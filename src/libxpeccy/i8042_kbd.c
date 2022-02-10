@@ -8,12 +8,14 @@
 
 // PS/2 controller
 
-PS2Ctrl* ps2c_create(Keyboard* kp, Mouse* mp) {
+PS2Ctrl* ps2c_create(Keyboard* kp, Mouse* mp, cbirq cb, void* p) {
 	PS2Ctrl* ctrl = (PS2Ctrl*)malloc(sizeof(PS2Ctrl));
 	if (ctrl) {
 		memset(ctrl, 0, sizeof(PS2Ctrl));
 		ctrl->kbd = kp;
 		ctrl->mouse = mp;
+		ctrl->xirq = cb;
+		ctrl->xptr = p;
 		ctrl->cmd = -1;
 		ctrl->status = 0;
 		ctrl->delay = 0;
@@ -116,7 +118,7 @@ void ps2c_rd_kbd(PS2Ctrl* ctrl) {
 		}
 		ctrl->kbd->outbuf >>= 8;
 		if (ctrl->ram[0] & 1) {
-			ctrl->intk = 1;
+			ctrl->xirq(IRQ_KBD, ctrl->xptr);
 		}
 		ctrl->delay = KBD_DELAY;
 		//printf("i8042 get scancode %X (remains %X)\n", ctrl->outbuf,ctrl->kbd->outbuf);
@@ -130,7 +132,7 @@ void ps2c_rd_mouse(PS2Ctrl* ctrl) {
 	ps2c_wr_ob2(ctrl, ctrl->mouse->outbuf);
 	ctrl->mouse->outbuf = 0;
 	if ((ctrl->ram[0] & 2) && (ctrl->outbuf & 0xff)) {
-		ctrl->intm = 1;
+		ctrl->xirq(IRQ_MOUSE, ctrl->xptr);
 		ctrl->delay = KBD_DELAY;
 	}
 }

@@ -217,3 +217,50 @@ xLabel::xLabel(QWidget* p):QLabel(p) {}
 void xLabel::mousePressEvent(QMouseEvent* ev) {
 	emit clicked(ev);
 }
+
+// xTreeBox
+
+xTreeBox::xTreeBox(QWidget *p):QComboBox(p) {
+	tree = new QTreeView;
+	mod = new QFileSystemModel;
+	setModel(mod);
+	setView(tree);
+	mod->setNameFilters(QStringList() << "*.rom" << "*.bin");
+	mod->setReadOnly(true);
+	mod->setFilter(QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot);
+	tree->setSelectionBehavior(QAbstractItemView::SelectRows);
+	tree->setSelectionMode(QAbstractItemView::SingleSelection);
+}
+
+void xTreeBox::setDir(QString dir) {
+	QModelIndex idx = mod->setRootPath(dir);
+	setRootModelIndex(idx);
+}
+
+void xTreeBox::showPopup() {
+	for (int i = 1; i < mod->columnCount(); i++) {
+		tree->hideColumn(i);
+	}
+	QComboBox::showPopup();
+}
+
+void xTreeBox::hidePopup() {
+	QModelIndex idx = tree->selectionModel()->currentIndex();
+	QFileInfo inf = mod->fileInfo(idx);
+	if (inf.isDir()) return;
+	QComboBox::hidePopup();
+}
+
+void xTreeBox::setCurrentFile(QString path) {
+	path.prepend(SLSH);
+	path.prepend(mod->rootPath());
+	qDebug() << path;
+	QModelIndex idx = mod->index(path, 0);
+	setCurrentIndex(idx.row());
+}
+
+QString xTreeBox::currentFile() {
+	QModelIndex idx = tree->selectionModel()->currentIndex();
+	QFileInfo inf = mod->fileInfo(idx);
+	return mod->rootDirectory().relativeFilePath(inf.filePath());
+}

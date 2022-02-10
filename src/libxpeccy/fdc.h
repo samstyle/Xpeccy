@@ -60,6 +60,7 @@ struct FDC {
 	unsigned idle:1;
 	unsigned crchi:1;
 	unsigned hd:1;		// HD mode (trklen 12500, bytedelay 16000)
+
 	unsigned char trk;	// registers
 	unsigned char sec;
 	unsigned char data;
@@ -69,8 +70,10 @@ struct FDC {
 	unsigned short wdata;
 	unsigned short tdata;
 	int bytedelay;
+
 	Floppy* flop[4];
 	Floppy* flp;		// current floppy ptr
+
 	unsigned short crc;	// calculated crc
 	unsigned short fcrc;	// crc get from floppy
 	unsigned char buf[6];
@@ -80,6 +83,9 @@ struct FDC {
 	int tns;
 	fdcCall* plan;		// current task
 	int pos;		// pos in plan
+
+	cbirq xirq;
+	void* xptr;
 
 	unsigned dma:1;		// not implemented yet
 	unsigned intr:1;	// uPD765 interrupt pending. reset @ com08
@@ -104,7 +110,7 @@ typedef struct DiskHW DiskHW;
 
 struct DiskIF {
 	unsigned inten:1;	// int enabled
-	unsigned intrq:1;	// current int
+//	unsigned intrq:1;	// current int
 	unsigned lirq:1;	// last int
 	int type;
 	DiskHW* hw;
@@ -115,7 +121,7 @@ typedef struct DiskIF DiskIF;
 
 extern int fdcFlag;
 
-DiskIF* difCreate(int);
+DiskIF* difCreate(int, cbirq, void*);
 void difDestroy(DiskIF*);
 
 void difReset(DiskIF*);

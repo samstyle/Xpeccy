@@ -141,7 +141,6 @@ int pdosOut(DiskIF* dif, int port, int val, int dos) {
 
 void pdosReset(DiskIF* dif) {
 	dif->inten = 0;
-	dif->intrq = 0;
 	dif->lirq = 0;
 	uReset(dif->fdc);
 }
@@ -154,8 +153,8 @@ void pdosSync(DiskIF* dif, int ns) {
 	}
 	if ((dif->fdc->intr & dif->inten) ^ dif->lirq) {
 		if (!dif->lirq)
-			dif->intrq = 1;
-		dif->lirq = dif->fdc->intr;
+			dif->fdc->xirq(IRQ_FDC, dif->fdc->xptr);
+		dif->lirq = dif->fdc->intr & dif->inten;
 	}
 }
 
@@ -292,7 +291,7 @@ void difSetHW(DiskIF* dif, int type) {
 	dif->fdc->upd = (dif->hw->id == DIF_P3DOS) ? 1 : 0;	// difference between upd765 & i8275
 }
 
-DiskIF* difCreate(int type) {
+DiskIF* difCreate(int type, cbirq cb, void* p) {
 	DiskIF* dif = (DiskIF*)malloc(sizeof(DiskIF));
 	dif->fdc = (FDC*)malloc(sizeof(FDC));
 	memset(dif->fdc,0x00,sizeof(FDC));
@@ -303,6 +302,8 @@ DiskIF* difCreate(int type) {
 	dif->fdc->flop[2] = flpCreate(2);
 	dif->fdc->flop[3] = flpCreate(3);
 	dif->fdc->flp = dif->fdc->flop[0];
+	dif->fdc->xptr = p;
+	dif->fdc->xirq = cb;
 	fdc_set_hd(dif->fdc, 0);
 	difSetHW(dif, type);
 	return dif;

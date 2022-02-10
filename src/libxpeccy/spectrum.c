@@ -294,11 +294,11 @@ Computer* compCreate() {
 	comp->joy = joyCreate();
 	comp->mouse = mouseCreate();
 	comp->ppi = ppi_create();
-	comp->ps2c = ps2c_create(comp->keyb, comp->mouse);
+	comp->ps2c = ps2c_create(comp->keyb, comp->mouse, comp_irq, comp);
 // storage
 	comp->tape = tapCreate();
-	comp->dif = difCreate(DIF_NONE);
-	comp->ide = ideCreate(IDE_NONE);
+	comp->dif = difCreate(DIF_NONE, comp_irq, comp);
+	comp->ide = ideCreate(IDE_NONE, comp_irq, comp);
 	comp->ide->smuc.cmos = &comp->cmos;
 	comp->sdc = sdcCreate();
 	comp->slot = sltCreate();
@@ -309,7 +309,7 @@ Computer* compCreate() {
 	comp->gbsnd = gbsCreate();
 	comp->saa = saaCreate();
 	comp->beep = bcCreate();
-	comp->nesapu = apuCreate(nes_apu_ext_rd, comp);
+	comp->nesapu = apuCreate(nes_apu_ext_rd, comp_irq, comp);
 // ibm
 	comp->dma8 = dma_create(comp, 0);
 	comp->dma16 = dma_create(comp, 1);

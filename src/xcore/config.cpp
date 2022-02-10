@@ -42,15 +42,19 @@ enum {
 std::map<std::string, int> shotFormat;
 xConfig conf;
 
-void conf_init(char* wpath) {
+void conf_init(char* wpath, char* confdir) {
 	conf.scrShot.dir = std::string(getenv(ENVHOME));
 	conf.port = 30000;
 #if defined(__linux) || defined(__APPLE__) || defined(__BSD)
-	conf.path.confDir = std::string(getenv(ENVHOME)) + "/.config";
-	mkdir(conf.path.confDir.c_str(), 0777);
-	conf.path.confDir += "/samstyle";
-	mkdir(conf.path.confDir.c_str(), 0777);
-	conf.path.confDir += "/xpeccy";
+	if (confdir == NULL) {
+		conf.path.confDir = std::string(getenv(ENVHOME)) + "/.config";
+		mkdir(conf.path.confDir.c_str(), 0777);
+		conf.path.confDir += "/samstyle";
+		mkdir(conf.path.confDir.c_str(), 0777);
+		conf.path.confDir += "/xpeccy";
+	} else {
+		conf.path.confDir = std::string(confdir);
+	}
 	mkdir(conf.path.confDir.c_str(), 0777);
 	conf.path.romDir = conf.path.confDir + "/roms";
 	mkdir(conf.path.romDir.c_str() ,0777);
@@ -61,12 +65,16 @@ void conf_init(char* wpath) {
 	conf.path.confFile = conf.path.confDir + "/config.conf";
 	conf.path.boot = conf.path.confDir + "/boot.$B";
 #elif defined(__WIN32)
-	conf.path.confDir = std::string(wpath);
-	size_t pos = conf.path.confDir.find_last_of(SLSH);
-	if (pos != std::string::npos) {
-		conf.path.confDir = conf.path.confDir.substr(0, pos);
+	if (confdir == NULL) {
+		conf.path.confDir = std::string(wpath);
+		size_t pos = conf.path.confDir.find_last_of(SLSH);
+		if (pos != std::string::npos) {
+			conf.path.confDir = conf.path.confDir.substr(0, pos);
+		}
+		conf.path.confDir += "\\config";
+	} else {
+		conf.path.confDir = std::string(confdir);
 	}
-	conf.path.confDir += "\\config";
 	conf.path.romDir = conf.path.confDir + "\\roms";
 	conf.path.prfDir = conf.path.confDir + "\\profiles";
 	conf.path.shdDir = conf.path.confDir + "\\shaders";

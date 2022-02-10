@@ -1,5 +1,6 @@
 #pragma once
 
+#include "defines.h"
 #include "input.h"
 
 #define PS2_RDATA	0
@@ -8,10 +9,13 @@
 
 typedef struct {
 	unsigned reset:1;	// system reset requested
-	unsigned intk:1;	// dev1(kbd) interrupt
-	unsigned intm:1;	// dev2(mouse) interrupt
+
+	cbirq xirq;
+	void* xptr;
+
 	Keyboard* kbd;
 	Mouse* mouse;
+
 	unsigned char ram[0x20];
 	int delay;
 	int cmd;	// last command for data port writing
@@ -23,7 +27,7 @@ typedef struct {
 	int outport;		// controller output port
 } PS2Ctrl;
 
-PS2Ctrl* ps2c_create(Keyboard*, Mouse*);
+PS2Ctrl* ps2c_create(Keyboard*, Mouse*, cbirq, void*);
 void ps2c_destroy(PS2Ctrl*);
 void ps2c_sync(PS2Ctrl*, int);
 void ps2c_reset(PS2Ctrl*);

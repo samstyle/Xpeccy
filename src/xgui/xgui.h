@@ -1,11 +1,14 @@
 #pragma once
 
+#include <QComboBox>
 #include <QDialog>
+#include <QFileSystemModel>
 #include <QLabel>
 #include <QLineEdit>
-#include <QWheelEvent>
 #include <QKeyEvent>
 #include <QRegExpValidator>
+#include <QTreeView>
+#include <QWheelEvent>
 
 // common
 
@@ -65,11 +68,25 @@ class xLabel : public QLabel {
 		void mousePressEvent(QMouseEvent*);
 };
 
+class xTreeBox : public QComboBox {
+	Q_OBJECT
+	public:
+		xTreeBox(QWidget* p = NULL);
+		void setDir(QString);
+		void setCurrentFile(QString);
+		QString currentFile();
+	private:
+		void showPopup();
+		void hidePopup();
+		QTreeView* tree;
+		QFileSystemModel* mod;
+};
+
 // tape player
 
-#include "xgui/options/opt_tapecat.h"
+#include "options/opt_tapecat.h"
 #include "ui_tapewin.h"
-#include "libxpeccy/tape.h"
+#include "../libxpeccy/tape.h"
 
 enum {
 	TW_STATE = 0,
@@ -109,7 +126,7 @@ class TapeWin : public QDialog {
 // rzx player
 
 #include "ui_rzxplayer.h"
-#include "libxpeccy/spectrum.h"
+#include "../libxpeccy/spectrum.h"
 
 enum {
 	RWS_PLAY = 1,

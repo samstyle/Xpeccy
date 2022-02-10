@@ -218,7 +218,7 @@ int ppuRenderSpriteLine(Video* vid, int line, unsigned char* sbuf, unsigned char
 
 // @ every visible dot
 void ppuDraw(Video* vid) {
-	if (vid->hblank) return;		// do not process on hblank
+	if (vid->hblank || vid->vblank) return;		// do not process on hblank
 
 	if (!(vid->ray.x & 7) && vid->ray.x && vid->bgen) {			// no fetch @ X=0
 		ppuRenderTile(vid, vid->bgline, vid->ray.x + 8, vid->vadr, vid->bgadr);

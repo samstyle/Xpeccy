@@ -10,20 +10,22 @@ std::string getRFText(QComboBox*);
 
 xRomsetEditor::xRomsetEditor(QWidget* par):QDialog(par) {
 	ui.setupUi(this);
+	ui.cbFile->setDir(conf.path.romDir.c_str());
 	connect(ui.rse_apply, SIGNAL(clicked()), this, SLOT(store()));
 	connect(ui.rse_cancel, SIGNAL(clicked()), this, SLOT(hide()));
 }
 
 void xRomsetEditor::edit(xRomFile f) {
 	xrf = f;
-	QDir rdir(QString(conf.path.romDir.c_str()));
-	QStringList rlst = rdir.entryList(QStringList() << "*.rom" << "*.bin", QDir::Files, QDir::Name);
-	QString str;
-	ui.cbFile->clear();
-	foreach(str, rlst) {
-		ui.cbFile->addItem(str, str);
-	}
-	ui.cbFile->setCurrentIndex(rlst.indexOf(f.name.c_str()));
+//	QDir rdir(QString(conf.path.romDir.c_str()));
+//	QStringList rlst = rdir.entryList(QStringList() << "*.rom" << "*.bin", QDir::Files, QDir::Name);
+//	QString str;
+//	ui.cbFile->clear();
+//	foreach(str, rlst) {
+//		ui.cbFile->addItem(str, str);
+//	}
+//	ui.cbFile->setCurrentIndex(rlst.indexOf(f.name.c_str()));
+	ui.cbFile->setCurrentFile(f.name.c_str());
 	ui.cbFoffset->setValue(f.foffset);
 	ui.cbFsize->setValue(f.fsize);
 	ui.cbRoffset->setValue(f.roffset);
@@ -31,7 +33,8 @@ void xRomsetEditor::edit(xRomFile f) {
 }
 
 void xRomsetEditor::store() {
-	xrf.name = getRFText(ui.cbFile);
+//	xrf.name = getRFText(ui.cbFile);
+	xrf.name = std::string(ui.cbFile->currentFile().toLocal8Bit().data());
 	if (xrf.name.empty()) return;
 	xrf.foffset = ui.cbFoffset->value();
 	xrf.fsize = ui.cbFsize->value();

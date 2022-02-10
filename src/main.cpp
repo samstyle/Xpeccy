@@ -48,6 +48,7 @@ void help() {
 	printf("--disk X\t\tselect drive to loading file (0..3 | a..d | A..D)\n");
 	printf("--style\t\t\tMacOSX only: use native qt style, else 'fusion' will be forced\n");
 	printf("--xmap FILE\t\tLoad *.xmap file\n");
+	printf("--confdir DIR\t\tChange config directory\n");
 }
 
 // for f*cking apple users
@@ -89,7 +90,7 @@ int main(int ac,char** av) {
 	QCoreApplication::setLibraryPaths(paths);
 #endif
 	sndInit();
-	conf_init(av[0]);
+	conf_init(av[0], NULL);
 	shortcut_init();
 
 	MainWin mwin;
@@ -251,6 +252,10 @@ int main(int ac,char** av) {
 			} else if (!strcmp(parg, "--xmap")) {
 				load_xmap(av[i]);
 				i++;
+			} else if (!strcmp(parg, "--confdir")) {
+				conf_init(av[0], av[i]);
+				i++;
+				loadConfig();
 			} else if (strlen(parg) > 0) {
 				load_file(mwin.comp, parg, FG_ALL, drv);
 			}

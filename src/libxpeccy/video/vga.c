@@ -416,7 +416,7 @@ void cga_t40_line(Video* vid) {
 	int i,t;
 	vid->xpos = 0;
 	vid->tadr = vid->vadr;					// current adr, vadr remains at start of line
-	for (t = 0; t <= CRT_REG(1); t++) {
+	for (t = vid->vga.cga ? 1 : 0; t <= CRT_REG(1); t++) {
 		vid->idx = vid->ram[vid->tadr];			// char (plane 0)
 		vid->atrbyte = vid->ram[vid->tadr + MEM_64K];	// attr	(plane 1)
 		vid->fadr = vid->idx * 32;			// offset of 1st char byte in plane 2 (allways 32 bytes/char in font plane)

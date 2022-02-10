@@ -3,6 +3,7 @@
 #include <QAbstractTableModel>
 #include <QDialog>
 
+#include "../xgui.h"
 #include "../../xcore/xcore.h"
 
 #include "ui_rsedit.h"

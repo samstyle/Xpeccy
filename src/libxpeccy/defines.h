@@ -2,10 +2,20 @@
 
 // interrupt types
 enum {
-	IRQ_VID_INT = 1,
+	IRQ_VID_INT = 1,// video
 	IRQ_VID_INT_E,
-	IRQ_VID_LINE,
+	IRQ_VID_VBLANK,
+	IRQ_VID_LINE,	// tsconf
 	IRQ_DMA,
+	IRQ_FDC,	// ibm
+	IRQ_HDD_PRI,
+	IRQ_SLAVE_PIC,
+	IRQ_MASTER_PIC,
+	IRQ_KBD,	// ibm kbd || gbc buttons
+	IRQ_MOUSE,
+	IRQ_PIT_CH0,
+	IRQ_PIT_CH1,
+	IRQ_APU,	// nes
 };
 
 typedef void(*cbirq)(int, void*);

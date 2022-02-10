@@ -213,22 +213,35 @@ void nesMaper(Computer* comp) {
 	memSetBank(comp->mem, 0x80, MEM_SLOT, 0, MEM_32K, nes_slot_prg_rd, nes_slot_prg_wr, comp->slot);// 8000..FFFF slot (prg)
 }
 
-void nesSync(Computer* comp, int ns) {
-	if (comp->vid->vblank && !comp->nes.vblank && comp->vid->inten) {	// @ start of VBlank
-		// comp->vid->vbstrb = 0;
-		comp->cpu->intrq |= MOS6502_INT_NMI;				// request NMI...
+void nes_irq(Computer* comp, int t) {
+	switch(t) {
+		case IRQ_VID_VBLANK:
+			if (comp->vid->inten)
+				comp->cpu->intrq |= MOS6502_INT_NMI;
+			break;
+		case IRQ_APU:
+			comp->cpu->intrq |= MOS6502_INT_IRQ;
+			break;
 	}
-	comp->nes.vblank = comp->vid->vblank;
+}
+
+void nesSync(Computer* comp, int ns) {
+//	if (comp->vid->vblank && !comp->nes.vblank && comp->vid->inten) {	// @ start of VBlank
+		// comp->vid->vbstrb = 0;
+//		comp->cpu->intrq |= MOS6502_INT_NMI;				// request NMI...
+//	}
+//	comp->nes.vblank = comp->vid->vblank;
 
 	apuSync(comp->nesapu, ns);
 	// irq
-	int irq = comp->nesapu->firq | comp->nesapu->dirq | comp->slot->irq;		// external irq signals
-	comp->nesapu->firq = 0;
-	comp->nesapu->dirq = 0;
-	comp->slot->irq = 0;
-	if (irq && !comp->nes.irq)
+//	int irq = /*comp->nesapu->firq | comp->nesapu->dirq |*/ comp->slot->irq;		// external irq signals
+//	comp->nesapu->firq = 0;
+//	comp->nesapu->dirq = 0;
+//	comp->slot->irq = 0;
+	if (comp->slot->irq && !comp->nes.irq)
 		comp->cpu->intrq |= MOS6502_INT_IRQ;
-	comp->nes.irq = irq ? 1 : 0;
+	comp->nes.irq = comp->slot->irq;
+	comp->slot->irq = 0;
 }
 
 extern int res4;

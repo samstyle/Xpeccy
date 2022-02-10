@@ -1,6 +1,7 @@
 #pragma once
 
 #include "sndcommon.h"
+#include "../defines.h"
 
 typedef int(*aextmrd)(int, void*);
 
@@ -62,11 +63,12 @@ typedef struct {
 
 	int time;
 
-    aextmrd mrd;
+	aextmrd mrd;
+	cbirq xirq;
 	void* data;
 } nesAPU;
 
-nesAPU* apuCreate(aextmrd, void*);
+nesAPU* apuCreate(aextmrd, cbirq, void*);
 void apuDestroy(nesAPU*);
 
 void apuReset(nesAPU*);

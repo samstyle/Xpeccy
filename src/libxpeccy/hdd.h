@@ -6,6 +6,7 @@ extern "C" {
 
 #include <stdio.h>
 
+#include "defines.h"
 #include "nvram.h"
 #include "cmos.h"
 
@@ -100,6 +101,10 @@ typedef struct {
 	unsigned inten:1;	// interrupt enabled
 	unsigned intrq:1;	// interrupt pending
 
+	int xid;
+	cbirq xirq;
+	void* xptr;
+
 	int type;		// none / ata / atapi
 	int lba;
 	int maxlba;
@@ -122,14 +127,6 @@ typedef struct {
 	ATAPassport pass;
 } ATADev;
 
-/*
-typedef struct {
-	int mode;		// mode for F0..FF reading
-	unsigned char adr;
-	unsigned char data[256];
-} CMOS;
-*/
-
 typedef struct {
 	int type;
 	ATADev* master;
@@ -145,7 +142,7 @@ typedef struct {
 	} smuc;
 } IDE;
 
-IDE* ideCreate(int);
+IDE* ideCreate(int, cbirq, void*);
 void ideDestroy(IDE*);
 int ideIn(IDE*, int, int*, int);
 int ideOut(IDE*, int, int, int);

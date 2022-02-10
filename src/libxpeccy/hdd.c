@@ -28,7 +28,7 @@ void copyStringToBuffer(unsigned char* dst, const char* src, int len) {
 
 // ATA device
 
-ATADev* ataCreate(int tp) {
+ATADev* ataCreate(int tp, cbirq cb, void* p, int id) {
 	ATADev* ata = (ATADev*)malloc(sizeof(ATADev));
 	memset(ata,0x00,sizeof(ATADev));
 	ata->type = tp;
@@ -39,6 +39,9 @@ ATADev* ataCreate(int tp) {
 	ata->pass.spt = 255;
 	ata->pass.bpt = ata->pass.bps * ata->pass.spt;
 	ata->pass.type = 1;
+	ata->xirq = cb;
+	ata->xptr = p;
+	ata->xid = id;
 	memset(ata->pass.serial,' ',20);
 	memcpy(ata->pass.serial,"IDDQD",strlen("IDDQD"));
 	memset(ata->pass.mcver,' ',8);
@@ -174,7 +177,8 @@ void ataExec(ATADev* dev, unsigned char cm) {
 				dev->buf.mode = HDB_READ;
 				dev->reg.state |= HDF_DRQ;
 				if (dev->inten)
-					dev->intrq = 1;		// non-dma transfer: INT on each sector in buffer
+					dev->xirq(dev->xid, dev->xptr);
+					//dev->intrq = 1;		// non-dma transfer: INT on each sector in buffer
 				break;
 			case 0x22:			// read long (w/retry) TODO: read sector & ECC
 			case 0x23:			// read long (w/o retry)
@@ -200,7 +204,8 @@ void ataExec(ATADev* dev, unsigned char cm) {
 						ataNextSector(dev);
 				} while (dev->reg.count != 0);
 				if (dev->inten)
-					dev->intrq = 1;		// generate int after all sectors verified
+					dev->xirq(dev->xid, dev->xptr);
+					//dev->intrq = 1;		// generate int after all sectors verified
 				break;
 			case 0x50:			// format track; TODO: cyl = track; count = spt; drq=1; wait for buffer write, ignore(?) buffer; format track;
 				break;
@@ -363,7 +368,8 @@ unsigned short ataRd(ATADev* dev,int prt) {
 							ataNextSector(dev);
 							ataReadSector(dev);
 							if (!dev->dma && dev->inten)
-								dev->intrq = 1;
+								dev->xirq(dev->xid, dev->xptr);
+								//dev->intrq = 1;
 						}
 					} else {
 						dev->buf.mode = HDB_IDLE;
@@ -417,7 +423,8 @@ void ataWr(ATADev* dev, int prt, unsigned short val) {
 					if ((dev->reg.com & 0xf0) == 0x30) {
 						ataWriteSector(dev);
 						if (!dev->dma && dev->inten)			// sector is writed, INT
-							dev->intrq = 1;
+							dev->xirq(dev->xid, dev->xptr);
+							//dev->intrq = 1;
 						dev->reg.count--;
 						if (dev->reg.count == 0) {
 							dev->buf.mode = HDB_IDLE;
@@ -453,14 +460,16 @@ void ataWr(ATADev* dev, int prt, unsigned short val) {
 			dev->reg.com = val & 0xff;
 			ataExec(dev,dev->reg.com);
 			if (dev->inten)
-				dev->intrq = 1;		// host writing the command register = INT
+				dev->xirq(dev->xid, dev->xptr);
+				//dev->intrq = 1;		// host writing the command register = INT
 			break;
 		case HDD_CTRL:
 			dev->inten = (val & 2) ? 0 : 1;
 			if (val & 0x04) {
 				ataReset(dev);
 				if (dev->inten)
-					dev->intrq = 1;	// INT on soft reset
+					dev->xirq(dev->xid, dev->xptr);
+					//dev->intrq = 1;	// INT on soft reset
 			}
 			break;
 		case HDD_FEAT:
@@ -473,11 +482,11 @@ void ataWr(ATADev* dev, int prt, unsigned short val) {
 
 // IDE interface
 
-IDE* ideCreate(int tp) {
+IDE* ideCreate(int tp, cbirq cb, void* p) {
 	IDE* ide = (IDE*)malloc(sizeof(IDE));
 	ide->type = tp;
-	ide->master = ataCreate(IDE_NONE);
-	ide->slave = ataCreate(IDE_NONE);
+	ide->master = ataCreate(IDE_NONE, cb, p, IRQ_HDD_PRI);
+	ide->slave = ataCreate(IDE_NONE, cb, p, IRQ_HDD_PRI);
 	ide->curDev = ide->master;
 	ide->smuc.fdd = 0xc0;
 	ide->smuc.sys = 0x00;

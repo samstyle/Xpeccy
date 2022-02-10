@@ -4,7 +4,7 @@
 extern "C" {
 #endif
 
-//#include <stdint.h>
+#include "defines.h"
 
 #define TRKLEN_DD	6250
 #define TRKLEN_HD	17700

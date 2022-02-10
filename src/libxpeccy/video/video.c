@@ -40,7 +40,7 @@ static xColor xcol;
 static int xpos = 0;
 static int ypos = 0;
 #elif !DRAWING_F
-static unsigned char pcol;
+// static unsigned char pcol;
 #endif
 
 typedef void(*cbdot)(Video*, unsigned char);
@@ -949,6 +949,7 @@ void vid_tick(Video* vid) {
 				vid_dark_all();
 		}
 		if (vid->ray.y == vid->vend.y) {		// vblank start
+			vid->xirq(IRQ_VID_VBLANK, vid->data);
 			vid->vblank = 1;
 			vid->vbstrb = 1;
 			vid->ray.yb = 0;

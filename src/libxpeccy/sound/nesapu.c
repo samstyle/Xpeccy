@@ -6,10 +6,11 @@
 
 // http://wiki.nesdev.com/w/index.php/APU
 
-nesAPU* apuCreate(aextmrd cb, void* d) {
+nesAPU* apuCreate(aextmrd cb, cbirq ci, void* d) {
 	nesAPU* apu = (nesAPU*)malloc(sizeof(nesAPU));
 	memset(apu, 0x00, sizeof(nesAPU));
 	apu->mrd = cb;
+	apu->xirq = ci;
 	apu->data = d;
 	apu->wdiv = 3729;
 	return apu;
@@ -249,6 +250,7 @@ void apuSync(nesAPU* apu, int ns) {
 		if (apu->chd.irq) {
 			apu->chd.irq = 0;
 			apu->dirq = 1;
+			apu->xirq(IRQ_APU, apu->data);
 		}
 		// frame counter
 		if ((apu->wstp % apu->wdiv) == 0) {				// 14915 / 4 = ~3729 : ~240Hz here (NTSC)
@@ -274,6 +276,8 @@ void apuSync(nesAPU* apu, int ns) {
 				apuToneLen(&apu->chn);
 			}
 			if (tmp & 4) {		// 60Hz (48Hz)
+				if (apu->irqen)
+					apu->xirq(IRQ_APU, apu->data);
 				apu->firq = apu->irqen;
 			}
 		}

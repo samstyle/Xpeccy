@@ -48,7 +48,7 @@
       </widget>
      </item>
      <item row="0" column="1">
-      <widget class="QComboBox" name="cbFile"/>
+      <widget class="xTreeBox" name="cbFile"/>
      </item>
      <item row="1" column="1">
       <widget class="QSpinBox" name="cbFoffset">
@@ -123,6 +123,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>xTreeBox</class>
+   <extends>QComboBox</extends>
+   <header>xgui/xgui.h</header>
+  </customwidget>
+ </customwidgets>
  <tabstops>
   <tabstop>cbFile</tabstop>
   <tabstop>cbFoffset</tabstop>

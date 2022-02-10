@@ -651,8 +651,8 @@ void gbcSync(Computer* comp, int ns) {
 	}
 	// interrupts
 	if (comp->vid->vbstrb) {
-		comp->vid->vbstrb = 0;
-		req |= 1;
+//		comp->vid->vbstrb = 0;
+//		req |= 1;
 	} else if (comp->vid->intrq) {
 		comp->vid->intrq = 0;
 		req |= 2;
@@ -661,11 +661,18 @@ void gbcSync(Computer* comp, int ns) {
 		req |= 4;
 	} else if (0) {				// TODO: serial INT (?)
 		req |= 8;
-	} else if (comp->gb.inpint) {
-		comp->gb.inpint = 0;
-		req |= 16;
+//	} else if (comp->gb.inpint) {
+//		comp->gb.inpint = 0;
+//		req |= 16;
 	}
 	comp->cpu->intrq |= req;		// cpu int req
+}
+
+void gbc_irq(Computer* comp, int t) {
+	switch (t) {
+		case IRQ_VID_VBLANK: comp->cpu->intrq |= 1; break;		// @ comp->vid->vbstrb
+		case IRQ_KBD: comp->cpu->intrq |= 16; break;
+	}
 }
 
 void gbc_init(Computer* comp) {
@@ -724,7 +731,8 @@ void gbc_keyp(Computer* comp, keyEntry ent) {
 	unsigned char mask = gbGetInputMask(ent.key);
 	if (mask) {
 		comp->gb.buttons &= ~mask;
-		comp->gb.inpint = 1;			// input interrupt request
+		//comp->gb.inpint = 1;			// input interrupt request
+		gbc_irq(comp, IRQ_KBD);
 	} else {
 		switch (ent.key) {
 			case XKEY_1:
