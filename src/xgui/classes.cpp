@@ -228,8 +228,11 @@ xTreeBox::xTreeBox(QWidget *p):QComboBox(p) {
 	mod->setNameFilters(QStringList() << "*.rom" << "*.bin");
 	mod->setReadOnly(true);
 	mod->setFilter(QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot);
+	mod->setNameFilterDisables(false);
+	tree->setEditTriggers(QTableView::NoEditTriggers);
 	tree->setSelectionBehavior(QAbstractItemView::SelectRows);
 	tree->setSelectionMode(QAbstractItemView::SingleSelection);
+	tree->header()->setVisible(false);
 }
 
 void xTreeBox::setDir(QString dir) {
@@ -256,7 +259,13 @@ void xTreeBox::setCurrentFile(QString path) {
 	path.prepend(mod->rootPath());
 	qDebug() << path;
 	QModelIndex idx = mod->index(path, 0);
+	if (!idx.isValid()) return;
+	QModelIndex x = rootModelIndex();
+	setRootModelIndex(idx.parent());
+	setModelColumn(0);
 	setCurrentIndex(idx.row());
+	setRootModelIndex(x);
+	tree->setCurrentIndex(idx);
 }
 
 QString xTreeBox::currentFile() {
