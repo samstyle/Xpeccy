@@ -311,8 +311,8 @@ Computer* compCreate() {
 	comp->beep = bcCreate();
 	comp->nesapu = apuCreate(nes_apu_ext_rd, comp_irq, comp);
 // ibm
-	comp->dma8 = dma_create(comp, 0);
-	comp->dma16 = dma_create(comp, 1);
+	comp->dma1 = dma_create(comp, 0);
+	comp->dma2 = dma_create(comp, 1);
 	pit_reset(&comp->pit);
 // baseconf
 	memcpy(comp->evo.blVer,blnm,16);
@@ -354,8 +354,8 @@ void compDestroy(Computer* comp) {
 	sltDestroy(comp->slot);
 	ppi_destroy(comp->ppi);
 	ps2c_destroy(comp->ps2c);
-	dma_destroy(comp->dma8);
-	dma_destroy(comp->dma16);
+	dma_destroy(comp->dma1);
+	dma_destroy(comp->dma2);
 	free(comp);
 }
 
@@ -389,8 +389,8 @@ void compReset(Computer* comp,int res) {
 	ideReset(comp->ide);
 	saaReset(comp->saa);
 	sdcReset(comp->sdc);
-	dma_reset(comp->dma8);
-	dma_reset(comp->dma16);
+	dma_reset(comp->dma1);
+	dma_reset(comp->dma2);
 	if (comp->hw->reset)
 		comp->hw->reset(comp);
 	comp->hw->mapMem(comp);

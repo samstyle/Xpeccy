@@ -280,8 +280,8 @@ typedef struct {
 	PIC mpic;		// master pic
 	PIC spic;		// slave pic
 	PS2Ctrl* ps2c;
-	i8237DMA* dma8;		// 8-bit dma
-	i8237DMA* dma16;	// 16-bit dma
+	i8237DMA* dma1;		// 8-bit dma
+	i8237DMA* dma2;		// 16-bit dma
 } Computer;
 
 #include "hardware/hardware.h"

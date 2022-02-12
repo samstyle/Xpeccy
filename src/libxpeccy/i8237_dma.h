@@ -26,10 +26,11 @@
 typedef int(*cbdmadrd)(void*, int*);
 typedef void(*cbdmadwr)(int, void*, int*);
 
-typedef int(*cbdmamrd)(int, void*);
-typedef void(*cbdmamwr)(int, int, void*);
+typedef int(*cbdmamrd)(int, int, void*);
+typedef void(*cbdmamwr)(int, int, int, void*);
 
 typedef struct {
+	unsigned wrd:1;		// channel from 16-bit dma controller
 	unsigned masked:1;	// don't process if 1
 	unsigned short bar;	// base address
 	unsigned short car;	// current address

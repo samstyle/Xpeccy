@@ -51,6 +51,7 @@ struct FDC {
 	unsigned seekend:1;	// uPD765: set at end of seek/recalibrate com
 	unsigned irq:1;		// VG93:irq ; uPD765:exec
 	unsigned drq:1;		// 1:data request
+	unsigned rqf:1;		// 1:data is just recieved, next status reading will set 0 as drq and
 	unsigned dir:1;		// drq dir: 0 - cpu->fdc; 1 - fdc->cpu
 	unsigned mr:1;		// master reset
 	unsigned block:1;

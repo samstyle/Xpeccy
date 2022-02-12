@@ -1,7 +1,6 @@
 #include "xgui.h"
 #include "../xcore/xcore.h"
 
-#include <QDebug>
 #include <QPalette>
 
 QString gethexword(int);
@@ -257,7 +256,6 @@ void xTreeBox::hidePopup() {
 void xTreeBox::setCurrentFile(QString path) {
 	path.prepend(SLSH);
 	path.prepend(mod->rootPath());
-	qDebug() << path;
 	QModelIndex idx = mod->index(path, 0);
 	if (!idx.isValid()) return;
 	QModelIndex x = rootModelIndex();

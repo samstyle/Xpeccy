@@ -10,6 +10,8 @@ i8237DMA* dma_create(void* p, int w) {
 		memset(dma, 0, sizeof(i8237DMA));
 		dma->ptr = p;
 		dma->wrd = w;
+		for (int i = 0; i < 4; i++)
+			dma->ch[0].wrd = w;
 	}
 	return dma;
 }
@@ -38,8 +40,7 @@ void dma_reset(i8237DMA* dma) {
 
 // set callbacks to read/wr device for one channel
 void dma_set_chan(i8237DMA* dma, int ch, cbdmadrd cr, cbdmadwr cw) {
-	if (ch < 0) return;
-	if (ch > 3) return;
+	ch &= 3;
 	dma->ch[ch].rd = cr;
 	dma->ch[ch].wr = cw;
 }
@@ -52,6 +53,8 @@ void dma_set_cb(i8237DMA* dma, cbdmamrd cr, cbdmamwr cw) {
 	}
 }
 
+// mode b6,7: 00:by request, 01:single, 10:block, 11:cascade
+// dma command reg: b0:mem-mem enable (ch0-ch1), b1:hold addres of ch0 (filling)
 void dma_ch_count(DMAChan* ch) {
 	ch->car += (ch->mode & 0x20) ? -1 : 1;
 	ch->cwr--;
@@ -64,21 +67,22 @@ void dma_ch_count(DMAChan* ch) {
 	}
 }
 
+// TODO: dma2 channels read/write by 2 bytes (ch->wrd == 1)
 void dma_ch_transfer(DMAChan* ch, void* ptr) {
 	if (ch->masked) return;			// channel masked, no transfer
 	int flag = 0;
 	int b;
 	switch((ch->mode >> 2) & 3) {
 		case 0:		// verify. just read from dev, not write to mem?
-			b = ch->rd ? ch->rd(ptr, &flag) : 0xff;
+			b = ch->rd ? ch->rd(ptr, &flag) : -1;
 			break;
 		case 1:		// dev->mem
-			b = ch->rd ? ch->rd(ptr, &flag) : 0xff;
+			b = ch->rd ? ch->rd(ptr, &flag) : -1;
 			if (flag && ch->mwr)
-				ch->mwr((ch->par << 16) | ch->car, b, ptr);
+				ch->mwr((ch->par << 16) | ch->car, b, ch->wrd, ptr);
 			break;
 		case 2:		// mem->dev
-			b = ch->mrd ? ch->mrd((ch->par << 16) | ch->car, ptr) : 0xff;	// TODO: check dev is ready first?
+			b = ch->mrd ? ch->mrd((ch->par << 16) | ch->car, ch->wrd, ptr) : -1;	// TODO: check dev is ready first?
 			if (ch->wr)
 				ch->wr(b, ptr, &flag);
 			break;

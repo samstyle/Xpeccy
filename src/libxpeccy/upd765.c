@@ -36,7 +36,7 @@ void unothing(FDC* fdc) {
 	if (fdc->flp->motor) {
 		flpNext(fdc->flp, fdc->side);
 	}
-	fdc->wait += turbo ? TRBBYTE : fdc->bytedelay;
+	fdc->wait += fdc->bytedelay; // turbo ? TRBBYTE : fdc->bytedelay;
 }
 
 void ustp(FDC* fdc) {
@@ -94,7 +94,7 @@ int uGetByte(FDC* fdc) {
 		}
 		fdc->tmp = flpRd(fdc->flp, fdc->side);
 		flpNext(fdc->flp, fdc->side);
-		fdc->wait += turbo ? TRBBYTE : fdc->bytedelay;
+		fdc->wait += fdc->bytedelay;
 		fdc->tns = 0;
 		res = 1;
 	}
@@ -344,7 +344,7 @@ void uread03(FDC* fdc) {
 	fdc->drq = 0;
 	fdc->dir = 1;
 	fdc->tns = 0;
-	fdc->wait = turbo ? TRBBYTE : fdc->bytedelay;
+	fdc->wait = fdc->bytedelay; // turbo ? TRBBYTE : fdc->bytedelay;
 	fdc->pos++;
 	// fdc->brk = 1;
 	// printf("combuf: %.2X",fdc->com); for (int i = 0; i < 8; i++) {printf(" %.2X",fdc->comBuf[i]);} printf("\n");
@@ -359,7 +359,7 @@ void uread04(FDC* fdc) {
 	fdc->cnt--;
 	if (fdc->cnt < 1) {
 		fdc->pos++;
-		fdc->wait = turbo ? TRBBYTE : fdc->bytedelay;
+		fdc->wait = fdc->bytedelay; // turbo ? TRBBYTE : fdc->bytedelay;
 	}
 }
 
@@ -514,7 +514,7 @@ void uscan01(FDC* fdc) {
 	fdc->cnt = 0x80 << (fdc->buf[3] & 3);
 	fdc->drq = 0;
 	fdc->dir = 1;
-	fdc->wait = turbo ? TRBBYTE : fdc->bytedelay;
+	fdc->wait = fdc->bytedelay; // turbo ? TRBBYTE : fdc->bytedelay;
 	fdc->pos++;
 }
 
@@ -541,7 +541,7 @@ void uscan02(FDC* fdc) {
 	fdc->cnt--;
 	if (fdc->cnt < 1) {
 		fdc->pos++;
-		fdc->wait = turbo ? TRBBYTE : fdc->bytedelay;
+		fdc->wait = fdc->bytedelay; // turbo ? TRBBYTE : fdc->bytedelay;
 	}
 }
 
@@ -715,7 +715,7 @@ void utrkfrm00(FDC* fdc) {
 
 void utrkfrm01(FDC* fdc) {		// wait for index
 	flpNext(fdc->flp, fdc->side);
-	fdc->wait += turbo ? TRBBYTE : fdc->bytedelay;
+	fdc->wait += fdc->bytedelay; // turbo ? TRBBYTE : fdc->bytedelay;
 	if (fdc->flp->index) {
 		DBGOUT("index\n");
 		fdc->cnt = 0;
@@ -899,7 +899,7 @@ unsigned char uRead(FDC* fdc, int adr) {
 					fdc->dir = 0;	// cpu->fdc, waiting for command
 					fdc->idle = 1;
 				}
-				DBGOUT("resp : %.2X\n",res);
+				//DBGOUT("resp : %.2X\n",res);
 			} else {			// other
 				res = 0xff;
 			}
