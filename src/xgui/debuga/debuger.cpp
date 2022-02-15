@@ -1988,12 +1988,12 @@ void DebugWin::saveVRam() {
 
 void DebugWin::doFind() {
 	memFinder->mem = comp->mem;
-	memFinder->adr = (ui.dasmTable->getAdr() + 1) & 0xffff;
+	memFinder->adr = (ui.dasmTable->getAdr() + 1) & comp->mem->busmask;
 	memFinder->show();
 }
 
 void DebugWin::onFound(int adr) {
-	//ui.dasmTable->setAdr(adr);
+	ui.dasmTable->setAdr(adr);
 	ui.dumpTable->setAdr(adr);
 }
 

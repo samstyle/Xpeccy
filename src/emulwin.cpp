@@ -420,28 +420,43 @@ void MainWin::timerEvent(QTimerEvent* ev) {
 			}
 		}
 // process sdl events (gamepad)
-		if (conf.joy.joy && !conf.emu.pause && isActiveWindow()) {
-			SDL_Event ev;
+		int act = conf.joy.joy && !conf.emu.pause && isActiveWindow();
+		SDL_Event ev;
+		if (act)
 			SDL_JoystickUpdate();
-			while(SDL_PollEvent(&ev)) {
-				switch(ev.type) {
-					case SDL_JOYAXISMOTION:
-						if (abs(ev.jaxis.value) < conf.joy.dead) {
-							mapJoystick(comp, JOY_AXIS, ev.jaxis.axis, 0);
-						} else {
-							mapJoystick(comp, JOY_AXIS, ev.jaxis.axis, ev.jaxis.value);
-						}
-						break;
-					case SDL_JOYBUTTONDOWN:
-						mapJoystick(comp, JOY_BUTTON, ev.jbutton.button, 32768);
-						break;
-					case SDL_JOYBUTTONUP:
-						mapJoystick(comp, JOY_BUTTON, ev.jbutton.button, 0);
-						break;
-					case SDL_JOYHATMOTION:
-						mapJoystick(comp, JOY_HAT, ev.jhat.hat, ev.jhat.value);
-						break;
-				}
+		while(SDL_PollEvent(&ev)) {
+			switch(ev.type) {
+				case SDL_JOYAXISMOTION:
+					if (abs(ev.jaxis.value) < conf.joy.dead) {
+						mapJoystick(comp, JOY_AXIS, ev.jaxis.axis, 0);
+					} else {
+						mapJoystick(comp, JOY_AXIS, ev.jaxis.axis, ev.jaxis.value);
+					}
+					break;
+				case SDL_JOYBUTTONDOWN:
+					mapJoystick(comp, JOY_BUTTON, ev.jbutton.button, 32768);
+					break;
+				case SDL_JOYBUTTONUP:
+					mapJoystick(comp, JOY_BUTTON, ev.jbutton.button, 0);
+					break;
+				case SDL_JOYHATMOTION:
+					mapJoystick(comp, JOY_HAT, ev.jhat.hat, ev.jhat.value);
+					break;
+#if HAVESDL2
+				// TODO: select device, if there is more than one
+				case SDL_JOYDEVICEREMOVED:
+				case SDL_JOYDEVICEADDED:
+					if (ev.jdevice.which != 0) break;
+					if (conf.joy.joy) {
+						SDL_JoystickClose(conf.joy.joy);
+						conf.joy.joy = NULL;
+					}
+					if (SDL_NumJoysticks() > 0) {
+						conf.joy.joy = SDL_JoystickOpen(0);
+					}
+					emit s_gamepad_plug();
+					break;
+#endif
 			}
 		}
 // process mouse auto move

@@ -25,6 +25,10 @@ void i286_reset(CPU* cpu) {
 extern void i286_push(CPU*, unsigned short);
 
 void i286_int_real(CPU* cpu, int vec) {
+	if (cpu->halt) {
+		cpu->halt = 0;
+		cpu->pc++;
+	}
 	i286_push(cpu, cpu->f);
 	i286_push(cpu, cpu->cs.idx);
 	i286_push(cpu, cpu->pc);
@@ -70,8 +74,12 @@ void i286_int_prt(CPU* cpu, int vec) {
 		if ((cpu->tmpdr.flag & 0x60) < (fl & 0x60)) {	// check priv
 			i286_int_prt(cpu, 13);
 		} else {					// do interrupt
+			if (cpu->halt) {
+				cpu->halt = 0;
+				cpu->pc++;
+			}
 			i286_push(cpu, cpu->f);
-			if (!(fl & 1)) cpu->f &= I286_FI;
+			if (!(fl & 1)) cpu->f &= ~I286_FI;
 			i286_push(cpu, cpu->cs.idx);
 			i286_push(cpu, cpu->pc);
 			i286_push(cpu, cpu->errcod & 0xffff);

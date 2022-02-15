@@ -29,6 +29,7 @@ class SetupWin : public QDialog {
 
 	public slots:
 		void start(xProfile*);
+		void setPadName();
 	private:
 		xProfile* prof;
 		Computer* comp;

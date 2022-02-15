@@ -8,6 +8,7 @@ void tslReset(Computer* comp) {
 	memset(comp->vid->tsconf.cram,0x00,0x200);
 	comp->rom = 0;
 	comp->dos = 0;
+	comp->cmos.mode = 2;
 	comp->tsconf.p21af = 0x04;
 	comp->tsconf.Page0 = 0;
 	comp->vid->nextbrd = 0xf7;

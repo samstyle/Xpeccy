@@ -163,7 +163,7 @@ void ibm_outKbd(Computer* comp, int adr, int val) {
 		case 1:
 			comp->reg[0x61] = val & 0xff;
 			if (val & 0x80) {
-				// comp->keyb->outbuf = 0;
+				comp->keyb->outbuf = 0;
 				comp->pit.ch0.out = 0;
 			}
 			break;
@@ -498,7 +498,7 @@ static xPort ibmPortMap[] = {
 	{0x03e1,0x00c0,2,2,2,ibm_inDMA, ibm_outDMA},	// dma2: c0..ce, d0..de
 
 //	{0x03f8,0x0170,2,2,2,ibm_dumird,ibm_dumiwr},	// secondary ide
-	{0x03f8,0x01f0,2,2,2,ibm_in1fx,	ibm_out1fx},	// primary ide
+	{0x03f8,0x01f0,2,2,2,ibm_in1fx,	ibm_out1fx},	// primary ide (1f0..1f7)
 	{0x03ff,0x03f6,2,2,2,ibm_in3f6,	ibm_out3f6},	// primary ide ctrl port
 
 	{0x03f0,0x03b0,2,2,2,ibm_inVGA,	ibm_outVGA},	// 3b0..3ba: MDA registers (CRT)

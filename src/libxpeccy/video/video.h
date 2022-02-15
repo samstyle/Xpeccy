@@ -305,6 +305,7 @@ struct Video {
 		int seq_idx;
 		int grf_idx;
 		int atr_idx;
+		int cpl;			// 40/80 chars per line
 		int line;			// chars line
 		int chline;			// line inside char
 		int chsize;			// char height (0-31)

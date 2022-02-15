@@ -11,7 +11,7 @@ i8237DMA* dma_create(void* p, int w) {
 		dma->ptr = p;
 		dma->wrd = w;
 		for (int i = 0; i < 4; i++)
-			dma->ch[0].wrd = w;
+			dma->ch[i].wrd = w;
 	}
 	return dma;
 }

@@ -20,8 +20,8 @@ void vga_reset(Video* vid) {
 		vid_set_col(vid, i, xcol);
 	}
 	vid->pal[6]=vid->pal[0x14];		// FIXME: ORLY?
+	memcpy(vid->ram + 0x20000, vid->font, 0x2000);	// copy default font
 	if (vid->vga.cga) {
-		memcpy(vid->ram + 0x20000, vid->font, 0x2000);	// copy default font
 		for (i = 0; i < 0x10; i++) {			// set default palette
 			ATR_REG(i) = ega_def_idx[i];
 		}
@@ -405,6 +405,14 @@ void vga_check_vsync(Video* vid) {
 	}
 }
 
+void cga_t40_ini(Video* vid) {
+	vid->vga.cpl = 40;
+}
+
+void cga_t80_ini(Video* vid) {
+	vid->vga.cpl = 80;
+}
+
 void cga_t40_frm(Video* vid) {
 	vid->vga.line = 0;
 	vid->vga.chline = 0;	// CRT_REG(0x08) & 0x1f;
@@ -415,12 +423,19 @@ void cga_t40_line(Video* vid) {
 	memset(vid->line, CRT_REG(0x11), 0x400);
 	int i,t;
 	vid->xpos = 0;
+	vid->vadr = (CRT_REG(0x0c) << 8) | CRT_REG(0x0d);
+	vid->vadr += vid->vga.line * vid->vga.cpl;
 	vid->tadr = vid->vadr;					// current adr, vadr remains at start of line
 	for (t = vid->vga.cga ? 1 : 0; t <= CRT_REG(1); t++) {
 		vid->idx = vid->ram[vid->tadr];			// char (plane 0)
 		vid->atrbyte = vid->ram[vid->tadr + MEM_64K];	// attr	(plane 1)
 		vid->fadr = vid->idx * 32;			// offset of 1st char byte in plane 2 (allways 32 bytes/char in font plane)
 		vid->fadr += vid->vga.chline;			// +line in char
+		if (!vid->vga.blinken || !(vid->atrbyte & 0x08)) {	// font select (each 8K)
+			vid->fadr += (SEQ_REG(3) & 0x03) << 13;
+		} else {
+			vid->fadr += (SEQ_REG(3) & 0x0c) << 11;
+		}
 		vid->idx = vid->ram[0x20000 + vid->fadr];	// pixels
 		if ((vid->tadr == vid->vga.cadr) && !(CRT_REG(0x0a) & 0x20)) {		// cursor position, cursor enabled
 			if ((vid->vga.chline > (CRT_REG(0x0a) & 0x1f)) \
@@ -481,7 +496,7 @@ void cga_t80_dot(Video* vid) {
 void vga_4bpp(Video* vid, int res) {
 	memset(vid->line, CRT_REG(0x11), 0x500);
 	int pos = 0;
-	int k;
+	int k,msk;
 	int col,b0,b1,b2,b3;
 	vid->tadr = vid->vadr;
 	if (!(CRT_REG(0x17) & 1)) {		// A13 = V0
@@ -500,12 +515,14 @@ void vga_4bpp(Video* vid, int res) {
 				b2 = vid->ram[vid->vadr + 0x20000] & 0xff;
 				b3 = vid->ram[vid->vadr + 0x30000] & 0xff;
 				vid->vadr++;
+				msk = 0x80;
 				for (k = 0; k < 8; k++) {
-					col = ((b3 & 0x80) >> 4) | ((b2 & 0x80) >> 5) | ((b1 & 0x80) >> 6) | ((b0 & 0x80) >> 7);
-					b3 <<= 1;
-					b2 <<= 1;
-					b1 <<= 1;
-					b0 <<= 1;
+					col = 0;
+					if (b3 & msk) col |= 8;
+					if (b2 & msk) col |= 4;
+					if (b1 & msk) col |= 2;
+					if (b0 & msk) col |= 1;
+					msk >>= 1;
 					vid->line[pos++] = ATR_REG(col);
 				}
 			}
@@ -575,22 +592,32 @@ void vga_4bpp(Video* vid, int res) {
 	}
 }
 
+void vga_glo_ini(Video* vid) {
+	vid->vga.cpl = 320;		// dots/line
+}
+
+void vga_ghi_ini(Video* vid) {
+	vid->vga.cpl = 640;
+}
+
 // G320
 
-static unsigned char cga_set_0[4] = {0, 4, 2, 20};
-static unsigned char cga_set_1[4] = {0, 3, 5, 7};
+static unsigned char cga_set_0[8] = {0, 4, 2, 20, 0, 0x3c, 0x3a, 0x3e};
+static unsigned char cga_set_1[8] = {0, 3, 5, 7, 0, 0x3b, 0x3d, 0x3f};
 
 unsigned char cga_to_ega(Video* vid, unsigned char c) {
 	c &= 3;
-	c = (vid->reg[0x59] & 0x20) ? cga_set_1[c] : cga_set_0[c];
-	if (c == 0) {
+	if (!c) {
 		c = vid->reg[0x59] & 7;		// background color (320x200)
-		if ((vid->reg[0x59] & 8) && c)
+		if ((vid->reg[0x59] & 8) && c)	// bright background
 			c |= 8;
+		c = ega_def_idx[c];
+	} else {
+		if ((vid->reg[0x59] & 0x10))	// bright
+			c |= 4;
+		c = (vid->reg[0x59] & 0x20) ? cga_set_1[c] : cga_set_0[c];
 	}
-	if ((vid->reg[0x59] & 0x10) && c)
-		c |= 8;
-	return ATR_REG(c);
+	return c;
 }
 
 // cga mode
@@ -599,7 +626,7 @@ void cga320_2bpp_line(Video* vid) {
 	int pos = 0;
 	int i;
 	unsigned char bt;
-	vid->vadr = (vid->ray.y >> 1) * CRT_REG(1) * 2;		// crt_reg(1) * 8 / 4 = line width (bytes)
+	vid->vadr = (vid->ray.y >> 1) * CRT_REG(1) * 2;			// crt_reg(1) * 8 / 4 = line width (bytes)
 	vid->vadr += (CRT_REG(0x0c) << 8) | (CRT_REG(0x0d));		// start address
 	if (vid->ray.y & 1)
 		vid->vadr |= 0x2000;

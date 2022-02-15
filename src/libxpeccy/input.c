@@ -74,7 +74,7 @@ Keyboard* keyCreate() {
 	memset(keyb, 0x00, sizeof(Keyboard));
 	keyb->pcmode = KBD_AT;
 	keyb->kdel = 5e8;
-	keyb->kper = 1e8;
+	keyb->kper = 5e7;
 	return keyb;
 }
 

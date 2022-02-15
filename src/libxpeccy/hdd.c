@@ -351,7 +351,7 @@ void ataExec(ATADev* dev, unsigned char cm) {
 
 unsigned short ataRd(ATADev* dev,int prt) {
 	unsigned short res = 0xffff;
-	if ((dev->type != IDE_ATA) || (dev->image == NULL) || dev->sleep) return res;
+	if ((dev->type != IDE_ATA) || (dev->image == NULL)/* || dev->sleep*/) return res;
 	switch (prt) {
 		case HDD_DATA:
 			if ((dev->buf.mode == HDB_READ) && (dev->reg.state & HDF_DRQ)) {
@@ -412,7 +412,7 @@ unsigned short ataRd(ATADev* dev,int prt) {
 }
 
 void ataWr(ATADev* dev, int prt, unsigned short val) {
-	if ((dev->type != IDE_ATA) || (dev->image == NULL) || dev->sleep) return;
+	if ((dev->type != IDE_ATA) || (dev->image == NULL)/* || dev->sleep*/) return;
 	switch (prt) {
 		case HDD_DATA:
 			if ((dev->buf.mode == HDB_WRITE) && (dev->reg.state & HDF_DRQ)) {

@@ -131,6 +131,7 @@ int main(int ac,char** av) {
 	app.connect(&mwin, SIGNAL(s_step()), &dbgw, SLOT(doStep()));
 
 	app.connect(&mwin, SIGNAL(s_options(xProfile*)), &optw, SLOT(start(xProfile*)));
+	app.connect(&mwin, SIGNAL(s_gamepad_plug()), &optw, SLOT(setPadName()));
 	app.connect(&optw, SIGNAL(closed()), &mwin, SLOT(optApply()));
 	app.connect(&optw, SIGNAL(s_apply()), &dbgw, SLOT(chaPal()));
 	app.connect(&optw, SIGNAL(s_prf_change(std::string)), &mwin, SLOT(setProfile(std::string)));

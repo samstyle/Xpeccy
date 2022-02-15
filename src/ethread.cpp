@@ -109,7 +109,7 @@ void xThread::emuCycle(Computer* comp) {
 			wavNs += tm;
 			// tape trap
 			if ((comp->hw->grp == HWG_ZX) && (comp->mem->map[0].type == MEM_ROM) && comp->rom && !comp->dos && !comp->ext) {
-				if (comp->cpu->pc == 0x559) {			// load: ix:addr, de:len (0x580 ?)
+				if (comp->cpu->pc == 0x56c) {			// load: ix:addr, de:len (0x580 ?) 56c/559
 					tap_catch_load(comp);
 				} else if (comp->cpu->pc == 0x4d0) {		// save: ix:addr, de:len, a:block type(b7), hl:pilot len (1f80/0c98)?
 					tap_catch_save(comp);

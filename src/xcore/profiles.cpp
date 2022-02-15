@@ -271,14 +271,16 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 		}
 		memSetSize(prf->zx->mem, -1, romsz);
 // load GS ROM
-		fpath = conf.path.romDir + SLASH + rset->gsFile;
-		file = fopen(fpath.c_str(), "rb");
-		if (file) {
-			fread(prf->zx->gs->mem->romData, MEM_32K, 1, file);
-			fclose(file);
-		} else {
-			printf("Can't load gs rom '%s' (profile %s)\n", fpath.c_str(), prf->name.c_str());
-			memset((char*)prf->zx->gs->mem->romData, 0xff, MEM_32K);
+		if (!rset->gsFile.empty()) {
+			fpath = conf.path.romDir + SLASH + rset->gsFile;
+			file = fopen(fpath.c_str(), "rb");
+			if (file) {
+				fread(prf->zx->gs->mem->romData, MEM_32K, 1, file);
+				fclose(file);
+			} else {
+				printf("Can't load gs rom '%s' (profile %s)\n", fpath.c_str(), prf->name.c_str());
+				memset((char*)prf->zx->gs->mem->romData, 0xff, MEM_32K);
+			}
 		}
 // load ATM2 font data
 		if (!rset->fntFile.empty()) {

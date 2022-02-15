@@ -78,7 +78,7 @@ void ps2c_clear(PS2Ctrl* ctrl) {
 // b7: kbd enabled
 
 // DONE: ~1ms delay between data bytes from device
-// TODO: xt/at keyboard autorepeat
+// DONE?: xt/at keyboard autorepeat
 
 int ps2c_rd(PS2Ctrl* ctrl, int adr) {
 	int res = -1;
@@ -114,12 +114,12 @@ void ps2c_wr_ob2(PS2Ctrl* ctrl, int val) {
 void ps2c_rd_kbd(PS2Ctrl* ctrl) {
 	if (ctrl->kbd->outbuf & 0xff) {
 		if (!ctrl->kbd->lock && !(ctrl->ram[0] & 0x10)) {
-			ps2c_wr_ob(ctrl, ctrl->kbd->outbuf & 0xff);
+			ps2c_wr_ob(ctrl, xt_read(ctrl->kbd));
 		}
-		ctrl->kbd->outbuf >>= 8;
-		if (ctrl->ram[0] & 1) {
+//		ctrl->kbd->outbuf >>= 8;
+//		if (ctrl->ram[0] & 1) {
 			ctrl->xirq(IRQ_KBD, ctrl->xptr);
-		}
+//		}
 		ctrl->delay = KBD_DELAY;
 		//printf("i8042 get scancode %X (remains %X)\n", ctrl->outbuf,ctrl->kbd->outbuf);
 	} else {
