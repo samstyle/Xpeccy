@@ -1,4 +1,5 @@
 #include "hardware.h"
+#include "../filetypes/filetypes.h"
 
 // debug
 
@@ -61,8 +62,19 @@ void zx_sync(Computer* comp, int ns) {
 void zx_irq(Computer* comp, int t) {
 	switch(t) {
 		case IRQ_VID_INT:			// frame int start
+			if (!comp->rzx.play) {		// ignore when playing rzx
+				comp->vid->intFRAME = comp->vid->intsize;
+				comp->intVector = 0xff;
+				comp->cpu->intrq |= Z80_INT;
+			}
+			break;
+		case IRQ_RZX_INT:
 			comp->intVector = 0xff;
 			comp->cpu->intrq |= Z80_INT;
+			comp->vid->intFRAME = comp->vid->intsize;
+			comp->rzx.fCurrent++;
+			comp->rzx.fCount--;
+			rzxGetFrame(comp);
 			break;
 		case IRQ_VID_INT_E:			// frame int end
 			if (comp->vid->intLINE) {

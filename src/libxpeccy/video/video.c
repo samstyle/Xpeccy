@@ -255,6 +255,15 @@ void vid_reset_ray(Video* vid) {
 	}
 }
 
+void vid_set_ray(Video* vid, int dots) {
+	dots += vid->full.x * vid->intp.y;
+	dots += vid->intp.x;
+	dots %= vid->dotPerFrame;
+	vid->ray.y = dots / vid->full.x;
+	vid->ray.x = dots % vid->full.x;
+	vid->ray.ptr = scrimg + (dots * 6);
+}
+
 // new layout:
 // [ bord ][ scr ][ ? ][ blank ]
 // [ <--------- full --------> ]
@@ -274,6 +283,7 @@ void vidUpdateLayout(Video* vid) {
 	vid->send.x = vid->bord.x + vid->scrn.x;		// screen end column
 	vid->send.y = vid->bord.y + vid->scrn.y;		// screen end line
 	vid->vBytes = vid->vsze.x * vid->vsze.y * 6;		// real size of image buffer (3 bytes/dot x2:x1)
+	vid->dotPerFrame = vid->full.y * vid->full.x;
 	vidUpdateTimings(vid, vid->nsPerDot);
 }
 
@@ -990,7 +1000,7 @@ void vid_tick(Video* vid) {
 			vid->xirq(IRQ_VID_INT_E, vid->data);
 	} else if ((vid->ray.yb == vid->intp.y) && (vid->ray.xb == vid->intp.x)) {
 		vid->intTime = vid->time;
-		vid->intFRAME = vid->intsize;
+		// vid->intFRAME = vid->intsize;
 		vid->xirq(IRQ_VID_INT, vid->data);
 	}
 	if (vid->busy > 0) vid->busy--;

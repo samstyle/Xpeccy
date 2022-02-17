@@ -35,15 +35,15 @@ size_t fgetSize(FILE* file) {
 }
 
 unsigned short fgetw(FILE* file) {
-	int res = fgetc(file);
-	res |= (fgetc(file) << 8);
+	int res = fgetc(file) & 0xff;
+	res |= ((fgetc(file) & 0xff) << 8);
 	return res & 0xffff;
 }
 
 int fgett(FILE* file) {
 	int res = fgetw(file);
-	res |= (fgetc(file) << 16);
-	return res;
+	res |= ((fgetc(file) & 0xff) << 16);
+	return res & 0xffffff;
 }
 
 int fgeti(FILE* file) {

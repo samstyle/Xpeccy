@@ -133,6 +133,7 @@ struct Video {
 	int time;		// +nsPerDot each dot
 	int busy;		// (cycles) to emulate busy period
 	int intTime;
+	int dotPerFrame;
 
 	int flash;
 	int curscr;
@@ -340,6 +341,7 @@ void vidReset(Video*);
 void vidSync(Video*,int);
 void vidSetMode(Video*,int);
 void vid_reset_ray(Video*);
+void vid_set_ray(Video*, int);
 
 int vid_wait(Video*);
 void vidDarkTail(Video*);

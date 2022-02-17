@@ -29,63 +29,9 @@ typedef struct {
 
 #pragma pack (pop)
 
-// zlib
-
-/*
-int zInit(z_stream* strm, char* in, int ilen) {
-	strm->zalloc = Z_NULL;
-	strm->zfree = Z_NULL;
-	strm->opaque = Z_NULL;
-	strm->avail_in = ilen;
-	strm->next_in = (unsigned char*)in;
-	if (inflateInit(strm) != Z_OK) return 0;
-	return 1;
-}
-
-int zGetData(z_stream* strm, char* out, int olen) {
-	strm->avail_out = olen;
-	strm->next_out = (unsigned char*)out;
-	int res = inflate(strm, Z_FINISH);
-	switch (res) {
-		case Z_NEED_DICT:
-		case Z_DATA_ERROR:
-		case Z_MEM_ERROR:
-			printf("inflate error %i\n",res);
-			inflateEnd(strm);
-			break;
-	}
-	return res;
-	// return (olen - strm->avail_out);
-}
-
-unsigned short zGetWord(z_stream* strm) {
-	char bl,bh;
-	zGetData(strm, &bl, 1);
-	zGetData(strm, &bh, 1);
-	return (bl & 0xff) | ((bh & 0xff) << 8);
-}
-
-int zlib_uncompress(char* in, int ilen, char* out, int olen) {
-	z_stream strm;
-	int err;
-	strm.zalloc = Z_NULL;
-	strm.zfree = Z_NULL;
-	strm.opaque = Z_NULL;
-	strm.next_in = (unsigned char*)in;
-	strm.avail_in = ilen;
-	err = inflateInit(&strm);
-	if (err != Z_OK) return -1;
-	strm.next_out = (unsigned char*)out;
-	strm.avail_out = olen;
-	err = inflate(&strm, Z_NO_FLUSH);
-	inflateReset(&strm);
-	if (err == Z_OK) return strm.avail_in;
-	if (err == Z_STREAM_END) return strm.avail_in;
-	return -2;
-}
-*/
-
 // new
+
+static char* msgRzxStop = " RZX playback end ";
 
 void rzxGetFrame(Computer* comp) {
 	int type;
@@ -101,7 +47,8 @@ void rzxGetFrame(Computer* comp) {
 			size = fgetw(comp->rzx.file);
 			if (size != 0xffff) {
 				comp->rzx.frm.size = size;
-				fread(comp->rzx.frm.data, comp->rzx.frm.size, 1, comp->rzx.file);
+				if (size > 0)
+					fread(comp->rzx.frm.data, size, 1, comp->rzx.file);
 			}
 			comp->rzx.frm.pos = 0;
 		} else {
@@ -114,7 +61,8 @@ void rzxGetFrame(Computer* comp) {
 					case 0x80:					// IN block
 						comp->rzx.fCount = fgeti(comp->rzx.file);		// +0 frame count
 						size = fgeti(comp->rzx.file);				// +4 start Tstate
-						comp->rzx.frm.fetches = fgetw(comp->rzx.file) - size;	// +8.. frames		+0 fetches
+						// vid_set_ray(comp->vid, size << 1);
+						comp->rzx.frm.fetches = fgetw(comp->rzx.file);		// +8.. frames		+0 fetches
 						size = fgetw(comp->rzx.file);				//			+2 size
 						if (size != 0xffff) {
 							comp->rzx.frm.size = size;
@@ -148,6 +96,7 @@ void rzxGetFrame(Computer* comp) {
 						break;
 					case 0xff:					// EOF
 						rzxStop(comp);
+						comp->msg = msgRzxStop;
 						work = 0;
 						break;
 					default:
@@ -270,13 +219,17 @@ int loadRZX(Computer* comp, const char* name, int drv) {
 							}
 							break;
 						case 0x80:
-							fread(&fhd, sizeof(rzxFrm), 1, file);
-							fhd.fCount = swap32(fhd.fCount);
-							fhd.tStart = swap32(fhd.tStart);
-							fhd.flags = swap32(fhd.flags);
+							//fread(&fhd, sizeof(rzxFrm), 1, file);
+							//fhd.fCount = swap32(fhd.fCount);
+							//fhd.tStart = swap32(fhd.tStart);
+							//fhd.flags = swap32(fhd.flags);
+							fhd.fCount = fgeti(file);	// +0 frames in block
+							fhd.byte09 = fgetc(file);	// +4 skip 1 byte
+							fhd.tStart = fgeti(file);	// +5 T state @ start
+							fhd.flags = fgeti(file);	// +9 flags
 							comp->rzx.fTotal += fhd.fCount;
 							fputc(0x80, comp->rzx.file);
-							fputi(0, comp->rzx.file);		// ???
+							fputi(0, comp->rzx.file);		// ??? len
 							fputi(fhd.fCount, comp->rzx.file);
 							fputi(fhd.tStart, comp->rzx.file);
 							// fputw(fhd.tStart, comp->rzx.file);
@@ -291,13 +244,11 @@ int loadRZX(Computer* comp, const char* name, int drv) {
 								fread(buf, len - 18, 1, file);
 								fwrite(buf, len - 18, 1, comp->rzx.file);
 							}
-
 							break;
 						default:
 							fseek(file, len - 5, SEEK_CUR);
 							break;
 					}
-
 				}
 				if (err == ERR_OK) {
 					fputc(0xff, comp->rzx.file);

@@ -6,6 +6,7 @@ enum {
 	IRQ_VID_INT_E,
 	IRQ_VID_VBLANK,
 	IRQ_VID_LINE,	// tsconf
+	IRQ_RZX_INT,
 	IRQ_DMA,
 	IRQ_FDC,	// ibm
 	IRQ_HDD_PRI,

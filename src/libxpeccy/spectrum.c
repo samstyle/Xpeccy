@@ -23,7 +23,7 @@ int vid_mrd_cb(int adr, void* ptr) {
 int memrd(int adr, int m1, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 #ifdef HAVEZLIB
-	if (m1 && comp->rzx.play) {
+	if (m1 && comp->rzx.play && (comp->rzx.frm.fetches > 0)) {
 		comp->rzx.frm.fetches--;
 	}
 #endif
@@ -270,6 +270,7 @@ void rzxStop(Computer* zx) {
 	zx->rzx.file = NULL;
 	zx->rzx.fCount = 0;
 	zx->rzx.frm.size = 0;
+	zx->rzx.stop = 1;
 #endif
 }
 
@@ -476,6 +477,14 @@ int compExec(Computer* comp) {
 // scorpion WAIT: add 1T to odd-T command
 	if (comp->evenM1 && (res2 & 1))
 		res2++;
+#ifdef HAVEZLIB
+	if (comp->rzx.play) {
+		if (comp->rzx.frm.fetches == 0) {
+			if (comp->hw->irq)
+				comp->hw->irq(comp, IRQ_RZX_INT);
+		}
+	}
+#endif
 #if RUNTIME_IO
 	if (res2 > res4) {
 		if (comp->hw->grp == HWG_ZX) {
@@ -533,22 +542,8 @@ int compExec(Computer* comp) {
 		comp->halt = 0;
 	}
 // sync hardware
-#ifdef HAVEZLIB
-	if (comp->rzx.play) {
-		if (comp->rzx.frm.fetches < 1) {
-			comp->intVector = 0xff;
-			comp->cpu->intrq |= Z80_INT;
-			comp->rzx.fCurrent++;
-			comp->rzx.fCount--;
-			rzxGetFrame(comp);
-		}
-	} else if (comp->hw->sync) {
-		comp->hw->sync(comp, nsTime);
-	}
-#else
 	if (comp->hw->sync)
 		comp->hw->sync(comp, nsTime);
-#endif
 // new frame
 	if (comp->vid->newFrame) {
 		comp->vid->newFrame = 0;

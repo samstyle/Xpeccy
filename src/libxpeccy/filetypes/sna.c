@@ -17,7 +17,7 @@ typedef struct {
 int loadSNA_f(Computer* comp, FILE* file, size_t fileSize) {
 
 	unsigned char tmp, tmp2;
-	unsigned short adr;
+	//unsigned short adr;
 	char pageBuf[0x4000];
 	char tmpgBuf[0x4000];
 
@@ -65,23 +65,28 @@ int loadSNA_f(Computer* comp, FILE* file, size_t fileSize) {
 		comp->pEFF7 = 0x00;
 		comp->rom = 1;		// set basic 48
 		comp->dos = 0;
+		comp->tsconf.p21af &= ~0x08;		// rom @ 0000
+		comp->tsconf.Page0 &= 0xfc;		// set page0 if 21af.b2=1
+		comp->tsconf.Page0 |= 3;		// rom48k
 		comp->hw->mapMem(comp);
 		memSetBank(comp->mem, 0xc0, MEM_RAM, 0, MEM_16K, NULL,NULL,NULL);
 		memPutData(comp->mem, MEM_RAM, 0, MEM_16K, tmpgBuf);
 		comp->vid->curscr = 5;
-		adr =(hd.hsp << 8) | hd.lsp;
-		tmp = memRd(comp->mem, adr++);
-		tmp2 = memRd(comp->mem, adr++);
-		comp->cpu->sp = adr;
-		comp->cpu->pc = tmp | (tmp2 << 8);
+		comp->cpu->lpc = memRd(comp->mem, comp->cpu->sp++);
+		comp->cpu->hpc = memRd(comp->mem, comp->cpu->sp++);
 	} else {
 		comp->cpu->pc = fgetw(file);
 		tmp = fgetc(file);		// byte out to 7ffd. b0..2 current page
 		comp->bdiz = 0;
-		if (comp->hw->out)
-			comp->hw->out(comp,0x7ffd,tmp);
 		tmp2 = fgetc(file);
+		comp->p7FFD &= ~0x20;
+		comp->rom = (tmp & 0x10) ? 1 : 0;
 		comp->dos = (tmp2 & 1) ? 1 : 0;
+		comp->tsconf.p21af &= ~0x08;		// rom @ 0000
+		comp->tsconf.Page0 &= 0xfc;		// set page0 if 21af.b2=1
+		comp->tsconf.Page0 |= ((comp->rom) ? 1 : 0) | (comp->dos ? 0 : 2);
+		comp->hw->out(comp, 0x7ffd, tmp);
+
 		for (tmp2 = 0; tmp2 < 8; tmp2++) {
 			if ((tmp2 == 2) || (tmp2 == 5)) tmp2++;
 			if ((tmp & 7) != tmp2) {

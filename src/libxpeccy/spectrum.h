@@ -152,6 +152,7 @@ typedef struct {
 
 	struct {
 		unsigned start:1;
+		unsigned stop:1;
 		unsigned play:1;
 		unsigned overio:1;
 		int fTotal;

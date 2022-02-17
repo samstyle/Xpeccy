@@ -165,7 +165,7 @@ MainWin::MainWin() {
 	scrInterval = 0;
 	grabMice = 0;
 	block = 0;
-	relskip = 0;
+//	relskip = 0;
 
 	msgTimer = 0;
 	msg.clear();
@@ -393,6 +393,8 @@ void MainWin::timerEvent(QTimerEvent* ev) {
 #if HAVEZLIB
 		if (comp->rzx.start) {
 			emit s_rzx_start();
+		} else if (comp->rzx.stop) {
+			emit s_rzx_stop();
 		}
 		if (comp->rzx.overio) {
 			comp->rzx.overio = 0;
@@ -565,6 +567,7 @@ void MainWin::rzxStateChanged(int state) {
 #ifdef HAVEZLIB
 	switch(state) {
 		case RWS_PLAY:
+			comp->rzx.start = 0;
 			pause(false,PR_RZX);
 			break;
 		case RWS_PAUSE:
@@ -572,15 +575,14 @@ void MainWin::rzxStateChanged(int state) {
 			break;
 		case RWS_STOP:
 			rzxStop(comp);
+			comp->rzx.stop = 0;
 			pause(false,PR_RZX);
 			break;
 		case RWS_OPEN:
 			pause(true,PR_RZX);
-			//loadFile(comp,"",FT_RZX,0);
 			load_file(comp, NULL, FG_RZX, -1);
 			if (comp->rzx.play) {
 				emit s_rzx_start();
-				//rzxWin->startPlay();
 			}
 			pause(false,PR_RZX);
 			break;
@@ -1059,6 +1061,7 @@ void MainWin::xkey_press(int xkey) {
 				pause(false,PR_FILE);
 				break;
 			case XCUT_NMI:
+				if (comp->rzx.play) break;
 				if (comp->cpu->type != CPU_Z80) break;
 				comp->nmiRequest = 1;
 				break;
@@ -1102,9 +1105,9 @@ void MainWin::xkey_press(int xkey) {
 
 void MainWin::keyReleaseEvent(QKeyEvent *ev) {
 	if (ev->isAutoRepeat()) return;
-	if (relskip) {
-		relskip = 0;
-	} else {
+//	if (relskip) {
+//		relskip = 0;
+//	} else {
 //		qDebug() << "keyReleaseEvent" << ev->text() << ev->nativeScanCode();
 		int keyid;
 		if (comp->debug) {
@@ -1140,7 +1143,7 @@ void MainWin::keyReleaseEvent(QKeyEvent *ev) {
 				xkey_release(keyid);
 			}
 		}
-	}
+//	}
 }
 
 void MainWin::xkey_release(int keyid) {
@@ -1334,8 +1337,11 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 
 void MainWin::checkState() {
 #ifdef HAVEZLIB
-	if (comp->rzx.start)
+	if (comp->rzx.start) {
 		emit s_rzx_start();
+	} else if (comp->rzx.stop) {
+		emit s_rzx_stop();
+	}
 		//rzxWin->startPlay();
 #endif
 	//emit s_tape_list(comp->tape);
@@ -1580,7 +1586,7 @@ void MainWin::doOptions() {
 }
 
 void MainWin::optApply() {
-	relskip = 1;
+//	relskip = 1;
 	comp = conf.prof.cur->zx;
 	fillUserMenu();
 	updateWindow();

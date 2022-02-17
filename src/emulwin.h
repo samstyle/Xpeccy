@@ -101,7 +101,7 @@ class MainWin : public QWidget {
 	private:
 		unsigned grabMice:1;
 		unsigned block:1;
-		int relskip;
+//		int relskip;
 
 		QIcon icon;
 		int timid;
