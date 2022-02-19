@@ -32,12 +32,14 @@ typedef void(*cbdmamwr)(int, int, int, void*);
 typedef struct {
 	unsigned wrd:1;		// channel from 16-bit dma controller
 	unsigned masked:1;	// don't process if 1
+	unsigned rdy:1;		// byte readed from mem to buf;
 	unsigned short bar;	// base address
 	unsigned short car;	// current address
 	unsigned char par;	// page address register (high 4/8 bits of address)
-	unsigned short bwr;	// base counter
-	unsigned short cwr;	// current counter
+	int bwr;	// base counter (x2 for wrd)
+	int cwr;	// current counter (x2 for wrd)
 	unsigned char mode;	// b2,3=00:verify mem,01:mem2io,10:verify mem,11:io2mem; b4=1:adr decrement; b6:16bit
+	int buf;
 	cbdmadrd rd;	// device
 	cbdmadwr wr;
 	cbdmamrd mrd;	// memory

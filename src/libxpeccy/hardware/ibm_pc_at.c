@@ -275,6 +275,7 @@ void ibm_outPOS(Computer* comp, int adr, int val) {
 		case 2:				// port 92
 			// b1: a20 gate (0:on, 1:off)
 			comp->a20gate = (val & 2) ? 1 : 0;
+			printf("port 92: a20gate = %i\n",comp->a20gate);
 			break;
 	}
 }
@@ -457,6 +458,41 @@ void ibm_dma_hdd_wr(int val, void* ptr, int* f) {
 	}
 }
 
+int ibm_dma_memmem(DMAChan* sch, int* f) {
+	int res = -1;
+	*f = 0;
+	if (sch->rdy) {
+		sch->rdy = 0;
+		res = sch->buf;
+		*f = 1;
+	}
+	return res;
+}
+
+int ibm_dma1_rd_2(void* ptr, int* f) {
+	Computer* comp = (Computer*)ptr;
+	return ibm_dma_memmem(&comp->dma2->ch[0], f);
+}
+
+int ibm_dma2_rd_1(void* ptr, int* f) {
+	Computer* comp = (Computer*)ptr;
+	return ibm_dma_memmem(&comp->dma1->ch[1], f);
+}
+
+void ibm_dma1_wr_2(int val, void* ptr, int* f) {
+	Computer* comp = (Computer*)ptr;
+	comp->dma1->ch[1].buf = val;
+	comp->dma1->ch[1].rdy = 1;
+	*f = 1;
+}
+
+void ibm_dma2_wr_1(int val, void* ptr, int* f) {
+	Computer* comp = (Computer*)ptr;
+	comp->dma2->ch[0].buf = val;
+	comp->dma2->ch[0].rdy = 1;
+	*f = 1;
+}
+
 // undef
 
 int ibm_dumird(Computer* comp, int adr) {return -1;}
@@ -538,8 +574,8 @@ void ibm_init(Computer* comp) {
 	dma_set_cb(comp->dma1, ibm_dma_mrd, ibm_dma_mwr);		// mrd/mwr callbacks
 	dma_set_chan(comp->dma1, 2, ibm_dma_flp_rd, ibm_dma_flp_wr);	// ch2: fdc
 	dma_set_chan(comp->dma1, 3, ibm_dma_hdd_rd, ibm_dma_hdd_wr);	// ch3: hdd
-//	dma_set_chan(comp->dma1, 1, ibm_dma1_rd_2, ibm_dma1_wr_2);
-//	dma_set_chan(comp->dma2, 0, ibm_dma2_rd_1, ibm_dma2_wr_1);
+	dma_set_chan(comp->dma1, 1, ibm_dma1_rd_2, ibm_dma1_wr_2);
+	dma_set_chan(comp->dma2, 0, ibm_dma2_rd_1, ibm_dma2_wr_1);
 }
 
 void ibm_irq(Computer* comp, int t) {

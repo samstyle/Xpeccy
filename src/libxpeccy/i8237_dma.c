@@ -157,6 +157,7 @@ void dma_wr(i8237DMA* dma, int reg, int ch, int val) {
 			break;
 		case DMA_CH_BWCR:
 			dma->ch[ch].bwr = dma_wr_reg(dma, dma->ch[ch].bwr, val) & 0xffff;
+			if (dma->wrd) dma->ch[ch].bwr <<= 1;
 			if (dma->wrd || !dma->btr) dma->ch[ch].cwr = dma->ch[ch].bwr;
 			break;
 		case DMA_CH_PAR:
@@ -183,16 +184,17 @@ int dma_rd(i8237DMA* dma, int reg, int ch) {
 	switch (reg) {
 		case DMA_SR:
 			res = 0;
-			if (dma->ch[0].cwr == 0) res |= 1;	// b0..3: transfer completed
-			if (dma->ch[1].cwr == 0) res |= 2;
-			if (dma->ch[2].cwr == 0) res |= 4;
-			if (dma->ch[3].cwr == 0) res |= 8;
+			if (dma->ch[0].cwr == -1) res |= 1;	// b0..3: transfer completed
+			if (dma->ch[1].cwr == -1) res |= 2;
+			if (dma->ch[2].cwr == -1) res |= 4;
+			if (dma->ch[3].cwr == -1) res |= 8;
 			break;
 		case DMA_CH_BAR:
 			res = dma_rd_reg(dma, dma->ch[ch].bar);
 			break;
 		case DMA_CH_BWCR:
 			res = dma_rd_reg(dma, dma->ch[ch].bwr);
+			if (dma->wrd) res >>= 1;
 			break;
 		case DMA_CH_PAR:
 			res = dma->ch[ch].par & (dma->wrd ? 0xff : 0x0f);

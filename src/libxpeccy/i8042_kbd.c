@@ -115,13 +115,10 @@ void ps2c_rd_kbd(PS2Ctrl* ctrl) {
 	if (ctrl->kbd->outbuf & 0xff) {
 		if (!ctrl->kbd->lock && !(ctrl->ram[0] & 0x10)) {
 			ps2c_wr_ob(ctrl, xt_read(ctrl->kbd));
-		}
-//		ctrl->kbd->outbuf >>= 8;
-//		if (ctrl->ram[0] & 1) {
 			ctrl->xirq(IRQ_KBD, ctrl->xptr);
-//		}
-		ctrl->delay = KBD_DELAY;
-		//printf("i8042 get scancode %X (remains %X)\n", ctrl->outbuf,ctrl->kbd->outbuf);
+			ctrl->delay = KBD_DELAY;
+			printf("i8042 get scancode %X (remains %X)\n", ctrl->outbuf,ctrl->kbd->outbuf);
+		}
 	} else {
 		ctrl->outbuf = 0;
 	}
@@ -181,12 +178,13 @@ void ps2c_wr(PS2Ctrl* ctrl, int adr, int val) {
 					val &= ~0x40;
 				}
 				ctrl->ram[ctrl->cmd & 0x1f] = val & 0xff;
+				// if (!(ctrl->cmd & 0x1f)) printf("i8042 conf = %.2X\n",val & 0xff);
 			} else {
 				// printf("i8042 arg wr %.2X\n",val);
 				switch (ctrl->cmd) {
 					case 0xd1:		// write to output port
 						ctrl->outport = val;
-						// printf("i8042 outport = %.2X\n",val);
+						printf("i8042 outport = %.2X (a20gate=%i)\n",val,(val&2) ? 1 : 0);
 						if (!(val & 1)) ctrl->reset = 1;
 						// b1:a20 gate. if 0 here [or port 92 bit 1 = 0], a20+ is disabled (always 0)
 						break;

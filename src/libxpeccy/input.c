@@ -279,6 +279,7 @@ void xt_press(Keyboard* kbd, keyEntry kent) {
 	kbd->outbuf = add_msb(kbd->outbuf, xt_get_code(kbd, kent, 0));
 	kbd->kent = kent;
 	kbd->per = kbd->kdel;
+	// printf("xt press, buf = %X\n", kbd->outbuf);
 }
 
 void xt_release(Keyboard* kbd, keyEntry kent) {
