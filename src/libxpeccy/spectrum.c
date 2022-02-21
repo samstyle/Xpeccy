@@ -314,7 +314,11 @@ Computer* compCreate() {
 // ibm
 	comp->dma1 = dma_create(comp, 0);
 	comp->dma2 = dma_create(comp, 1);
+	comp->mpic = pic_create(1, comp_irq, comp);
+	comp->spic = pic_create(0, comp_irq, comp);
 	pit_reset(&comp->pit);
+//	comp->mpic.master = 1;
+//	comp->spic.master = 0;
 // baseconf
 	memcpy(comp->evo.blVer,blnm,16);
 	memcpy(comp->evo.bcVer,bcnm,16);
@@ -324,8 +328,6 @@ Computer* compCreate() {
 #ifdef HAVEZLIB
 	comp->rzx.file = NULL;
 #endif
-	comp->mpic.master = 1;
-	comp->spic.master = 0;
 	compSetHardware(comp, "Dummy");
 	gsReset(comp->gs);
 	comp->cmos.data[17] = 0xaa;	// 0a?

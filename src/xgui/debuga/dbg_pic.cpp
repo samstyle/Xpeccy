@@ -39,7 +39,7 @@ QVariant xPicModel::data(const QModelIndex& idx, int role) const {
 	QVariant res;
 	int row = idx.row();
 	int col = idx.column();
-	PIC* pic = col ? &conf.prof.cur->zx->spic : &conf.prof.cur->zx->mpic;
+	PIC* pic = col ? conf.prof.cur->zx->spic : conf.prof.cur->zx->mpic;
 	switch (role) {
 		case Qt::DisplayRole:
 			switch (row) {

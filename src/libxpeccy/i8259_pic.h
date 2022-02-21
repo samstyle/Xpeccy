@@ -1,5 +1,7 @@
 #pragma once
 
+#include "defines.h"
+
 #define PIC_COM		0
 #define PIC_DATA	1
 
@@ -23,12 +25,17 @@ typedef struct {
 	unsigned char imr;	// mask bits (1 = disabled)
 	unsigned char isr;	// on int send set bit in isr, reset in irr. on eoi reset bit in isr
 	unsigned char num;	// last int input number
-	unsigned char mask;	// mask of interrupt that sends oint (must be power of 2)
 	int vec;
 	int mode;
 	unsigned char ocw2,ocw3;	// ocw1 = ocwx = imr
 	unsigned char icw1,icw2,icw3,icw4;
+
+	cbirq xirq;
+	void* xptr;
 } PIC;
+
+PIC* pic_create(int, cbirq, void*);
+void pic_destroy(PIC*);
 
 void pic_reset(PIC*);
 int pic_int(PIC*, int);

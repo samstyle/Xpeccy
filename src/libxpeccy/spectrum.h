@@ -278,8 +278,8 @@ typedef struct {
 	unsigned a20gate:1;
 	unsigned char post;
 	PIT pit;
-	PIC mpic;		// master pic
-	PIC spic;		// slave pic
+	PIC* mpic;		// master pic
+	PIC* spic;		// slave pic
 	PS2Ctrl* ps2c;
 	i8237DMA* dma1;		// 8-bit dma
 	i8237DMA* dma2;		// 16-bit dma

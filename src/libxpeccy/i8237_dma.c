@@ -58,7 +58,7 @@ void dma_set_cb(i8237DMA* dma, cbdmamrd cr, cbdmamwr cw) {
 void dma_ch_count(DMAChan* ch) {
 	ch->car += (ch->mode & 0x20) ? -1 : 1;
 	ch->cwr--;
-	if (ch->cwr == 0xffff) {	// counter is 1 less than bytes must be sended
+	if (ch->cwr == -1) {	// counter is 1 less than bytes must be sended
 		ch->masked = 1;
 		if (ch->mode & 0x10) {	// auto restore
 			ch->car = ch->bar;
@@ -68,6 +68,7 @@ void dma_ch_count(DMAChan* ch) {
 }
 
 // TODO: dma2 channels read/write by 2 bytes (ch->wrd == 1)
+// TODO: mem->dev: channel reads data from mem to buffer and checks device is ready to get it (dec counter and clear buffer if it is)
 void dma_ch_transfer(DMAChan* ch, void* ptr) {
 	if (ch->masked) return;			// channel masked, no transfer
 	int flag = 0;

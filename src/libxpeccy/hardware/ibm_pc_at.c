@@ -77,12 +77,12 @@ void ibm_mwr(Computer* comp, int adr, int val) {
 // A1 slave pic data
 
 int ibm_inPIC(Computer* comp, int adr) {
-	PIC* pic = (adr & 0x80) ? &comp->spic : &comp->mpic;	// select master or slave
+	PIC* pic = (adr & 0x80) ? comp->spic : comp->mpic;	// select master or slave
 	return pic_rd(pic, adr);
 }
 
 void ibm_outPIC(Computer* comp, int adr, int data) {
-	PIC* pic = (adr & 0x80) ? &comp->spic : &comp->mpic;
+	PIC* pic = (adr & 0x80) ? comp->spic : comp->mpic;
 	pic_wr(pic, adr, data);
 }
 
@@ -560,8 +560,8 @@ void ibm_iowr(Computer* comp, int adr, int val) {
 
 void ibm_reset(Computer* comp) {
 //	pit_reset(&comp->pit);		// pit don't have reset input (!)
-	pic_reset(&comp->mpic);
-	pic_reset(&comp->spic);
+	pic_reset(comp->mpic);
+	pic_reset(comp->spic);
 	ps2c_reset(comp->ps2c);
 	vga_reset(comp->vid);
 	comp->a20gate = 1;
@@ -580,10 +580,16 @@ void ibm_init(Computer* comp) {
 
 void ibm_irq(Computer* comp, int t) {
 	switch(t) {
-		case IRQ_FDC: pic_int(&comp->mpic, 6); break;
-		case IRQ_HDD_PRI: pic_int(&comp->spic, 6); break;
-		case IRQ_KBD: pic_int(&comp->mpic, 1); break;
-		case IRQ_MOUSE: pic_int(&comp->spic, 4); break;
+		case IRQ_FDC: pic_int(comp->mpic, 6); break;
+		case IRQ_HDD_PRI: pic_int(comp->spic, 6); break;
+		case IRQ_KBD: pic_int(comp->mpic, 1); break;
+		case IRQ_MOUSE: pic_int(comp->spic, 4); break;
+//		case IRQ_SLAVE_PIC: pic_int(comp->mpic, 2); break;	// slave pic -> master pic int2
+//		case IRQ_MASTER_PIC: t = pic_ack(comp->mpic);
+//			if (t < 0) t = pic_ack(comp->spic);
+//			comp->cpu->intrq |= I286_INT;
+//			comp->cpu->intvec = t;
+//			break;
 	}
 }
 
@@ -601,7 +607,7 @@ void ibm_sync(Computer* comp, int ns) {
 	pit_sync(&comp->pit, ns);
 	// ch0 connected to int0
 	if (!comp->pit.ch0.lout && comp->pit.ch0.out) {		// 0->1
-		pic_int(&comp->mpic, 0);	// input 0 master pic (int 8)
+		pic_int(comp->mpic, 0);	// input 0 master pic (int 8)
 	}
 	comp->pit.ch0.lout = comp->pit.ch0.out;
 	// ch1 mem refresh
@@ -629,11 +635,12 @@ void ibm_sync(Computer* comp, int ns) {
 	}
 	*/
 	// pic
-	if (comp->spic.oint)		// slave pic int -> master pic int2
-		pic_int(&comp->mpic, 2);
-	if (comp->mpic.oint) {
-		int v = pic_ack(&comp->mpic);
-		if (v < 0) v = pic_ack(&comp->spic);
+	// TODO: pic sync? if isr==0, check irr
+	if (comp->spic->oint)		// slave pic int -> master pic int2
+		pic_int(comp->mpic, 2);
+	if (comp->mpic->oint) {
+		int v = pic_ack(comp->mpic);
+		if (v < 0) v = pic_ack(comp->spic);
 		comp->cpu->intrq |= I286_INT;
 		comp->cpu->intvec = v & 0xffff;
 	}

@@ -2,24 +2,68 @@
 // http://www.brokenthorn.com/Resources/OSDevPic.html
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "i8259_pic.h"
 
+PIC* pic_create(int m, cbirq ci, void* p) {
+	PIC* pic = (PIC*)malloc(sizeof(PIC));
+	if (pic) {
+		memset(pic, 0, sizeof(PIC));
+		pic->master = m ? 1 : 0;
+		pic->xirq = ci;
+		pic->xptr = p;
+	}
+	return pic;
+}
+
+void pic_destroy(PIC* pic) {
+	free(pic);
+}
+
 void pic_reset(PIC* pic) {
+	pic->irr = 0;
 	pic->imr = 0xff;
 	pic->isr = 0;
 	pic->irr = 0;
 	pic->oint = 0;
 }
 
+int pic_check_irr(PIC* pic) {
+	if (pic->isr != 0) return 0;
+	int msk;
+	int res = 0;
+	for (int n = 0; n < 8; n++) {
+		msk = 1 << n;
+		if (pic->irr & msk) {
+			pic->num = n;
+			pic->isr |= msk;
+			if (pic->master && (pic->icw3 & msk)) {
+				pic->vec = -1;
+			} else {
+				pic->vec = (pic->icw2 & 0xf8) | n;
+			}
+			pic->oint = 1;
+			pic->xirq(pic->master ? IRQ_MASTER_PIC : IRQ_SLAVE_PIC, pic->xptr);
+			res = 1;
+		}
+	}
+	return res;
+}
+
 int pic_int(PIC* pic, int num) {
 	if (pic->isr != 0) return 0;		//  don't process many ints at once
 	int mask = (1 << (num & 7));
 	mask &= ~pic->imr;		// 0=masked
+	pic->irr |= mask;
 	mask &= ~pic->isr;		// 0=this int is not ended
 	if (!mask) return 0;
+#if 1
+	return pic_check_irr(pic);
+#else
 	pic->num = num & 7;
-	pic->mask = mask;		// fix mask
+//	pic->mask = mask;		// fix mask
 //	pic->irr |= mask;		// input accepted
 	pic->isr |= mask;		// set isr bit (remains 1 until eoi)
 	pic->oint = 1;			// send INT
@@ -29,11 +73,15 @@ int pic_int(PIC* pic, int num) {
 		pic->vec = (pic->icw2 & 0xf8) | (num & 7);
 	}
 	return 1;
+#endif
 }
 
 void pic_eoi(PIC* pic, int num) {
 	pic->isr &= ~(1 << (num & 7));
 	pic->irr &= ~(1 << (num & 7));
+#if 1
+//	pic_check_irr(pic);
+#endif
 }
 
 // return vector for int with hightst priority with bits irr=1 imr=0 & isr=0

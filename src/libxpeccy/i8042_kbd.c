@@ -117,7 +117,7 @@ void ps2c_rd_kbd(PS2Ctrl* ctrl) {
 			ps2c_wr_ob(ctrl, xt_read(ctrl->kbd));
 			ctrl->xirq(IRQ_KBD, ctrl->xptr);
 			ctrl->delay = KBD_DELAY;
-			printf("i8042 get scancode %X (remains %X)\n", ctrl->outbuf,ctrl->kbd->outbuf);
+			// printf("i8042 get scancode %X (remains %X)\n", ctrl->outbuf,ctrl->kbd->outbuf);
 		}
 	} else {
 		ctrl->outbuf = 0;

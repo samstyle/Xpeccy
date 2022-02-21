@@ -61,6 +61,9 @@ void dma_reset(i8237DMA*);
 void dma_set_chan(i8237DMA*, int, cbdmadrd, cbdmadwr);
 void dma_set_cb(i8237DMA*, cbdmamrd, cbdmamwr);
 
+// TODO: send data 'd' from device to dma chan 'ch' (channel doesn't check device data every tick)
+void dma_send(i8237DMA*, int ch, int d);
+
 void dma_sync(i8237DMA*, int);
 void dma_wr(i8237DMA*, int reg, int ch, int val);
 int dma_rd(i8237DMA*, int reg, int ch);

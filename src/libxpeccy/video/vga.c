@@ -20,8 +20,8 @@ void vga_reset(Video* vid) {
 		vid_set_col(vid, i, xcol);
 	}
 	vid->pal[6]=vid->pal[0x14];		// FIXME: ORLY?
-	memcpy(vid->ram + 0x20000, vid->font, 0x2000);	// copy default font
 	if (vid->vga.cga) {
+		memcpy(vid->ram + 0x20000, vid->font, 0x2000);	// copy default font
 		for (i = 0; i < 0x10; i++) {			// set default palette
 			ATR_REG(i) = ega_def_idx[i];
 		}
