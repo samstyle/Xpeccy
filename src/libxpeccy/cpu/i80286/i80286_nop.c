@@ -1496,6 +1496,8 @@ void i286_op9C(CPU* cpu) {
 }
 
 // 9d: popf (real mode: NT and IOP flags not modified)
+// real mode: IOP can changed if cpl=0, FI - if (cpl <= iop)
+// TODO: 80286 - only low 8 bits changed in real mode?
 void i286_op9D(CPU* cpu) {
 	cpu->tmpw = i286_pop(cpu);
 	if (cpu->msw & I286_FPE) {
@@ -1507,15 +1509,14 @@ void i286_op9D(CPU* cpu) {
 
 // 9e: sahf
 void i286_op9E(CPU* cpu) {
-	cpu->f &= ~0xff;
-	cpu->f |= cpu->ah;
-//	cpu->f &= (I286_FS | I286_FZ | I286_FA | I286_FP | I286_FC);
-//	cpu->f |= (cpu->ah & (I286_FS | I286_FZ | I286_FA | I286_FP | I286_FC));
+	cpu->f &= ~(I286_FS | I286_FZ | I286_FA | I286_FP | I286_FC);
+	cpu->f |= cpu->ah & (I286_FS | I286_FZ | I286_FA | I286_FP | I286_FC);
 }
 
 // 9f: lahf
 void i286_op9F(CPU* cpu) {
-	cpu->ah = (cpu->f & 0xff);
+	cpu->ah &= ~(I286_FS | I286_FZ | I286_FA | I286_FP | I286_FC);
+	cpu->ah |= cpu->f & (I286_FS | I286_FZ | I286_FA | I286_FP | I286_FC);
 }
 
 // a0,iw: mov al,[*ds:iw]

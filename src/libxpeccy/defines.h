@@ -13,6 +13,7 @@ enum {
 	IRQ_SLAVE_PIC,
 	IRQ_MASTER_PIC,
 	IRQ_KBD,	// ibm kbd || gbc buttons
+	IRQ_RESET,
 	IRQ_MOUSE,
 	IRQ_PIT_CH0,
 	IRQ_PIT_CH1,

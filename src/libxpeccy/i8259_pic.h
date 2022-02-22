@@ -17,7 +17,7 @@ enum {
 
 typedef struct {
 	unsigned master:1;	// 1 on master pic, 0 on slave
-	unsigned oint:1;	// int output
+//	unsigned oint:1;	// int output
 	unsigned smm:1;		// special mask mode
 	unsigned srd:1;		// special rd (ocw3 bit1 = 1)
 	unsigned sdt:1;		// data for special rd from data port

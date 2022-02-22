@@ -169,10 +169,11 @@ void ibm_outKbd(Computer* comp, int adr, int val) {
 			break;
 		case 4:
 			ps2c_wr(comp->ps2c, PS2_RCMD, val);
-			if (comp->ps2c->reset) {
-				comp->ps2c->reset = 0;
-				compReset(comp, RES_DEFAULT);
-			}
+//			if (comp->ps2c->reset) {
+//				comp->ps2c->reset = 0;
+//				comp->cpu->reset(comp->cpu);		// don't reset all comp
+				// compReset(comp, RES_DEFAULT);
+//			}
 			break;
 	}
 	//printf("%.4X:%.4X kbd out %.3X, %.2X\n",comp->cpu->cs.idx,comp->cpu->pc,adr,val);
@@ -584,12 +585,14 @@ void ibm_irq(Computer* comp, int t) {
 		case IRQ_HDD_PRI: pic_int(comp->spic, 6); break;
 		case IRQ_KBD: pic_int(comp->mpic, 1); break;
 		case IRQ_MOUSE: pic_int(comp->spic, 4); break;
-//		case IRQ_SLAVE_PIC: pic_int(comp->mpic, 2); break;	// slave pic -> master pic int2
-//		case IRQ_MASTER_PIC: t = pic_ack(comp->mpic);
-//			if (t < 0) t = pic_ack(comp->spic);
-//			comp->cpu->intrq |= I286_INT;
-//			comp->cpu->intvec = t;
-//			break;
+		case IRQ_SLAVE_PIC: pic_int(comp->mpic, 2); break;	// slave pic -> master pic int2
+		case IRQ_MASTER_PIC: t = pic_ack(comp->mpic);
+			if (t < 0) t = pic_ack(comp->spic);
+			comp->cpu->intrq |= I286_INT;
+			comp->cpu->intvec = t;
+			break;
+		case IRQ_RESET: comp->cpu->reset(comp->cpu);
+			break;
 	}
 }
 
@@ -599,11 +602,7 @@ void ibm_sync(Computer* comp, int ns) {
 	dma_sync(comp->dma1, ns);
 	// ps/2 controller
 	ps2c_sync(comp->ps2c, ns);
-//	if (comp->ps2c->mouse->intrq) {
-//		comp->ps2c->mouse->intrq = 0;
-//		ps2c_rd_mouse(comp->ps2c);
-//	}
-	// pit
+	// pit (todo: irq for pit)
 	pit_sync(&comp->pit, ns);
 	// ch0 connected to int0
 	if (!comp->pit.ch0.lout && comp->pit.ch0.out) {		// 0->1
@@ -619,31 +618,11 @@ void ibm_sync(Computer* comp, int ns) {
 	comp->pit.ch2.lout = comp->pit.ch2.out;
 	comp->beep->lev = (comp->reg[0x61] & 2) ? comp->pit.ch2.out : 1;
 
-	// fdc
+	// master int 6: fdc
 	difSync(comp->dif, ns);
 	// slave int6: primary hdc
 	// slave int7: secondary hdc
 	// slave int1: [cga] vertical retrace
-	/*
-	if ((comp->vid->intbf ^ comp->vid->intrq) & 1) {
-		if (!(comp->vid->intbf & 1)) {
-			pic_int(&comp->spic, 1);
-			comp->vid->intbf |= 1;
-		} else {
-			comp->vid->intbf &= ~1;
-		}
-	}
-	*/
-	// pic
-	// TODO: pic sync? if isr==0, check irr
-	if (comp->spic->oint)		// slave pic int -> master pic int2
-		pic_int(comp->mpic, 2);
-	if (comp->mpic->oint) {
-		int v = pic_ack(comp->mpic);
-		if (v < 0) v = pic_ack(comp->spic);
-		comp->cpu->intrq |= I286_INT;
-		comp->cpu->intvec = v & 0xffff;
-	}
 }
 
 // key press/release (at/xt code is already in kbd->outbuf)

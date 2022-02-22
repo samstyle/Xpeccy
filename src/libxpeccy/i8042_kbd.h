@@ -8,7 +8,7 @@
 #define PS2_RSTATUS	PS2_RCMD
 
 typedef struct {
-	unsigned reset:1;	// system reset requested
+//	unsigned reset:1;	// system reset requested
 
 	cbirq xirq;
 	void* xptr;

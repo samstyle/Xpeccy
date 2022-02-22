@@ -27,7 +27,7 @@ void pic_reset(PIC* pic) {
 	pic->imr = 0xff;
 	pic->isr = 0;
 	pic->irr = 0;
-	pic->oint = 0;
+//	pic->oint = 0;
 }
 
 int pic_check_irr(PIC* pic) {
@@ -44,52 +44,44 @@ int pic_check_irr(PIC* pic) {
 			} else {
 				pic->vec = (pic->icw2 & 0xf8) | n;
 			}
-			pic->oint = 1;
 			pic->xirq(pic->master ? IRQ_MASTER_PIC : IRQ_SLAVE_PIC, pic->xptr);
 			res = 1;
+			n = 8;
+		} else if (pic->isr & msk) {
+			n = 8;
 		}
 	}
 	return res;
 }
 
 int pic_int(PIC* pic, int num) {
-	if (pic->isr != 0) return 0;		//  don't process many ints at once
 	int mask = (1 << (num & 7));
 	mask &= ~pic->imr;		// 0=masked
 	pic->irr |= mask;
-	mask &= ~pic->isr;		// 0=this int is not ended
 	if (!mask) return 0;
-#if 1
 	return pic_check_irr(pic);
-#else
-	pic->num = num & 7;
-//	pic->mask = mask;		// fix mask
-//	pic->irr |= mask;		// input accepted
-	pic->isr |= mask;		// set isr bit (remains 1 until eoi)
-	pic->oint = 1;			// send INT
-	if (pic->master && (pic->icw3 & mask)) {		// if this input is slave pic, get vector from there
-		pic->vec = -1;
-	} else {					// else calc vector
-		pic->vec = (pic->icw2 & 0xf8) | (num & 7);
-	}
-	return 1;
-#endif
 }
 
 void pic_eoi(PIC* pic, int num) {
-	pic->isr &= ~(1 << (num & 7));
-	pic->irr &= ~(1 << (num & 7));
-#if 1
-//	pic_check_irr(pic);
-#endif
+	if (num < 0) {
+		num = 0;
+		while (num < 8) {
+			if (pic->isr & (1 << num)) break;
+			num++;
+		}
+	}
+	if (num < 8) {
+		pic->isr &= ~(1 << num);
+		pic->irr &= ~(1 << num);
+		pic_check_irr(pic);
+	}
 }
 
-// return vector for int with hightst priority with bits irr=1 imr=0 & isr=0
+// TODO: return vector for int with hightst priority and isr=1
 int pic_ack(PIC* pic) {
 	if (pic->icw4 & 2) {		// automatic eoi
 		pic_eoi(pic, pic->num);
 	}
-	pic->oint = 0;
 	return pic->vec;
 }
 
@@ -138,7 +130,7 @@ void pic_wr(PIC* pic, int adr, int data) {
 				if (data & 0x40) {		// specific eoi - reset specific isr bit
 					pic_eoi(pic, data & 7);
 				} else {			// non-specific eoi (TODO: reset isr bit with highest priority)
-					pic_eoi(pic, pic->num & 7);	// eoi
+					pic_eoi(pic, -1);	// eoi (highest priority int)
 				}
 			}
 		}

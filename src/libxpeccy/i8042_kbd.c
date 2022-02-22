@@ -29,7 +29,7 @@ void ps2c_destroy(PS2Ctrl* ctrl) {
 
 void ps2c_reset(PS2Ctrl* ctrl) {
 	ctrl->cmd = -1;
-	ctrl->reset = 0;
+//	ctrl->reset = 0;
 	ctrl->outbuf = 0;
 	ctrl->outport = 2;
 	ctrl->status &= ~0x03;
@@ -184,8 +184,10 @@ void ps2c_wr(PS2Ctrl* ctrl, int adr, int val) {
 				switch (ctrl->cmd) {
 					case 0xd1:		// write to output port
 						ctrl->outport = val;
-						printf("i8042 outport = %.2X (a20gate=%i)\n",val,(val&2) ? 1 : 0);
-						if (!(val & 1)) ctrl->reset = 1;
+						if (!(val & 1)) {
+							//ctrl->reset = 1;
+							ctrl->xirq(IRQ_RESET, ctrl->xptr);
+						}
 						// b1:a20 gate. if 0 here [or port 92 bit 1 = 0], a20+ is disabled (always 0)
 						break;
 					case 0xd2:
@@ -302,7 +304,10 @@ void ps2c_wr(PS2Ctrl* ctrl, int adr, int val) {
 					if (val == 0xff) {				// FF reset
 						ps2c_reset(ctrl);
 					} else if ((val & 0xf0) == 0xf0) {		// Fx commands
-						if (!(val & 1)) ctrl->reset = 1;	// b0=0: reset computer
+						if (!(val & 1)) {
+						//	ctrl->reset = 1;	// b0=0: reset computer
+							ctrl->xirq(IRQ_RESET, ctrl->xptr);
+						}
 					} else {					// Ex commands
 						switch (val) {
 							case 0xe0:
