@@ -98,8 +98,8 @@ int loadLabels(const char* fn) {
 					name = arr.at(2);
 					switch (xadr.bank) {
 						case 0xff:
-							xadr.type = MEM_ROM;
-							xadr.bank = -1;
+							//xadr.type = MEM_ROM;
+							//xadr.bank = -1;
 							break;
 						case 0x05:
 							xadr.adr |= 0x4000;

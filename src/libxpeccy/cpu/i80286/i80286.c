@@ -273,7 +273,16 @@ xMnem i286_mnem(CPU* cpu, int sadr, cbdmr mrd, void* data) {
 							adr++;
 							dptr += sprintf(dptr, "#%.4X", disp.w);
 							// disp.w = 0;
-						} else {			// reg.based
+						} else if ((mb & 0xc0) == 0x40) {			// disp is 1 byte
+							dptr += sprintf(dptr, "%s", str_ea[mb & 7]);
+							if (disp.l) {
+								if (disp.w & 0x80) {	// negative
+									dptr += sprintf(dptr,"-#%.2X", 0x100-disp.l);
+								} else {		// positive
+									dptr += sprintf(dptr,"+#%.2X", disp.l);
+								}
+							}
+						} else {						// disp is 2 byte or 0
 							if (disp.w)		// if disp!=0
 								dptr += sprintf(dptr, "#%.4X+", disp.w);
 							dptr += sprintf(dptr, "%s", str_ea[mb & 7]);	// TODO: do something to show segment override

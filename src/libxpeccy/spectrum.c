@@ -40,7 +40,7 @@ int memrd(int adr, int m1, void* ptr) {
 			*fptr = flag;
 		}
 	}
-	if (comp->hw->id != HW_IBM_PC)
+	if (comp->mem->busmask < 0x10000)
 		flag |= comp->brkAdrMap[adr & 0xffff];
 	if (flag & MEM_BRK_RD)
 		comp->brk = 1;
@@ -459,7 +459,7 @@ int compExec(Computer* comp) {
 // breakpoints
 	if (!comp->debug) {
 		unsigned char *ptr = getBrkPtr(comp, comp->cpu->pc + comp->cpu->cs.base);
-		unsigned char brk = *ptr;
+		unsigned char brk = getBrk(comp, comp->cpu->pc + comp->cpu->cs.base);
 		if (brk & (MEM_BRK_FETCH | MEM_BRK_TFETCH)) {
 			comp->brk = 1;
 			if (brk & MEM_BRK_TFETCH) {

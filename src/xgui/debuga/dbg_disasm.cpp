@@ -208,7 +208,7 @@ void placeLabel(Computer* comp, dasmData& drow) {
 	xMnem mn;
 	xAdr xadr;
 	while (work && (shift < 8)) {
-		xadr = mem_get_xadr(comp->mem, drow.oadr - shift + comp->cpu->cs.base);
+		xadr = mem_get_xadr(comp->mem, drow.oadr - shift);
 		lab = find_label(xadr);
 		if (lab.isEmpty()) {
 			if (drow.oflag & OF_MEMADR) {
@@ -219,7 +219,7 @@ void placeLabel(Computer* comp, dasmData& drow) {
 		} else {
 			mn.len = 8;					// default seek range
 			if ((drow.flag & 0xf0) == DBG_VIEW_CODE) {	// for code - size of opcode only
-				mn = cpuDisasm(comp->cpu, (drow.oadr - shift + comp->cpu->cs.base), NULL, dasmrd, comp);
+				mn = cpuDisasm(comp->cpu, (drow.oadr - shift), NULL, dasmrd, comp);
 			}
 			if (shift < mn.len) {
 				num = gethexword(drow.oadr).prepend("#").toUpper();
