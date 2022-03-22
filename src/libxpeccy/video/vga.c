@@ -31,6 +31,12 @@ void vga_reset(Video* vid) {
 
 static int vga_scr_height[4] = {200,350,400,480};
 // static int vga_scr_width[4] = {320,640,320,640};
+// TODO: v200=400 with line doubler, h320=640 with dots doubler?
+
+void cga_lores_dot(Video*);
+void ega_hires_dot(Video*);
+void cga_t40_dot(Video*);
+void cga_t80_dot(Video*);
 
 void vga_upd_mode(Video* vid) {
 	// reg[0x42] bit 2,3 = clock select (00:14MHz, 01:16MHz, 10:from ft.connector, 11:not used
@@ -47,8 +53,14 @@ void vga_upd_mode(Video* vid) {
 		default:	// others is undefined
 			break;
 	}
+	int rx = 640;	// (SEQ_REG(1) & 8) ? 320 : 640;
 	int ry = vga_scr_height[(vid->reg[0x42] >> 6) & 3];
-	int rx = (SEQ_REG(1) & 8) ? 320 : 640;
+	if (vid->vga.cga || (ry == 200)) {
+		rx = 320;
+		vid->cbDot = (SEQ_REG(1) & 8) ? cga_t40_dot : ega_hires_dot;
+	} else {
+		vid->cbDot = (SEQ_REG(1) & 8) ? cga_lores_dot : cga_t40_dot;
+	}
 	vid_set_resolution(vid, rx, ry);
 }
 
@@ -224,6 +236,7 @@ void vga_wr(Video* vid, int port, int val) {
 // 10:B0000..B7FFF (32K)
 // 11:B8000..BFFFF (32K)
 
+/*
 #define VGA_DIRECT (1<<24)
 
 int vga_adr(Video* vid, int exadr) {
@@ -254,7 +267,7 @@ int vga_adr(Video* vid, int exadr) {
 		}
 #else
 		if (exadr < 0xb0000) {
-			adr = exadr & 0x1ffff;
+			adr = exadr & 0xffff;
 		} else {
 			adr = ((exadr & 0x7fff) >> 1) | VGA_DIRECT;
 			if (exadr & 1)
@@ -264,6 +277,7 @@ int vga_adr(Video* vid, int exadr) {
 #endif
 	return adr;
 }
+*/
 
 // GRF_R05.b0,1 = write mode
 // write mode 00:
@@ -280,23 +294,27 @@ int vga_adr(Video* vid, int exadr) {
 // GRF_R05.b4: odd/even mode
 // GRF_R06.b1: chain odd/even (2=0, 3=1)
 
-
 void vga_mwr(Video* vid, int adr, int val) {
-	if (!(vid->reg[0x42] & 2) && !vid->vga.cga) return;	// vmem disabled
-	adr = vga_adr(vid, adr);
-	if (adr < 0) return;
-	if (adr & VGA_DIRECT) {			// b000/b800 buffers
-		vid->ram[adr ^ VGA_DIRECT] = val & 0xff;
-	} else if (vid->vga.cga) {				// write to plane
-		vid->ram[adr] = val & 0xff;
-	} else {
-		int bt,lay;
-		if (GRF_REG(3) & 7) {		// rotation
+	adr &= (adr < 0xb0000) ? 0xffff : 0x7fff;
+	if (vid->vga.cga) {
+		if (adr & 1) adr |= 0x20000;
+		adr >>= 1;
+		vid->ram[adr] = val;
+	} else if ((vid->reg[0x42] & 2)) {		// vmem enabled
+		unsigned char wmsk = SEQ_REG(2) & 0x0f;
+		if (GRF_REG(5) & 0x10) {		// odd/even mode
+			wmsk &= 0x05;			// 0,2
+			if (adr & 1) wmsk <<= 1;	// 1,3
+			adr >>= 1;
+		}
+		int bt,lay,lm;
+		if ((GRF_REG(3) & 7) && !(GRF_REG(5) & 3)) {		// rotation, affect only mode 0
 			val &= 0xff;
 			val |= (val << 8);
 			val >>= (GRF_REG(3) & 7);
 		}
 		for (lay = 0; lay < 4; lay++) {
+			lm = (1 << lay);
 			switch ((GRF_REG(3) & 0x18) >> 3) {	// logical operation with latches
 				case 0: break;					// 00 no changes
 				case 1: val &= vid->vga.latch[lay]; break;	// 01 AND
@@ -305,11 +323,11 @@ void vga_mwr(Video* vid, int adr, int val) {
 			}
 			switch(GRF_REG(5) & 3) {		// write mode
 				case 0:
-					if (SEQ_REG(2) & (1 << lay)) {			// map mask bit = 1, changing enabled
-						if (GRF_REG(1) & (1 << lay)) {		// set-reset enabled for this layer
-							bt = (GRF_REG(0) & (1 << lay)) ? 0xff : 0x00;	// set or reset
+					if (wmsk & lm) {			// map mask bit = 1, changing enabled
+						if (GRF_REG(1) & lm) {		// set-reset enabled for this layer
+							bt = (GRF_REG(0) & lm) ? 0xff : 0x00;	// set or reset
 						} else {
-							bt = vid->ram[adr];		// else - byte from layer
+							bt = vid->ram[adr];	// else - byte from layer
 						}
 						bt &= ~GRF_REG(8);			// reset bits alowed from cpu
 						bt |= (val & GRF_REG(8));		// write bits alowed from cpu
@@ -317,12 +335,16 @@ void vga_mwr(Video* vid, int adr, int val) {
 					}
 					break;
 				case 1:
-					vid->ram[adr] = vid->vga.latch[lay];
+					if (wmsk & lm)
+						vid->ram[adr] = vid->vga.latch[lay];
 					break;
 				case 2:
-					bt = (val & (1 << lay)) ? 0xff : 0x00;
-					vid->ram[adr] &= ~GRF_REG(8);
-					vid->ram[adr] |= (val & GRF_REG(8));
+					if (wmsk & lm) {
+						bt = (val & lm) ? 0xff : 0x00;
+						bt &= ~GRF_REG(8);
+						bt |= (val & GRF_REG(8));
+						vid->ram[adr] = bt;
+					}
 					break;
 				case 3:					// VGA only
 					break;
@@ -341,16 +363,20 @@ void vga_mwr(Video* vid, int adr, int val) {
 
 int vga_mrd(Video* vid, int adr) {
 	int res = -1;
-	if (!(vid->reg[0x42] & 2) && !vid->vga.cga) return res;
-	int col;
-	int msk;
-	adr = vga_adr(vid, adr);
-	if (adr < 0) return -1;
-	if (adr & VGA_DIRECT) {		// b000/b800
-		res = vid->ram[adr ^ VGA_DIRECT];
-	} else if (vid->vga.cga) {
-		res = vid->ram[adr];
-	} else {			// a000:planes
+	adr &= (adr < 0xb0000) ? 0xffff : 0x7fff;
+	if (vid->vga.cga) {
+		if (adr & 1) adr |= 0x20000;
+		adr >>= 1;
+		res = vid->ram[adr] & 0xff;
+	} else if (vid->reg[0x42] & 2) {
+		int col;
+		int msk;
+		int rp = GRF_REG(4) & 3;
+		if (GRF_REG(5) & 0x10) {
+			rp = (rp & 2) | (adr & 1);
+			adr = (adr >> 1) | ((adr & 1) ? MEM_64K : 0);
+		}
+
 		for(res = 0; res < 4; res++)		// store latches
 			vid->vga.latch[res] = vid->ram[(adr & 0xffff) | (res << 16)];
 		if (GRF_REG(0x05) & 8) {		// color compare mode
@@ -367,7 +393,7 @@ int vga_mrd(Video* vid, int adr) {
 				msk <<= 1;
 			} while (msk > 0x100);
 		} else {
-			res = vid->vga.latch[GRF_REG(0x04) & 3];
+			res = vid->vga.latch[rp];
 		}
 	}
 	return res;
@@ -416,28 +442,30 @@ void cga_t80_ini(Video* vid) {
 void cga_t40_frm(Video* vid) {
 	vid->vga.line = 0;
 	vid->vga.chline = 0;	// CRT_REG(0x08) & 0x1f;
-	vid->vadr = (CRT_REG(0x0c) << 8) | (CRT_REG(0x0d));
+	vid->vadr = (CRT_REG(0x0c) << 8) | (CRT_REG(0x0d));	// screen start address
 }
 
 void cga_t40_line(Video* vid) {
 	memset(vid->line, CRT_REG(0x11), 0x400);
+//	if (vid->vga.line >= CRT_REG(0x12)) return;
 	int i,t;
 	vid->xpos = 0;
-	vid->vadr = (CRT_REG(0x0c) << 8) | CRT_REG(0x0d);
-	vid->vadr += vid->vga.line * vid->vga.cpl;
-	vid->tadr = vid->vadr;					// current adr, vadr remains at start of line
+//	vid->vadr = (CRT_REG(0x0c) << 8) | CRT_REG(0x0d);
+//	vid->vadr += vid->vga.line * vid->vga.cpl;
+	vid->tadr = vid->vadr;					// current line adr
 	for (t = vid->vga.cga ? 1 : 0; t <= CRT_REG(1); t++) {
-		vid->idx = vid->ram[vid->tadr];			// char (plane 0)
-		vid->atrbyte = vid->ram[vid->tadr + MEM_64K];	// attr	(plane 1)
+		vid->idx = vid->ram[vid->vadr];			// char (plane 0)
+		vid->atrbyte = vid->ram[vid->vadr + MEM_64K];	// attr	(plane 1)
+		vid->vadr++;
 		vid->fadr = vid->idx * 32;			// offset of 1st char byte in plane 2 (allways 32 bytes/char in font plane)
 		vid->fadr += vid->vga.chline;			// +line in char
-		if (!vid->vga.blinken || !(vid->atrbyte & 0x08)) {	// font select (each 8K)
+		if (!vid->vga.cga && (!vid->vga.blinken || !(vid->atrbyte & 0x08))) {	// font select (each 8K)
 			vid->fadr += (SEQ_REG(3) & 0x03) << 13;
 		} else {
 			vid->fadr += (SEQ_REG(3) & 0x0c) << 11;
 		}
 		vid->idx = vid->ram[0x20000 + vid->fadr];	// pixels
-		if ((vid->tadr == vid->vga.cadr) && !(CRT_REG(0x0a) & 0x20)) {		// cursor position, cursor enabled
+		if ((vid->vadr == vid->vga.cadr) && !(CRT_REG(0x0a) & 0x20)) {		// cursor position, cursor enabled
 			if ((vid->vga.chline > (CRT_REG(0x0a) & 0x1f)) \
 				&& (vid->vga.chline <= (CRT_REG(0x0b) & 0x1f))) {	// cursor start/end
 				vid->idx ^= 0xff;
@@ -456,32 +484,41 @@ void cga_t40_line(Video* vid) {
 			}
 			vid->idx <<= 1;
 		}
-		vid->tadr++;
+		// vid->tadr++;
 	}
 	vid->vga.chline++;
 	if (vid->vga.chline > CRT_REG(9)) {			// char height register
 		vid->vga.line++;
 		vid->vga.chline = 0;
-		vid->vadr = vid->tadr;				// vadr to next line
+//		vid->vadr = vid->tadr;				// vadr to next line
+	} else {
+		vid->vadr = vid->tadr;				// return to current line address
 	}
 	if ((vid->ray.y == vid->blank.y) && (vid->inten & 1))
 		vid->intrq = 1;
 	vga_check_vsync(vid);
 }
 
+// when SEQ(1).b3=1
+void cga_lores_dot(Video* vid) {
+	vid_dot_full(vid, vid->line[vid->ray.x]);
+	vid_dot_full(vid, vid->line[vid->ray.x]);
+}
+
+void ega_hires_dot(Video* vid) {
+	vid_dot_half(vid, vid->line[vid->ray.x << 1]);
+	vid_dot_half(vid, vid->line[(vid->ray.x << 1) | 1]);
+}
+
+// when SEQ(1).b3=0
 void cga_t40_dot(Video* vid) {
-	vid_dot_full(vid, vid->line[vid->ray.x]);		// 40x8=320
+	vid_dot_full(vid, vid->line[vid->ray.x]);
 }
 
 // T80
 
 void cga_t80_dot(Video* vid) {
-	if (vid->vga.cga) {
-		vid_dot_half(vid, vid->line[vid->ray.x << 1]);		// 80x8=640
-		vid_dot_half(vid, vid->line[(vid->ray.x << 1) + 1]);
-	} else {
-		vid_dot_full(vid, vid->line[vid->ray.x]);
-	}
+	vid_dot_half(vid, vid->line[vid->ray.x << 1]);		// 80x8=640
 }
 
 // res = HResolution (320 or 640)
@@ -499,22 +536,34 @@ void vga_4bpp(Video* vid, int res) {
 	int k,msk;
 	int col,b0,b1,b2,b3;
 	vid->tadr = vid->vadr;
+	vid->fadr = vid->vadr;
+	if (!(CRT_REG(0x17) & 0x40)) {
+		vid->fadr <<= 1;
+		if (CRT_REG(0x17) & 0x20) {
+			vid->fadr |= (vid->fadr & 0x8000) >> 15;
+		} else {
+			vid->fadr |= (vid->fadr & 0x2000) >> 13;
+		}
+	}
 	if (!(CRT_REG(0x17) & 1)) {		// A13 = V0
-		vid->vadr &= ~0x1000;
-		vid->vadr |= ((vid->ray.y & 1) << 12);
+		vid->fadr &= ~0x2000;
+		vid->fadr |= ((vid->ray.y & 1) << 13);
 	}
 	if (!(CRT_REG(0x17) & 2)) {		// A14 = V1
-		vid->vadr &= ~0x2000;
-		vid->vadr |= ((vid->ray.y & 2) << 11);
+		vid->fadr &= ~0x4000;
+		vid->fadr |= ((vid->ray.y & 2) << 13);
 	}
+	if (!(SEQ_REG(4) & 4))		// odd/even
+		vid->fadr >>= 1;
 	switch ((SEQ_REG(1) & 4) | (GRF_REG(5) & 0x20)) {
 		case 0x00:			// common
 			while (pos < res) {
-				b0 = vid->ram[vid->vadr] & 0xff;
-				b1 = vid->ram[vid->vadr + 0x10000] & 0xff;
-				b2 = vid->ram[vid->vadr + 0x20000] & 0xff;
-				b3 = vid->ram[vid->vadr + 0x30000] & 0xff;
+				b0 = vid->ram[vid->fadr] & 0xff;
+				b1 = vid->ram[vid->fadr + 0x10000] & 0xff;
+				b2 = vid->ram[vid->fadr + 0x20000] & 0xff;
+				b3 = vid->ram[vid->fadr + 0x30000] & 0xff;
 				vid->vadr++;
+				vid->fadr++;
 				msk = 0x80;
 				for (k = 0; k < 8; k++) {
 					col = 0;
@@ -523,47 +572,48 @@ void vga_4bpp(Video* vid, int res) {
 					if (b1 & msk) col |= 2;
 					if (b0 & msk) col |= 1;
 					msk >>= 1;
+					col &= (ATR_REG(0x12) & 0x0f);
 					vid->line[pos++] = ATR_REG(col);
 				}
 			}
 			break;
 		case 0x04:			// iterleaved
 			while (pos < res) {
-				b0 = ((vid->ram[vid->vadr] & 0xff) << 8) | ((vid->ram[vid->vadr + 0x10000]) & 0xff);
-				b1 = ((vid->ram[vid->vadr+0x20000] & 0xff) << 8) | ((vid->ram[vid->vadr + 0x30000]) & 0xff);
+				b0 = ((vid->ram[vid->fadr] & 0xff) << 8) | ((vid->ram[vid->fadr + 0x10000]) & 0xff);
+				b1 = ((vid->ram[vid->fadr+0x20000] & 0xff) << 8) | ((vid->ram[vid->fadr + 0x30000]) & 0xff);
 				vid->vadr++;
-				for (k = 0; k < 16; k++) {
-					col = ((b1 & 0x8000) >> 14) | ((b1 & 0x8000) >> 15);
+				vid->fadr++;
+				for (k = 0; k < 8; k++) {
+					col = ((b0 & 0x8000) >> 14) | ((b1 & 0x8000) >> 15);
 					b0 <<= 1;
 					b1 <<= 1;
+					col &= (ATR_REG(0x12) & 0x0f);
 					vid->line[pos++] = ATR_REG(col);
 				}
 			}
 			break;
 		case 0x20:			// cga (byte = 4 pix, 2bpp)
 			while (pos < res) {
-				b0 = vid->ram[vid->vadr] & 0xff;
-				for (k = 0; k < 4; k++) {
-					col = (b0 >> 6) & 3;
+				b0 = (vid->ram[vid->fadr] << 8) | (vid->ram[vid->fadr + 0x10000] & 0xff);
+				for (k = 0; k < 8; k++) {
+					col = (b0 >> 14) & 3;
 					b0 <<= 2;
-					vid->line[pos++] = ATR_REG(col);
-				}
-				b0 = vid->ram[vid->vadr + 0x10000] & 0xff;
-				for (k = 0; k < 4; k++) {
-					col = (b0 >> 6) & 3;
-					b0 <<= 2;
+					col &= (ATR_REG(0x12) & 0x0f);
 					vid->line[pos++] = ATR_REG(col);
 				}
 				vid->vadr++;
+				vid->fadr++;
 			}
 			break;
 		case 0x24:			// cga interleaved
 			while (pos < res) {
-				b0 = ((vid->ram[vid->vadr] & 0xff) << 8) | (vid->ram[vid->vadr + 0x10000] & 0xff);
+				b0 = ((vid->ram[vid->fadr] & 0xff) << 8) | (vid->ram[vid->fadr + 0x10000] & 0xff);
 				vid->vadr++;
+				vid->fadr++;
 				for (k = 0; k < 8; k++) {
 					col = (b0 >> 14) & 3;
 					b0 <<= 2;
+					col &= (ATR_REG(0x12) & 0x0f);
 					vid->line[pos++] = ATR_REG(col);
 				}
 			}
@@ -656,21 +706,17 @@ void cga640_1bpp_line(Video* vid) {
 	memset(vid->line, CRT_REG(0x11), 0x400);
 	int pos = 0;
 	int i,k;
-	unsigned char bt;
+	int bt;
 	vid->vadr = (vid->ray.y >> 1) * CRT_REG(1) * 2;		// crt_reg(1) * 8 / 4 = line width (bytes)
 	vid->vadr += (CRT_REG(0x0c) << 8) | (CRT_REG(0x0d));	// start address
-	//if (vid->ray.y & 1)
-	//	vid->vadr |= 0x2000;
+	if (vid->ray.y & 1)
+		vid->vadr |= 0x2000;
 	for (i = 0; i <= CRT_REG(1) * 2; i++) {
-#if 1
-		bt = vid->ram[vid->vadr & (MEM_256K-1)];
-#else
 		if (vid->vadr & 1) {
 			bt = vid->ram[(vid->vadr >> 1) + 0x10000];
 		} else {
 			bt = vid->ram[vid->vadr >> 1];
 		}
-#endif
 		vid->vadr++;
 		for (k = 0; k < 8; k++) {
 			vid->line[pos++] = (bt & 0x80) ? 7 : 0;
