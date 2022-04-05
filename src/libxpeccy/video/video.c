@@ -828,7 +828,7 @@ void cga640_1bpp_line(Video*);
 void vga320_4bpp_line(Video*);
 void vga640_4bpp_line(Video*);
 void cga_t40_dot(Video*);
-void cga_t80_dot(Video*);
+void ega_lores_dot(Video*);
 void ega_hires_dot(Video*);
 void cga_t40_ini(Video*);
 void cga_t80_ini(Video*);
