@@ -1156,29 +1156,43 @@ void MainWin::xkey_release(int keyid) {
 	emit s_keywin_upd(comp->keyb);
 }
 
+void MainWin::calcCoords(QMouseEvent* ev) {
+	int x = ev->x() * 0x100 / xstep + comp->vid->lcut.x - comp->vid->bord.x;
+	int y = ev->y() * 0x100 / ystep + comp->vid->lcut.y - comp->vid->bord.y;
+	if ((x >= 0) && (x < comp->vid->scrn.x) && (y >= 0) && (y < comp->vid->scrn.y)) {	// inside screen
+		int adr = ((y & 0xc0) << 5) | ((y & 0x38) << 2) | /*((y & 7) << 8) |*/ ((x & 0xf8) >> 3);
+		setMessage(gethexword(adr));
+	}
+}
+
 void MainWin::mousePressEvent(QMouseEvent *ev){
 	if (comp->debug) {
+		if ((ev->button() == Qt::LeftButton) && (comp->hw->grp == HWG_ZX)) {
+			calcCoords(ev);
+		}
 		ev->ignore();
-		return;
-	}
-	switch (ev->button()) {
-		case Qt::LeftButton:
-			if (grabMice) {
-				comp->mouse->lmb = 1;
-				mouse_interrupt(comp->mouse);
-			}
-			break;
-		case Qt::RightButton:
-			if (grabMice) {
-				comp->mouse->rmb = 1;
-				mouse_interrupt(comp->mouse);
-			} else {
-				fillUserMenu();
-				userMenu->popup(QPoint(ev->globalX(),ev->globalY()));
-				userMenu->setFocus();
-			}
-			break;
-		default: break;
+	} else {
+		switch (ev->button()) {
+			case Qt::LeftButton:
+				if (grabMice) {
+					comp->mouse->lmb = 1;
+					mouse_interrupt(comp->mouse);
+				} else if (comp->hw->grp == HWG_ZX) {	// zx: print dot address
+					calcCoords(ev);
+				}
+				break;
+			case Qt::RightButton:
+				if (grabMice) {
+					comp->mouse->rmb = 1;
+					mouse_interrupt(comp->mouse);
+				} else {
+					fillUserMenu();
+					userMenu->popup(QPoint(ev->globalX(),ev->globalY()));
+					userMenu->setFocus();
+				}
+				break;
+			default: break;
+		}
 	}
 }
 
@@ -1186,48 +1200,46 @@ void MainWin::mouseReleaseEvent(QMouseEvent *ev) {
 	if (conf.emu.pause) return;
 	if (comp->debug) {
 		ev->ignore();
-		return;
-	}
-	switch (ev->button()) {
-		case Qt::LeftButton:
-			if (grabMice) {
-				comp->mouse->lmb = 0;
-				mouse_interrupt(comp->mouse);
+	} else {
+		switch (ev->button()) {
+			case Qt::LeftButton:
+				if (grabMice) {
+					comp->mouse->lmb = 0;
+					mouse_interrupt(comp->mouse);
 #ifdef __APPLE__
-			} else if (comp->mouse->enable) {
-				grabMice = 1;
-				grabMouse(QCursor(Qt::BlankCursor));
-				setMessage(" grab mouse ");
+				} else if (comp->mouse->enable) {
+					grabMice = 1;
+					grabMouse(QCursor(Qt::BlankCursor));
+					setMessage(" grab mouse ");
 #endif
-			}
-			break;
-		case Qt::RightButton:
-			if (grabMice) {
-				comp->mouse->rmb = 0;
-				mouse_interrupt(comp->mouse);
-			}
-			break;
-		case Qt::MidButton:
-			grabMice = !grabMice;
-			if (grabMice) {
-				grabMouse(QCursor(Qt::BlankCursor));
-				setMessage(" grab mouse ");
-			} else {
-				releaseMouse();
-				setMessage(" release mouse ");
-				cursor().setPos(pos().x() + width() / 2, pos().y() + height() / 2);
-			}
-			break;
-		default: break;
+				}
+				break;
+			case Qt::RightButton:
+				if (grabMice) {
+					comp->mouse->rmb = 0;
+					mouse_interrupt(comp->mouse);
+				}
+				break;
+			case Qt::MidButton:
+				grabMice = !grabMice;
+				if (grabMice) {
+					grabMouse(QCursor(Qt::BlankCursor));
+					setMessage(" grab mouse ");
+				} else {
+					releaseMouse();
+					setMessage(" release mouse ");
+					cursor().setPos(pos().x() + width() / 2, pos().y() + height() / 2);
+				}
+				break;
+			default: break;
+		}
 	}
 }
 
 void MainWin::wheelEvent(QWheelEvent* ev) {
 	if (comp->debug) {
 		ev->ignore();
-		return;
-	}
-	if (grabMice) {
+	} else if (grabMice) {
 		if (comp->mouse->hasWheel)
 			mousePress(comp->mouse, (ev->yDelta < 0) ? XM_WHEELDN : XM_WHEELUP, 0);
 	} else {
@@ -1247,11 +1259,13 @@ void MainWin::wheelEvent(QWheelEvent* ev) {
 static int dumove = 0;
 
 void MainWin::mouseMoveEvent(QMouseEvent *ev) {
-	if (!grabMice || conf.emu.pause) return;
-	if (dumove) {			// it was dummy move to center of screen
+	if (!grabMice || conf.emu.pause) {
+		if ((ev->buttons() & Qt::LeftButton) && (comp->hw->grp == HWG_ZX)) {
+			calcCoords(ev);
+		}
+	} else if (dumove) {			// it was dummy move to center of screen
 		dumove = 0;
 	} else {
-#if 1
 		QPoint dpos = pos() + QPoint(width()/2, height()/2);
 		comp->mouse->xdelta = ev->globalX() - dpos.x();
 		comp->mouse->ydelta = dpos.y() - ev->globalY();		// revert sign
@@ -1260,16 +1274,6 @@ void MainWin::mouseMoveEvent(QMouseEvent *ev) {
 		mouse_interrupt(comp->mouse);
 		dumove = 1;
 		cursor().setPos(dpos);
-		// qDebug() << cursor().pos();
-#else
-		QSize rct = SCREENSIZE;
-		rct.setWidth(rct.width() / 2);
-		rct.setHeight(rct.height() / 2);
-		comp->mouse->xpos += ev->globalX() - rct.width();
-		comp->mouse->ypos -= ev->globalY() - rct.height();
-		dumove = 1;
-		cursor().setPos(rct.width(), rct.height());
-#endif
 	}
 }
 
@@ -1289,7 +1293,6 @@ void MainWin::dropEvent(QDropEvent* ev) {
 #if defined(__WIN32)
 		fpath.remove(0,1);	// by some reason path will start with /
 #endif
-		//loadFile(comp,fpath.toUtf8().data(),FT_ALL,0);
 		load_file(comp, fpath.toLocal8Bit().data(), FG_ALL, 0);
 	}
 }

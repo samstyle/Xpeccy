@@ -64,6 +64,7 @@ enum {
 };
 
 // memory flags
+// no room for new break types... bit4-7 is reserved for memory cell type
 #define	MEM_BRK_FETCH	(1<<0)	// xxxxxxx1
 #define	MEM_BRK_RD	(1<<1)	// xxxxxx1x
 #define	MEM_BRK_WR	(1<<2)	// xxxxx1xx

@@ -148,6 +148,7 @@ class MainWin : public QWidget {
 		QAction* pckAct;
 
 		void initUserMenu();
+		void calcCoords(QMouseEvent*);
 
 		void xkey_press(int);
 		void xkey_release(int);

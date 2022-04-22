@@ -60,8 +60,9 @@ void memwr(int adr, int val, void* ptr) {
 	}
 	if (comp->hw->id != HW_IBM_PC)
 		flag |= comp->brkAdrMap[adr & 0xffff];
-	if (flag & MEM_BRK_WR)
+	if (flag & MEM_BRK_WR) {
 		comp->brk = 1;
+	}
 	comp->hw->mwr(comp,adr,val);
 }
 
