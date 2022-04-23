@@ -1124,6 +1124,11 @@ bool DebugWin::fillAll() {
 	return fillNotCPU();
 }
 
+void DebugWin::setScrAtr(int adr, int atr) {
+	ui.leScr->setValue(adr);
+	ui.leAtr->setValue(atr);
+}
+
 // gameboy
 
 extern xColor iniCol[4];
