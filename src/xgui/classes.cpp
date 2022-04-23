@@ -155,47 +155,50 @@ void xHexSpin::onTextChange(QString txt) {
 }
 
 void xHexSpin::keyPressEvent(QKeyEvent* ev) {
-	if (isReadOnly()) return;
 	QString txt;
 	int pos;
-	switch(ev->key()) {
-		case Qt::Key_Up:
-			setValue(minMaxCorrect(value + 1, min, max));
-			break;
-		case Qt::Key_Down:
-			setValue(minMaxCorrect(value - 1, min, max));
-			break;
-		case Qt::Key_PageUp:
-			setValue(minMaxCorrect(value + 0x100, min, max));
-			break;
-		case Qt::Key_PageDown:
-			setValue(minMaxCorrect(value - 0x100, min, max));
-			break;
-		case Qt::Key_Insert:
-			pos = cursorPosition();
-			txt = vtxt;
-			if (inputMask().isEmpty()) {
-				setInputMask(QString(len,'H'));
-			} else {
-				setInputMask(QString());
-			}
-			setText(txt);
-			setCursorPosition(pos);
-			break;
-		case Qt::Key_X:
-			if (hsflag & XHS_DEC) {
-				if (base == 8) {
-					setBase(10);
-				} else if (base == 10) {
-					setBase(16);
+	if (isReadOnly()) {
+		QLineEdit::keyPressEvent(ev);
+	} else {
+		switch(ev->key()) {
+			case Qt::Key_Up:
+				setValue(minMaxCorrect(value + 1, min, max));
+				break;
+			case Qt::Key_Down:
+				setValue(minMaxCorrect(value - 1, min, max));
+				break;
+			case Qt::Key_PageUp:
+				setValue(minMaxCorrect(value + 0x100, min, max));
+				break;
+			case Qt::Key_PageDown:
+				setValue(minMaxCorrect(value - 0x100, min, max));
+				break;
+			case Qt::Key_Insert:
+				pos = cursorPosition();
+				txt = vtxt;
+				if (inputMask().isEmpty()) {
+					setInputMask(QString(len,'H'));
 				} else {
-					setBase(8);
+					setInputMask(QString());
 				}
-			}
-			break;
-		default:
-			QLineEdit::keyPressEvent(ev);
-			break;
+				setText(txt);
+				setCursorPosition(pos);
+				break;
+			case Qt::Key_X:
+				if (hsflag & XHS_DEC) {
+					if (base == 8) {
+						setBase(10);
+					} else if (base == 10) {
+						setBase(16);
+					} else {
+						setBase(8);
+					}
+				}
+				break;
+			default:
+				QLineEdit::keyPressEvent(ev);
+				break;
+		}
 	}
 }
 
