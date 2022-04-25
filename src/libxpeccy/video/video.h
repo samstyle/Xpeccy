@@ -88,6 +88,7 @@ extern unsigned char pscr[];
 extern int xstep;
 extern int ystep;
 extern int lefSkip;
+extern int pixSkip;
 extern int rigSkip;
 extern int topSkip;
 extern int botSkip;

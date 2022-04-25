@@ -17,8 +17,8 @@ void vid_upd_scale() {
 #else
 		scrsz = QApplication::desktop()->screenGeometry().size();
 #endif
-		dwid = scrsz.width(); // QApplication::desktop()->screenGeometry().width();
-		dhei = scrsz.height(); // QApplication::desktop()->screenGeometry().height();
+		dwid = scrsz.width();
+		dhei = scrsz.height();
 		xstep = dwid * 0x100 / conf.prof.cur->zx->vid->vsze.x;
 		ystep = dhei * 0x100 / conf.prof.cur->zx->vid->vsze.y;
 		if (conf.vid.keepRatio) {
@@ -32,23 +32,27 @@ void vid_upd_scale() {
 			xstep *= conf.prof.cur->zx->hw->xscale;
 			// calculate black spaces
 			// TODO: recalculate for OpenGL
-			lefSkip = (dwid - (conf.prof.cur->zx->vid->vsze.x * xstep / 256)) / 2 * 4;
-			topSkip = (dhei - (conf.prof.cur->zx->vid->vsze.y * ystep / 256)) / 2;
+			topSkip = (dhei - ((conf.prof.cur->zx->vid->vsze.y * ystep) >> 8)) / 2;
 #ifdef USEOPENGL
-			lefSkip = lefSkip / 4;
-			lefSkip = lefSkip * conf.prof.cur->zx->vid->vsze.x / dwid;
-			lefSkip = lefSkip * 8;
+			pixSkip = (dwid * 256 / xstep - conf.prof.cur->zx->vid->vsze.x) / 2;	// unscaled
+			lefSkip = pixSkip * 8;
+			pixSkip = pixSkip * xstep / 256;					// scaled (to substract from cursor X)
+#else
+			pixSkip = (dwid - ((conf.prof.cur->zx->vid->vsze.x * xstep) >> 8)) / 2;
+			lefSkip = pixSkip * 4;
 #endif
 			rigSkip = lefSkip;
 			botSkip = topSkip;
 		} else {
 			lefSkip = 0;
+			pixSkip = 0;
 			rigSkip = 0;
 			topSkip = 0;
 			botSkip = 0;
 		}
 	} else {
 		lefSkip = 0;
+		pixSkip = 0;
 		rigSkip = 0;
 		topSkip = 0;
 		botSkip = 0;

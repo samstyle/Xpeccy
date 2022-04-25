@@ -28,6 +28,7 @@ int bufSize = 3;
 int xstep = 0x100;
 int ystep = 0x100;
 int lefSkip = 0;
+int pixSkip = 0;
 int rigSkip = 0;
 int topSkip = 0;
 int botSkip = 0;
