@@ -92,9 +92,19 @@ inline void vid_dot_half(Video* vid, unsigned char idx) {
 	}
 }
 
+static int blkcol = 0xff000000;
+
+void vid_fill_black(unsigned char* ptr, int len) {
+	while (len > 0) {
+		*(int32_t*)(ptr) = blkcol;
+		ptr += sizeof(int32_t);
+		len -= sizeof(int32_t);
+	}
+}
+
 void vid_line(Video* vid) {
 	if (rigSkip > 0)
-		memset(vid->ray.ptr, 0x00, rigSkip);
+		vid_fill_black(vid->ray.ptr, rigSkip);
 	vid->ray.lptr += bytesPerLine;
 #ifndef USEOPENGL
 	ypos += ystep;
@@ -119,7 +129,7 @@ void vid_line(Video* vid) {
 	}
 #endif
 	if (lefSkip > 0)
-		memset(vid->ray.lptr, 0x00, lefSkip);
+		vid_fill_black(vid->ray.lptr, bytesPerLine);
 	vid->ray.ptr = vid->ray.lptr + lefSkip;
 }
 
@@ -138,8 +148,9 @@ void vid_line_fill(Video* vid) {
 }
 
 void vid_frame(Video* vid) {
-	if (botSkip > 0)
-		memset(vid->ray.lptr, 0x00, botSkip * bytesPerLine);
+	if (botSkip > 0) {
+		vid_fill_black(vid->ray.lptr, botSkip * bytesPerLine);
+	}
 // scanlines TODO: bad @ fullscreen
 #ifndef USEOPENGL
 	ypos = 0;
@@ -171,11 +182,12 @@ void vid_frame(Video* vid) {
 		bufimg = curbuf ? bufa : bufb;
 		curbuf = !curbuf;
 	}
-	if (topSkip > 0)
-		memset(scrimg, 0x00, topSkip * bytesPerLine);
+	if (topSkip > 0) {
+		vid_fill_black(scrimg, topSkip * bytesPerLine);
+	}
 	vid->ray.lptr = scrimg + topSkip * bytesPerLine;
-	if (lefSkip)
-		memset(vid->ray.lptr, 0x00, lefSkip);
+	if (lefSkip > 0)
+		vid_fill_black(vid->ray.lptr, lefSkip);
 	vid->ray.ptr = vid->ray.lptr + lefSkip;
 	pptr = pscr;				// previous screen ptr
 	vid->newFrame = 1;
