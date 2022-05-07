@@ -30,6 +30,8 @@ void plusRes(Computer* comp) {
 	comp->p1FFD = 0;
 	comp->p7FFD = 0;
 	comp->rom = 0;
+	comp->dos = 0;
+	comp->ext = 0;
 }
 
 // in
