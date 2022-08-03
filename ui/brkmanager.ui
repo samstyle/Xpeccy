@@ -10,99 +10,13 @@
     <x>0</x>
     <y>0</y>
     <width>276</width>
-    <height>268</height>
+    <height>300</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Breakpoint editor</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="7" column="0">
-    <widget class="QLabel" name="labEndOff">
-     <property name="text">
-      <string>end.off</string>
-     </property>
-    </widget>
-   </item>
-   <item row="3" column="1">
-    <widget class="xHexSpin" name="leStartOffset"/>
-   </item>
-   <item row="4" column="1">
-    <widget class="xHexSpin" name="brkAdrHex">
-     <property name="inputMask">
-      <string>HHHH</string>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="0">
-    <widget class="QLabel" name="labFlags">
-     <property name="text">
-      <string>Flags</string>
-     </property>
-    </widget>
-   </item>
-   <item row="4" column="0">
-    <widget class="QLabel" name="labStartAbs">
-     <property name="text">
-      <string>start.abs</string>
-     </property>
-    </widget>
-   </item>
-   <item row="0" column="0">
-    <widget class="QLabel" name="label">
-     <property name="text">
-      <string>Type</string>
-     </property>
-    </widget>
-   </item>
-   <item row="3" column="0">
-    <widget class="QLabel" name="labStartOff">
-     <property name="text">
-      <string>start.off</string>
-     </property>
-    </widget>
-   </item>
-   <item row="2" column="1">
-    <widget class="QSpinBox" name="brkBank">
-     <property name="maximum">
-      <number>255</number>
-     </property>
-    </widget>
-   </item>
-   <item row="0" column="1">
-    <widget class="QComboBox" name="brkType"/>
-   </item>
-   <item row="5" column="1">
-    <widget class="xHexSpin" name="brkMaskHex">
-     <property name="inputMask">
-      <string>HHHH</string>
-     </property>
-    </widget>
-   </item>
-   <item row="5" column="0">
-    <widget class="QLabel" name="labMask">
-     <property name="text">
-      <string>IO Mask</string>
-     </property>
-    </widget>
-   </item>
-   <item row="8" column="0">
-    <widget class="QLabel" name="labEndAbs">
-     <property name="text">
-      <string>end.abs</string>
-     </property>
-    </widget>
-   </item>
-   <item row="7" column="1">
-    <widget class="xHexSpin" name="leEndOffset"/>
-   </item>
-   <item row="2" column="0">
-    <widget class="QLabel" name="labBank">
-     <property name="text">
-      <string>bank</string>
-     </property>
-    </widget>
-   </item>
    <item row="1" column="1">
     <layout class="QHBoxLayout" name="horizontalLayout_2">
      <item>
@@ -128,7 +42,109 @@
      </item>
     </layout>
    </item>
-   <item row="13" column="1">
+   <item row="8" column="1">
+    <widget class="xHexSpin" name="brkAdrEnd"/>
+   </item>
+   <item row="5" column="1">
+    <widget class="xHexSpin" name="brkMaskHex">
+     <property name="inputMask">
+      <string>HHHH</string>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="0">
+    <widget class="QLabel" name="labMask">
+     <property name="text">
+      <string>IO Mask</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="1">
+    <widget class="QSpinBox" name="brkBank">
+     <property name="maximum">
+      <number>255</number>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="0">
+    <widget class="QLabel" name="labBank">
+     <property name="text">
+      <string>bank</string>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="1">
+    <widget class="xHexSpin" name="leEndOffset"/>
+   </item>
+   <item row="3" column="0">
+    <widget class="QLabel" name="labStartOff">
+     <property name="text">
+      <string>start.off</string>
+     </property>
+    </widget>
+   </item>
+   <item row="8" column="0">
+    <widget class="QLabel" name="labEndAbs">
+     <property name="text">
+      <string>end.abs</string>
+     </property>
+    </widget>
+   </item>
+   <item row="10" column="1">
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="0" column="0">
+    <widget class="QLabel" name="label">
+     <property name="text">
+      <string>Type</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="1">
+    <widget class="QComboBox" name="brkType"/>
+   </item>
+   <item row="4" column="0">
+    <widget class="QLabel" name="labStartAbs">
+     <property name="text">
+      <string>start.abs</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="1">
+    <widget class="xHexSpin" name="leStartOffset"/>
+   </item>
+   <item row="1" column="0">
+    <widget class="QLabel" name="labFlags">
+     <property name="text">
+      <string>Flags</string>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="1">
+    <widget class="xHexSpin" name="brkAdrHex">
+     <property name="inputMask">
+      <string>HHHH</string>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="0">
+    <widget class="QLabel" name="labEndOff">
+     <property name="text">
+      <string>end.off</string>
+     </property>
+    </widget>
+   </item>
+   <item row="14" column="1">
     <layout class="QHBoxLayout" name="horizontalLayout_3">
      <item>
       <spacer name="horizontalSpacer">
@@ -156,21 +172,29 @@
      </item>
     </layout>
    </item>
-   <item row="8" column="1">
-    <widget class="xHexSpin" name="brkAdrEnd"/>
+   <item row="9" column="0">
+    <widget class="QLabel" name="labValue">
+     <property name="text">
+      <string>Value</string>
+     </property>
+    </widget>
    </item>
    <item row="9" column="1">
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>40</height>
-      </size>
-     </property>
-    </spacer>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="xHexSpin" name="leValue"/>
+     </item>
+     <item>
+      <widget class="QLabel" name="labValMask">
+       <property name="text">
+        <string>Mask</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="xHexSpin" name="leValMask"/>
+     </item>
+    </layout>
    </item>
   </layout>
  </widget>

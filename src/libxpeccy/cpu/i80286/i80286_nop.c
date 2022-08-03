@@ -1503,7 +1503,7 @@ void i286_op9D(CPU* cpu) {
 	if (cpu->msw & I286_FPE) {
 		cpu->f = (cpu->f & (I286_FN | I286_FIP)) | (cpu->tmpw & ~(I286_FN | I286_FIP));
 	} else {
-		cpu->f = cpu->tmpw;
+		cpu->f = (cpu->f & 0xff00) | cpu->ltw;
 	}
 }
 

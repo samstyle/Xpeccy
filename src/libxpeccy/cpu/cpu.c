@@ -89,7 +89,7 @@ void cpuSetType(CPU* cpu, int type) {
 	cpu->setregs = core->setregs;
 }
 
-CPU* cpuCreate(int type, cbmr fmr, cbmw fmw, cbir fir, cbiw fiw, cbiack frq, void* dt) {
+CPU* cpuCreate(int type, cbmr fmr, cbmw fmw, cbir fir, cbiw fiw, cbiack frq, cbirq xirq, void* dt) {
 	CPU* cpu = (CPU*)malloc(sizeof(CPU));
 	memset(cpu, 0x00, sizeof(CPU));
 	cpu->data = dt;
@@ -98,6 +98,7 @@ CPU* cpuCreate(int type, cbmr fmr, cbmw fmw, cbir fir, cbiw fiw, cbiack frq, voi
 	cpu->ird = fir;
 	cpu->iwr = fiw;
 	cpu->irq = frq;
+	cpu->xirq = xirq;
 	cpuSetType(cpu, type);
 	return cpu;
 }

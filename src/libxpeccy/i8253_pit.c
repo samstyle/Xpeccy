@@ -9,8 +9,8 @@ void pit_ch_reset(pitChan* ch) {
 	ch->wdiv = 1;
 	ch->wgat = 1;
 	ch->gate = 1;
-	ch->out = 1;
-	ch->lout = 1;
+	ch->out = 0;
+	ch->lout = 0;
 }
 
 void pit_reset(PIT* pit) {

@@ -33,6 +33,7 @@ void ps2c_reset(PS2Ctrl* ctrl) {
 	ctrl->outbuf = 0;
 	ctrl->outport = 2;
 	ctrl->status &= ~0x03;
+	ctrl->status_ch = 0;
 	ctrl->ram[0] = 0x00;
 	ctrl->delay = 0;
 }
@@ -86,28 +87,40 @@ int ps2c_rd(PS2Ctrl* ctrl, int adr) {
 		case PS2_RDATA:
 			res = ctrl->outbuf & 0xff;
 			ctrl->outbuf >>= 8;
+			ctrl->status &= ~1;
+			if (ctrl->outbuf & 0xff) {
+				ctrl->status_ch = 1;
+			}
 			//printf("i8042 read code %.2X\n",res);
 			break;
 		case PS2_RSTATUS:
 			res = ctrl->status | 0x10;		// b4 = keyboard lock off
+			ctrl->status ^= ctrl->status_ch;
 			ctrl->status &= ~2;
-			res &= ~0x01;				// set b0[,1] manually
-			if (ctrl->outbuf & 0xff)
-				res |= 0x01;
+			ctrl->status_ch = 0;
+//			res &= ~0x01;				// set b0[,1] manually
+//			if (!(ctrl->status & 1) && (ctrl->outbuf & 0xff)) {		// if there is data in buf
+//				ctrl->status_ch = 1;
+//			}
 			break;
 	}
 	return res;
 }
 
+// TODO: set status.bit0 after reading status reg (0 immediately, 1 after reading) ???
 void ps2c_wr_ob(PS2Ctrl* ctrl, int val) {
 	ctrl->outbuf = val;
 	ctrl->status &= ~0x21;
-	ctrl->status |= 0x01;
+	// ctrl->status |= 0x01;
+	ctrl->status_ch = 0x01;
 }
 
 void ps2c_wr_ob2(PS2Ctrl* ctrl, int val) {
 	ctrl->outbuf = val;
-	ctrl->status |= 0x21;
+	//ctrl->status |= 0x21;
+	ctrl->status &= ~0x21;
+	ctrl->status |= 0x20;
+	ctrl->status_ch = 1;
 }
 
 // read 1 byte from kbd to outbuf and generate intk if need

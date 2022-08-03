@@ -8,6 +8,7 @@ enum {
 	IRQ_VID_LINE,	// tsconf
 	IRQ_RZX_INT,
 	IRQ_DMA,
+	IRQ_CPU_SYNC,	// sync cpu ticks
 	IRQ_FDC,	// ibm
 	IRQ_HDD_PRI,
 	IRQ_SLAVE_PIC,

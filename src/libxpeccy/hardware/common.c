@@ -59,6 +59,8 @@ void zx_sync(Computer* comp, int ns) {
 //	}
 }
 
+extern int res4;
+
 void zx_irq(Computer* comp, int t) {
 	switch(t) {
 		case IRQ_VID_INT:			// frame int start
@@ -96,6 +98,11 @@ void zx_irq(Computer* comp, int t) {
 			comp->vid->intDMA = 0;
 			comp->intVector = 0xfb;
 			comp->cpu->intrq |= Z80_INT;
+			break;
+		case IRQ_CPU_SYNC:			// sync cpu-vid
+			vidSync(comp->vid, comp->cpu->t - res4);
+			res4 = comp->cpu->t;
+			// comp->cpu->wait = vid_wait(comp->vid) ? 1 : 0;
 			break;
 	}
 }

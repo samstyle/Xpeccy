@@ -285,7 +285,7 @@ Computer* compCreate() {
 	comp->resbank = RES_48;
 	comp->firstRun = 1;
 
-	comp->cpu = cpuCreate(CPU_Z80,memrd,memwr,iord,iowr,intrq,comp);
+	comp->cpu = cpuCreate(CPU_Z80,memrd,memwr,iord,iowr,intrq,comp_irq,comp);
 	comp->mem = memCreate();
 	comp->vid = vidCreate(vid_mrd_cb, comp_irq, comp);
 	vidSetMode(comp->vid, VID_NORMAL);

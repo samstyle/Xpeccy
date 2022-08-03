@@ -494,6 +494,12 @@ void ibm_dma2_wr_1(int val, void* ptr, int* f) {
 	*f = 1;
 }
 
+// 1ec..1ef
+// 1ec ???
+// 1ed reg.num to r/w through 1ef
+// 1ee b7:enable 1ec ?
+// 1ef registers data r/w
+
 // undef
 
 int ibm_dumird(Computer* comp, int adr) {return -1;}
@@ -529,6 +535,7 @@ static xPort ibmPortMap[] = {
 	{0x03ff,0x0089,2,2,2,ibm_inDMA, ibm_outDMA},
 	{0x03ff,0x008a,2,2,2,ibm_inDMA, ibm_outDMA},
 	{0x03ff,0x008b,2,2,2,ibm_inDMA, ibm_outDMA},
+	{0x03ff,0x008f,2,2,2,ibm_inDMA, ibm_outDMA},
 
 	{0x03f8,0x0090,2,2,2,ibm_inPOS, ibm_outPOS},	// 090..097 POS
 

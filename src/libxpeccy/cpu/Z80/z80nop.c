@@ -12,6 +12,31 @@ void z80_iowr(CPU* cpu, int adr, int data) {
 	cpu->t += 4;
 }
 
+// TODO: use this
+int z80_mrd(CPU* cpu, int adr) {
+	cpu->t++;		// T1
+	cpu->xirq(IRQ_CPU_SYNC, cpu->data);
+	// sample /wait @ T2
+//	while (cpu->wait) {
+//		cpu->t++;
+//		cpu->xirq(IRQ_CPU_SYNC, cpu->data);
+//	}
+	cpu->t += 2;	// T2, T3
+	return cpu->mrd(adr, 0, cpu->data);
+}
+
+void z80_mwr(CPU *cpu, int adr, int data) {
+	cpu->t++;
+	cpu->xirq(IRQ_CPU_SYNC, cpu->data);
+	// sample /wait @ T2
+//	while (cpu->wait) {
+//		cpu->t++;
+//		cpu->xirq(IRQ_CPU_SYNC, cpu->data);
+//	}
+	cpu->t += 2;	// T2, T3
+	cpu->mwr(adr, data, cpu->data);
+}
+
 // 00	nop		4
 void npr00(CPU* cpu) {}
 

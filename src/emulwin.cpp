@@ -225,11 +225,11 @@ MainWin::MainWin() {
 	setContext(cont);
 	setAutoBufferSwap(true);
 	makeCurrent();
-	shd_support = QGLShader::hasOpenGLShaders(QGLShader::Vertex) && QGLShader::hasOpenGLShaders(QGLShader::Vertex);
+	shd_support = QGLShader::hasOpenGLShaders(QGLShader::Vertex) && QGLShader::hasOpenGLShaders(QGLShader::Fragment);
 	curtex = 0;
 	vtx_shd = new QGLShader(QGLShader::Vertex, cont);
 	frg_shd = new QGLShader(QGLShader::Fragment, cont);
-	if (!shd_support) setMessage(" Shaders is not supported ");
+	if (!shd_support) setMessage(" Shaders not supported ");
 #endif
 }
 

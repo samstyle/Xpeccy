@@ -4,6 +4,8 @@
 extern "C" {
 #endif
 
+#include "../defines.h"
+
 typedef unsigned char xbyte;
 typedef unsigned short xword;
 
@@ -223,6 +225,7 @@ struct CPU {
 	cbir ird;
 	cbiw iwr;
 	cbiack irq;
+	cbirq xirq;
 	void* data;
 
 // opcode
@@ -261,7 +264,7 @@ typedef struct {
 	void (*setregs)(CPU*,xRegBunch);	// set cpu registers
 } cpuCore;
 
-CPU* cpuCreate(int,cbmr,cbmw,cbir,cbiw,cbiack,void*);
+CPU* cpuCreate(int,cbmr,cbmw,cbir,cbiw,cbiack,cbirq,void*);
 void cpuDestroy(CPU*);
 void cpuSetType(CPU*, int);
 

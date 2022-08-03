@@ -21,6 +21,7 @@ typedef struct {
 	int cmd;	// last command for data port writing
 	int data;
 	int status;
+	int status_ch;
 	int inbuf;		// controller input buffer (cpu wr)
 	unsigned int outbuf;	// controller output buffer (cpu rd)
 	int inport;		// controller input port

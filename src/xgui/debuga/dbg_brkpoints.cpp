@@ -205,6 +205,11 @@ xBrkManager::xBrkManager(QWidget* p):QDialog(p) {
 	ui.leStartOffset->setMax(0x3fff);
 	ui.leEndOffset->setMin(0);
 	ui.leEndOffset->setMax(0x3fff);
+	ui.leValue->setMin(0);
+	ui.leValue->setMax(0xff);
+	ui.leValMask->setMin(0);
+	ui.leValMask->setMax(0xff);
+	ui.leValMask->setValue(0xff);
 
 	connect(ui.brkBank, SIGNAL(valueChanged(int)), this, SLOT(bnkChanged(int)));
 	connect(ui.leStartOffset,SIGNAL(valueChanged(int)),this,SLOT(startOffChanged(int)));
@@ -259,6 +264,7 @@ void xBrkManager::endAbsChanged(int v) {
 	ui.leEndOffset->blockSignals(true);
 }
 
+#define EL_VAL 512
 #define EL_FE 256
 #define EL_RD 128
 #define EL_WR 64
@@ -286,6 +292,11 @@ void xBrkManager::setElements(int mask) {
 	ui.labEndAbs->setVisible(mask & EL_EAD);
 	ui.brkMaskHex->setVisible(mask & EL_MSK);
 	ui.labMask->setVisible(mask & EL_MSK);
+
+	ui.labValue->setVisible(mask & EL_VAL);
+	ui.labValMask->setVisible(mask & EL_VAL);
+	ui.leValue->setVisible(mask & EL_VAL);
+	ui.leValMask->setVisible(mask & EL_VAL);
 }
 
 void xBrkManager::chaType(int i) {
