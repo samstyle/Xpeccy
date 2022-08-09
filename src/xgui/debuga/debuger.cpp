@@ -405,9 +405,9 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.tbTrace->addAction(ui.actTrace);
 	ui.tbTrace->addAction(ui.actTraceHere);
 	ui.tbTrace->addAction(ui.actTraceINT);
-#ifdef ISDEBUG
+//#ifdef ISDEBUG
 	ui.tbTrace->addAction(ui.actTraceLog);
-#endif
+//#endif
 
 	ui.tbTool->addAction(ui.actSearch);
 	ui.tbTool->addAction(ui.actFill);
@@ -855,10 +855,36 @@ void DebugWin::keyReleaseEvent(QKeyEvent* ev) {
 	}
 }
 
+static xRegBunch traceregs;
+static QString tracestr;
+static dasmData tracemnm;
+extern int dasmrd(int, void*);
+
 void DebugWin::customEvent(QEvent* ev) {
 	switch(ev->type()) {
 		case DBG_EVENT_STEP:
-			doStep();
+			if ((traceType == DBG_TRACE_LOG) && logfile.isOpen()) {
+				dasmSome(comp, comp->cpu->pc + comp->cpu->cs.base, tracemnm);
+				doStep();
+				traceregs = cpuGetRegs(comp->cpu);
+				tracestr = tracemnm.command.leftJustified(24,' ');
+				int i = 0;
+				while (traceregs.regs[i].id != REG_NONE) {
+					if (i!=0) tracestr.append(" ");
+					tracestr.append(traceregs.regs[i].name).append(":");
+					switch(traceregs.regs[i].type & REG_TMASK) {
+						case REG_BIT: tracestr.append(traceregs.regs[i].value ? "1" : "0"); break;
+						case REG_BYTE: tracestr.append(gethexbyte(traceregs.regs[i].value)); break;
+						case REG_WORD: tracestr.append(gethexword(traceregs.regs[i].value)); break;
+						case REG_24: tracestr.append(gethex6(traceregs.regs[i].value)); break;
+					}
+					i++;
+				}
+				tracestr.append("\n");
+				logfile.write(tracestr.toUtf8());
+			} else {
+				doStep();
+			}
 			switch(traceType) {
 				case DBG_TRACE_INT:
 					if (comp->cpu->intrq & comp->cpu->inten)

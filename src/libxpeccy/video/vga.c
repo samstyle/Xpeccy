@@ -7,33 +7,26 @@
 
 //#define CGA_MODE 0
 
-static const int ega_def_idx[16] = {0,1,2,3,4,5,20,7,56,57,58,59,60,61,62,63};
+// stretch x2
+// when SEQ(1).b3=1
+void cga_lores_dot(Video* vid) {
+	vid_dot_full(vid, vid->line[vid->ray.x]);
+	vid_dot_full(vid, vid->line[vid->ray.x]);
+}
 
-void vga_reset(Video* vid) {
-	vidSetMode(vid, CGA_TXT_H);
-	int i;
-	xColor xcol;
-	for (i = 0; i < 64; i++) {
-		xcol.r = 0x55 * (((i >> 1) & 2) + ((i >> 5) & 1));
-		xcol.g = 0x55 * ((i & 2) + ((i >> 4) & 1));
-		xcol.b = 0x55 * (((i << 1) & 2) + ((i >> 3) & 1));
-		vid_set_col(vid, i, xcol);
-	}
-	vid->pal[6]=vid->pal[0x14];		// FIXME: ORLY?
-	if (vid->vga.cga) {
-		memcpy(vid->ram + 0x20000, vid->font, 0x2000);	// copy default font
-		for (i = 0; i < 0x10; i++) {			// set default palette
-			ATR_REG(i) = ega_def_idx[i];
-		}
-		vid_set_resolution(vid, 320, 200);
-	}
+// normal mode
+// when SEQ(1).b3=0
+void cga_t40_dot(Video* vid) {
+	vid_dot_full(vid, vid->line[vid->ray.x]);
+}
+
+// CGA hires (640) modes, showing in 320 columns (compressed x2)
+void ega_hires_dot(Video* vid) {
+	vid_dot_half(vid, vid->line[vid->ray.x << 1]);
+	vid_dot_half(vid, vid->line[(vid->ray.x << 1) | 1]);
 }
 
 static int vga_scr_height[4] = {200,350,400,480};
-
-void cga_lores_dot(Video*);
-void ega_hires_dot(Video*);
-void cga_t40_dot(Video*);
 
 void vga_upd_mode(Video* vid) {
 	// reg[0x42] bit 2,3 = clock select (00:14MHz, 01:16MHz, 10:from ft.connector, 11:not used
@@ -41,7 +34,7 @@ void vga_upd_mode(Video* vid) {
 	// SEQ(1).b3: 1=divide dot clock by 2 (T40 or G320)
 	// GRF_REG[0x06] bit0: 1:gfx, 0:text
 	int mod = (SEQ_REG(1) & 8) | (GRF_REG(6) & 1);
-	printf("mod = %i\n",mod);
+	//printf("mod = %i\n",mod);
 	switch(mod) {
 		case 0: vidSetMode(vid, CGA_TXT_H); break;	// T80
 		case 1: vidSetMode(vid, VGA_GRF_H); break;	// G640
@@ -59,6 +52,30 @@ void vga_upd_mode(Video* vid) {
 		vid->cbDot = (SEQ_REG(1) & 8) ? cga_lores_dot : cga_t40_dot;
 	}
 	vid_set_resolution(vid, rx, ry);
+}
+
+static const int ega_def_idx[16] = {0,1,2,3,4,5,20,7,56,57,58,59,60,61,62,63};
+
+void vga_reset(Video* vid) {
+	int i;
+	xColor xcol;
+	for (i = 0; i < 64; i++) {
+		xcol.r = 0x55 * (((i >> 1) & 2) + ((i >> 5) & 1));
+		xcol.g = 0x55 * ((i & 2) + ((i >> 4) & 1));
+		xcol.b = 0x55 * (((i << 1) & 2) + ((i >> 3) & 1));
+		vid_set_col(vid, i, xcol);
+	}
+	vid->pal[6]=vid->pal[0x14];		// FIXME: ORLY?
+	if (vid->vga.cga) {
+		memcpy(vid->ram + 0x20000, vid->font, 0x2000);	// copy default font
+		for (i = 0; i < 0x10; i++) {			// set default palette
+			ATR_REG(i) = ega_def_idx[i];
+		}
+		vid_set_resolution(vid, 320, 200);
+	}
+	SEQ_REG(1) = 0;
+	GRF_REG(6) = 0;
+	vga_upd_mode(vid);
 }
 
 /* switches (initial video mode) (?)
@@ -455,25 +472,6 @@ void cga_t40_line(Video* vid) {
 	if ((vid->ray.y == vid->blank.y) && (vid->inten & 1))
 		vid->intrq = 1;
 	vga_check_vsync(vid);
-}
-
-// stretch x2
-// when SEQ(1).b3=1
-void cga_lores_dot(Video* vid) {
-	vid_dot_full(vid, vid->line[vid->ray.x]);
-	vid_dot_full(vid, vid->line[vid->ray.x]);
-}
-
-// normal mode
-// when SEQ(1).b3=0
-void cga_t40_dot(Video* vid) {
-	vid_dot_full(vid, vid->line[vid->ray.x]);
-}
-
-// CGA hires (640) modes, showing in 320 columns (compressed x2)
-void ega_hires_dot(Video* vid) {
-	vid_dot_half(vid, vid->line[vid->ray.x << 1]);
-	vid_dot_half(vid, vid->line[(vid->ray.x << 1) | 1]);
 }
 
 // res = HResolution (320 or 640)
