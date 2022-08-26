@@ -273,6 +273,8 @@ endif()
 
 # other
 
+include_directories(${PROJECT_SOURCE_DIR}/3rdparty/xdgpp)
+
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 	add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS} ${UIHEADERS} ${RESOURCES} ${MOCHEADERS})
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "/BSD$/")

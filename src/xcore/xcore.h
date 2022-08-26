@@ -3,12 +3,15 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <filesystem>
 
 #if defined(__linux) || defined(__BSD)
 #include <linux/limits.h>
 #endif
 
 #include <SDL_joystick.h>
+
+#include <xdg.hpp>
 
 #include <QKeySequence>
 #include <QString>
@@ -43,6 +46,8 @@
 #define X_SkipEmptyParts QString::SkipEmptyParts
 #define X_KeepEmptyParts QString::KeepEmptyParts
 #endif
+
+namespace fs = std::filesystem;
 
 // common
 
@@ -450,7 +455,31 @@ struct xConfig {
 	struct {
 		std::string confDir;
 		std::string confFile;
-		std::string romDir;
+#if defined(__linux) || defined(__APPLE__) || defined(__BSD)
+        fs::path dataHomeDir;
+		fs::path romHomeDir;
+        std::vector<fs::path> romDataDirs;
+
+        auto findRom(const fs::path &FileName) -> fs::path  {
+            auto fileInHomeDir = romHomeDir / FileName;
+            if (fs::exists(fileInHomeDir)) {
+                return fileInHomeDir;
+            }
+            for (const auto &dir : romDataDirs) {
+                auto file = dir / FileName;
+                if (fs::exists(file)) {
+                    return file;
+                }
+            }
+            return fileInHomeDir;
+        }
+#elif defined(__WIN32)
+        std::string romHomeDir;
+
+        auto findRom(const std::string &FileName) -> std::string  {
+            return romDir + SLASH + FileName;
+        }
+#endif
 		std::string prfDir;
 		std::string shdDir;
 		std::string font;
@@ -466,6 +495,7 @@ struct xConfig {
 		int dwsize;
 		int dmsize;
 	} dbg;
+
 };
 
 extern xConfig conf;
