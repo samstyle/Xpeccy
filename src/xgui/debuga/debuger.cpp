@@ -118,7 +118,7 @@ void DebugWin::start(Computer* c) {
 	if (!comp->vid->tail)
 		vidDarkTail(comp->vid);
 
-	this->move(winPos);
+	this->move(conf.dbg.pos);
 	comp->vid->debug = 1;
 	comp->debug = 1;
 	comp->brk = 0;
@@ -154,7 +154,6 @@ void DebugWin::stop() {
 	comp->debug = 0;		// back to normal work, turn breakpoints on
 	comp->vid->debug = 0;
 	comp->maping = ui.actMaping->isChecked() ? 1 : 0;
-	winPos = pos();
 	stopTrace();
 
 	memViewer->vis = memViewer->isVisible() ? 1 : 0;
@@ -902,6 +901,16 @@ void DebugWin::customEvent(QEvent* ev) {
 		default:
 			break;
 	}
+}
+
+void DebugWin::moveEvent(QMoveEvent* ev) {
+	if (!isVisible()) return;
+	conf.dbg.pos = ev->pos();
+}
+
+void DebugWin::resizeEvent(QResizeEvent* ev) {
+	if (!isVisible()) return;
+	conf.dbg.siz = ev->size();
 }
 
 void setSignal(QLabel* lab, int on) {

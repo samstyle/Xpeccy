@@ -102,7 +102,6 @@ class DebugWin : public QDialog {
 		int traceAdr;
 
 		Ui::Debuger ui;
-		QPoint winPos;
 		QImage scrImg;
 
 		QMap<int, QList<tabDSC> > tablist;
@@ -228,6 +227,8 @@ class DebugWin : public QDialog {
 	protected:
 		void keyPressEvent(QKeyEvent*);
 		void keyReleaseEvent(QKeyEvent*);
+		void resizeEvent(QResizeEvent*);
+		void moveEvent(QMoveEvent*);
 		void customEvent(QEvent*);
 };
 

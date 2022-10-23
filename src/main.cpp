@@ -265,6 +265,8 @@ int main(int ac,char** av) {
 			load_file(mwin.comp, parg, FG_ALL, drv);
 		}
 	}
+	dbgw.move(conf.dbg.pos);
+	dbgw.resize(conf.dbg.siz);
 
 #ifdef __APPLE__
 	if (!style) {

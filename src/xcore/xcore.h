@@ -12,8 +12,10 @@
 
 #include <QKeySequence>
 #include <QString>
+#include <QPoint>
 #include <QColor>
 #include <QFont>
+#include <QSize>
 #include <QMap>
 
 #include "../libxpeccy/spectrum.h"
@@ -465,6 +467,8 @@ struct xConfig {
 		int dbsize;
 		int dwsize;
 		int dmsize;
+		QPoint pos;
+		QSize siz;
 	} dbg;
 };
 

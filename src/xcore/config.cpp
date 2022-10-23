@@ -200,6 +200,7 @@ void saveConfig() {
 	fprintf(cfile, "dwsize = %i\n", conf.dbg.dwsize);
 	fprintf(cfile, "dmsize = %i\n", conf.dbg.dmsize);
 	fprintf(cfile, "font = %s\n", conf.dbg.font.toString().toUtf8().data());
+	fprintf(cfile, "window = %i:%i:%i:%i\n",conf.dbg.pos.x(),conf.dbg.pos.y(),conf.dbg.siz.width(),conf.dbg.siz.height());
 
 	fprintf(cfile, "\n[PALETTE]\n\n");
 	QStringList lst = conf.pal.keys();
@@ -344,6 +345,19 @@ void loadConfig() {
 					if (pnam == "dwsize") conf.dbg.dwsize = atoi(pval.c_str());
 					if (pnam == "dmsize") conf.dbg.dmsize = atoi(pval.c_str());
 					if (pnam == "font") conf.dbg.font.fromString(QString(pval.c_str()));
+					if (pnam == "window") {
+						vect = splitstr(pval,":");
+						if (vect.size() < 4) {
+							vect.insert(vect.begin(), "0");
+							vect.insert(vect.begin(), "0");
+						}
+						if (vect.size() > 3) {
+							fprt = atoi(vect[0].c_str()); if (fprt >= 0) conf.dbg.pos.setX(fprt);
+							fprt = atoi(vect[1].c_str()); if (fprt >= 0) conf.dbg.pos.setY(fprt);
+							fprt = atoi(vect[2].c_str()); if (fprt > 0) conf.dbg.siz.setWidth(fprt);
+							fprt = atoi(vect[3].c_str()); if (fprt > 0) conf.dbg.siz.setHeight(fprt);
+						}
+					}
 					break;
 				case SECT_BOOKMARK:
 					addBookmark(pnam,pval);
