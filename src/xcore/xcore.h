@@ -46,6 +46,14 @@
 #define X_KeepEmptyParts QString::KeepEmptyParts
 #endif
 
+#if QT_VERSION >= QT_VERSION_CHECK(5,14,0)
+#include <QScreen>
+#define SCREENSIZE screen()->size()
+#else
+#include <QDesktopWidget>
+#define SCREENSIZE QApplication::desktop()->screenGeometry().size()
+#endif
+
 // common
 
 std::string getTimeString(int);
