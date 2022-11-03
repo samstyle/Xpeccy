@@ -1709,6 +1709,9 @@ void MainWin::disconnected() {
 #endif
 }
 
+static char dasmbuf[256];
+extern int dasmrd(int adr, void* ptr);
+
 void MainWin::socketRead() {
 #ifdef USENETWORK
 	QTcpSocket* sock = (QTcpSocket*)sender();
@@ -1716,6 +1719,10 @@ void MainWin::socketRead() {
 	QString com(arr);
 	QString str;
 	com = com.remove("\n");
+	com = com.remove("\r");
+	QStringList prm = com.split(" ",X_SkipEmptyParts);
+	xMnem mnm;
+	int adr, cnt;
 	// and do something with this
 	if (com == "debug") {
 		doDebug();
@@ -1735,6 +1742,47 @@ void MainWin::socketRead() {
 	} else if (com.startsWith("load ")) {
 		str = com.mid(5);
 		load_file(comp, str.toLocal8Bit().data(), FG_ALL, 0);
+	} else if (com.startsWith("disasm ")) {
+		if (prm.size() > 1) {
+			adr = prm[1].toInt(NULL, 16);
+			cnt = (prm.size() > 2) ? prm[2].toInt() : 1;
+			// qDebug() << cnt;
+			while (cnt > 0) {
+				sprintf(dasmbuf, "%.6X : ", adr);
+				sock->write(dasmbuf);
+				mnm = cpuDisasm(comp->cpu, comp->cpu->cs.base + adr, dasmbuf, dasmrd, comp);
+				sock->write(dasmbuf);
+				sock->write("\r\n");
+				adr += mnm.len;
+				cnt--;
+			}
+		}
+	} else if (com.startsWith("dump ")) {
+		if (prm.size() > 1) {
+			adr = prm[1].toInt(NULL, 16);
+			if (prm.size() > 2) {
+				cnt = prm[2].toInt();
+				if (cnt < 1) {
+					cnt = 8;
+				} else {
+					cnt <<= 3;
+				}
+			} else {
+				cnt = 8;
+			}
+			while (cnt > 0) {
+				sprintf(dasmbuf, "%.6X : ", adr);
+				sock->write(dasmbuf);
+				dasmbuf[0] = 0x00;
+				do {
+					sprintf(dasmbuf, "%.2X ", dasmrd(comp->cpu->cs.base + adr, comp));
+					sock->write(dasmbuf);
+					adr++;
+					cnt--;
+				} while (cnt & 7);
+				sock->write("\r\n");
+			}
+		}
 	}
 #endif
 }
