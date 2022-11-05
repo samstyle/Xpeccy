@@ -1146,15 +1146,20 @@ void MainWin::optApply() {
 #ifdef USENETWORK
 	if (srv.serverPort() != conf.port) {
 		if (srv.isListening()) {
-			foreach(QTcpSocket* sock, clients)
+			foreach(QTcpSocket* sock, clients) {
 				sock->close();
+				sock->deleteLater();
+			}
 			srv.close();
 		}
-		srv.listen(QHostAddress::LocalHost, conf.port);
+		int i = 0;
+		while (!srv.listen(QHostAddress::LocalHost, (conf.port + i) & 0xffff) && (i < 0x10000)) {
+			i++;
+		}
 		if (!srv.isListening()) {
 			shitHappens("Listen server can't start");
 		} else {
-			printf("Listening port %i\n", conf.port);
+			printf("Listening port %i\n", (conf.port + i) & 0xffff);
 		}
 	}
 #endif
@@ -1238,7 +1243,7 @@ void MainWin::connected() {
 #ifdef USENETWORK
 	QTcpSocket* sock = srv.nextPendingConnection();
 	clients.append(sock);
-	sock->write("hello\n");
+	sock->write("hello\n> ");
 	connect(sock,SIGNAL(destroyed()),this,SLOT(disconnected()));
 	connect(sock,SIGNAL(readyRead()),this,SLOT(socketRead()));
 #endif
@@ -1256,6 +1261,7 @@ void MainWin::disconnected() {
 #ifdef USENETWORK
 static char dasmbuf[256];
 extern int dasmrd(int adr, void* ptr);
+extern int str_to_adr(Computer* comp, QString str);
 #endif
 
 void MainWin::socketRead() {
@@ -1290,7 +1296,7 @@ void MainWin::socketRead() {
 		load_file(comp, str.toLocal8Bit().data(), FG_ALL, 0);
 	} else if (com.startsWith("disasm ")) {
 		if (prm.size() > 1) {
-			adr = prm[1].toInt(NULL, 16);
+			adr = str_to_adr(comp, prm[1]);
 			cnt = (prm.size() > 2) ? prm[2].toInt() : 1;
 			// qDebug() << cnt;
 			while (cnt > 0) {
@@ -1305,7 +1311,7 @@ void MainWin::socketRead() {
 		}
 	} else if (com.startsWith("dump ")) {
 		if (prm.size() > 1) {
-			adr = prm[1].toInt(NULL, 16);
+			adr = str_to_adr(comp, prm[1]);
 			if (prm.size() > 2) {
 				cnt = prm[2].toInt();
 				if (cnt < 1) {
@@ -1330,6 +1336,8 @@ void MainWin::socketRead() {
 			}
 		}
 	}
+	if (com != "exit")
+		sock->write("> ");
 #endif
 }
 
