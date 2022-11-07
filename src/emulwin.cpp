@@ -203,14 +203,8 @@ MainWin::MainWin() {
 	fillUserMenu();
 
 #ifdef USENETWORK
-	srv.listen(QHostAddress::LocalHost, conf.port);
-	if (!srv.isListening()) {
-		shitHappens("Listen server can't start");
-	} else {
-		printf("Listening port %i\n",conf.port);
-	}
-
-	connect(&srv, SIGNAL(newConnection()),this,SLOT(connected()));
+	openServer();
+	connect(&srv, SIGNAL(newConnection()),this, SLOT(connected()));
 #endif
 #ifdef USEOPENGL
 	frmt.setDoubleBuffer(false);
@@ -874,11 +868,7 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 			SDL_JoystickClose(conf.joy.joy);
 		saveConfig();
 #ifdef USENETWORK
-		foreach(QTcpSocket* sock, clients) {
-			sock->close();
-			sock->deleteLater();
-		}
-		srv.close();
+		closeServer();
 #endif
 		emit s_emulwin_close();
 		ev->accept();
@@ -1145,22 +1135,9 @@ void MainWin::optApply() {
 	updateWindow();
 #ifdef USENETWORK
 	if (srv.serverPort() != conf.port) {
-		if (srv.isListening()) {
-			foreach(QTcpSocket* sock, clients) {
-				sock->close();
-				sock->deleteLater();
-			}
-			srv.close();
-		}
-		int i = 0;
-		while (!srv.listen(QHostAddress::LocalHost, (conf.port + i) & 0xffff) && (i < 0x10000)) {
-			i++;
-		}
-		if (!srv.isListening()) {
-			shitHappens("Listen server can't start");
-		} else {
-			printf("Listening port %i\n", (conf.port + i) & 0xffff);
-		}
+		closeServer();
+		openServer();
+
 	}
 #endif
 #ifdef USEOPENGL
@@ -1235,110 +1212,6 @@ void MainWin::keySelected(QAction* act) {
 		conf.prof.cur->kmapName = std::string(str.toUtf8().data());
 	}
 	loadKeys();
-}
-
-// socket
-
-void MainWin::connected() {
-#ifdef USENETWORK
-	QTcpSocket* sock = srv.nextPendingConnection();
-	clients.append(sock);
-	sock->write("hello\n> ");
-	connect(sock,SIGNAL(destroyed()),this,SLOT(disconnected()));
-	connect(sock,SIGNAL(readyRead()),this,SLOT(socketRead()));
-#endif
-}
-
-void MainWin::disconnected() {
-#ifdef USENETWORK
-	QTcpSocket* sock = (QTcpSocket*)sender();
-	disconnect(sock);
-	clients.removeAll(sock);
-	sock->deleteLater();
-#endif
-}
-
-#ifdef USENETWORK
-static char dasmbuf[256];
-extern int dasmrd(int adr, void* ptr);
-extern int str_to_adr(Computer* comp, QString str);
-#endif
-
-void MainWin::socketRead() {
-#ifdef USENETWORK
-	QTcpSocket* sock = (QTcpSocket*)sender();
-	QByteArray arr = sock->readAll();
-	QString com(arr);
-	QString str;
-	com = com.remove("\n");
-	com = com.remove("\r");
-	QStringList prm = com.split(" ",X_SkipEmptyParts);
-	xMnem mnm;
-	int adr, cnt;
-	// and do something with this
-	if (com == "debug") {
-		doDebug();
-	} else if (com == "exit") {
-		close();
-	} else if (com == "pause") {
-		pause(true, PR_PAUSE);
-	} else if (com == "cont") {
-		pause(false, PR_PAUSE);
-	} else if (com == "step") {
-		emit s_step();
-	} else if (com == "reset") {
-		compReset(comp, RES_DEFAULT);
-	} else if (com == "cpu") {
-		sock->write(getCoreName(comp->cpu->type));
-		sock->write("\n");
-	} else if (com.startsWith("load ")) {
-		str = com.mid(5);
-		load_file(comp, str.toLocal8Bit().data(), FG_ALL, 0);
-	} else if (com.startsWith("disasm ")) {
-		if (prm.size() > 1) {
-			adr = str_to_adr(comp, prm[1]);
-			cnt = (prm.size() > 2) ? prm[2].toInt() : 1;
-			// qDebug() << cnt;
-			while (cnt > 0) {
-				sprintf(dasmbuf, "%.6X : ", adr);
-				sock->write(dasmbuf);
-				mnm = cpuDisasm(comp->cpu, comp->cpu->cs.base + adr, dasmbuf, dasmrd, comp);
-				sock->write(dasmbuf);
-				sock->write("\r\n");
-				adr += mnm.len;
-				cnt--;
-			}
-		}
-	} else if (com.startsWith("dump ")) {
-		if (prm.size() > 1) {
-			adr = str_to_adr(comp, prm[1]);
-			if (prm.size() > 2) {
-				cnt = prm[2].toInt();
-				if (cnt < 1) {
-					cnt = 8;
-				} else {
-					cnt <<= 3;
-				}
-			} else {
-				cnt = 8;
-			}
-			while (cnt > 0) {
-				sprintf(dasmbuf, "%.6X : ", adr);
-				sock->write(dasmbuf);
-				dasmbuf[0] = 0x00;
-				do {
-					sprintf(dasmbuf, "%.2X ", dasmrd(comp->cpu->cs.base + adr, comp));
-					sock->write(dasmbuf);
-					adr++;
-					cnt--;
-				} while (cnt & 7);
-				sock->write("\r\n");
-			}
-		}
-	}
-	if (com != "exit")
-		sock->write("> ");
-#endif
 }
 
 // debug stufffff

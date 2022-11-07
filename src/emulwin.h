@@ -45,6 +45,7 @@ class MainWin : public QWidget {
 	signals:
 		void s_options(xProfile*);
 		void s_debug(Computer*);
+		void s_debug_off();
 		void s_prf_change(xProfile*);
 		void s_gamepad_plug();
 		void s_scradr(int, int);
@@ -91,9 +92,11 @@ class MainWin : public QWidget {
 		void reset(QAction*);
 		void chLayout(QAction*);
 		void umOpen(QAction*);
+
 		void connected();
 		void disconnected();
 		void socketRead();
+
 		void saveVRAM();
 		void saveGBVRAM();
 		void saveNESPPU();
@@ -134,7 +137,10 @@ class MainWin : public QWidget {
 		void mapJoystick(Computer*, int, int, int);
 		void mapPress(Computer*, xJoyMapEntry);
 		void mapRelease(Computer*, xJoyMapEntry);
-
+#ifdef USENETWORK
+		void openServer();
+		void closeServer();
+#endif
 		QMenu* userMenu;
 		QMenu* bookmarkMenu;
 		QMenu* profileMenu;
