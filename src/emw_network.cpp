@@ -101,15 +101,15 @@ void MainWin::socketRead() {
 	} else if (com.startsWith("poke ") || com.startsWith("memwr ")) {
 		if (prm.size() > 2) {
 			adr = str_to_adr(comp, prm[1]);
-			cnt = prm[2].toInt();
-			comp->hw->mwr(comp, adr, cnt);
+			val = str_to_adr(comp, prm[2]);
+			comp->hw->mwr(comp, adr, val & 0xff);
 		}
 	} else if (com.startsWith("pokew ") || com.startsWith("memwrw ")) {
 		if (prm.size() > 2) {
 			adr = str_to_adr(comp, prm[1]);
-			cnt = prm[2].toInt();
-			comp->hw->mwr(comp, adr, cnt & 0xff);
-			comp->hw->mwr(comp, adr+1, (cnt >> 8) & 0xff);
+			val = str_to_adr(comp, prm[2]);
+			comp->hw->mwr(comp, adr, val & 0xff);
+			comp->hw->mwr(comp, adr+1, (val >> 8) & 0xff);
 		}
 	} else if (com.startsWith("memfill ")) {
 		if (prm.size() > 3) {
