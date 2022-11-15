@@ -2341,8 +2341,7 @@ void i286_opF66(CPU* cpu) {		// div eb
 	if (cpu->ltw == 0) {				// div by zero
 		i286_interrupt(cpu, I286_INT_DE);
 	} else {
-		// TODO: int0 if quo>0xff
-		if (cpu->ax / cpu->ltw > 0xff) {
+		if (cpu->ax / cpu->ltw > 0xff) {	// cpu->ah >= cpu->ltw ?
 			i286_interrupt(cpu, I286_INT_DE);
 		} else {
 			cpu->twrd = cpu->ax % cpu->ltw;
@@ -2358,11 +2357,11 @@ void i286_opF67(CPU* cpu) {		// idiv eb
 		i286_interrupt(cpu, I286_INT_DE);
 	} else {
 		// TODO: int0 if quo>0xff
-		if (cpu->ax / cpu->ltw > 0xff) {
+		if (cpu->ax / cpu->ltw > 0xff) {	// cpu->ah >= cpu->ltw
 			i286_interrupt(cpu, I286_INT_DE);
 		} else {
-			cpu->tmpw = (signed short)cpu->ax / (signed char)cpu->ltw;
 			cpu->twrd = (signed short)cpu->ax % (signed char)cpu->ltw;
+			cpu->tmpw = (signed short)cpu->ax / (signed char)cpu->ltw;
 			cpu->al = cpu->ltw;
 			cpu->ah = cpu->lwr;
 		}
@@ -2415,9 +2414,8 @@ void i286_opF76(CPU* cpu) {		// div ew
 	if (cpu->tmpw == 0) {				// div by zero
 		i286_interrupt(cpu, I286_INT_DE);
 	} else {
-		// TODO: int0 if quo>0xffff
 		cpu->tmpi = (cpu->dx << 16) | cpu->ax;
-		if (cpu->tmpi / cpu->tmpw > 0xffff) {
+		if (cpu->tmpi / cpu->tmpw > 0xffff) {		// cpu->dx >= cpu->tmpw
 			i286_interrupt(cpu, I286_INT_DE);
 		} else {
 			cpu->ax = cpu->tmpi / cpu->tmpw;
@@ -2430,8 +2428,7 @@ void i286_opF77(CPU* cpu) {		// idiv ew
 	if (cpu->tmpw == 0) {
 		i286_interrupt(cpu, I286_INT_DE);
 	} else {
-		// TODO: int0 if quo>0xffff
-		if ((signed int)cpu->tmpi / (signed short)cpu->tmpw > 0xffff) {
+		if ((signed int)cpu->tmpi / (signed short)cpu->tmpw > 0xffff) {		// cpu->dx >= cpu->tmpw ?
 			i286_interrupt(cpu, I286_INT_DE);
 		} else {
 			cpu->tmpi = (cpu->dx << 16) | cpu->ax;
