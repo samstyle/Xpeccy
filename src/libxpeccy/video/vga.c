@@ -498,13 +498,13 @@ void vga_4bpp(Video* vid, int res) {
 			vid->fadr |= (vid->vadr & 0x2000) >> 13;
 		}
 	}
-	if (!(CRT_REG(0x17) & 1)) {		// A13 = V0
+	if (!(CRT_REG(0x17) & 1)) {		// A13 = V0 (ray.y.bit0)
 		vid->fadr &= ~0x2000;
-		vid->fadr |= ((vid->vga.line & 1) << 13);
+		vid->fadr |= ((vid->ray.y & 1) << 13);
 	}
 	if (!(CRT_REG(0x17) & 2)) {		// A14 = V1
 		vid->fadr &= ~0x4000;
-		vid->fadr |= ((vid->vga.line & 2) << 13);
+		vid->fadr |= ((vid->ray.y & 2) << 13);
 	}
 	if (!(SEQ_REG(4) & 4)) {		// odd/even
 		vid->fadr = (vid->fadr >> 1) | ((vid->fadr & 1) << 16);
