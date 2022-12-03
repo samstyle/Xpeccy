@@ -113,6 +113,7 @@ struct Video {
 	unsigned tail:1;
 	unsigned cutscr:1;
 	unsigned irq:1;		// C64 vic-ii ints (TODO: remove)
+	unsigned linedbl:1;	// lines doubler
 
 	unsigned hblank:1;	// HBlank signal
 	unsigned hbstrb:1;	// HBlank strobe 0->1
@@ -313,6 +314,7 @@ struct Video {
 		int chsize;			// char height (0-31)
 		int cadr;			// cursor address
 		unsigned char latch[4];
+		cbvid ega_cbline;
 	} vga;
 
 	unsigned char line[0x500];		// buffer for render sprites & tiles

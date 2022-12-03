@@ -105,9 +105,14 @@ void vid_fill_black(unsigned char* ptr, int len) {
 void vid_line(Video* vid) {
 	if (rigSkip > 0)
 		vid_fill_black(vid->ray.ptr, rigSkip);
+	if (vid->linedbl) {
+		memcpy(vid->ray.lptr+bytesPerLine, vid->ray.lptr, bytesPerLine);
+		vid->ray.lptr += bytesPerLine;
+	}
 	vid->ray.lptr += bytesPerLine;
 #ifndef USEOPENGL
 	ypos += ystep;
+	if (vid->linedbl) ypos += ystep;
 	ypos -= 0x100;		// 1 line is already drawn
 	xpos = 0;
 	if (scanlines) {
@@ -959,8 +964,8 @@ void vid_tick(Video* vid) {
 			vid_line(vid);
 		vid->hblank = 1;
 		vid->hbstrb = 1;
-		vid->ray.y++;
 		vid->ray.xb = 0;
+		vid->ray.y++;
 		vid->ray.yb++;
 		if (vid->ray.y >= vid->full.y) {		// new frame
 			vid_frame(vid);

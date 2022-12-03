@@ -34,7 +34,7 @@ void vga_upd_mode(Video* vid) {
 	// SEQ(1).b3: 1=divide dot clock by 2 (T40 or G320)
 	// GRF_REG[0x06] bit0: 1:gfx, 0:text
 	int mod = (SEQ_REG(1) & 8) | (GRF_REG(6) & 1);
-	//printf("mod = %i\n",mod);
+	printf("ega mode = %i\n",mod);
 	switch(mod) {
 		case 0: vidSetMode(vid, CGA_TXT_H); break;	// T80
 		case 1: vidSetMode(vid, VGA_GRF_H); break;	// G640
@@ -45,12 +45,19 @@ void vga_upd_mode(Video* vid) {
 	}
 	int rx = 640;	// (SEQ_REG(1) & 8) ? 320 : 640;
 	int ry = vga_scr_height[(vid->reg[0x42] >> 6) & 3];
+#if 1
+	// TODO: line doubler on if (vid->vga.cga || (ry == 200))
+	vid->linedbl = (vid->vga.cga || (ry == 200));
+	if (vid->linedbl) ry <<= 1;
+	vid->cbDot = (SEQ_REG(1) & 8) ? cga_lores_dot : cga_t40_dot;
+#else
 	if (vid->vga.cga || (ry == 200)) {
 		rx = 320;
 		vid->cbDot = (SEQ_REG(1) & 8) ? cga_t40_dot : ega_hires_dot;
 	} else {
 		vid->cbDot = (SEQ_REG(1) & 8) ? cga_lores_dot : cga_t40_dot;
 	}
+#endif
 	vid_set_resolution(vid, rx, ry);
 }
 
@@ -277,8 +284,9 @@ void vga_mwr(Video* vid, int adr, int val) {
 		unsigned char wmsk = SEQ_REG(2) & 0x0f;
 		int ival;
 		if (GRF_REG(5) & 0x10) {		// odd/even mode
-			wmsk &= 0x05;			// 0,2
-			if (adr & 1) wmsk <<= 1;	// 1,3
+			if (adr & 1) wmsk &= 0x0a; else wmsk &= 0x05;
+			//wmsk &= 0x05;			// 0,2
+			//if (adr & 1) wmsk <<= 1;	// 1,3
 			adr >>= 1;
 		}
 		int bt,lay,lm;
@@ -286,10 +294,11 @@ void vga_mwr(Video* vid, int adr, int val) {
 			val &= 0xff;
 			val |= (val << 8);
 			val >>= (GRF_REG(3) & 7);
+			val &= 0xff;
 		}
 		for (lay = 0; lay < 4; lay++) {
 			lm = (1 << lay);
-			switch ((GRF_REG(3) & 0x18) >> 3) {	// logical operation with latches
+			switch ((GRF_REG(3) & 0x18) >> 3) {				// logical operation with latches
 				case 0: ival = val; break;				// 00 no changes
 				case 1: ival = val & vid->vga.latch[lay]; break;	// 01 AND
 				case 2: ival = val | vid->vga.latch[lay]; break;	// 10 OR
@@ -425,8 +434,6 @@ void cga_t40_line(Video* vid) {
 //	if (vid->vga.line >= CRT_REG(0x12)) return;
 	int i,t;
 	vid->xpos = 0;
-//	vid->vadr = (CRT_REG(0x0c) << 8) | CRT_REG(0x0d);
-//	vid->vadr += vid->vga.line * vid->vga.cpl;
 	vid->tadr = vid->vadr;					// current line adr
 	for (t = vid->vga.cga ? 1 : 0; t <= CRT_REG(1); t++) {
 		vid->idx = vid->ram[vid->vadr];			// char (plane 0)
@@ -486,8 +493,7 @@ void cga_t40_line(Video* vid) {
 void vga_4bpp(Video* vid, int res) {
 	memset(vid->line, CRT_REG(0x11), 0x500);
 	int pos = 0;
-	int k,msk;
-	int col,b0,b1,b2,b3;
+	res = vid->vga.cpl;
 	vid->tadr = vid->vadr;
 	vid->fadr = vid->vadr;
 	if (!(CRT_REG(0x17) & 0x40)) {
@@ -509,6 +515,8 @@ void vga_4bpp(Video* vid, int res) {
 	if (!(SEQ_REG(4) & 4)) {		// odd/even
 		vid->fadr = (vid->fadr >> 1) | ((vid->fadr & 1) << 16);
 	}
+	int k,msk;
+	int col,b0,b1,b2,b3;
 	switch ((SEQ_REG(1) & 4) | (GRF_REG(5) & 0x20)) {
 		case 0x00:			// common
 			while (pos < res) {

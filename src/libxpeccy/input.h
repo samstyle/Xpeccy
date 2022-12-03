@@ -9,6 +9,8 @@ extern "C" {
 #include "keycode_windows.h"
 #include "keycode_others.h"
 
+#include "defines.h"
+
 // joystick type
 enum {
 	XJ_NONE = 0,
@@ -117,6 +119,9 @@ typedef struct {
 	int autoy;
 
 	int outbuf;
+	// callbacks
+	cbirq xirq;
+	void* xptr;
 } Mouse;
 
 typedef struct {
@@ -163,6 +168,9 @@ typedef struct {
 	unsigned char port;		// high byte of xxFE port
 	int mode;
 	unsigned char flag;
+	// callbacks
+	cbirq xirq;
+	void* xptr;
 	// i8031 block
 	unsigned wcom:1;		// i8031 waiting for command
 	unsigned warg:1;		// i8031 waiting for argument
@@ -203,7 +211,7 @@ typedef struct {
 	int mask;
 } keyScan;
 
-Keyboard* keyCreate();
+Keyboard* keyCreate(cbirq, void*);
 void keyDestroy(Keyboard*);
 void kbdSetMode(Keyboard*, int);
 void kbdPress(Keyboard*, keyEntry);
@@ -218,7 +226,7 @@ void xt_release(Keyboard*, keyEntry);
 int xt_read(Keyboard*);
 int xt_sync(Keyboard*, int);
 
-Mouse* mouseCreate();
+Mouse* mouseCreate(cbirq, void*);
 void mouseDestroy(Mouse*);
 void mousePress(Mouse*, int, int);
 void mouseRelease(Mouse*, int);

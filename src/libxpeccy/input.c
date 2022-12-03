@@ -69,12 +69,14 @@ keyScan findKey(keyScan* tab, char key) {
 
 // keyboard
 
-Keyboard* keyCreate() {
+Keyboard* keyCreate(cbirq cb, void* p) {
 	Keyboard* keyb = (Keyboard*)malloc(sizeof(Keyboard));
 	memset(keyb, 0x00, sizeof(Keyboard));
 	keyb->pcmode = KBD_AT;
 	keyb->kdel = 5e8;
 	keyb->kper = 5e7;
+	keyb->xirq = cb;
+	keyb->xptr = p;
 	return keyb;
 }
 
@@ -369,9 +371,11 @@ unsigned char joyInput(Joystick* joy) {
 
 // mouse
 
-Mouse* mouseCreate() {
+Mouse* mouseCreate(cbirq cb, void* p) {
 	Mouse* mou = (Mouse*)malloc(sizeof(Mouse));
 	memset(mou,0x00,sizeof(Mouse));
+	mou->xirq = cb;
+	mou->xptr = p;
 	return mou;
 }
 
@@ -426,14 +430,15 @@ void mouseRelease(Mouse* mou, int wut) {
 // byte3	abs Y delta
 
 void mouse_interrupt(Mouse* mouse) {
-	mouse->outbuf = abs(mouse->ydelta) & 0xff;
-	mouse->outbuf |= ((abs(mouse->xdelta) & 0xff) << 8);
-	if (mouse->lmb) mouse->outbuf |= (1 << 16);
-	if (mouse->rmb) mouse->outbuf |= (1 << 17);
-	// b18: mmb
-	mouse->outbuf |= (1 << 19);
-	if (mouse->xdelta < 0) mouse->outbuf |= (1 << 20);
-	if (mouse->ydelta < 0) mouse->outbuf |= (1 << 21);
+	mouse->outbuf = (abs(mouse->ydelta) & 0xff) << 8;
+	mouse->outbuf |= ((abs(mouse->xdelta) & 0xff) << 16);
+	if (mouse->lmb) mouse->outbuf |= (1 << 0);
+	if (mouse->rmb) mouse->outbuf |= (1 << 1);
+	// b2: mmb
+	mouse->outbuf |= (1 << 3);
+	if (mouse->xdelta < 0) mouse->outbuf |= (1 << 4);
+	if (mouse->ydelta < 0) mouse->outbuf |= (1 << 5);
+	// b6,7: x,y overflow
 	mouse->xdelta = 0;
 	mouse->ydelta = 0;
 	mouse->intrq = 1;

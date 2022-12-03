@@ -345,6 +345,9 @@ void ps2c_sync(PS2Ctrl* ctrl, int ns) {
 			ctrl->delay = 0;
 			if (ctrl->kbd->outbuf & 0xff) {
 				ps2c_rd_kbd(ctrl);
+			//} else if (ctrl->mouse->intrq) {
+			//	ps2c_rd_mouse(ctrl);
+			//	ctrl->mouse->intrq = 0;
 			}
 		}
 	}

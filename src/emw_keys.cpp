@@ -19,13 +19,87 @@ void MainWin::kRelease(QKeyEvent* ev) {
 static QMap<qint32, int> key_press_map;
 #endif
 
+// TODO: realtime autorepeat on xt keyboard (no runtime emulation)
+// debug: no reaction
+// keygrab, no autorep: get keyid, xkey_press
+// keygrab, autorepeat: get keyid, xt_release, xt_press
+// no grab, no autorep: get shortcut/keyid, xkey_press
+// no grab, autorepeat: if !shortcut then get keyid, xt_release, xt_press
+
+int ev_to_keyid(QKeyEvent* ev, bool kgrab) {
+	int keyid = -1;
+	if (!kgrab) {
+		keyid = shortcut_check(SCG_MAIN, QKeySequence(ev->key() | ev->modifiers()));
+		if (keyid < 0)
+			keyid = shortcut_check(SCG_MAIN, QKeySequence(ev->key()));
+	}
+	if (keyid < 0) {
+#if defined(__linux) || defined(__BSD)
+			keyid = ev->nativeScanCode();
+#elif defined(__WIN32)
+			keyid = ev->nativeScanCode();
+#if STICKY_KEY
+			if (keyid == 0) {
+				keyid = ev->nativeVirtualKey();
+			} else if ((ev->key() == Qt::Key_Shift) || (ev->key() == Qt::Key_Control) || (ev->key() == Qt::Key_Alt)) {
+				keyid = 0;
+			}
+#endif
+			if (key_press_map[keyid] == 0) {	// catch false press events
+				key_press_map[keyid] = 1;
+			} else {
+				keyid = 0;
+			}
+#else
+			keyid = qKey2id(ev->key(), ev->modifiers());
+#endif
+	}
+	return keyid;
+}
+
+#if 0
+
+void MainWin::keyPressEvent(QKeyEvent* ev) {
+	int keyid;
+	keyEntry kent;
+	if (comp->debug) {
+		ev->ignore();
+	} else if (pckAct->isChecked()) {
+		keyid = ev_to_keyid(ev, true);
+		kent = getKeyEntry(keyid);
+		if (ev->isAutoRepeat()) {
+			xt_release(comp->keyb, kent);
+			xt_press(comp->keyb, kent);
+		} else {
+			xkey_press(keyid);
+		}
+	} else {
+		keyid = ev_to_keyid(ev, false);
+		kent = getKeyEntry(keyid);
+		if (ev->isAutoRepeat()) {
+			if (keyid < 0x10000) {		// not a shortcut
+				xt_release(comp->keyb, kent);
+				xt_press(comp->keyb, kent);
+			} else {
+				xkey_press(keyid);
+			}
+		} else {
+			xkey_press(keyid);
+		}
+	}
+}
+
+#else
+
 void MainWin::keyPressEvent(QKeyEvent *ev) {
 	if (ev->isAutoRepeat()) return;
 //	qDebug() << "keyPressEvent" << ev->text() << ev->nativeScanCode() << ev->count();
 	if (comp->debug) {
 		ev->ignore();
 	} else {
-		int keyid = -1;
+#if 1
+		int keyid = ev_to_keyid(ev, pckAct->isChecked());
+#else
 		if (!pckAct->isChecked()) {
 			keyid = shortcut_check(SCG_MAIN, QKeySequence(ev->key() | ev->modifiers()));
 			if (keyid < 0)
@@ -52,10 +126,13 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 			keyid = qKey2id(ev->key(), ev->modifiers());
 #endif
 		}
+#endif
 //		printf("press: %i\n", keyid);
 		xkey_press(keyid);
 	}
 }
+
+#endif
 
 void MainWin::xkey_press(int xkey) {
 	keyEntry kent = getKeyEntry(xkey);

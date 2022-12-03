@@ -291,10 +291,10 @@ Computer* compCreate() {
 	vidSetMode(comp->vid, VID_NORMAL);
 
 // input
-	comp->keyb = keyCreate();
+	comp->keyb = keyCreate(comp_irq, comp);
 	// comp->cmos.kbuf = &comp->keyb->kbuf;
 	comp->joy = joyCreate();
-	comp->mouse = mouseCreate();
+	comp->mouse = mouseCreate(comp_irq, comp);
 	comp->ppi = ppi_create();
 	comp->ps2c = ps2c_create(comp->keyb, comp->mouse, comp_irq, comp);
 // storage
