@@ -322,7 +322,6 @@ int ibm_inDMA(Computer* comp, int adr) {
 static const int dma_ctrl_regs[8] = {DMA_CR, DMA_RR, DMA_CMR, DMA_MR, DMA_BTR, DMA_RES, DMA_MRES, DMA_WAMR};
 
 void ibm_outDMA(Computer* comp, int adr, int val) {
-#if 1
 	if ((adr & 0x3f8) == 0x000) {		// 000..007. dma1: b1,2 = ch, b0=bwcr/bar
 		dma_wr(comp->dma1, adr & 1 ? DMA_CH_BWCR : DMA_CH_BAR, (adr >> 1) & 3, val);
 	} else if ((adr & 0x3f8) == 0x008) {	// 008..00f. dma1 control. b0-2=reg
@@ -342,49 +341,6 @@ void ibm_outDMA(Computer* comp, int adr, int val) {
 			case 0x8b: dma_wr(comp->dma2, DMA_CH_PAR, 3, val); break;	// dma2 ch3
 		}
 	}
-#else
-	switch(adr) {
-		case 0x00: dma_wr(comp->dma1, DMA_CH_BAR, 0, val); break;	// base address
-		case 0x01: dma_wr(comp->dma1, DMA_CH_BWCR, 0, val); break;	// word count
-		case 0x02: dma_wr(comp->dma1, DMA_CH_BAR, 1, val); break;
-		case 0x03: dma_wr(comp->dma1, DMA_CH_BWCR, 1, val); break;
-		case 0x04: dma_wr(comp->dma1, DMA_CH_BAR, 2, val); break;
-		case 0x05: dma_wr(comp->dma1, DMA_CH_BWCR, 2, val); break;
-		case 0x06: dma_wr(comp->dma1, DMA_CH_BAR, 3, val); break;
-		case 0x07: dma_wr(comp->dma1, DMA_CH_BWCR, 3, val); break;
-		case 0x08: dma_wr(comp->dma1, DMA_CR, -1, val); break;		// command register
-		case 0x09: dma_wr(comp->dma1, DMA_RR, -1, val); break;		// request register
-		case 0x0a: dma_wr(comp->dma1, DMA_CMR, -1, val); break;		// channel mask register
-		case 0x0b: dma_wr(comp->dma1, DMA_MR, -1, val); break;		// mode register
-		case 0x0c: dma_wr(comp->dma1, DMA_BTR, -1, val); break;		// byte trigger reset
-		case 0x0d: dma_wr(comp->dma1, DMA_RES, -1, val); break;		// master clear
-		case 0x0e: dma_wr(comp->dma1, DMA_MRES, -1, val); break;	// clear mask register
-		case 0x0f: dma_wr(comp->dma1, DMA_WAMR, -1, val); break;	// write mask register
-		case 0x81: dma_wr(comp->dma1, DMA_CH_PAR, 2, val); break;	// page address registers
-		case 0x82: dma_wr(comp->dma1, DMA_CH_PAR, 3, val); break;
-		case 0x83: dma_wr(comp->dma1, DMA_CH_PAR, 1, val); break;
-		case 0x87: dma_wr(comp->dma1, DMA_CH_PAR, 0, val); break;
-		case 0x89: dma_wr(comp->dma2, DMA_CH_PAR, 2, val); break;	// dma2 ch2
-		case 0x8a: dma_wr(comp->dma2, DMA_CH_PAR, 1, val); break;	// dma2 ch1
-		case 0x8b: dma_wr(comp->dma2, DMA_CH_PAR, 3, val); break;	// dma2 ch3
-		case 0xc0: dma_wr(comp->dma2, DMA_CH_BAR, 0, val); break;	// dma2 bar/bwcr
-		case 0xc2: dma_wr(comp->dma2, DMA_CH_BWCR, 0, val); break;
-		case 0xc4: dma_wr(comp->dma2, DMA_CH_BAR, 1, val); break;
-		case 0xc6: dma_wr(comp->dma2, DMA_CH_BWCR, 1, val); break;
-		case 0xc8: dma_wr(comp->dma2, DMA_CH_BAR, 2, val); break;
-		case 0xca: dma_wr(comp->dma2, DMA_CH_BWCR, 2, val); break;
-		case 0xcc: dma_wr(comp->dma2, DMA_CH_BAR, 3, val); break;
-		case 0xce: dma_wr(comp->dma2, DMA_CH_BWCR, 3, val); break;
-		case 0xd0: dma_wr(comp->dma2, DMA_CR, -1, val); break;		// command register
-		case 0xd2: dma_wr(comp->dma2, DMA_RR, -1, val); break;		// request register
-		case 0xd4: dma_wr(comp->dma2, DMA_CMR, -1, val); break;		// channel mask register
-		case 0xd6: dma_wr(comp->dma2, DMA_MR, -1, val); break;		// mode register
-		case 0xd8: dma_wr(comp->dma2, DMA_BTR, -1, val); break;		// byte trigger reset
-		case 0xda: dma_wr(comp->dma2, DMA_RES, -1, val); break;		// master clear
-		case 0xdc: dma_wr(comp->dma2, DMA_MRES, -1, val); break;	// clear mask register
-		case 0xde: dma_wr(comp->dma2, DMA_WAMR, -1, val); break;	// write mask register
-	}
-#endif
 }
 
 // dma memory rd/wr byte
@@ -407,6 +363,7 @@ void ibm_dma_mwr(int adr, int val, int w, void* ptr) {
 
 // dma device rd/wr. *f=0 if failed, =1 if success
 // ptr = computer
+
 int ibm_dma_flp_rd(void* ptr, int* f) {
 	DiskIF* dif = ((Computer*)ptr)->dif;
 	int res = -1;
@@ -584,11 +541,17 @@ void ibm_init(Computer* comp) {
 	dma_set_chan(comp->dma1, 3, ibm_dma_hdd_rd, ibm_dma_hdd_wr);	// ch3: hdd
 	dma_set_chan(comp->dma1, 1, ibm_dma1_rd_2, ibm_dma1_wr_2);
 	dma_set_chan(comp->dma2, 0, ibm_dma2_rd_1, ibm_dma2_wr_1);
+	comp->dma1->ch[2].blk = 1;		// block dma1 maintaining ch2 (fdc), it working through callbacks
 }
+
+void dma_ch_transfer(DMAChan*, void*);
 
 void ibm_irq(Computer* comp, int t) {
 	switch(t) {
-		case IRQ_FDC: pic_int(comp->mpic, 6); break;
+		case IRQ_FDC: pic_int(comp->mpic, 6); break;		// non-dma fdc request
+		case IRQ_FDC_RD: dma_ch_transfer(&comp->dma1->ch[2], comp->dma1->ptr); break;		// dma1.ch2 fdc->mem
+		case IRQ_FDC_WR: dma_ch_transfer(&comp->dma1->ch[2], comp->dma1->ptr); break;		// dma1.ch2 mem->fdc
+
 		case IRQ_HDD_PRI: pic_int(comp->spic, 6); break;
 		case IRQ_KBD: pic_int(comp->mpic, 1); break;
 		case IRQ_MOUSE: pic_int(comp->spic, 4); break;

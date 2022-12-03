@@ -140,7 +140,7 @@ int pdosOut(DiskIF* dif, int port, int val, int dos) {
 }
 
 void pdosReset(DiskIF* dif) {
-	dif->inten = 0;
+	dif->fdc->inten = 0;
 	dif->lirq = 0;
 	uReset(dif->fdc);
 }
@@ -151,11 +151,11 @@ void pdosSync(DiskIF* dif, int ns) {
 		dif->fdc->flp->door = 1;
 		dif->fdc->intr = 1;
 	}
-	if ((dif->fdc->intr & dif->inten) ^ dif->lirq) {
-		if (!dif->lirq)
-			dif->fdc->xirq(IRQ_FDC, dif->fdc->xptr);
-		dif->lirq = dif->fdc->intr & dif->inten;
-	}
+//	if ((dif->fdc->intr & dif->fdc->inten) ^ dif->lirq) {
+//		if (!dif->lirq)
+//			dif->fdc->xirq(IRQ_FDC, dif->fdc->xptr);
+//		dif->lirq = dif->fdc->intr & dif->fdc->inten;
+//	}
 }
 
 // pc (i8275 = upd765)
@@ -211,7 +211,7 @@ int dpcOut(DiskIF* dif, int port, int val, int dos) {
 			if (val & (0x10 << (val & 3)))
 				dif->fdc->flp->motor = 1;
 			if (!(val & 4)) uReset(dif->fdc);
-			dif->inten = (val & 8) ? 1 : 0;
+			dif->fdc->inten = (val & 8) ? 1 : 0;
 			break;
 		case 4:
 		case 5: uWrite(dif->fdc, port & 1, val);

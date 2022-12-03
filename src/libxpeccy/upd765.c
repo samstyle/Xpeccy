@@ -53,11 +53,14 @@ void ustp(FDC* fdc) {
 	}
 }
 
-void uResp(FDC* fdc, int len) {
+void uResp(FDC* fdc, int len, int ie) {
 	fdc->resPos = 0;
 	fdc->resCnt = len;
 	fdc->dir = 1;
-	fdc->intr = 1;
+	if (ie) {
+		fdc->xirq(IRQ_FDC, fdc->xptr);
+		fdc->intr = 1;
+	}
 }
 
 void uSetDrive(FDC* fdc) {
@@ -141,7 +144,7 @@ void udrvst00(FDC* fdc) {
 		   (fdc->flp->doubleSide ? 0x08 : 0x00) |
 		   (fdc->comBuf[0] & 7);
 	fdc->resBuf[0] = fdc->sr3;
-	uResp(fdc, 1);
+	uResp(fdc, 1, 1);
 	fdc->pos++;
 }
 
@@ -165,8 +168,9 @@ void ucalib01(FDC* fdc) {
 		fdc->sr0 &= 0x0f;
 		fdc->sr0 |= 0x20;	// SR0:0010xxxx
 		fdc->state &= 0xf0;
-		fdc->intr = 1;		// interrupt @ end of recalibrate/seek command
+		//fdc->intr = 1;		// interrupt @ end of recalibrate/seek command
 		fdc->seekend = 1;
+		fdc->xirq(IRQ_FDC, fdc->xptr);
 		fdc->pos++;
 	} else if (fdc->cnt > 0) {
 		flpStep(fdc->flp, FLP_BACK);
@@ -176,7 +180,8 @@ void ucalib01(FDC* fdc) {
 		fdc->sr0 &= 0x0f;
 		fdc->sr0 |= 0x70;	// SR0:0111xxxxx
 		fdc->state &= 0xf0;
-		fdc->intr = 1;
+		//fdc->intr = 1;
+		fdc->xirq(IRQ_FDC, fdc->xptr);
 		fdc->seekend = 1;
 		fdc->pos++;
 	}
@@ -213,7 +218,8 @@ void useek01(FDC* fdc) {
 
 void useek02(FDC* fdc) {
 	// fdc->trk = fdc->flp->trk;
-	fdc->intr = 1;			// end of seek com
+	//fdc->intr = 1;			// end of seek com
+	fdc->xirq(IRQ_FDC, fdc->xptr);
 	fdc->seekend = 1;
 	fdc->state &= 0xf0;		// seek mode off
 	fdc->sr0 &= 0x1f;		// b7,6=00:success
@@ -237,9 +243,8 @@ void urdaRS(FDC* fdc) {
 	fdc->resBuf[4] = fdc->buf[1];	// H
 	fdc->resBuf[5] = fdc->buf[2];	// R
 	fdc->resBuf[6] = fdc->buf[3];	// N
-	uResp(fdc, 7);
+	uResp(fdc, 7, 1);
 	fdc->pos++;
-//	fdc->intr = 1;
 }
 
 void urda00(FDC* fdc) {
@@ -282,9 +287,8 @@ void ureadRS(FDC* fdc) {
 	fdc->resBuf[4] = fdc->side;
 	fdc->resBuf[5] = fdc->sec;
 	fdc->resBuf[6] = fdc->buf[3];
-	uResp(fdc, 7);
+	uResp(fdc, 7, 1);
 	fdc->pos++;
-//	fdc->intr = 1;
 }
 
 // wait ADR
@@ -354,8 +358,12 @@ void uread04(FDC* fdc) {
 	if (!uGetByte(fdc)) return;
 	fdc->data = fdc->tmp;
 	fdc->drq = 1;
-	if (!fdc->dma)
+	if (fdc->dma) {
+		fdc->xirq(IRQ_FDC_RD, fdc->xptr);
+	} else {
 		fdc->intr = 1;
+		fdc->xirq(IRQ_FDC, fdc->xptr);
+	}
 	fdc->cnt--;
 	if (fdc->cnt < 1) {
 		fdc->pos++;
@@ -419,9 +427,8 @@ void urdtrkRS(FDC* fdc) {
 	fdc->resBuf[4] = fdc->side;
 	fdc->resBuf[5] = fdc->sec;
 	fdc->resBuf[6] = fdc->buf[3];
-	uResp(fdc, 7);
+	uResp(fdc, 7, 1);
 	fdc->pos++;
-//	fdc->intr = 1;
 }
 
 void urdtrk00(FDC* fdc) {
@@ -650,8 +657,12 @@ void uwrdat03(FDC* fdc) {
 		fdc->pos++;
 	} else {
 		fdc->drq = 1;		// request next byte
-		if (!fdc->dma)
+		if (fdc->dma) {
+			fdc->xirq(IRQ_FDC_WR, fdc->xptr);
+		} else {
 			fdc->intr = 1;
+			fdc->xirq(IRQ_FDC, fdc->xptr);
+		}
 	}
 }
 
@@ -722,8 +733,12 @@ void utrkfrm01(FDC* fdc) {		// wait for index
 		fdc->scnt = 0;
 		fdc->dir = 0;
 		fdc->drq = 1;		// waiting for 1st C
-		if (!fdc->dma)
+		if (fdc->dma) {
+			fdc->xirq(IRQ_FDC_WR, fdc->xptr);
+		} else {
 			fdc->intr = 1;	// generate interrupt
+			fdc->xirq(IRQ_FDC, fdc->xptr);
+		}
 		fdc->pos++;
 	}
 }
@@ -751,13 +766,21 @@ void utrkfrm02(FDC* fdc) {		// recieve cnt (4 * spt) bytes from cpu = sectors he
 				fdc->pos++;
 			} else {
 				fdc->drq = 1;
-				if (!fdc->dma)
+				if (fdc->dma) {
+					fdc->xirq(IRQ_FDC_WR, fdc->xptr);
+				} else {
 					fdc->intr = 1;
+					fdc->xirq(IRQ_FDC, fdc->xptr);
+				}
 			}
 		} else {
 			fdc->drq = 1;		// else request new byte
-			if (!fdc->dma)
+			if (fdc->dma) {
+				fdc->xirq(IRQ_FDC_WR, fdc->xptr);
+			} else {
 				fdc->intr = 1;
+				fdc->xirq(IRQ_FDC, fdc->xptr);
+			}
 		}
 	}
 	fdc->wait += fdc->bytedelay;
@@ -784,8 +807,7 @@ static fdcCall uFormat[] = {&uwargs,&utrkfrm00,&utrkfrm01,&utrkfrm02,&utrkfrm03,
 void uinv00(FDC* fdc) {
 	fdc->sr0 = 0x80;
 	fdc->resBuf[0] = fdc->sr0;
-	uResp(fdc, 1);
-	fdc->intr = 0;		// no interrupt
+	uResp(fdc, 1, 0);
 	fdc->pos++;
 }
 
@@ -803,8 +825,7 @@ void usint00(FDC* fdc) {
 		fdc->state &= 0xf0;		// clear b0..3 of main status register
 		fdc->resBuf[0] = fdc->sr0;
 		fdc->resBuf[1] = fdc->trk;
-		uResp(fdc, 2);
-		fdc->intr = 0;			// no int on response/reset interrupt
+		uResp(fdc, 2, 0);		// no int on response/reset interrupt
 		fdc->seekend = 0;
 		fdc->pos++;
 	}
@@ -934,6 +955,7 @@ void uReset(FDC* fdc) {
 	fdc->resCnt = 0;
 	fdc->resPos = 0;
 	// TODO:check this
-	fdc->intr = 1;		// ibm bios want interrupt after reset
+	//fdc->intr = 1;		// ibm bios want interrupt after reset
+	fdc->xirq(IRQ_FDC, fdc->xptr);
 	fdc->sr0 = 0xc0;	// and b7,6=11 in sr0
 }

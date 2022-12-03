@@ -31,7 +31,8 @@ typedef void(*cbdmamwr)(int, int, int, void*);
 
 typedef struct {
 	unsigned wrd:1;		// channel from 16-bit dma controller
-	unsigned masked:1;	// don't process if 1
+	unsigned masked:1;	// don't process if 1 (internal)
+	unsigned blk:1;		// channel is blocked (external)
 	unsigned rdy:1;		// byte readed from mem to buf;
 	unsigned short bar;	// base address
 	unsigned short car;	// current address

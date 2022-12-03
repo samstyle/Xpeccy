@@ -89,6 +89,7 @@ struct FDC {
 
 	unsigned dma:1;		// not implemented yet
 	unsigned intr:1;	// uPD765 interrupt pending. reset @ com08
+	unsigned inten:1;	// uPD765 interrupt enabled
 	int hlt;		// head load time (all ns)
 	int hut;		// head unload time
 	int srt;		// step rate time
@@ -109,8 +110,6 @@ void fdc_set_hd(FDC*, int);
 typedef struct DiskHW DiskHW;
 
 struct DiskIF {
-	unsigned inten:1;	// int enabled
-//	unsigned intrq:1;	// current int
 	unsigned lirq:1;	// last int
 	int type;
 	DiskHW* hw;

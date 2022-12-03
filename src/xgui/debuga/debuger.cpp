@@ -1503,7 +1503,7 @@ void DebugWin::fillFDC() {
 	ui.flpCRC->setText(gethexword(comp->dif->fdc->crc));
 	ui.flpInt->setText(comp->dif->fdc->intr ? "1" : "0");
 	ui.flpDma->setText(comp->dif->fdc->dma ? "1" : "0");
-	ui.flpIntEn->setText(comp->dif->inten ? "1" : "0");
+	ui.flpIntEn->setText(comp->dif->fdc->inten ? "1" : "0");
 
 	ui.flpCurL->setText(QString('A' + comp->dif->fdc->flp->id));
 	ui.flpRdyL->setText((comp->dif->fdc->flp->insert && comp->dif->fdc->flp->door) ? "1" : "0");

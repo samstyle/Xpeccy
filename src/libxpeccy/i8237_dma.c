@@ -10,8 +10,10 @@ i8237DMA* dma_create(void* p, int w) {
 		memset(dma, 0, sizeof(i8237DMA));
 		dma->ptr = p;
 		dma->wrd = w;
-		for (int i = 0; i < 4; i++)
+		for (int i = 0; i < 4; i++) {
 			dma->ch[i].wrd = w;
+			dma->ch[i].blk = 0;
+		}
 	}
 	return dma;
 }
@@ -95,10 +97,10 @@ void dma_ch_transfer(DMAChan* ch, void* ptr) {
 }
 
 void dma_transfer(i8237DMA* dma) {
-	dma_ch_transfer(&dma->ch[0], dma->ptr);
-	dma_ch_transfer(&dma->ch[1], dma->ptr);
-	dma_ch_transfer(&dma->ch[2], dma->ptr);
-	dma_ch_transfer(&dma->ch[3], dma->ptr);
+	if (!dma->ch[0].blk) dma_ch_transfer(&dma->ch[0], dma->ptr);
+	if (!dma->ch[1].blk) dma_ch_transfer(&dma->ch[1], dma->ptr);
+	if (!dma->ch[2].blk) dma_ch_transfer(&dma->ch[2], dma->ptr);
+	if (!dma->ch[3].blk) dma_ch_transfer(&dma->ch[3], dma->ptr);
 }
 
 void dma_sync(i8237DMA* dma, int ns) {
