@@ -337,18 +337,16 @@ void ps2c_wr(PS2Ctrl* ctrl, int adr, int val) {
 	}
 }
 
+// xt keyboard byterate ~31KHz (~32260ns/byte)
+
 void ps2c_sync(PS2Ctrl* ctrl, int ns) {
-	ctrl->delay += xt_sync(ctrl->kbd, ns);
-	if (ctrl->delay > 0) {
-		ctrl->delay -= ns;
-		if (ctrl->delay < 0) {
-			ctrl->delay = 0;
-			if (ctrl->kbd->outbuf & 0xff) {
-				ps2c_rd_kbd(ctrl);
-			//} else if (ctrl->mouse->intrq) {
-			//	ps2c_rd_mouse(ctrl);
-			//	ctrl->mouse->intrq = 0;
-			}
-		}
+#if !USE_HOST_KEYBOARD
+	xt_sync(ctrl->kbd, ns);
+#endif
+	ctrl->delay -= ns;
+	while (ctrl->delay < 0) {
+		ctrl->delay += 32260;
+		if (ctrl->kbd->outbuf & 0xff)
+			ps2c_rd_kbd(ctrl);
 	}
 }

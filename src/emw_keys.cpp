@@ -57,7 +57,7 @@ int ev_to_keyid(QKeyEvent* ev, bool kgrab) {
 	return keyid;
 }
 
-#if 0
+#if USE_HOST_KEYBOARD
 
 void MainWin::keyPressEvent(QKeyEvent* ev) {
 	int keyid;
@@ -70,8 +70,8 @@ void MainWin::keyPressEvent(QKeyEvent* ev) {
 		if (ev->isAutoRepeat()) {
 			xt_release(comp->keyb, kent);
 			xt_press(comp->keyb, kent);
-		} else {
-			xkey_press(keyid);
+		//} else {
+		//	xkey_press(keyid);
 		}
 	} else {
 		keyid = ev_to_keyid(ev, false);
@@ -97,36 +97,7 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 	if (comp->debug) {
 		ev->ignore();
 	} else {
-#if 1
 		int keyid = ev_to_keyid(ev, pckAct->isChecked());
-#else
-		if (!pckAct->isChecked()) {
-			keyid = shortcut_check(SCG_MAIN, QKeySequence(ev->key() | ev->modifiers()));
-			if (keyid < 0)
-				keyid = shortcut_check(SCG_MAIN, QKeySequence(ev->key()));
-		}
-		if (keyid < 0) {
-#if defined(__linux) || defined(__BSD)
-			keyid = ev->nativeScanCode();
-#elif defined(__WIN32)
-			keyid = ev->nativeScanCode();
-#if STICKY_KEY
-			if (keyid == 0) {
-				keyid = ev->nativeVirtualKey();
-			} else if ((ev->key() == Qt::Key_Shift) || (ev->key() == Qt::Key_Control) || (ev->key() == Qt::Key_Alt)) {
-				keyid = 0;
-			}
-#endif
-			if (key_press_map[keyid] == 0) {	// catch false press events
-				key_press_map[keyid] = 1;
-			} else {
-				keyid = 0;
-			}
-#else
-			keyid = qKey2id(ev->key(), ev->modifiers());
-#endif
-		}
-#endif
 //		printf("press: %i\n", keyid);
 		xkey_press(keyid);
 	}

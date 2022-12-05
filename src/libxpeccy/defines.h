@@ -1,5 +1,8 @@
 #pragma once
 
+// compilation flags
+#define USE_HOST_KEYBOARD	0
+
 // interrupt types
 enum {
 	IRQ_VID_INT = 1,// video
@@ -16,7 +19,7 @@ enum {
 	IRQ_SLAVE_PIC,
 	IRQ_MASTER_PIC,
 	IRQ_KBD,	// ps/2 controller kbd int || gbc buttons
-	IRQ_KBD_PCK,	// kbd data packet ready
+//	IRQ_KBD_PCK,	// kbd data packet ready
 	IRQ_MOUSE,	// ps/2 controller mouse int
 	IRQ_MOUSE_PCK,	// mouse data packet ready
 	IRQ_RESET,
