@@ -33,8 +33,10 @@ unsigned short i286_ird(CPU* cpu, int adr) {
 	return cpu->ird(adr, cpu->data) & 0xffff;
 }
 
-void i286_iwr(CPU* cpu, int adr, int val) {
+void i286_iwr(CPU* cpu, int adr, int val, int w) {
+	cpu->wrd = !!w;
 	cpu->iwr(adr, val, cpu->data);
+	cpu->wrd = 0;
 }
 
 // imm: byte from ip
@@ -281,8 +283,9 @@ unsigned char i286_add8(CPU* cpu, unsigned char p1, unsigned char p2, int cf) {
 	int r1 = p1 & 0xff;
 	int r2 = (p2 & 0xff) + (cf ? 1 : 0);
 	int res = r1 + r2;
-	cpu->tmp = ((p1 & 0x80) >> 7) | ((p2 & 0x80) >> 6) | ((res & 0x80) >> 5);
-	if (i286_add_FO[cpu->tmp]) cpu->f |= I286_FO;
+	//cpu->tmp = ((p1 & 0x80) >> 7) | ((p2 & 0x80) >> 6) | ((res & 0x80) >> 5);
+	//if (i286_add_FO[cpu->tmp]) cpu->f |= I286_FO;
+	if (((p1 ^ p2 ^ 0x80) & (res ^ p2)) & 0x80) cpu->f |= I286_FO;
 	if (res & 0x80) cpu->f |= I286_FS;
 	if (!(res & 0xff)) cpu->f |= I286_FZ;
 	if ((p1 & 15) + (p2 & 15) > 15) cpu->f |= I286_FA;
@@ -296,8 +299,9 @@ unsigned short i286_add16(CPU* cpu, unsigned short p1, unsigned short p2, int cf
 	int r1 = p1 & 0xffff;
 	int r2 = (p2 & 0xffff) + (cf ? 1 : 0);
 	int res = r1 + r2;
-	cpu->tmp = ((p1 & 0x8000) >> 15) | ((p2 & 0x8000) >> 14) | ((res & 0x8000) >> 13);
-	if (i286_add_FO[cpu->tmp]) cpu->f |= I286_FO;
+	//cpu->tmp = ((p1 & 0x8000) >> 15) | ((p2 & 0x8000) >> 14) | ((res & 0x8000) >> 13);
+	//if (i286_add_FO[cpu->tmp]) cpu->f |= I286_FO;
+	if (((p1 ^ p2 ^ 0x8000) & (res ^ p2)) & 0x8000) cpu->f |= I286_FO;
 	if (res & 0x8000) cpu->f |= I286_FS;
 	if (!(res & 0xffff)) cpu->f |= I286_FZ;
 	if ((p1 & 0xfff) + (p2 & 0xfff) > 0xfff) cpu->f |= I286_FA;
@@ -482,15 +486,16 @@ void i286_op17(CPU* cpu) {
 
 // sub/sbc
 
-static const int i286_sub_FO[8] = {0, 1, 0, 0, 0, 0, 1, 0};
+// static const int i286_sub_FO[8] = {0, 1, 0, 0, 0, 0, 1, 0};
 
 unsigned char i286_sub8(CPU* cpu, unsigned char p1, unsigned char p2, int cf) {
 	cpu->f &= ~(I286_FS | I286_FZ | I286_FP | I286_FO | I286_FC | I286_FA);
 	int r1 = p1 & 0xff;
 	int r2 = (p2 & 0xff) + (cf ? 1 : 0);
 	int res = r1 - r2;
-	cpu->tmp = ((p1 & 0x80) >> 7) | ((p2 & 0x80) >> 6) | ((res & 0x80) >> 5);
-	if (i286_sub_FO[cpu->tmp & 7]) cpu->f |= I286_FO;
+	//cpu->tmp = ((p1 & 0x80) >> 7) | ((p2 & 0x80) >> 6) | ((res & 0x80) >> 5);
+	//if (i286_sub_FO[cpu->tmp & 7]) cpu->f |= I286_FO;
+	if (((p1 ^ p2) & (p1 ^ res)) & 0x80) cpu->f |= I286_FO;
 	if (res & 0x80) cpu->f |= I286_FS;
 	if (!(res & 0xff)) cpu->f |= I286_FZ;
 	if (parity(res & 0xff)) cpu->f |= I286_FP;
@@ -504,8 +509,9 @@ unsigned short i286_sub16(CPU* cpu, unsigned short p1, unsigned short p2, int cf
 	int r1 = p1 & 0xffff;
 	int r2 = (p2 & 0xffff) + (cf ? 1 : 0);
 	int res = r1 - r2;
-	cpu->tmp = ((p1 & 0x8000) >> 15) | ((p2 & 0x8000) >> 14) | ((res & 0x8000) >> 13);
-	if (i286_sub_FO[cpu->tmp & 7]) cpu->f |= I286_FO;
+	//cpu->tmp = ((p1 & 0x8000) >> 15) | ((p2 & 0x8000) >> 14) | ((res & 0x8000) >> 13);
+	//if (i286_sub_FO[cpu->tmp & 7]) cpu->f |= I286_FO;
+	if (((p1 ^ p2) & (p1 ^ res)) & 0x8000) cpu->f |= I286_FO;
 	if (res & 0x8000) cpu->f |= I286_FS;
 	if (!(res & 0xffff)) cpu->f |= I286_FZ;
 	if (parity(res & 0xff)) cpu->f |= I286_FP;
@@ -1197,7 +1203,7 @@ void i286_op6D(CPU* cpu) {
 // 6e: outsb: out (dx),word [ds:si]
 void i286_6e_cb(CPU* cpu) {
 	cpu->tmp = i286_mrd(cpu, cpu->ds, 1, cpu->si);
-	i286_iwr(cpu, cpu->dx, cpu->tmp);
+	i286_iwr(cpu, cpu->dx, cpu->tmp, 0);
 	cpu->si += (cpu->f & I286_FD) ? -1 : 1;
 }
 void i286_op6E(CPU* cpu) {i286_rep(cpu, i286_6e_cb);}
@@ -1206,7 +1212,7 @@ void i286_op6E(CPU* cpu) {i286_rep(cpu, i286_6e_cb);}
 void i286_6f_cb(CPU* cpu) {
 	cpu->ltw = i286_mrd(cpu, cpu->ds, 1, cpu->si);
 	cpu->htw = i286_mrd(cpu, cpu->ds, 1, cpu->si + 1);
-	i286_iwr(cpu, cpu->dx, cpu->tmpw);
+	i286_iwr(cpu, cpu->dx, cpu->tmpw, 1);
 	cpu->si += (cpu->f & I286_FD) ? -2 : 2;
 }
 void i286_op6F(CPU* cpu) {
@@ -2219,13 +2225,13 @@ void i286_opE5(CPU* cpu) {
 // e6,ib: out ib,al	out(ib),al
 void i286_opE6(CPU* cpu) {
 	cpu->tmpb = i286_rd_imm(cpu);
-	i286_iwr(cpu, cpu->tmpb, cpu->al);
+	i286_iwr(cpu, cpu->tmpb, cpu->al, 0);
 }
 
 // e7,ib: out ib,ax	out(ib),ax
 void i286_opE7(CPU* cpu) {
 	cpu->tmpb = i286_rd_imm(cpu);
-	i286_iwr(cpu, cpu->tmpb, cpu->ax);
+	i286_iwr(cpu, cpu->tmpb, cpu->ax, 1);
 }
 
 // e8,cw: call cw	(relative call)
@@ -2268,12 +2274,12 @@ void i286_opED(CPU* cpu) {
 
 // ee: out dx,al
 void i286_opEE(CPU* cpu) {
-	i286_iwr(cpu, cpu->dx, cpu->al);
+	i286_iwr(cpu, cpu->dx, cpu->al, 0);
 }
 
 // ef: out dx,ax
 void i286_opEF(CPU* cpu) {
-	i286_iwr(cpu, cpu->dx, cpu->ax);
+	i286_iwr(cpu, cpu->dx, cpu->ax, 1);
 }
 
 // f0: lock prefix (for multi-CPU)

@@ -1,7 +1,7 @@
 #pragma once
 
 // compilation flags
-#define USE_HOST_KEYBOARD	0
+#define USE_HOST_KEYBOARD	1
 
 // interrupt types
 enum {
@@ -26,6 +26,7 @@ enum {
 	IRQ_PIT_CH0,
 	IRQ_PIT_CH1,
 	IRQ_APU,	// nes
+	IRQ_BRK
 };
 
 typedef void(*cbirq)(int, void*);

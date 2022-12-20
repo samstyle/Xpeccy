@@ -186,6 +186,7 @@ struct CPU {
 	PAIR(hl_,h_,l_);
 
 // 80286 registers
+	unsigned wrd:1;		// i/o: out word
 	PAIR(ax,ah,al);
 	PAIR(dx,dh,dl);
 	PAIR(cx,ch,cl);

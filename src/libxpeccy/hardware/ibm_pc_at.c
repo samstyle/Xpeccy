@@ -255,12 +255,21 @@ void ibm_out3f6(Computer* comp, int adr, int val) {
 }
 
 // mda/cga/ega/vga
+// NOTE: some games do 'mov dx,03ce; mov ax,08ff; out dx,ax;` to write registers
+//	case 1: index registers works as flip-flops, wr to data register reset flip-flop
+//	case 2: wtf?
 
 void ibm_outVGA(Computer* comp, int adr, int val) {
 //	if (((adr & 0x3f8) == 0x3b0) && (comp->vid->reg[0x42] & 1)) return;
 //	if (((adr & 0x3f8) == 0x3d0) && !(comp->vid->reg[0x42] & 1)) return;
 //	printf("VGA wr %.3X,%.2X\n",adr,val);
-	vga_wr(comp->vid, adr & 0x3ff, val);
+	adr &= 0x3ff;
+	if (comp->cpu->wrd) {
+		vga_wr(comp->vid, adr & ~1, val & 0xff);
+		vga_wr(comp->vid, adr | 1, (val >> 8) & 0xff);
+	} else {
+		vga_wr(comp->vid, adr, val);
+	}
 }
 
 int ibm_inVGA(Computer* comp, int adr) {
@@ -563,6 +572,7 @@ void ibm_irq(Computer* comp, int t) {
 			break;
 		case IRQ_RESET: comp->cpu->reset(comp->cpu);
 			break;
+		case IRQ_BRK: comp->brk = 1; break;
 	}
 }
 
