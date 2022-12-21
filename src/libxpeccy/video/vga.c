@@ -281,8 +281,7 @@ void vga_mwr(Video* vid, int adr, int val) {
 		adr >>= 1;
 		vid->ram[adr] = val;
 	} else if ((vid->reg[0x42] & 2)) {		// vmem enabled
-		unsigned char wmsk = SEQ_REG(2) & 0x0f;
-		int ival;
+		unsigned char wmsk = SEQ_REG(2) & 0x0f;	// plane write-enable bits
 		if (GRF_REG(5) & 0x10) {		// odd/even mode
 			if (adr & 1) wmsk &= 0x0a; else wmsk &= 0x05;
 			//wmsk &= 0x05;			// 0,2
@@ -290,48 +289,43 @@ void vga_mwr(Video* vid, int adr, int val) {
 			adr >>= 1;
 		}
 		int bt,lay,lm;
-		if ((GRF_REG(3) & 7) && !(GRF_REG(5) & 3)) {		// rotation, affect only mode 0
-			val &= 0xff;
-			val |= (val << 8);
-			val >>= (GRF_REG(3) & 7);
-			val &= 0xff;
-		}
 		for (lay = 0; lay < 4; lay++) {
 			lm = (1 << lay);
-			switch ((GRF_REG(3) & 0x18) >> 3) {				// logical operation with latches
-				case 0: ival = val; break;				// 00 no changes
-				case 1: ival = val & vid->vga.latch[lay]; break;	// 01 AND
-				case 2: ival = val | vid->vga.latch[lay]; break;	// 10 OR
-				case 3: ival = val ^ vid->vga.latch[lay]; break;	// 11 XOR
-			}
-			switch(GRF_REG(5) & 3) {		// write mode
-				case 0:
-					if (wmsk & lm) {			// map mask bit = 1, changing enabled
+			if (wmsk & lm) {
+				switch (GRF_REG(5) & 3) {
+					case 0:
 						if (GRF_REG(1) & lm) {		// set-reset enabled for this layer
 							bt = (GRF_REG(0) & lm) ? 0xff : 0x00;	// set or reset
 						} else {
-							bt = vid->ram[adr];	// else - byte from layer
+							bt = val;
 						}
-						bt &= ~GRF_REG(8);			// reset bits alowed from cpu
-						bt |= (ival & GRF_REG(8));		// write bits alowed from cpu
-						vid->ram[adr] = bt;			// write modified byte to layer
-					}
-					break;
-				case 1:
-					if (wmsk & lm)
-						vid->ram[adr] = vid->vga.latch[lay];
-					break;
-				case 2:
-					if (wmsk & lm) {
-						if (ival & lm) {			// check color bit for this layer
-							vid->ram[adr] |= GRF_REG(8);	// set changing bits
-						} else {
-							vid->ram[adr] &= ~GRF_REG(8);	// reset changing bits
+						if (GRF_REG(3) & 7) {		// rotation, affect only mode 0
+							bt &= 0xff;
+							bt |= (bt << 8);
+							bt >>= (GRF_REG(3) & 7);
+							bt &= 0xff;
 						}
+						break;
+					case 1:
+						bt = vid->vga.latch[lay];	// mode 1: write latch, don't apply alu
+						break;
+					case 2:
+						bt = (val & lm) ? 0xff : 0x00;	// mode 2: write color to pixels enabled by bitmask register
+						break;
+					case 3:
+						bt = GRF_REG(0) & GRF_REG(8);	// mode 3: write set/reset reg & bitmask
+						break;
+				}
+				if (!(GRF_REG(5) & 1)) {		// modes 1 and 3 doesn't affected by alu/bitmask
+					switch ((GRF_REG(3) & 0x18) >> 3) {			// logical operation with latches
+						case 1: bt &= vid->vga.latch[lay]; break;	// 01 AND
+						case 2: bt |= vid->vga.latch[lay]; break;	// 10 OR
+						case 3: bt ^= vid->vga.latch[lay]; break;	// 11 XOR
 					}
-					break;
-				case 3:					// VGA only
-					break;
+					bt &= GRF_REG(8);					// apply bitmask
+					bt |= (vid->ram[adr] & ~GRF_REG(8));
+				}
+				vid->ram[adr] = bt;
 			}
 			adr += MEM_64K;		// move to next layer
 		}
