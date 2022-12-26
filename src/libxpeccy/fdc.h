@@ -81,6 +81,8 @@ struct FDC {
 	int cnt;
 	int wait;		// pause (ns)
 	int tns;
+	int drdy;		// time (ns) to replace fdc->insert signal by 0 (time between opening and closing a flp gate)
+
 	fdcCall* plan;		// current task
 	int pos;		// pos in plan
 

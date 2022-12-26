@@ -166,19 +166,14 @@ void i286_set_reg(CPU* cpu, int val, int wrd) {
 	}
 }
 
-// read mod, calculate effective address in cpu->tmpi, read byte/word from EA to cpu->tmpw, set register N to cpu->twrd
+// read mod, calculate effective address in cpu->tmpi, set register N to cpu->twrd/ltw
 // modbyte: [7.6:mod][5.4.3:regN][2.1.0:adr/reg]
-void i286_rd_ea(CPU* cpu, int wrd) {
+void i286_get_ea(CPU* cpu, int wrd) {
 	cpu->tmpw = 0;	// = disp
 	cpu->mod = i286_rd_imm(cpu);
 	cpu->twrd = i286_get_reg(cpu, wrd);
-	if ((cpu->mod & 0xc0) == 0x40) {
-		cpu->ltw = i286_rd_imm(cpu);
-		cpu->htw = (cpu->ltw & 0x80) ? 0xff : 0x00;
-	} else if ((cpu->mod & 0xc0) == 0x80) {
-		cpu->tmpw = i286_rd_immw(cpu);
-	}
 	if ((cpu->mod & 0xc0) == 0xc0) {
+		cpu->ea.reg = 1;
 		if (wrd) {
 			switch(cpu->mod & 7) {
 				case 0: cpu->tmpw = cpu->ax; break;
@@ -203,8 +198,15 @@ void i286_rd_ea(CPU* cpu, int wrd) {
 				case 7: cpu->ltw = cpu->bh; break;
 			}
 		}
-		cpu->tmpi = -1;		// reg
+//		cpu->tmpi = -1;		// reg
 	} else {
+		cpu->ea.reg = 0;
+		if ((cpu->mod & 0xc0) == 0x40) {
+			cpu->ltw = i286_rd_imm(cpu);
+			cpu->htw = (cpu->ltw & 0x80) ? 0xff : 0x00;
+		} else if ((cpu->mod & 0xc0) == 0x80) {
+			cpu->tmpw = i286_rd_immw(cpu);
+		}
 		switch(cpu->mod & 0x07) {
 			case 0: cpu->ea.adr = cpu->bx + cpu->si + cpu->tmpw;
 				cpu->ea.seg = cpu->ds;
@@ -236,7 +238,14 @@ void i286_rd_ea(CPU* cpu, int wrd) {
 				cpu->ea.seg = cpu->ds;
 				break;
 		}
-		cpu->tmpi = 0;		// memory address
+//		cpu->tmpi = 0;		// memory address
+	}
+}
+
+// = get ea & read byte/word from EA to cpu->tmpw
+void i286_rd_ea(CPU* cpu, int wrd) {
+	i286_get_ea(cpu, wrd);
+	if (!cpu->ea.reg) {
 		cpu->ltw = i286_mrd(cpu, cpu->ea.seg, 1, cpu->ea.adr);
 		cpu->htw = wrd ? i286_mrd(cpu, cpu->ea.seg, 1, cpu->ea.adr + 1) : 0;
 	}
@@ -244,7 +253,7 @@ void i286_rd_ea(CPU* cpu, int wrd) {
 
 // must be called after i286_rd_ea, cpu->ea must be calculated, cpu->mod setted
 void i286_wr_ea(CPU* cpu, int val, int wrd) {
-	if (cpu->tmpi < 0) {		// this is a reg
+	if (cpu->ea.reg) {		// this is a reg
 		if (wrd) {
 			switch(cpu->mod & 7) {
 				case 0: cpu->ax = val & 0xffff; break;
@@ -1088,7 +1097,7 @@ void i286_op61(CPU* cpu) {
 // 62,mod: bound rw,md		@eff.addr (md): 2words = min,max. check if min<=rw<=max, INT5 if not
 void i286_op62(CPU* cpu) {
 	i286_rd_ea(cpu, 1);	// twrd=rw, tmpw=min
-	if (cpu->tmpi < 0) {	// interrupts. TODO: fix for protected mode
+	if (cpu->ea.reg) {	// interrupts. TODO: fix for protected mode
 		i286_interrupt(cpu, 6);		// bad mod
 	} else if ((signed short)cpu->twrd < (signed short)cpu->tmpw) {	// not in bounds: INT5
 		i286_interrupt(cpu, 5);
@@ -1351,13 +1360,15 @@ void i286_op87(CPU* cpu) {
 
 // 88,mod: mov eb,rb
 void i286_op88(CPU* cpu) {
-	i286_rd_ea(cpu, 0);
+	i286_get_ea(cpu, 0);
+	cpu->lwr = i286_get_reg(cpu, 0);
 	i286_wr_ea(cpu, cpu->lwr, 0);
 }
 
 // 89,mod: mov ew,rw
 void i286_op89(CPU* cpu) {
-	i286_rd_ea(cpu, 1);
+	i286_get_ea(cpu, 1);
+	cpu->twrd = i286_get_reg(cpu, 1);
 	i286_wr_ea(cpu, cpu->twrd, 1);
 }
 
@@ -1375,7 +1386,7 @@ void i286_op8B(CPU* cpu) {
 
 // 8c,mod: mov ew,[es,cs,ss,ds]	TODO: ignore N.bit2?
 void i286_op8C(CPU* cpu) {
-	i286_rd_ea(cpu, 1);
+	i286_get_ea(cpu, 1);
 	switch((cpu->mod & 0x18) >> 3) {
 		case 0: cpu->twrd = cpu->es.idx; break;
 		case 1: cpu->twrd = cpu->cs.idx; break;
@@ -1387,8 +1398,8 @@ void i286_op8C(CPU* cpu) {
 
 // 8d: lea rw,ea	rw = ea.offset
 void i286_op8D(CPU* cpu) {
-	i286_rd_ea(cpu, 0);
-	if (cpu->tmpi < 0) {	// 2nd operand is register
+	i286_get_ea(cpu, 0);
+	if (cpu->ea.reg) {	// 2nd operand is register
 		i286_interrupt(cpu, 6);
 	} else {
 		i286_set_reg(cpu, cpu->ea.adr, 1);
@@ -1408,9 +1419,9 @@ void i286_op8E(CPU* cpu) {
 
 // 8f, mod: pop ew
 void i286_op8F(CPU* cpu) {
-	i286_rd_ea(cpu, 0);
+	i286_get_ea(cpu, 0);
 	cpu->tmpw = i286_pop(cpu);
-	if (cpu->tmpi < 0) {
+	if (cpu->ea.reg) {
 		i286_set_reg(cpu, cpu->tmpw, 1);
 	} else {
 		i286_wr_ea(cpu, cpu->tmpw, 1);
@@ -1509,7 +1520,7 @@ void i286_op9D(CPU* cpu) {
 	if (cpu->msw & I286_FPE) {
 		cpu->f = (cpu->f & (I286_FN | I286_FIP)) | (cpu->tmpw & ~(I286_FN | I286_FIP));
 	} else {
-		cpu->f = (cpu->f & 0xff00) | cpu->ltw;
+		cpu->f = cpu->tmpw;
 	}
 }
 

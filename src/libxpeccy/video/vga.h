@@ -13,6 +13,12 @@
 #define VGA_STAT1	0x3da
 
 // vid->reg (registers)
+
+#define EGA_3C2	0x42
+#define CGA_3D8	0x58
+#define CGA_3D9 0x59
+#define CGA_3DA 0x5a
+
 #define	VGA_CRB	0x80	// crt registers
 #define VGA_CRC	0x18	// count
 #define VGA_SRB 0xA0	// syncronisator registers

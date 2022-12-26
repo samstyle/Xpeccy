@@ -287,7 +287,7 @@ void xt_press(Keyboard* kbd, keyEntry kent) {
 void xt_release(Keyboard* kbd, keyEntry kent) {
 	if (kbd->lock) return;
 	kbd->outbuf = add_msb(kbd->outbuf, xt_get_code(kbd, kent, 1));	// kbd->outbuf = xt_get_code(kbd, kent, 1);
-	kbd->per = 0;
+	kbd->per = kbd->kdel;
 }
 
 int xt_read(Keyboard* kbd) {

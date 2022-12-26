@@ -8,6 +8,10 @@ xMemFinder::xMemFinder(QWidget* p):QDialog(p) {
 	connect(ui.leBytes, SIGNAL(textEdited(QString)),this,SLOT(onBytesEdit()));
 	connect(ui.leText, SIGNAL(textEdited(QString)),this,SLOT(onTextEdit()));
 	connect(ui.pbFind, SIGNAL(clicked(bool)),this,SLOT(doFind()));
+
+	adr = -1;
+	setModal(true);
+	setWindowModality(Qt::NonModal);
 }
 
 void xMemFinder::onTextEdit() {

@@ -70,8 +70,8 @@ void MainWin::keyPressEvent(QKeyEvent* ev) {
 		if (ev->isAutoRepeat()) {
 			xt_release(comp->keyb, kent);
 			xt_press(comp->keyb, kent);
-		//} else {
-		//	xkey_press(keyid);
+		} else {
+			xkey_press(keyid);
 		}
 	} else {
 		keyid = ev_to_keyid(ev, false);

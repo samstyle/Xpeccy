@@ -145,17 +145,15 @@ void pdosReset(DiskIF* dif) {
 	uReset(dif->fdc);
 }
 
+// TODO: interrupt on flp ready signal changed (on a disk change)
 void pdosSync(DiskIF* dif, int ns) {
 	dhwSync(dif, ns);
+/*
 	if (dif->fdc->flp->insert && !dif->fdc->flp->door) {
 		dif->fdc->flp->door = 1;
 		dif->fdc->intr = 1;
 	}
-//	if ((dif->fdc->intr & dif->fdc->inten) ^ dif->lirq) {
-//		if (!dif->lirq)
-//			dif->fdc->xirq(IRQ_FDC, dif->fdc->xptr);
-//		dif->lirq = dif->fdc->intr & dif->fdc->inten;
-//	}
+*/
 }
 
 // pc (i8275 = upd765)

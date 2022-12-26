@@ -147,7 +147,7 @@ void i286_rd_ea40(CPU* cpu) {
 
 // 0f 01 /2 lgdt eq	set gdtr (40 bit)
 void i286_0F012(CPU* cpu) {
-	if (cpu->tmpi < 0) {
+	if (cpu->ea.reg) {
 		i286_interrupt(cpu, 6);		// ea is register
 	} else {
 		i286_rd_ea40(cpu);
@@ -158,7 +158,7 @@ void i286_0F012(CPU* cpu) {
 
 // 0f 01 /3 lidt ew	set idtr (40 bit)
 void i286_0F013(CPU* cpu) {
-	if (cpu->tmpi < 0) {
+	if (cpu->ea.reg) {
 		i286_interrupt(cpu, 6);
 	} else {
 		i286_rd_ea40(cpu);

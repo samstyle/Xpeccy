@@ -1694,16 +1694,16 @@ void DebugWin::saveDasm() {
 	QList<dasmData> list;
 	if (file.open(QFile::WriteOnly)) {
 		QTextStream strm(&file);
-		int adr = (blockStart < 0) ? 0 : (blockStart & 0xffff);
-		int end = (blockEnd < 0) ? 0 : (blockEnd & 0xffff);
+		int adr = (blockStart < 0) ? 0 : (blockStart & comp->mem->busmask);
+		int end = (blockEnd < 0) ? 0 : (blockEnd & comp->mem->busmask);
 		int work = 1;
 		strm << "; Created by Xpeccy deBUGa\n\n";
 		strm << "\tORG 0x" << gethexword(adr) << "\n\n";
 		while ((adr <= end) && work) {
-			// TODO: check equ $-e
 			list = getDisasm(comp, adr);
 			foreach (drow, list) {
-				if (adr < drow.adr) work = 0;		// address overfill (FFFF+)
+				if (adr > comp->mem->busmask)
+					work = 0;		// address overfill (FFFF+)
 				if (drow.isequ) {
 					strm << drow.aname << ":";
 				} else if (drow.islab) {
@@ -2028,7 +2028,8 @@ void DebugWin::saveVRam() {
 
 void DebugWin::doFind() {
 	memFinder->mem = comp->mem;
-	memFinder->adr = (ui.dasmTable->getAdr() + 1) & comp->mem->busmask;
+	if (memFinder->adr < 0)
+		memFinder->adr = (ui.dasmTable->getAdr() + 1) & comp->mem->busmask;
 	memFinder->show();
 }
 

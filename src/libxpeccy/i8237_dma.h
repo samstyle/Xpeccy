@@ -34,6 +34,8 @@ typedef struct {
 	unsigned masked:1;	// don't process if 1 (internal)
 	unsigned blk:1;		// channel is blocked (external)
 	unsigned rdy:1;		// byte readed from mem to buf;
+	unsigned hold:1;	// hold address (if mem-mem)
+	unsigned memem:1;
 	unsigned short bar;	// base address
 	unsigned short car;	// current address
 	unsigned char par;	// page address register (high 4/8 bits of address)
@@ -48,6 +50,7 @@ typedef struct {
 } DMAChan;
 
 typedef struct {
+	unsigned en:1;		// enabled
 	unsigned wrd:1;		// 16-bit dma, ignore btr
 	unsigned btr:1;		// byte trigger. 0=low, 1=high
 	DMAChan ch[4];

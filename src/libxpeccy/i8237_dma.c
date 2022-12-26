@@ -29,11 +29,13 @@ void dma_ch_res(DMAChan* ch) {
 	ch->cwr = 0;
 	ch->par = 0;
 	ch->masked = 1;
+	ch->hold = 0;
 }
 
 void dma_reset(i8237DMA* dma) {
 	dma->state = DMA_IDLE;
 	dma->btr = 0;
+	dma->en = 1;
 	dma_ch_res(&dma->ch[0]);
 	dma_ch_res(&dma->ch[1]);
 	dma_ch_res(&dma->ch[2]);
@@ -58,7 +60,8 @@ void dma_set_cb(i8237DMA* dma, cbdmamrd cr, cbdmamwr cw) {
 // mode b6,7: 00:by request, 01:single, 10:block, 11:cascade
 // dma command reg: b0:mem-mem enable (ch0-ch1), b1:hold addres of ch0 (filling)
 void dma_ch_count(DMAChan* ch) {
-	ch->car += (ch->mode & 0x20) ? -1 : 1;
+	if (!ch->hold)
+		ch->car += (ch->mode & 0x20) ? -1 : 1;
 	ch->cwr--;
 	if (ch->cwr == -1) {	// counter is 1 less than bytes must be sended
 		ch->masked = 1;
@@ -97,10 +100,12 @@ void dma_ch_transfer(DMAChan* ch, void* ptr) {
 }
 
 void dma_transfer(i8237DMA* dma) {
-	if (!dma->ch[0].blk) dma_ch_transfer(&dma->ch[0], dma->ptr);
-	if (!dma->ch[1].blk) dma_ch_transfer(&dma->ch[1], dma->ptr);
-	if (!dma->ch[2].blk) dma_ch_transfer(&dma->ch[2], dma->ptr);
-	if (!dma->ch[3].blk) dma_ch_transfer(&dma->ch[3], dma->ptr);
+	if (dma->en) {
+		if (!dma->ch[0].blk) dma_ch_transfer(&dma->ch[0], dma->ptr);
+		if (!dma->ch[1].blk) dma_ch_transfer(&dma->ch[1], dma->ptr);
+		if (!dma->ch[2].blk) dma_ch_transfer(&dma->ch[2], dma->ptr);
+		if (!dma->ch[3].blk) dma_ch_transfer(&dma->ch[3], dma->ptr);
+	}
 }
 
 void dma_sync(i8237DMA* dma, int ns) {
@@ -127,6 +132,9 @@ void dma_wr(i8237DMA* dma, int reg, int ch, int val) {
 	ch &= 3;
 	switch (reg) {
 		case DMA_CR:
+			dma->ch[0].hold = !(~val & 3);		// mem-mem && hold address
+			dma->en = !!(val & 4);
+			printf("dma mem-mem: %i\n", val & 3);
 			break;
 		case DMA_RR:
 			break;
