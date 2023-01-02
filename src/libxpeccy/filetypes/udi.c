@@ -114,10 +114,7 @@ int loadUDI(Computer* comp, const char* name, int drv) {
 			loadUDITrack(flp, file, i, 0);
 			if (dbSide) loadUDITrack(flp, file, i, 1);
 		}
-		flp_set_path(flp, name);
-		flp->insert = 1;
-		flp->door = 0;
-		flp->changed = 0;
+		flp_insert(flp, name);
 	}
 	fclose(file);
 	return err;

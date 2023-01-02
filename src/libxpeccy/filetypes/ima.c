@@ -14,10 +14,7 @@ int load_ima(Computer* comp, const char* path, int drv) {
 			flp_format_trk(flp, trk, 18, 512, buf);
 		}
 		fclose(file);
-		flp_set_path(flp, path);
-		flp->insert = 1;
-		flp->door = 0;
-		flp->changed = 0;
+		flp_insert(flp, path);
 	} else {
 		res = ERR_CANT_OPEN;
 	}

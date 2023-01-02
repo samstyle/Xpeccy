@@ -2002,9 +2002,8 @@ void DebugWin::saveDumpToDisk(int idx) {
 	// name.append(".").append(dui.leBank->text());
 	Floppy* flp = comp->dif->fdc->flop[idx & 3];
 	if (!flp->insert) {
-		diskFormat(flp);
-		flp->insert = 1;
-		flp->door = 0;
+		flp_insert(flp, NULL);
+		trd_format(flp);
 	}
 	TRFile dsc = diskMakeDescriptor(name.toStdString().c_str(), 'C', start, len);
 	if (diskCreateFile(flp, dsc, (unsigned char*)data.data(), data.size()) == ERR_OK)

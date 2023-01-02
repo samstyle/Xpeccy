@@ -410,7 +410,9 @@ void cga_t80_ini(Video* vid) {
 void cga_t40_frm(Video* vid) {
 	vid->vga.line = 0;
 	vid->vga.chline = 0;	// CRT_REG(0x08) & 0x1f;
-	vid->vadr = (CRT_REG(0x0c) << 8) | (CRT_REG(0x0d));	// screen start address
+	vid->bgadr = (CRT_REG(0x0c) << 8) | (CRT_REG(0x0d));	// screen start address
+	vid->vadr = vid->bgadr;
+	vid->fadr = 0;		// fetches counter (index) for ega graphics modes
 }
 
 void cga_t40_line(Video* vid) {
@@ -464,9 +466,34 @@ void cga_t40_line(Video* vid) {
 	vga_check_vsync(vid);
 }
 
+int vga_seq_adr(Video* vid, int idx) {
+	int adr = idx;
+	if (!(CRT_REG(0x17) & 0x40)) {
+		adr <<= 1;
+		if (CRT_REG(0x17) & 0x20) {
+			adr |= (idx & 0x8000) >> 15;
+		} else {
+			adr |= (idx & 0x2000) >> 13;
+		}
+	}
+	if (!(CRT_REG(0x17) & 1)) {		// A13 = V0 (ray.y.bit0)
+		adr &= ~0x2000;
+		adr |= ((vid->ray.y & 1) << 13);
+	}
+	if (!(CRT_REG(0x17) & 2)) {		// A14 = V1
+		adr &= ~0x4000;
+		adr |= ((vid->ray.y & 2) << 13);
+	}
+	if (!(SEQ_REG(4) & 4)) {		// odd/even
+		adr = (adr >> 1) | ((adr & 1) << 16);
+	}
+	adr += vid->bgadr;
+	return adr;
+}
+
 // res = HResolution (320 or 640)
 // SEQ(1).bit2: if 1, data from 2 planes as 16-bit stream, result - 2 streams by 16 bits; 0 - separate 4 streams by 8 bits (all planes)
-// GRF(5).bit5: if 1, 2 bits from stream forms one color; 0 - 1 bit per color/ega
+// GRF(5).bit5: if 1, 2 bits from stream forms one color/cga; 0 - 1 bit per color/ega
 // GRF(17h).bit0: 0:vadr.b13=ray.y.bit0
 // GRF(17h).bit1: 0:vadr.b14=ray.y.bit1
 // GRF(17h).bit2: 1:inc line counter each 2nd line, 0:each line
@@ -477,40 +504,23 @@ void vga_4bpp(Video* vid, int res) {
 	memset(vid->line, CRT_REG(0x11), 0x500);
 	int pos = 0;
 	res = vid->vga.cpl;
-	vid->tadr = vid->vadr;
-	vid->fadr = vid->vadr;
-	if (!(CRT_REG(0x17) & 0x40)) {
-		vid->fadr <<= 1;
-		if (CRT_REG(0x17) & 0x20) {
-			vid->fadr |= (vid->vadr & 0x8000) >> 15;
-		} else {
-			vid->fadr |= (vid->vadr & 0x2000) >> 13;
-		}
-	}
-	if (!(CRT_REG(0x17) & 1)) {		// A13 = V0 (ray.y.bit0)
-		vid->fadr &= ~0x2000;
-		vid->fadr |= ((vid->ray.y & 1) << 13);
-	}
-	if (!(CRT_REG(0x17) & 2)) {		// A14 = V1
-		vid->fadr &= ~0x4000;
-		vid->fadr |= ((vid->ray.y & 2) << 13);
-	}
-	if (!(SEQ_REG(4) & 4)) {		// odd/even
-		vid->fadr = (vid->fadr >> 1) | ((vid->fadr & 1) << 16);
-	}
+	vid->tadr = vid->fadr;
+	vid->vadr = vid->fadr;
+	// TODO:fadr = line idx (starts from 0, increment every fetch)
+	//	vadr = calculated from fadr due bits below + screen start adr, pick byte(s) to b0..3
 	int k,msk;
 	int col,b0,b1,b2,b3;
 	switch ((SEQ_REG(1) & 4) | (GRF_REG(5) & 0x20)) {
 		case 0x00:			// common
 			while (pos < res) {
-				b0 = vid->ram[vid->fadr] & 0xff;
-				b1 = vid->ram[vid->fadr + 0x10000] & 0xff;
-				b2 = vid->ram[vid->fadr + 0x20000] & 0xff;
-				b3 = vid->ram[vid->fadr + 0x30000] & 0xff;
-				vid->vadr++;
+				vid->vadr = vga_seq_adr(vid, vid->fadr);
+				b0 = vid->ram[vid->vadr] & 0xff;
+				b1 = vid->ram[vid->vadr + 0x10000] & 0xff;
+				b2 = vid->ram[vid->vadr + 0x20000] & 0xff;
+				b3 = vid->ram[vid->vadr + 0x30000] & 0xff;
 				vid->fadr++;
 				msk = 0x80;
-				for (k = 0; k < 8; k++) {
+				do {
 					col = 0;
 					if (b3 & msk) col |= 8;
 					if (b2 & msk) col |= 4;
@@ -519,14 +529,14 @@ void vga_4bpp(Video* vid, int res) {
 					msk >>= 1;
 					col &= ATR_REG(0x12);
 					vid->line[pos++] = ATR_REG(col & 0x0f);
-				}
+				} while (msk);
 			}
 			break;
 		case 0x04:			// iterleaved
 			while (pos < res) {
-				b0 = ((vid->ram[vid->fadr] & 0xff) << 8) | ((vid->ram[vid->fadr + 0x10000]) & 0xff);
-				b1 = ((vid->ram[vid->fadr+0x20000] & 0xff) << 8) | ((vid->ram[vid->fadr + 0x30000]) & 0xff);
-				vid->vadr++;
+				vid->vadr = vga_seq_adr(vid, vid->fadr);
+				b0 = ((vid->ram[vid->vadr] & 0xff) << 8) | ((vid->ram[vid->vadr + 0x10000]) & 0xff);
+				b1 = ((vid->ram[vid->vadr+0x20000] & 0xff) << 8) | ((vid->ram[vid->vadr + 0x30000]) & 0xff);
 				vid->fadr++;
 				for (k = 0; k < 8; k++) {
 					col = ((b0 & 0x8000) >> 14) | ((b1 & 0x8000) >> 15);
@@ -539,21 +549,21 @@ void vga_4bpp(Video* vid, int res) {
 			break;
 		case 0x20:			// cga (byte = 4 pix, 2bpp)
 			while (pos < res) {
-				b0 = (vid->ram[vid->fadr] << 8) | (vid->ram[vid->fadr + 0x10000] & 0xff);
+				vid->vadr = vga_seq_adr(vid, vid->fadr);
+				b0 = (vid->ram[vid->vadr] << 8) | (vid->ram[vid->vadr + 0x10000] & 0xff);
+				vid->fadr++;
 				for (k = 0; k < 8; k++) {
 					col = (b0 >> 14) & 3;
 					b0 <<= 2;
 					col &= ATR_REG(0x12);
 					vid->line[pos++] = ATR_REG(col & 0x0f);
 				}
-				vid->vadr++;
-				vid->fadr++;
 			}
 			break;
 		case 0x24:			// cga interleaved
 			while (pos < res) {
-				b0 = ((vid->ram[vid->fadr] & 0xff) << 8) | (vid->ram[vid->fadr + 0x10000] & 0xff);
-				vid->vadr++;
+				vid->vadr = vga_seq_adr(vid, vid->fadr);
+				b0 = ((vid->ram[vid->vadr] & 0xff) << 8) | (vid->ram[vid->vadr + 0x10000] & 0xff);
 				vid->fadr++;
 				for (k = 0; k < 8; k++) {
 					col = (b0 >> 14) & 3;
@@ -565,9 +575,9 @@ void vga_4bpp(Video* vid, int res) {
 			break;
 	}
 	switch (CRT_REG(0x17) & 3) {
-		case 0: if ((vid->ray.y & 3) != 3) vid->vadr = vid->tadr; break;
+		case 0: if ((vid->ray.y & 3) != 3) vid->fadr = vid->tadr; break;
 		case 1:
-		case 2: if (!(vid->ray.y & 1)) vid->vadr = vid->tadr; break;
+		case 2: if (!(vid->ray.y & 1)) vid->fadr = vid->tadr; break;
 		case 3: break;
 	}
 	if (CRT_REG(17) & 4) {

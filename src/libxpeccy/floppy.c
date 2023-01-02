@@ -13,6 +13,9 @@ Floppy* flpCreate(int id) {
 	flp->trk = 0;
 	flp->pos = 0;
 	flp->path = NULL;
+	flp->insert = 0;
+	flp->door = 0;
+	flp->dwait = 0;
 	flp_set_hd(flp, 0);
 	return flp;
 }
@@ -22,7 +25,7 @@ void flpDestroy(Floppy* flp) {
 }
 
 void flp_set_path(Floppy* flp, const char* path) {
-	if (path != NULL) {
+	if (path) {
 		flp->path = realloc(flp->path, strlen(path) + 1);
 		strcpy(flp->path, path);
 	} else {
@@ -283,12 +286,21 @@ void flpFillFields(Floppy* flp,int tr, int flag) {
 	}
 }
 
-int flpEject(Floppy* flp) {
+// if path is NULL, insert new unformatted disk
+void flp_insert(Floppy* flp, const char* path) {
+	flp->insert = 1;
+	flp->door = 0;
+	flp->dwait = 5e8;	// .5 sec
+	flp->changed = 0;
+	if (!path) flpClearDisk(flp);
+	flp_set_path(flp, path);
+	printf("insert:%i\tdoor:%i\n",flp->insert,flp->door);
+}
+
+void flp_eject(Floppy* flp) {
 	flp_set_path(flp, NULL);
 	flp->insert = 0;
-	flp->door = 0;
-	flp->changed = 0;
-	return 1;
+	flp->dwait = 5e8;
 }
 
 

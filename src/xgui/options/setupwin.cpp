@@ -1305,10 +1305,10 @@ void SetupWin::copyToDisk() {
 	Floppy* flp = comp->dif->fdc->flop[dsk];
 	if (!flp->insert) {
 		newdisk(dsk, 0);
-		diskFormat(flp);
+		trd_format(flp);
 	} else if (diskGetType(flp) != DISK_TYPE_TRD) {
 		if (areSure("Not TRDOS disk. Format?<br>All data will be lost")) {
-			diskFormat(flp);
+			trd_format(flp);
 		} else {
 			// shitHappens("As you wish...");
 			return;
@@ -1387,13 +1387,11 @@ void SetupWin::updvolumes() {
 void SetupWin::newdisk(int idx, int ask) {
 	Floppy *flp = comp->dif->fdc->flop[idx];
 	if (saveChangedDisk(comp,idx & 3) != ERR_OK) return;
-	diskClear(flp);
-	flp_set_path(flp, NULL);
-	flp->insert = 1;
-	flp->door = 0;
+	flp_insert(flp, NULL);
+	// diskClear(flp);
 	flp->changed = 1;
 	if (ask && areSure("Format for TRDOS?")) {
-		diskFormat(flp);
+		trd_format(flp);
 	}
 	updatedisknams();
 }
@@ -1413,10 +1411,10 @@ void SetupWin::saveb() {Floppy* flp = comp->dif->fdc->flop[1]; if (flp->insert) 
 void SetupWin::savec() {Floppy* flp = comp->dif->fdc->flop[2]; if (flp->insert) save_file(comp, flp->path, FG_DISK_C, 2); updatedisknams();}
 void SetupWin::saved() {Floppy* flp = comp->dif->fdc->flop[3]; if (flp->insert) save_file(comp, flp->path, FG_DISK_D, 3); updatedisknams();}
 
-void SetupWin::ejcta() {saveChangedDisk(comp,0); flpEject(comp->dif->fdc->flop[0]); updatedisknams();}
-void SetupWin::ejctb() {saveChangedDisk(comp,1); flpEject(comp->dif->fdc->flop[1]); updatedisknams();}
-void SetupWin::ejctc() {saveChangedDisk(comp,2); flpEject(comp->dif->fdc->flop[2]); updatedisknams();}
-void SetupWin::ejctd() {saveChangedDisk(comp,3); flpEject(comp->dif->fdc->flop[3]); updatedisknams();}
+void SetupWin::ejcta() {saveChangedDisk(comp,0); flp_eject(comp->dif->fdc->flop[0]); updatedisknams();}
+void SetupWin::ejctb() {saveChangedDisk(comp,1); flp_eject(comp->dif->fdc->flop[1]); updatedisknams();}
+void SetupWin::ejctc() {saveChangedDisk(comp,2); flp_eject(comp->dif->fdc->flop[2]); updatedisknams();}
+void SetupWin::ejctd() {saveChangedDisk(comp,3); flp_eject(comp->dif->fdc->flop[3]); updatedisknams();}
 
 void SetupWin::updatedisknams() {
 	ui.apathle->setText(QString::fromLocal8Bit(comp->dif->fdc->flop[0]->path));

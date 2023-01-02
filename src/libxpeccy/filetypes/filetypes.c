@@ -93,7 +93,7 @@ static unsigned char trd_8e0[] = {
 };
 
 // format whole disk as 168x16x256 and init as TRDOS
-void diskFormat(Floppy* flp) {
+void trd_format(Floppy* flp) {
 	int i;
 	unsigned char buf[0x1000];
 	memset(buf, 0, 0x1000);

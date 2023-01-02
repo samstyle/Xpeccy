@@ -322,6 +322,15 @@ void difReset(DiskIF* dif) {
 }
 
 void difSync(DiskIF* dif, int ns) {
+	if (dif->fdc->flp->dwait > 0) {
+		dif->fdc->flp->dwait -= ns;
+		if (dif->fdc->flp->dwait < 0) {
+			dif->fdc->flp->dwait = 0;
+			dif->fdc->xirq(IRQ_FDD_RDY, dif->fdc->xptr);
+			dif->fdc->flp->door = dif->fdc->flp->insert;
+			printf("insert:%i\tdoor:%i\n",dif->fdc->flp->insert,dif->fdc->flp->door);
+		}
+	}
 	dif->hw->sync(dif, ns);
 }
 

@@ -191,10 +191,7 @@ int loadTD0(Computer* comp, const char* name, int drv) {
 		} else {
 			doTD0(flp, fGetData, file, hd.flag & 0x80);
 		}
-		flp_set_path(flp, name);
-		flp->insert = 1;
-		flp->door = 0;
-		flp->changed = 0;
+		flp_insert(flp, name);
 	}
 	fclose(file);
 	return err;

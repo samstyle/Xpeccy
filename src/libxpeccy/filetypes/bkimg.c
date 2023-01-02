@@ -18,9 +18,7 @@ int loadBkIMG(Computer* comp, const char* fname, int drv) {
 			trk++;
 		}
 		fclose(file);
-		flp->insert = 1;
-		flp->door = 0;
-		flp_set_path(flp, fname);
+		flp_insert(flp, fname);
 	}
 	return err;
 }

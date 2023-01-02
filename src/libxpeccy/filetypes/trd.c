@@ -23,10 +23,7 @@ int loadTRD(Computer* comp, const char* name, int drv) {
 			trk++;
 		}
 
-		flp_set_path(flp, name);
-		flp->insert = 1;
-		flp->door = 0;
-		flp->changed = 0;
+		flp_insert(flp, name);
 	}
 	fclose(file);
 	return err;

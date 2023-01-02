@@ -113,7 +113,7 @@ typedef struct {
 } TRFile;
 
 void diskClear(Floppy*);
-void diskFormat(Floppy*);
+void trd_format(Floppy*);
 void diskFormTrack(Floppy*,int,Sector*,int);
 void diskFormTRDTrack(Floppy*,int,unsigned char*);
 

@@ -223,7 +223,7 @@ void setDiskString(Computer* comp,Floppy* flp,std::string st) {
 	st = st.substr(5);
 	// TODO: do not load files before set hw
 	if (st.size() > 1) {
-		flp_set_path(flp, st.c_str());		// delayed loading after set hw
+		flp_insert(flp, st.c_str());		// delayed loading after set hw
 	}
 }
 

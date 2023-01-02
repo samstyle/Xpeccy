@@ -42,6 +42,7 @@ typedef struct {
 	unsigned changed:1;	// disk is changed
 	unsigned index:1;	// disk index impulse
 
+	int dwait;		// delay between disk inserting and door closing
 	unsigned rd:1;
 	unsigned wr:1;
 
@@ -64,7 +65,9 @@ void flpDestroy(Floppy*);
 void flp_set_path(Floppy*, const char*);
 void flp_set_hd(Floppy*, int);
 
-int flpEject(Floppy*);
+void flp_insert(Floppy*, const char*);
+void flp_eject(Floppy*);
+
 unsigned char flpRd(Floppy*, int);
 void flpWr(Floppy*, int, unsigned char);
 int flpNext(Floppy*,int);		// return 1 if index strobe

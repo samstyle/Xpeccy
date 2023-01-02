@@ -69,10 +69,7 @@ int loadSCL(Computer* comp, const char* name, int drv) {
 			flp_format_trk(flp, i, 16, 256, (char*)buf);
 			i++;
 		}
-		flp_set_path(flp, name);
-		flp->insert = 1;
-		flp->door = 0;
-		flp->changed = 0;
+		flp_insert(flp, name);
 	}
 	fclose(file);
 	return err;

@@ -21,9 +21,8 @@ int loadHobeta(Computer* comp, const char* name, int drv) {
 
 	printf("drv %i : %i\n", drv, flp->insert);
 	if (!flp->insert) {
-		diskFormat(flp);
-		flp->insert = 1;
-		flp->door = 0;
+		flp_insert(flp, NULL);
+		trd_format(flp);
 	}
 	if (diskGetType(flp) != DISK_TYPE_TRD) {
 		err = ERR_NOTRD;

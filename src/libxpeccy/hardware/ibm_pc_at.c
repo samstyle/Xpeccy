@@ -557,7 +557,9 @@ void dma_ch_transfer(DMAChan*, void*);
 
 void ibm_irq(Computer* comp, int t) {
 	switch(t) {
-		case IRQ_FDC: pic_int(comp->mpic, 6); break;		// non-dma fdc request
+		case IRQ_FDC:
+		case IRQ_FDD_RDY:
+			pic_int(comp->mpic, 6); break;		// fdc interrupt (drq | rdy changing)
 		case IRQ_FDC_RD: dma_ch_transfer(&comp->dma1->ch[2], comp->dma1->ptr); break;		// dma1.ch2 fdc->mem
 		case IRQ_FDC_WR: dma_ch_transfer(&comp->dma1->ch[2], comp->dma1->ptr); break;		// dma1.ch2 mem->fdc
 
@@ -572,7 +574,6 @@ void ibm_irq(Computer* comp, int t) {
 			break;
 		case IRQ_RESET: comp->cpu->reset(comp->cpu);
 			break;
-		case IRQ_BRK: comp->brk = 1; break;
 	}
 }
 

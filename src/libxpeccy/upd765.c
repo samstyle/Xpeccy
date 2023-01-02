@@ -139,10 +139,10 @@ typedef struct {
 void udrvst00(FDC* fdc) {
 	uSetDrive(fdc);
 	fdc->sr3 = (fdc->flp->protect ? 0x40 : 0x00) |
-		   ((fdc->flp->insert && fdc->flp->door) ? 0x20 : 0x00) |
-		   ((fdc->flp->trk == 0) ? 0x10 : 0x00) |
-		   (fdc->flp->doubleSide ? 0x08 : 0x00) |
-		   (fdc->comBuf[0] & 7);
+		((fdc->flp->insert && fdc->flp->door) ? 0x20 : 0x00) |
+		((fdc->flp->trk == 0) ? 0x10 : 0x00) |
+		(fdc->flp->doubleSide ? 0x08 : 0x00) |
+		(fdc->comBuf[0] & 7);
 	fdc->resBuf[0] = fdc->sr3;
 	uResp(fdc, 1, 1);
 	fdc->pos++;
@@ -420,6 +420,8 @@ static fdcCall uRdData[] = {&uwargs,&uread00,&uread00a};
 // read track
 
 void urdtrkRS(FDC* fdc) {
+	if (!(fdc->flp->insert && fdc->flp->door))
+		fdc->sr0 |= 0x08;
 	fdc->resBuf[0] = fdc->sr0;
 	fdc->resBuf[1] = fdc->sr1;
 	fdc->resBuf[2] = fdc->sr2;
@@ -576,7 +578,7 @@ static fdcCall uScan[] = {&uwargs, &uread00, &uread01, &uscan00, &uscan01, &usca
 void uwrdat00(FDC* fdc) {
 	uSetDrive(fdc);
 	fdc->sec = fdc->comBuf[3];		// R, sec.num
-	if (!(fdc->flp->insert & fdc->flp->door)) {
+	if (!(fdc->flp->insert && fdc->flp->door)) {
 		fdc->sr0 |= 0x48;		// not ready
 		ureadRS(fdc);
 		uTerm(fdc);
@@ -880,7 +882,7 @@ void uWrite(FDC* fdc, int adr, unsigned char val) {
 		fdc->wait = 0;
 		if (fdc->com != 0x08) {	// sense interrupt status
 			fdc->seekend = 0;
-			fdc->sr0 = 0x00;
+			fdc->sr0 = fdc->flp->id & 3;
 			fdc->sr1 = 0x00;
 			fdc->sr2 = 0x00;
 		}
