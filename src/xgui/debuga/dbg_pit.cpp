@@ -40,9 +40,9 @@ QVariant xPitModel::data(const QModelIndex& idx, int role) const {
 	if ((col < 0) || (col >= columnCount())) return res;
 	pitChan* ch = NULL;
 	switch (col) {
-		case 0: ch = &conf.prof.cur->zx->pit.ch0; break;
-		case 1: ch = &conf.prof.cur->zx->pit.ch1; break;
-		case 2: ch = &conf.prof.cur->zx->pit.ch2; break;
+		case 0: ch = &conf.prof.cur->zx->pit->ch0; break;
+		case 1: ch = &conf.prof.cur->zx->pit->ch1; break;
+		case 2: ch = &conf.prof.cur->zx->pit->ch2; break;
 	}
 	if (!ch) return res;
 	switch(role) {

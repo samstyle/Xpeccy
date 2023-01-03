@@ -277,7 +277,7 @@ typedef struct {
 // ibm
 	unsigned a20gate:1;
 	unsigned char post;
-	PIT pit;
+	PIT* pit;		// timer
 	PIC* mpic;		// master pic
 	PIC* spic;		// slave pic
 	PS2Ctrl* ps2c;

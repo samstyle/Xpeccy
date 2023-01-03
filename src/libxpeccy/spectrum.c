@@ -318,7 +318,8 @@ Computer* compCreate() {
 	comp->dma2 = dma_create(comp, 1);
 	comp->mpic = pic_create(1, comp_irq, comp);
 	comp->spic = pic_create(0, comp_irq, comp);
-	pit_reset(&comp->pit);
+	comp->pit = pit_create(comp_irq, comp);
+//	pit_reset(&comp->pit);
 //	comp->mpic.master = 1;
 //	comp->spic.master = 0;
 // baseconf
@@ -361,6 +362,7 @@ void compDestroy(Computer* comp) {
 	ps2c_destroy(comp->ps2c);
 	dma_destroy(comp->dma1);
 	dma_destroy(comp->dma2);
+	pit_destroy(comp->pit);
 	free(comp);
 }
 

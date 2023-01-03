@@ -1,5 +1,7 @@
 #pragma once
 
+#include "defines.h"
+
 typedef struct pitChan pitChan;
 
 typedef void(*pccbv)(pitChan*);
@@ -37,7 +39,12 @@ typedef struct {
 	pitChan ch1;
 	pitChan ch2;
 	int ns;			// sync: time couter for ticks. 1T = 838ns (~1.1933MHz)
+	cbirq xirq;
+	void* xptr;
 } PIT;
+
+PIT* pit_create(cbirq, void*);
+void pit_destroy(PIT*);
 
 void pit_reset(PIT*);
 int pit_rd(PIT*, int);

@@ -1,9 +1,27 @@
 // Programmable Interval Timer (PIT) i8253
 
 #include <stddef.h>
+#include <string.h>
+#include <stdlib.h>
 #include <stdio.h>
 
 #include "i8253_pit.h"
+
+PIT* pit_create(cbirq cb, void* p) {
+	PIT* pit = (PIT*)malloc(sizeof(PIT));
+	if (pit) {
+		memset(pit, 0, sizeof(PIT));
+		pit->xirq = cb;
+		pit->xptr = p;
+		pit_reset(pit);
+
+	}
+	return pit;
+}
+
+void pit_destroy(PIT* pit) {
+	free(pit);
+}
 
 void pit_ch_reset(pitChan* ch) {
 	ch->wdiv = 1;
@@ -246,8 +264,9 @@ void pit_wr(PIT* pit, int adr, int val) {
 
 // mod0: if out=0, send signal and set out=1; if out=1 do nothing. out=0 on command/mode wr or divider reloading. counter will continue
 // mod1: =mod0
-void pit_ch_tick(pitChan* ch) {
-	if (ch->wdiv || ch->wgat) return;	// wait divider or wait gate = stop counter
+int pit_ch_tick(pitChan* ch) {
+	int res = 0;
+	if (ch->wdiv || ch->wgat) return res;	// wait divider or wait gate = stop counter
 	ch->cnt--;
 	if ((ch->opmod == 3) && ch->cnt) ch->cnt--;		// 2 times in mode 3
 	if (ch->bcd) {
@@ -258,17 +277,29 @@ void pit_ch_tick(pitChan* ch) {
 		if ((ch->cnt & 0xf000) > 0x9000) ch->cnt -= 0x6000;
 	}
 	if (ch->cnt == 0) {
-		if (ch->cb->tm)
+		if (ch->cb->tm) {
 			ch->cb->tm(ch);
+			res = 1;
+		}
 	}
+	return res;
 }
 
 void pit_sync(PIT* pit, int ns) {
 	pit->ns -= ns;
 	while (pit->ns < 0) {
 		pit->ns += 838;		// 838ns, ~1.1933MHz
-		pit_ch_tick(&pit->ch0);
-		pit_ch_tick(&pit->ch1);
-		pit_ch_tick(&pit->ch2);
+		if (pit_ch_tick(&pit->ch0)) {
+			if (!pit->ch0.lout && pit->ch0.out)		// ch0 0->1
+				pit->xirq(IRQ_PIT_CH0, pit->xptr);
+		}
+		if (pit_ch_tick(&pit->ch1)) {
+			if (!pit->ch1.lout && pit->ch1.out)		// ch1 0->1
+				pit->xirq(IRQ_PIT_CH1, pit->xptr);
+		}
+		if (pit_ch_tick(&pit->ch2)) {
+			if (pit->ch2.lout ^ pit->ch2.out)		// ch2 change
+			pit->xirq(IRQ_PIT_CH2, pit->xptr);
+		}
 	}
 }

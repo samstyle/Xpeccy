@@ -15,6 +15,7 @@
 
 // NOTE: x86 parity counts on LSB
 
+// TODO: check segment limit && permissions for protected mode
 unsigned char i286_mrd(CPU* cpu, xSegPtr seg, int rpl, unsigned short adr) {
 	if (rpl && (cpu->seg.idx >= 0)) seg = cpu->seg;
 	cpu->t++;
@@ -168,11 +169,12 @@ void i286_set_reg(CPU* cpu, int val, int wrd) {
 
 // read mod, calculate effective address in cpu->tmpi, set register N to cpu->twrd/ltw
 // modbyte: [7.6:mod][5.4.3:regN][2.1.0:adr/reg]
+// TODO: tmpi is still using somewhere (?)
 void i286_get_ea(CPU* cpu, int wrd) {
 	cpu->tmpw = 0;	// = disp
 	cpu->mod = i286_rd_imm(cpu);
 	cpu->twrd = i286_get_reg(cpu, wrd);
-	if ((cpu->mod & 0xc0) == 0xc0) {
+	if ((cpu->mod & 0xc0) == 0xc0) {		// ea is register
 		cpu->ea.reg = 1;
 		if (wrd) {
 			switch(cpu->mod & 7) {
@@ -198,8 +200,8 @@ void i286_get_ea(CPU* cpu, int wrd) {
 				case 7: cpu->ltw = cpu->bh; break;
 			}
 		}
-//		cpu->tmpi = -1;		// reg
-	} else {
+		cpu->tmpi = -1;		// reg
+	} else {					// ea is memory
 		cpu->ea.reg = 0;
 		if ((cpu->mod & 0xc0) == 0x40) {
 			cpu->ltw = i286_rd_imm(cpu);
@@ -238,7 +240,7 @@ void i286_get_ea(CPU* cpu, int wrd) {
 				cpu->ea.seg = cpu->ds;
 				break;
 		}
-//		cpu->tmpi = 0;		// memory address
+		cpu->tmpi = 0;		// memory address
 	}
 }
 
@@ -1505,6 +1507,9 @@ void i286_op9A(CPU* cpu) {
 // 9b: wait
 void i286_op9B(CPU* cpu) {
 	// wait for busy=0
+	if ((cpu->msw & I286_FTS) && (cpu->msw & I286_FMP)) {
+		i286_interrupt(cpu, I286_INT_NM);		// int 7
+	}
 }
 
 // 9c: pushf

@@ -20,12 +20,11 @@ enum {
 	IRQ_SLAVE_PIC,
 	IRQ_MASTER_PIC,
 	IRQ_KBD,	// ps/2 controller kbd int || gbc buttons
-//	IRQ_KBD_PCK,	// kbd data packet ready
 	IRQ_MOUSE,	// ps/2 controller mouse int
-	IRQ_MOUSE_PCK,	// mouse data packet ready
 	IRQ_RESET,
 	IRQ_PIT_CH0,
 	IRQ_PIT_CH1,
+	IRQ_PIT_CH2,
 	IRQ_APU,	// nes
 	IRQ_BRK
 };

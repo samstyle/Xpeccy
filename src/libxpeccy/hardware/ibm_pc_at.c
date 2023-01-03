@@ -97,11 +97,11 @@ not us	044 8254 PS/2 extended timer
 */
 
 int ibm_inPIT(Computer* comp, int adr) {
-	return pit_rd(&comp->pit, adr);
+	return pit_rd(comp->pit, adr);
 }
 
 void ibm_outPIT(Computer* comp, int adr, int val) {
-	pit_wr(&comp->pit,adr,val);
+	pit_wr(comp->pit,adr,val);
 }
 
 // ps/2 controller
@@ -145,7 +145,7 @@ int ibm_inKbd(Computer* comp, int adr) {
 		case 1:
 			// comp->reg[0x61] ^= 0x10;		// Toggles with each refresh request (?)
 			res = comp->reg[0x61] & 0x1f;		// b0..3 is copied
-			if (comp->pit.ch2.out && (res & 8)) res |= 0x20;	// b6: timer2 output
+			if (comp->pit->ch2.out && (res & 8)) res |= 0x20;	// b6: timer2 output
 			break;
 		case 4:
 			res = ps2c_rd(comp->ps2c, PS2_RSTATUS);
@@ -164,7 +164,7 @@ void ibm_outKbd(Computer* comp, int adr, int val) {
 			comp->reg[0x61] = val & 0xff;
 			if (val & 0x80) {
 				comp->keyb->outbuf = 0;
-				comp->pit.ch0.out = 0;
+				comp->pit->ch0.out = 0;
 			}
 			break;
 		case 4:
@@ -572,6 +572,11 @@ void ibm_irq(Computer* comp, int t) {
 			comp->cpu->intrq |= I286_INT;
 			comp->cpu->intvec = t;
 			break;
+		case IRQ_PIT_CH0:		// input 0 master pic (int 8)
+			pic_int(comp->mpic, 0);
+			break;
+		case IRQ_PIT_CH1: comp->reg[0x61] ^= 0x10; break;
+		case IRQ_PIT_CH2: comp->beep->lev = (comp->reg[0x61] & 2) ? comp->pit->ch2.out : 1; break;
 		case IRQ_RESET: comp->cpu->reset(comp->cpu);
 			break;
 	}
@@ -584,20 +589,20 @@ void ibm_sync(Computer* comp, int ns) {
 	// ps/2 controller
 	ps2c_sync(comp->ps2c, ns);
 	// pit (todo: irq for pit)
-	pit_sync(&comp->pit, ns);
+	pit_sync(comp->pit, ns);
 	// ch0 connected to int0
-	if (!comp->pit.ch0.lout && comp->pit.ch0.out) {		// 0->1
-		pic_int(comp->mpic, 0);	// input 0 master pic (int 8)
-	}
-	comp->pit.ch0.lout = comp->pit.ch0.out;
+//	if (!comp->pit->ch0.lout && comp->pit->ch0.out) {		// 0->1
+//		pic_int(comp->mpic, 0);	// input 0 master pic (int 8)
+//	}
+//	comp->pit->ch0.lout = comp->pit->ch0.out;
 	// ch1 mem refresh
-	if (!comp->pit.ch1.lout && comp->pit.ch1.out) {
-		comp->reg[0x61] ^= 0x10;
-	}
-	comp->pit.ch1.lout = comp->pit.ch1.out;
+//	if (!comp->pit->ch1.lout && comp->pit->ch1.out) {
+//		comp->reg[0x61] ^= 0x10;
+//	}
+//	comp->pit->ch1.lout = comp->pit->ch1.out;
 	// ch2 connected to speaker
-	comp->pit.ch2.lout = comp->pit.ch2.out;
-	comp->beep->lev = (comp->reg[0x61] & 2) ? comp->pit.ch2.out : 1;
+//	comp->pit->ch2.lout = comp->pit->ch2.out;
+//	comp->beep->lev = (comp->reg[0x61] & 2) ? comp->pit->ch2.out : 1;
 
 	// master int 6: fdc
 	difSync(comp->dif, ns);

@@ -268,9 +268,9 @@ int xt_sync(Keyboard* kbd, int ns) {
 	if (kbd->per == 0) return 0;
 	kbd->per -= ns;
 	if (kbd->per > 0) return 0;
-	unsigned long relcode = xt_get_code(kbd, kbd->kent, 1);	// release
+//	unsigned long relcode = xt_get_code(kbd, kbd->kent, 1);	// release
 	unsigned long prscode = xt_get_code(kbd, kbd->kent, 0); // press
-	kbd->outbuf = add_msb(kbd->outbuf, relcode);
+//	kbd->outbuf = add_msb(kbd->outbuf, relcode);
 	kbd->outbuf = add_msb(kbd->outbuf, prscode);
 	kbd->per = kbd->kper;
 	return 1;
@@ -287,7 +287,7 @@ void xt_press(Keyboard* kbd, keyEntry kent) {
 void xt_release(Keyboard* kbd, keyEntry kent) {
 	if (kbd->lock) return;
 	kbd->outbuf = add_msb(kbd->outbuf, xt_get_code(kbd, kent, 1));	// kbd->outbuf = xt_get_code(kbd, kent, 1);
-	kbd->per = kbd->kdel;
+	kbd->per = 0;		// 0 for stopping autorepeat
 }
 
 int xt_read(Keyboard* kbd) {
