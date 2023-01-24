@@ -1907,7 +1907,7 @@ unsigned short i286_sar16(CPU* cpu, unsigned short p) {
 typedef unsigned char(*cb286rot8)(CPU*, unsigned char);
 typedef unsigned short(*cb286rot16)(CPU*, unsigned short);
 
-// shr (/4) = sal (/6)
+// shl (/4) = sal (/6)
 static cb286rot8 i286_rot8_tab[8] = {
 	i286_rol8, i286_ror8, i286_rcl8, i286_rcr8,
 	i286_sal8, i286_shr8, i286_sal8, i286_sar8
@@ -1918,28 +1918,28 @@ static cb286rot16 i286_rot16_tab[8] = {
 	i286_sal16, i286_shr16, i286_sal16, i286_sar16
 };
 
-void i286_rotsh8(CPU* cpu) {
+void i286_rotsh8(CPU* cpu, int cnt) {
 	// i286_rd_ea already called, cpu->tmpb is number of repeats
 	// cpu->ltw = ea.byte, result should be back in cpu->ltw. flags is setted
-	cpu->tmpb &= 0x1f;		// only 5 bits is counted
-	cpu->t += cpu->tmpb;		// 1T for each iteration
+	cnt &= 0x1f;		// only 5 bits is counted
+	cpu->t += cnt;		// 1T for each iteration
 	cb286rot8 foo = i286_rot8_tab[(cpu->mod >> 3) & 7];
 	if (foo) {
-		while (cpu->tmpb) {
+		while (cnt) {
 			cpu->ltw = foo(cpu, cpu->ltw);
-			cpu->tmpb--;
+			cnt--;
 		}
 	}
 }
 
-void i286_rotsh16(CPU* cpu) {
-	cpu->tmpb &= 0x1f;
+void i286_rotsh16(CPU* cpu, int cnt) {
+	cnt &= 0x1f;
 	cpu->t += cpu->tmpb;
 	cb286rot16 foo = i286_rot16_tab[(cpu->mod >> 3) & 7];
 	if (foo) {
-		while (cpu->tmpb) {
+		while (cnt) {
 			cpu->tmpw = foo(cpu, cpu->tmpw);
-			cpu->tmpb--;
+			cnt--;
 		}
 	}
 }
@@ -1948,7 +1948,7 @@ void i286_rotsh16(CPU* cpu) {
 void i286_opC0(CPU* cpu) {
 	i286_rd_ea(cpu, 0);
 	cpu->tmpb = i286_rd_imm(cpu);
-	i286_rotsh8(cpu);
+	i286_rotsh8(cpu, cpu->tmpb);
 	i286_wr_ea(cpu, cpu->ltw, 0);
 }
 
@@ -1956,7 +1956,7 @@ void i286_opC0(CPU* cpu) {
 void i286_opC1(CPU* cpu) {
 	i286_rd_ea(cpu, 1);
 	cpu->tmpb = i286_rd_imm(cpu);
-	i286_rotsh16(cpu);
+	i286_rotsh16(cpu, cpu->tmpb);
 	i286_wr_ea(cpu, cpu->tmpw, 1);
 }
 
@@ -2082,32 +2082,28 @@ void i286_opCF(CPU* cpu) {
 // d0,mod: rot/shift ea.byte 1 time
 void i286_opD0(CPU* cpu) {
 	i286_rd_ea(cpu, 0);
-	cpu->tmpb = 1;
-	i286_rotsh8(cpu);
+	i286_rotsh8(cpu, 1);
 	i286_wr_ea(cpu, cpu->ltw, 0);
 }
 
 // d1,mod: rot/shift ea.word 1 time
 void i286_opD1(CPU* cpu) {
 	i286_rd_ea(cpu, 1);
-	cpu->tmpb = 1;
-	i286_rotsh16(cpu);
+	i286_rotsh16(cpu, 1);
 	i286_wr_ea(cpu, cpu->tmpw, 1);
 }
 
 // d2,mod: rot/shift ea.byte CL times
 void i286_opD2(CPU* cpu) {
 	i286_rd_ea(cpu, 0);
-	cpu->tmpb = cpu->cl;
-	i286_rotsh8(cpu);
+	i286_rotsh8(cpu, cpu->cl);
 	i286_wr_ea(cpu, cpu->ltw, 0);
 }
 
 // d3,mod: rot/shift ea.word CL times
 void i286_opD3(CPU* cpu) {
 	i286_rd_ea(cpu, 1);
-	cpu->tmpb = cpu->cl;
-	i286_rotsh16(cpu);
+	i286_rotsh16(cpu, cpu->cl);
 	i286_wr_ea(cpu, cpu->tmpw, 1);
 }
 

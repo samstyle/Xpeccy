@@ -36,7 +36,6 @@ enum {
 
 void pdp11_reset(CPU*);
 int pdp11_exec(CPU*);
-// int pdp11_int(CPU*);
 
 xMnem pdp11_mnem(CPU*, int, cbdmr, void*);
 xAsmScan pdp11_asm(const char*, char*);

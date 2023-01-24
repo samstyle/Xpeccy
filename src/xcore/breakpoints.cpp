@@ -150,6 +150,9 @@ void brkInstall(xBrkPoint brk, int del) {
 	brkDelete(brk);
 }
 
+bool brk_compare(xBrkPoint& bp1, xBrkPoint& bp2) {return (bp1.adr < bp2.adr);}
+void brkSort() {std::sort(conf.prof.cur->brkList.begin(), conf.prof.cur->brkList.end(), brk_compare);}
+
 void brkAdd(xBrkPoint brk) {
 	xbpIndex idx = brkFind(brk);
 	if (idx.ptr) {
@@ -160,7 +163,7 @@ void brkAdd(xBrkPoint brk) {
 	} else {
 		conf.prof.cur->brkList.push_back(brk);
 	}
-	// brkInstall(brk, 0);
+	brkSort();
 	brkInstallAll();
 }
 
@@ -183,6 +186,7 @@ void brkXor(int type, int flag, int adr, int mask, int del) {
 	} else {
 		conf.prof.cur->brkList.push_back(brk);
 	}
+	brkSort();
 	brkInstallAll();
 	// brkInstall(brk, del);		// delete if inactive
 }
@@ -192,6 +196,7 @@ void brkDelete(xBrkPoint dbrk) {
 	if (idx < 0) return;
 	if (idx >= (int)conf.prof.cur->brkList.size()) return;
 	conf.prof.cur->brkList.erase(conf.prof.cur->brkList.begin() + idx);
+	brkSort();
 	brkInstallAll();
 }
 

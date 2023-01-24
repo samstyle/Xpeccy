@@ -174,7 +174,35 @@ struct CPU {
 	unsigned char imode;		// Z80:int mode
 
 	unsigned char a;
+#if 1
 	unsigned short f;
+#else
+	struct {
+		unsigned c:1;		// all: carry
+		union {
+			unsigned n:1;		// z80: set on substraction
+			unsigned f1:1;		// 8080: unnamed flag (always set)
+		};
+		unsigned pv:1;		// all: parity z80:overflow
+		unsigned f3:1;		// z80: f3
+		union {
+			unsigned h:1;	// all: half-carry
+			unsigned a:1;	// x86: half-carry
+		};
+		unsigned f5:1;		// z80: f5
+		unsigned z:1;		// all: zero
+		unsigned s:1;		// all: sign
+		unsigned b:1;		// 6502: break;
+		unsigned t:1;		// vm1,x86: trap
+		unsigned i:1;		// x86, 6502: interrrupt
+		unsigned d:1;		// x86: direction, 6502:bcd mode
+		unsigned o:1;		// x86: overflow
+		unsigned ip:2;		// x86: iopl
+		unsigned f7:1;		// vm1: unnamed flags
+		unsigned f10:1;
+		unsigned f11:1;
+	} f;
+#endif
 	PAIR(bc,b,c);
 	PAIR(de,d,e);
 	PAIR(hl,h,l);

@@ -315,7 +315,7 @@ void vga_mwr(Video* vid, int adr, int val) {
 					bt |= (vid->vga.latch[lay] & ~bmsk); //(vid->ram[adr] & ~bmsk);
 				}
 				vid->ram[adr] = bt;
-				// if ((adr == 6) && (bt == 0x7c)) vid->xirq(IRQ_BRK, vid->data);	// maniac mansion, upper text
+				// if ((adr == 0x280) && (bt == 0xfc)) vid->xirq(IRQ_BRK, vid->data);	// maniac mansion
 			}
 			adr += MEM_64K;		// move to next layer
 		}

@@ -44,11 +44,11 @@ int toLimits(int src, int min, int max) {
 void mem_set_bus(Memory* mem, int bw) {
 	bw = toLimits(bw, 8, 24);
 	mem->busmask = (1 << bw) - 1;		// FFFF for 16, FFFFFF for 24...
-	int sz = 1 << (bw - 8);			// memory map contains 256 pages
+	int sz = 1 << (bw - 8);			// memory map contains 256 pages (each: 256 bytes for 16bit, 65546 bytes for 24 bit)
 	mem->pgsize = sz;
 	mem->pgshift = 8;
 	mem->pgmask = sz - 1;
-	while (sz > MEM_256) {
+	while (sz > 256) {
 		mem->pgshift++;
 		sz >>= 1;
 	}

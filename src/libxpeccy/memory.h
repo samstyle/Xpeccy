@@ -44,7 +44,7 @@ typedef struct {
 	int pgsize;	// size of page in bytes
 	int pgmask;	// number of LSBits in address = page offset (FF or FFFF)
 	int pgshift;	// = log2(page size), 8 for 256-pages, 16 for 64K-pages
-	int busmask;	// cpu addr bus mask
+	int busmask;	// cpu addr bus mask (todo: move to CPU)
 	char* snapath;
 } Memory;
 
