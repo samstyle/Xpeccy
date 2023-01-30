@@ -783,7 +783,7 @@ sndPair gbc_vol(Computer* comp, sndVolume* sv) {
 void gbReset(Computer* comp) {
 	comp->gb.boot = 1;
 	comp->vid->gbmode = 0;
-	vidSetMode(comp->vid, VID_GBC);
+	vid_set_mode(comp->vid, VID_GBC);
 	gbcvReset(comp->vid);
 
 	compSetTurbo(comp, 1);

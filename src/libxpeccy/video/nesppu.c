@@ -113,11 +113,11 @@ unsigned short ppuXcoarse(unsigned short v) {
 void ppuRenderTile(Video* vid, unsigned char* buf, int offset, unsigned short adr, unsigned short tadr) {
 	int cnt;
 	unsigned char col;
-	unsigned char tile = vid->mrd(0x2000 | (adr & 0x0fff), vid->data) & 0xff;						// tile num
-	unsigned char atr = vid->mrd(0x23c0 | (adr & 0x0c00) | ((adr >> 4) & 0x38) | ((adr >> 2) & 7), vid->data) & 0xff;	// attribute
+	unsigned char tile = vid->mrd(0x2000 | (adr & 0x0fff), vid->xptr) & 0xff;						// tile num
+	unsigned char atr = vid->mrd(0x23c0 | (adr & 0x0c00) | ((adr >> 4) & 0x38) | ((adr >> 2) & 7), vid->xptr) & 0xff;	// attribute
 	unsigned short bgadr = tadr | ((tile << 4) & 0x0ff0) | ((adr >> 12) & 7);					// tile adr
-	unsigned short data = vid->mrd(bgadr, vid->data) & 0xff;								// tile data (2 bytes)
-	data |= ((vid->mrd(bgadr + 8, vid->data) << 8) & 0xff00);
+	unsigned short data = vid->mrd(bgadr, vid->xptr) & 0xff;								// tile data (2 bytes)
+	data |= ((vid->mrd(bgadr + 8, vid->xptr) << 8) & 0xff00);
 	if (adr & 0x0040) atr >>= 4;							// bit 2,3 = attribute of current tile
 	if (~adr & 0x0002) atr <<= 2;
 	for (cnt = 0; cnt < 8; cnt++) {							// put 8 color indexes in buffer
@@ -174,8 +174,8 @@ int ppuRenderSpriteLine(Video* vid, int line, unsigned char* sbuf, unsigned char
 						bgadr = ppuspa | ((tile << 4) & 0x0ff0) | (sln & 7);
 					}
 					// fetch tile data
-					data = vid->mrd(bgadr, vid->data) & 0xff;
-					data |= ((vid->mrd(bgadr + 8, vid->data) << 8) & 0xff00);
+					data = vid->mrd(bgadr, vid->xptr) & 0xff;
+					data |= ((vid->mrd(bgadr + 8, vid->xptr) << 8) & 0xff00);
 					for (y = 0; y < 8; y++) {
 						if (flag & 0x40) {			// HFlip
 							col = (data & 0x01) ? 1 : 0;
@@ -210,7 +210,7 @@ int ppuRenderSpriteLine(Video* vid, int line, unsigned char* sbuf, unsigned char
 	else
 		bgadr = ppuspa | 0xff0;
 	while (lin < maxspr) {
-		vid->mrd(bgadr, vid->data);
+		vid->mrd(bgadr, vid->xptr);
 		lin++;
 	}
 	return  cnt;
@@ -340,10 +340,10 @@ int ppuRead(Video* vid, int reg) {
 			adr = vid->vadr & 0x3fff;
 			if (adr < 0x3f00) {
 				res = vid->vbuf;
-				vid->vbuf = vid->mrd(adr, vid->data) & 0xff;
+				vid->vbuf = vid->mrd(adr, vid->xptr) & 0xff;
 			} else {
 				res = vid->ram[(adr & 0x1f) | 0x3f00];		// palette
-				vid->vbuf = vid->mrd(adr & 0x2fff, vid->data) & 0xff;
+				vid->vbuf = vid->mrd(adr & 0x2fff, vid->xptr) & 0xff;
 			}
 			vid->vadr += vid->vastep ? 32 : 1;
 			break;
@@ -413,7 +413,7 @@ void ppuWrite(Video* vid, int reg, int val) {
 		case 7:
 			adr = vid->vadr & 0x3fff;
 			if (adr < 0x3f00) {
-				vid->mwr(adr, val, vid->data);
+				vid->mwr(adr, val, vid->xptr);
 			} else {
 				vid->ram[(adr & 0x1f) | 0x3f00] = val & 0xff;
 				if ((adr & 0x1f) == 0x10)

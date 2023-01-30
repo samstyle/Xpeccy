@@ -26,10 +26,27 @@ enum {
 	IRQ_PIT_CH1,
 	IRQ_PIT_CH2,
 	IRQ_APU,	// nes
-	IRQ_BRK
+	IRQ_BRK,
+	IRQ_CIA1,	// commodore
+	IRQ_CIA2,
+	IRQ_TAP_0,
+	IRQ_TAP_1
 };
 
 typedef void(*cbirq)(int, void*);
+// external data ports rd/wr
+typedef int(*cbxrd)(int, void*);
+typedef void(*cbxwr)(int, int, void*);
+
+// 16bit reg
+
+#ifdef WORDS_BIG_ENDIAN
+	#define PAIR(p,h,l) union{unsigned short p; struct {unsigned char h; unsigned char l;};}
+#else
+	#define PAIR(p,h,l) union{unsigned short p; struct {unsigned char l; unsigned char h;};}
+#endif
+
+typedef PAIR(w,h,l) xpair;
 
 // memory size
 #define MEM_256	(1<<8)

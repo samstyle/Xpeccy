@@ -552,7 +552,7 @@ void vdpSetMode(Video* vid, int mode) {
 	while((vdpTab[idx].id != mode) && (vdpTab[idx].id != VID_UNKNOWN)) {
 		idx++;
 	}
-	vidSetMode(vid, vdpTab[idx].id);
+	vid_set_mode(vid, vdpTab[idx].id);
 	vid->pset = vdpTab[idx].pset;
 	vid->col = vdpTab[idx].col;
 	vid->scrsize.x = vdpTab[idx].wid;

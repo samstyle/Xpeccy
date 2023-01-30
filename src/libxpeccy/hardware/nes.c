@@ -59,7 +59,7 @@ int nes_apu_ext_rd(int adr, void* ptr) {
 void nesReset(Computer* comp) {
 	comp->vid->mrd = nes_ppu_ext_rd;
 	comp->vid->mwr = nes_ppu_ext_wr;
-	comp->vid->data = comp;
+	comp->vid->xptr = comp;
 	switch (comp->slot->core->id) {
 		case MAP_NES_MMC1:
 			comp->slot->reg00 = 0x0c;	// MMC1
@@ -73,7 +73,7 @@ void nesReset(Computer* comp) {
 	}
 	apuReset(comp->nesapu);
 	ppuReset(comp->vid);
-	vidSetMode(comp->vid, VID_NES);
+	vid_set_mode(comp->vid, VID_NES);
 }
 
 // 0000..1fff : ram 2K + mirrors

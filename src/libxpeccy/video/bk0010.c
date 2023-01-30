@@ -24,7 +24,7 @@ void bk_bw_dot(Video* vid) {
 			yscr = (vid->ray.ys + vid->sc.y - 0xd8) & 0xff;
 			xadr = ((vid->curscr ? 7 : 1) << 14) | (yscr << 6) | ((xscr >> 2) & 0x3f);
 			if (vid->cutscr) xadr |= 0x3000;
-			sbyte = vid->mrd(xadr, vid->data);
+			sbyte = vid->mrd(xadr, vid->xptr);
 		}
 		cola = (sbyte & 0x01) ? 0x15 : 0x14;
 		colb = (sbyte & 0x02) ? 0x15 : 0x14;
@@ -48,7 +48,7 @@ void bk_col_dot(Video* vid) {
 			yscr = (vid->ray.ys + vid->sc.y - 0xd8) & 0xff;
 			xadr = ((vid->curscr ? 7 : 1) << 14) | (yscr << 6) | ((xscr >> 2) & 0x3f);
 			if (vid->cutscr) xadr |= 0x3000;
-			sbyte = vid->mrd(xadr, vid->data);
+			sbyte = vid->mrd(xadr, vid->xptr);
 		}
 		cola = sbyte & 3;
 		sbyte >>= 2;

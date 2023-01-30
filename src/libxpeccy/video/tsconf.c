@@ -23,7 +23,7 @@ int vidTSLRenderTiles(Video* vid, int lay, unsigned short yoffs, unsigned short 
 	xscr = (0x200 - xoffs) & 0x1ff;								// pos in line buf
 	xadr = vid->tsconf.tconfig & (lay ? 8 : 4);
 	do {											// 64 tiles in row
-		tile = vid->mrd(adr, vid->data) | (vid->mrd(adr + 1, vid->data) << 8);		// tile dsc
+		tile = vid->mrd(adr, vid->xptr) | (vid->mrd(adr + 1, vid->xptr) << 8);		// tile dsc
 		adr += 2;
 
 		if ((tile & 0xfff) || xadr) {							// !0 or (0 enabled)
@@ -36,11 +36,11 @@ int vidTSLRenderTiles(Video* vid, int lay, unsigned short yoffs, unsigned short 
 				xscr += 8;
 				for (j = 0; j < 4; j++) {
 					col &= 0xf0;
-					col |= (vid->mrd(fadr, vid->data) & 0xf0) >> 4;		// left pixel
+					col |= (vid->mrd(fadr, vid->xptr) & 0xf0) >> 4;		// left pixel
 					xscr--;
 					if (col & 0x0f) vid->line[xscr & 0x1ff] = col;
 					col &= 0xf0;
-					col |= vid->mrd(fadr, vid->data) & 0x0f;			// right pixel
+					col |= vid->mrd(fadr, vid->xptr) & 0x0f;			// right pixel
 					xscr--;
 					if (col & 0x0f) vid->line[xscr & 0x1ff] = col;
 					fadr++;
@@ -49,13 +49,13 @@ int vidTSLRenderTiles(Video* vid, int lay, unsigned short yoffs, unsigned short 
 			} else {								// no XFlip
 				for (j = 0; j < 4; j++) {
 					col &= 0xf0;
-					col |= (vid->mrd(fadr, vid->data) & 0xf0) >> 4;				// left pixel
+					col |= (vid->mrd(fadr, vid->xptr) & 0xf0) >> 4;				// left pixel
 					if (col & 0x0f) {
 						vid->line[xscr & 0x1ff] = col;
 					}
 					xscr++;
 					col &= 0xf0;
-					col |= vid->mrd(fadr, vid->data) & 0x0f;					// right pixel
+					col |= vid->mrd(fadr, vid->xptr) & 0x0f;					// right pixel
 					if (col & 0x0f) {
 						vid->line[xscr & 0x1ff] = col;
 					}
@@ -125,11 +125,11 @@ int vidTSLRenderSprites(Video* vid) {
 				if (spr.xf) adr += xadr - 1;	// xpos of right pixel (xflip)
 				for (xscr = xadr; xscr > 0; xscr -= 2) {
 					col &= 0xf0;
-					col |= ((vid->mrd(fadr, vid->data) & 0xf0) >> 4);		// left pixel;
+					col |= ((vid->mrd(fadr, vid->xptr) & 0xf0) >> 4);		// left pixel;
 					if (col & 0x0f) vid->line[adr & 0x1ff] = col;
 					if (spr.xf) adr--; else adr++;
 					col &= 0xf0;
-					col |= (vid->mrd(fadr, vid->data) & 0x0f);		// right pixel
+					col |= (vid->mrd(fadr, vid->xptr) & 0x0f);		// right pixel
 					if (col & 0x0f) vid->line[adr & 0x1ff] = col;
 					if (spr.xf) adr--; else adr++;
 					fadr++;
@@ -150,7 +150,7 @@ int vidTSLRender16c(Video* vid) {
 	xadr = adr & ~0xff;
 	fadr = 0;
 	while (fadr < vid->scrsize.x) {
-		scrbyte = vid->mrd(adr, vid->data);
+		scrbyte = vid->mrd(adr, vid->xptr);
 		adr = ((adr + 1) & 0xff) | xadr;
 		vid->linb[fadr] = vid->tsconf.scrPal | ((scrbyte >> 4) & 0x0f);
 		fadr++;
@@ -167,7 +167,7 @@ int vidTSLRender256c(Video* vid) {
 	xadr = adr & ~0x1ff;
 	fadr = 0;
 	while (fadr < vid->scrsize.x) {
-		vid->linb[fadr] = vid->mrd(adr, vid->data);
+		vid->linb[fadr] = vid->mrd(adr, vid->xptr);
 		fadr++;
 		adr = ((adr + 1) & 0x1ff) | xadr;
 	}
@@ -238,10 +238,10 @@ void tslUpdatePorts(Video* vid) {
 	vid->tsconf.yPos = (vid->vend.y - vid->scrsize.y) / 2;
 	// printf("%i x %i (%i x %i) = %i x %i\n",vid->scrsize.x,vid->scrsize.y,vid->vsze.x,vid->vsze.y,vid->tsconf.xPos,vid->tsconf.yPos);
 	switch(val & 3) {
-		case 0: vidSetMode(vid,VID_TSL_NORMAL); break;
-		case 1: vidSetMode(vid,VID_TSL_16); break;
-		case 2: vidSetMode(vid,VID_TSL_256); break;
-		case 3: vidSetMode(vid,VID_TSL_TEXT); break;
+		case 0: vid_set_mode(vid,VID_TSL_NORMAL); break;
+		case 1: vid_set_mode(vid,VID_TSL_16); break;
+		case 2: vid_set_mode(vid,VID_TSL_256); break;
+		case 3: vid_set_mode(vid,VID_TSL_TEXT); break;
 	}
 	vid->nogfx = (val & 0x20) ? 1 : 0;
 	val = vid->tsconf.p07af;
@@ -257,7 +257,7 @@ void vidTSline(Video* vid) {
 	vid->intp.x = vid->tsconf.hsint + res;
 	if (vid->inten & 2) {
 		vid->intLINE = 1;
-		vid->xirq(IRQ_VID_LINE, vid->data);
+		vid->xirq(IRQ_VID_LINE, vid->xptr);
 	}
 	tslUpdatePorts(vid);
 }
@@ -284,7 +284,7 @@ void vidDrawTSLNormal(Video* vid) {
 		xadr = vid->tsconf.vidPage;
 		if ((xscr & 7) == 4) {
 			adr = ((yscr & 0xc0) << 5) | ((yscr & 7) << 8) | ((yscr & 0x38) << 2) | (((xscr + 4) & 0xf8) >> 3);
-			nxtbyte = vid->mrd(MADR(xadr, adr), vid->data);
+			nxtbyte = vid->mrd(MADR(xadr, adr), vid->xptr);
 		}
 		if ((xscr < 0) || (xscr >= vid->scrn.x)) {
 			col = vid->brdcol;
@@ -292,7 +292,7 @@ void vidDrawTSLNormal(Video* vid) {
 			if ((xscr & 7) == 0) {
 				scrbyte = nxtbyte;
 				adr = 0x1800 | ((yscr & 0xc0) << 2) | ((yscr & 0x38) << 2) | (((xscr + 4) & 0xf8) >> 3);
-				vid->atrbyte = vid->mrd(MADR(xadr, adr), vid->data);
+				vid->atrbyte = vid->mrd(MADR(xadr, adr), vid->xptr);
 				if ((vid->atrbyte & 0x80) && vid->flash) scrbyte ^= 0xff;
 				ink = (vid->atrbyte & 0x07) | ((vid->atrbyte & 0x40) >> 3);
 				pap = (vid->atrbyte & 0x78) >> 3;
@@ -330,11 +330,11 @@ void vidDrawTSLText(Video* vid) {
 			xscr &= 0x1ff;
 			yscr &= 0x1ff;
 			adr = (vid->tsconf.vidPage << 14) + ((yscr & 0x1f8) << 5) + (xscr >> 2);	// 256 bytes in row
-			scrbyte = vid->mrd(adr, vid->data);
-			col = vid->mrd(adr | 0x80, vid->data);
+			scrbyte = vid->mrd(adr, vid->xptr);
+			col = vid->mrd(adr | 0x80, vid->xptr);
 			ink = (col & 0x0f) | (vid->tsconf.scrPal);
 			pap = ((col & 0xf0) >> 4)  | (vid->tsconf.scrPal);
-			scrbyte = vid->mrd(MADR(vid->tsconf.vidPage ^ 1, (scrbyte << 3) | (yscr & 7)), vid->data);
+			scrbyte = vid->mrd(MADR(vid->tsconf.vidPage ^ 1, (scrbyte << 3) | (yscr & 7)), vid->xptr);
 //			vidDrawByteDD(vid);
 		}
 		if (vid->line[xscr] & 0x0f) {							// put not-transparent tiles/sprites pixel

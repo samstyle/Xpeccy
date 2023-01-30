@@ -36,10 +36,10 @@ void vga_upd_mode(Video* vid) {
 	int mod = (SEQ_REG(1) & 8) | (GRF_REG(6) & 1);
 	printf("ega mode = %i\n",mod);
 	switch(mod) {
-		case 0: vidSetMode(vid, CGA_TXT_H); break;	// T80
-		case 1: vidSetMode(vid, VGA_GRF_H); break;	// G640
-		case 8: vidSetMode(vid, CGA_TXT_L); break;	// T40
-		case 9: vidSetMode(vid, VGA_GRF_L); break;	// G320
+		case 0: vid_set_mode(vid, CGA_TXT_H); break;	// T80
+		case 1: vid_set_mode(vid, VGA_GRF_H); break;	// G640
+		case 8: vid_set_mode(vid, CGA_TXT_L); break;	// T40
+		case 9: vid_set_mode(vid, VGA_GRF_L); break;	// G320
 		default:	// others is undefined
 			break;
 	}
@@ -205,16 +205,16 @@ void vga_wr(Video* vid, int port, int val) {
 			vid->reg[CGA_3D8] = val & 0xff;
 			switch (val & 0x13) {
 				case 0x00: case 0x10:
-					vidSetMode(vid, CGA_TXT_L);
+					vid_set_mode(vid, CGA_TXT_L);
 					break;		// text 40x25
 				case 0x01: case 0x11:
-					vidSetMode(vid, CGA_TXT_H);
+					vid_set_mode(vid, CGA_TXT_H);
 					break;		// text 80x25
 				case 0x02: case 0x03:
-					vidSetMode(vid, CGA_GRF_L);
+					vid_set_mode(vid, CGA_GRF_L);
 					break;		// gfx 320x200
 				case 0x12: case 0x13:
-					vidSetMode(vid, CGA_GRF_H);
+					vid_set_mode(vid, CGA_GRF_H);
 					break;		// gfx 640x200
 			}
 			if (val & 0x04) {}		// b2:monochrome

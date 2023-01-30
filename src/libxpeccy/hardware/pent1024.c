@@ -50,7 +50,7 @@ void p1mOutDFF7(Computer* comp, int port, int val) {
 
 void p1mOutEFF7(Computer* comp, int port, int val) {
 	comp->pEFF7 = val & 0xff;
-	vidSetMode(comp->vid,(val & 0x01) ? VID_ALCO : VID_NORMAL);
+	vid_set_mode(comp->vid,(val & 0x01) ? VID_ALCO : VID_NORMAL);
 	compSetTurbo(comp, (val & 0x10) ? 1.0 : 2.0);
 	p1mMapMem(comp);
 }

@@ -23,6 +23,14 @@ typedef struct {
 // L/M	byte boundary
 // L/S	end of file
 
+// tape signal
+// ~13568 waves of lead-in (short)
+// L/M: byte boundary
+// 8 bits (S/M, M/S)
+// parity bit
+// L/M: next byte
+// ...
+
 int loadT64(Computer* comp, const char* fname, int drv) {
 	char buf[32];
 	int err = ERR_OK;
@@ -104,6 +112,7 @@ int loadC64RawTap(Computer* comp, const char* name, int dsk) {
 	TapeBlock blk;
 	blk.data = NULL;
 	FILE* file = fopen(name, "rb");
+	int flg = 0;
 	if (file) {
 		fread(buf, 12, 1, file);
 		if (!strncmp(buf, "C64-TAPE-RAW", 12)) {
@@ -126,7 +135,9 @@ int loadC64RawTap(Computer* comp, const char* name, int dsk) {
 						tap_add_block(comp->tape, blk);
 						blkClear(&blk);
 					} else {
-						blkAddWave(&blk, per/2);
+						//blkAddWave(&blk, per/2);
+						blkAddPulse(&blk, per, flg ? 0xa0 : 0x60);
+						flg = !flg;
 					}
 					len--;
 				}

@@ -8,12 +8,12 @@ void zx48_reset(Computer* comp) {
 	comp->vid->curscr = 5;
 	//speReset(comp);
 	zx_set_pal(comp);
-	vidSetMode(comp->vid, VID_ULA_SCR);
+	vid_set_mode(comp->vid, VID_ULA_SCR);
 }
 
 void speReset(Computer* comp) {
 	zx_set_pal(comp);
-	vidSetMode(comp->vid, VID_NORMAL);
+	vid_set_mode(comp->vid, VID_NORMAL);
 }
 
 int zx_slt_rd(int adr, void* ptr) {

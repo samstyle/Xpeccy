@@ -290,7 +290,7 @@ sndPair c64_vol(Computer*, sndVolume*);
 void c64_sync(Computer*, int);
 void c64_keyp(Computer*, keyEntry);
 void c64_keyr(Computer*, keyEntry);
-// int c64_vic_mrd(int, void*);
+void c64_irq(Computer*, int);
 
 // bk0010
 void bk_init(Computer*);

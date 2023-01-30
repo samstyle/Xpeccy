@@ -289,7 +289,7 @@ Computer* compCreate() {
 	comp->cpu = cpuCreate(CPU_Z80,memrd,memwr,iord,iowr,intrq,comp_irq,comp);
 	comp->mem = memCreate();
 	comp->vid = vidCreate(vid_mrd_cb, comp_irq, comp);
-	vidSetMode(comp->vid, VID_NORMAL);
+	vid_set_mode(comp->vid, VID_NORMAL);
 
 // input
 	comp->keyb = keyCreate(comp_irq, comp);
@@ -299,7 +299,7 @@ Computer* compCreate() {
 	comp->ppi = ppi_create();
 	comp->ps2c = ps2c_create(comp->keyb, comp->mouse, comp_irq, comp);
 // storage
-	comp->tape = tapCreate();
+	comp->tape = tape_create(comp_irq, comp);
 	comp->dif = difCreate(DIF_NONE, comp_irq, comp);
 	comp->ide = ideCreate(IDE_NONE, comp_irq, comp);
 	comp->ide->smuc.cmos = &comp->cmos;
@@ -313,6 +313,9 @@ Computer* compCreate() {
 	comp->saa = saaCreate();
 	comp->beep = bcCreate();
 	comp->nesapu = apuCreate(nes_apu_ext_rd, comp_irq, comp);
+// c64
+	comp->c64.cia1 = cia_create(IRQ_CIA1, comp_irq, comp);
+	comp->c64.cia2 = cia_create(IRQ_CIA2, comp_irq, comp);
 // ibm
 	comp->dma1 = dma_create(comp, 0);
 	comp->dma2 = dma_create(comp, 1);
@@ -347,7 +350,7 @@ void compDestroy(Computer* comp) {
 	keyDestroy(comp->keyb);
 	joyDestroy(comp->joy);
 	mouseDestroy(comp->mouse);
-	tapDestroy(comp->tape);
+	tape_destroy(comp->tape);
 	difDestroy(comp->dif);
 	ideDestroy(comp->ide);
 	tsDestroy(comp->ts);
@@ -363,6 +366,8 @@ void compDestroy(Computer* comp) {
 	dma_destroy(comp->dma1);
 	dma_destroy(comp->dma2);
 	pit_destroy(comp->pit);
+	cia_destroy(comp->c64.cia1);
+	cia_destroy(comp->c64.cia2);
 	free(comp);
 }
 
@@ -451,6 +456,7 @@ int compSetHardware(Computer* comp, const char* name) {
 	comp->hw = hw;
 	comp->cpu->nod = 0;
 	comp->vid->mrd = vid_mrd_cb;
+	comp->tape->xen = 0;
 	mem_set_bus(comp->mem, hw->adrbus);
 	compSetBaseFrq(comp, 0);	// recalculations
 	return 1;

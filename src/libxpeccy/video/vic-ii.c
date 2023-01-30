@@ -18,7 +18,8 @@ void vic_irq(Video* vid, int mask) {
 	vid->intrq &= 0x0f;
 	if (vid->intrq & vid->inten) {
 		vid->intrq |= 0x80;
-		vid->irq = 1;
+		//vid->irq = 1;
+		vid->xirq(IRQ_VID_INT, vid->xptr);
 	}
 }
 
@@ -48,12 +49,12 @@ void vic_set_mode(Video* vid) {
 	int mode = ((vid->reg[0x11] & 0x60) | (vid->reg[0x16] & 0x10));
 //	printf("mode:%.2X\n",mode);
 	switch (mode) {
-		case 0x00: vidSetMode(vid, VID_C64_TEXT); break;
-		case 0x10: vidSetMode(vid, VID_C64_TEXT_MC); break;
-		case 0x20: vidSetMode(vid, VID_C64_BITMAP); break;
-		case 0x30: vidSetMode(vid, VID_C64_BITMAP_MC); break;
+		case 0x00: vid_set_mode(vid, VID_C64_TEXT); break;
+		case 0x10: vid_set_mode(vid, VID_C64_TEXT_MC); break;
+		case 0x20: vid_set_mode(vid, VID_C64_BITMAP); break;
+		case 0x30: vid_set_mode(vid, VID_C64_BITMAP_MC); break;
 		// and extend modes
-		default: vidSetMode(vid, VID_UNKNOWN); break;
+		default: vid_set_mode(vid, VID_UNKNOWN); break;
 	}
 }
 
@@ -86,43 +87,46 @@ void vic_wr(Video* vid, unsigned short adr, unsigned char val) {
 
 // text mode
 void vidC64TDraw(Video* vid) {
-	if (vid->reg[0x11] & 0x10)
-	yscr = vid->ray.y - vid->bord.y;
-	if ((yscr < 0) || (yscr >= vid->scrn.y) || !(vid->reg[0x11] & 0x10)) {
-		if (vid->line[vid->ray.xb] != 0xff) {
-			col = vid->line[vid->ray.xb];
-		} else if (vid->linb[vid->ray.x] != 0xff) {
-			col = vid->linb[vid->ray.xb];
-		} else {
-			col = vid->reg[0x20];				// border color
-		}
-	} else {
-		xscr = vid->ray.x - vid->bord.x;
-		if ((xscr < 0) || (xscr >= vid->scrn.x)) {
-			col = vid->reg[0x20];			// border color
-		} else {
-			if ((xscr & 7) == 0) {
-				adr = ((yscr >> 3) * 40) + (xscr >> 3);
-				ink = vid->mrd(adr | ((vid->reg[0x18] & 0xf0) << 6), vid->data);				// tile nr
-				if ((~vid->vbank & 1) && ((vid->reg[0x18] & 0x0c) == 0x04)) {
-					scrbyte = vid->font[(ink << 3) | (yscr & 7)];	// from char rom
-				} else {
-					scrbyte = vid->mrd(((vid->reg[0x18] & 0x0e) << 10) | (ink << 3) | (yscr & 7), vid->data);	// tile row data
-				}
-				ink = vid->colram[adr & 0x3ff];			// tile color
-				pap = vid->reg[0x21];				// background color
-			}
+	if (vid->reg[0x11] & 0x10) {
+		yscr = vid->ray.y - vid->bord.y;
+		if ((yscr < 0) || (yscr >= vid->scrn.y) || !(vid->reg[0x11] & 0x10)) {
 			if (vid->line[vid->ray.xb] != 0xff) {
 				col = vid->line[vid->ray.xb];
-			} else if (scrbyte & 0x80) {
-				col = ink;
 			} else if (vid->linb[vid->ray.x] != 0xff) {
 				col = vid->linb[vid->ray.xb];
 			} else {
-				col = pap;
+				col = vid->reg[0x20];				// border color
 			}
-			scrbyte <<= 1;
+		} else {
+			xscr = vid->ray.x - vid->bord.x;
+			if ((xscr < 0) || (xscr >= vid->scrn.x)) {
+				col = vid->reg[0x20];			// border color
+			} else {
+				if ((xscr & 7) == 0) {
+					adr = ((yscr >> 3) * 40) + (xscr >> 3);
+					ink = vid->mrd(adr | ((vid->reg[0x18] & 0xf0) << 6), vid->xptr);				// tile nr
+					if ((~vid->vbank & 1) && ((vid->reg[0x18] & 0x0c) == 0x04)) {
+						scrbyte = vid->font[(ink << 3) | (yscr & 7)];	// from char rom
+					} else {
+						scrbyte = vid->mrd(((vid->reg[0x18] & 0x0e) << 10) | (ink << 3) | (yscr & 7), vid->xptr);	// tile row data
+					}
+					ink = vid->colram[adr & 0x3ff];			// tile color
+					pap = vid->reg[0x21];				// background color
+				}
+				if (vid->line[vid->ray.xb] != 0xff) {
+					col = vid->line[vid->ray.xb];
+				} else if (scrbyte & 0x80) {
+					col = ink;
+				} else if (vid->linb[vid->ray.x] != 0xff) {
+					col = vid->linb[vid->ray.xb];
+				} else {
+					col = pap;
+				}
+				scrbyte <<= 1;
+			}
 		}
+	} else {
+		col = vid->reg[0x20];
 	}
 	vid_dot_full(vid, col & 0x0f);
 }
@@ -148,11 +152,11 @@ void vidC64TMDraw(Video* vid) {
 		} else {
 			if ((xscr & 7) == 0) {
 				adr = ((yscr >> 3) * 40) + (xscr >> 3);						// offset to tile
-				ink = vid->mrd(adr | ((vid->reg[0x18] & 0xf0) << 6), vid->data);		// tile nr
+				ink = vid->mrd(adr | ((vid->reg[0x18] & 0xf0) << 6), vid->xptr);		// tile nr
 				if ((~vid->vbank & 1) && ((vid->reg[0x18] & 0x0c) == 0x04)) {
 					scrbyte = vid->font[(ink << 3) | (yscr & 7)];
 				} else {
-					scrbyte = vid->mrd(((vid->reg[0x18] & 0x0e) << 10) | (ink << 3) | (yscr & 7), vid->data);
+					scrbyte = vid->mrd(((vid->reg[0x18] & 0x0e) << 10) | (ink << 3) | (yscr & 7), vid->xptr);
 				}
 				atrbyte = vid->colram[adr & 0x3ff];			// tile color
 				pap = vid->reg[0x21];				// background color
@@ -209,9 +213,9 @@ void vidC64BDraw(Video* vid) {
 			} else {
 				if ((xscr & 7) == 0) {
 					adr = (yscr >> 3) * 320 + (xscr & ~7) + (yscr & 7);
-					scrbyte = vid->mrd(adr | ((vid->reg[0x18] & 0x08) << 10), vid->data);
+					scrbyte = vid->mrd(adr | ((vid->reg[0x18] & 0x08) << 10), vid->xptr);
 					adr = (yscr >> 3) * 40 + (xscr >> 3);
-					ink = vid->mrd(adr | ((vid->reg[0x18] & 0xf0) << 6), vid->data);
+					ink = vid->mrd(adr | ((vid->reg[0x18] & 0xf0) << 6), vid->xptr);
 					pap = ink & 0x0f;		// 0
 					ink = (ink >> 4) & 0x0f;	// 1
 				}
@@ -238,10 +242,10 @@ void vidC64BMDraw(Video* vid) {
 			} else {
 				if ((xscr & 7) == 0) {
 					adr = (yscr >> 3) * 320 + (xscr & 0xf8) + (yscr & 7);
-					scrbyte = vid->mrd(adr | ((vid->reg[0x18] & 0x08) << 10), vid->data);
+					scrbyte = vid->mrd(adr | ((vid->reg[0x18] & 0x08) << 10), vid->xptr);
 				}
 				adr = (yscr >> 3) * 40 + (xscr >> 3);
-				ink = vid->mrd(adr | ((vid->reg[0x18] & 0xf0) << 6), vid->data);
+				ink = vid->mrd(adr | ((vid->reg[0x18] & 0xf0) << 6), vid->xptr);
 				if ((xscr & 1) == 0) {
 					switch (scrbyte & 0xc0) {
 						case 0x00:
@@ -322,10 +326,10 @@ void vidC64Line(Video* vid) {
 					posx |= 0x100;
 //				printf("%.2X, %.4X, %.2X\n",vid->reg[0x18] & 0x07, (((vid->reg[0x18] & 0x07) << 11) | 0x7f8) + i, vid->vbank);
 //				assert(0);
-				sadr = vid->mrd(((vid->reg[0x18] & 0xf0) << 6) + 0x3f8 + i, vid->data) << 6;		// address of sprite data
+				sadr = vid->mrd(((vid->reg[0x18] & 0xf0) << 6) + 0x3f8 + i, vid->xptr) << 6;		// address of sprite data
 				sadr += posy * 3;									// address of current line
 				for (bn = 0; bn < 3; bn++) {
-					dat = vid->mrd(sadr, vid->data);
+					dat = vid->mrd(sadr, vid->xptr);
 					sadr++;
 					ptr = (sprpr & msk) ? vid->linb : vid->line;
 					if (sprmc & msk) {		// multicolor

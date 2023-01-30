@@ -13,18 +13,6 @@
 #define	F_HIRAM		(1<<1)
 #define	F_CHAREN	(1<<2)
 
-#define CIA_IRQ_TIMA	(1<<0)
-#define CIA_IRQ_TIMB	(1<<1)
-#define CIA_IRQ_ALARM	(1<<2)
-#define CIA_IRQ_SP	(1<<3)
-#define CIA_IRQ_FLAG	(1<<4)
-
-#define CIA_CR_START	(1<<0)	// start timer
-#define CIA_CR_PBXON	(1<<1)	// use reg B bits
-#define CIA_CR_TOGGLE	(1<<2)	// 0:pulse, 1:toggle
-#define CIA_CR_ONESHOT	(1<<3)	// 0:continuous, 1:oneshot
-#define CIA_CR_RELOAD	(1<<4)	// 0:no effect, 1:load latch on overflow
-
 // vicII read byte
 // bits 00..13:vic ADR bus
 // bits 14..15:cia2 reg #00 bit 0,1 inverted
@@ -99,159 +87,52 @@ void c64_pal_wr(int adr, int val, void* data) {
 
 extern unsigned char toBCD(unsigned char);
 
-int c64_cia_rd(c64cia* cia, int adr) {
-	unsigned char res = 0xff;
-	switch (adr & 0x0f) {
-		case 0x02: res = cia->portA_mask; break;
-		case 0x03: res = cia->portB_mask; break;
-		case 0x04: res = cia->timerA.vall; break;
-		case 0x05: res = cia->timerA.valh; break;
-		case 0x06: res = cia->timerB.vall; break;
-		case 0x07: res = cia->timerB.valh; break;
-		case 0x08: res = toBCD(cia->time.tenth); break;
-		case 0x09: res = toBCD(cia->time.sec); break;
-		case 0x0a: res = toBCD(cia->time.min); break;
-		case 0x0b: if (cia->time.hour < 12) {
-				res = toBCD(cia->time.hour);
-			} else {
-				res = toBCD(cia->time.hour - 12) | 0x80;
-			}
-			break;
-		case 0x0c: res = cia->ssr; break;
-		case 0x0d:
-			res = cia->intrq;
-			cia->intrq = 0;
-			break;		// cia1:INT; cia2:NMI bits
-		case 0x0e: res = cia->timerA.flags; break;
-		case 0x0f: res = cia->timerB.flags; break;
-	}
-	return res;
-}
-
-void c64_cia_wr(c64cia* cia, int adr, int val) {
-	switch (adr & 0x0f) {
-		case 0x02: cia->portA_mask = val & 0xff; break;
-		case 0x03: cia->portB_mask = val & 0xff; break;
-		case 0x04: cia->timerA.inil = val & 0xff; break;
-		case 0x05:
-			cia->timerA.inih = val & 0xff;
-			if (!(cia->timerA.flags & CIA_CR_START))
-				cia->timerA.value = cia->timerA.inival;
-			break;
-		case 0x06: cia->timerB.inil = val & 0xff; break;
-		case 0x07:
-			cia->timerB.inih = val;
-			if (!(cia->timerB.flags & CIA_CR_START))
-				cia->timerB.value = cia->timerB.inival;
-			break;
-		case 0x08: if (cia->timerB.flags & 0x80) {cia->alarm.tenth = val & 0xff;} else {cia->time.tenth = val & 0xff;} break;
-		case 0x09: if (cia->timerB.flags & 0x80) {cia->alarm.sec = val & 0xff;} else {cia->time.sec = val & 0xff;} break;
-		case 0x0a: if (cia->timerB.flags & 0x80) {cia->alarm.min = val & 0xff;} else {cia->time.min = val & 0xff;} break;
-		case 0x0b: if (cia->timerB.flags & 0x80) {cia->alarm.hour = val & 0xff;} else {cia->time.hour = val & 0xff;} break;
-		case 0x0c: cia->ssr = val & 0xff; break;
-		case 0x0d:
-			if (val & 0x80)
-				cia->inten |= (val & 0x7f);		// 1 - set state bits 0..6 where val bits is 1
-			else
-				cia->inten &= ~val;			// 0 - same but reset bits 0..6
-			break;
-		case 0x0e: cia->timerA.flags = val & 0xff;
-			if (val & CIA_CR_RELOAD)
-				cia->timerA.value = cia->timerA.inival;
-			break;
-		case 0x0f: cia->timerB.flags = val & 0xff;
-			if (val & CIA_CR_RELOAD)
-				cia->timerB.value = cia->timerB.inival;
-			break;
-	}
-}
 
 // dc00..dcff	cia1 (0x10 registers + mirrors)
 
-int c64_cia1_rd(int adr, void* data) {
-	Computer* comp = (Computer*)data;
-	int res = -1;
-	int idx;
-	int row;
-	adr &= 0x0f;
-	switch (adr) {
-		case 0x00:
-			res = 0xff;		// joystick 1
-			break;
-		case 0x01:
-			row = comp->c64.keyrow;
-			res = 0xff;
-			for (idx = 0; idx < 8; idx++) {
-				if ((row & 1) == 0) {
-					res &= comp->keyb->msxMap[idx];
-				}
-				row >>= 1;
-			}
-			break;
-		default:
-			res = c64_cia_rd(&comp->c64.cia1, adr & 0x0f);
-			break;
+// cia1 port A rd: joystick
+int cia1_porta_rd(int, void*) {
+	return 0xff;
+}
 
+// cia1 port B rd: keyboard scan
+int cia1_portb_rd(int, void* p) {
+	Computer* comp = (Computer*)p;
+	int row = comp->c64.keyrow;
+	int res = 0xff;
+	for (int idx = 0; idx < 8; idx++) {
+		if ((row & 1) == 0) {
+			res &= comp->keyb->msxMap[idx];
+		}
+		row >>= 1;
 	}
-	//printf("cia1 rd %.2X = %.2X\n",adr,res);
 	return res;
 }
 
-void c64_cia1_wr(int adr, int val, void* data) {
-	Computer* comp = (Computer*)data;
-	adr &= 0x0f;
-	comp->c64.cia1.reg[adr] = val & 0xff;
-	//printf("cia1 wr %.2X,%.2X\n",adr,val);
-	switch (adr) {
-		case 0x00: comp->c64.keyrow = val & 0xff;
-			break;
-		case 0x01:			// no write to port b?
-			break;
-		default:
-			c64_cia_wr(&comp->c64.cia1, adr & 0x0f, val);
-			break;
-	}
+void cia1_porta_wr(int, int v, void* p) {
+	((Computer*)p)->c64.keyrow = v & 0xff;
+}
+
+int c64_cia1_rd(int adr, void* p) {
+	return c64_cia_rd(((Computer*)p)->c64.cia1, adr);
+}
+
+void c64_cia1_wr(int adr, int val, void* p) {
+	c64_cia_wr(((Computer*)p)->c64.cia1, adr, val);
 }
 
 // dd00..ddff	cia2 (0x10 registers + mirrors)
 
-int c64_cia2_rd(int adr, void* data) {
-	Computer* comp = (Computer*)data;
-	int res = 0xff;
-	adr &= 0x0f;
-	switch (adr) {
-		case 0x00:
-			res = 0xff;	// rs232 line 1
-			break;
-		case 0x01:
-			res = 0xff;	// rs232 line 2
-			break;
-		default:
-			res = c64_cia_rd(&comp->c64.cia2, adr & 0x0f);
-			break;
-
-	}
-	//printf("cia2 rd %.2X = %.2X\n",adr,res);
-	return res;
+void cia2_porta_wr(int, int v, void* p) {
+	((Computer*)p)->vid->vbank = ~v & 3;
 }
 
-void c64_cia2_wr(int adr, int val, void* data) {
-	Computer* comp = (Computer*)data;
-	adr &= 0x0f;
-	comp->c64.cia2.reg[adr] = val;
-	//printf("cia2 wr %.2X,%.2X\n",adr,val);
-	switch (adr) {
-		case 0x00:
-			comp->vid->vbank = ~val & 3;
-			// rs232 bits
-			break;
-		case 0x01:
-			// rs232 bits
-			break;
-		default:
-			c64_cia_wr(&comp->c64.cia2, adr & 0x0f, val);
-			break;
-	}
+int c64_cia2_rd(int adr, void* p) {
+	return c64_cia_rd(((Computer*)p)->c64.cia2, adr);
+}
+
+void c64_cia2_wr(int adr, int val, void* p) {
+	c64_cia_wr(((Computer*)p)->c64.cia2, adr, val);
 }
 
 // de00..deff	io1
@@ -286,7 +167,7 @@ void c64_maper(Computer* comp) {
 	memSetBank(comp->mem, 0x00, MEM_RAM, 0, MEM_32K, NULL, NULL, NULL);
 	// 0x8000: RAM or cartrige rom (TODO)
 	memSetBank(comp->mem, 0x80, MEM_RAM, 4, MEM_8K, NULL, NULL, NULL);
-	// 0xa000: RAM or BASIC (8K)
+	// 0xa000: RAM or BASIC (8K): reg01 & 1
 	if ((comp->c64.reg01 & (F_LORAM | F_HIRAM)) == (F_LORAM | F_HIRAM)) {			// 11:basic, others:ram
 		memSetBank(comp->mem, 0xa0, MEM_ROM, 0, MEM_8K, c64_rom_rd, c64_rom_wr, comp);	// BASIC (A000..BFFF)
 	} else {
@@ -332,14 +213,14 @@ void c64_reset(Computer* comp) {
 	int i;
 	xColor xcol;
 	for (i = 0; i < 16; i++) {
-		comp->c64.cia1.reg[i] = 0x00;
-		comp->c64.cia2.reg[i] = 0x00;
+		comp->c64.cia1->reg[i] = 0x00;
+		comp->c64.cia2->reg[i] = 0x00;
 		xcol = c64_palette[i];
 		vid_set_col(comp->vid, i, xcol);
 	}
 	memset(comp->vid->reg, 0x00, 256);
 	c64_maper(comp);
-	vidSetMode(comp->vid, VID_C64_TEXT);
+	vid_set_mode(comp->vid, VID_C64_TEXT);
 }
 
 int c64_mrd(Computer* comp, int adr, int m1) {
@@ -354,6 +235,7 @@ int c64_mrd(Computer* comp, int adr, int m1) {
 			break;
 		default:
 			res = memRd(comp->mem, adr);
+			break;
 	}
 	return res;
 }
@@ -404,125 +286,43 @@ sndPair c64_vol(Computer* comp, sndVolume* sv) {
 	return res;
 }
 
-void cia_sync_time(ciaTime* xt, int ns) {
-	xt->ns += ns;
-	while (xt->ns >= 1e8) {		// 1/10 sec
-		xt->ns -= 1e8;
-		xt->tenth++;
-		if (xt->tenth > 9) {
-			xt->tenth = 0;
-			xt->sec++;
-			if (xt->sec > 59) {
-				xt->sec = 0;
-				xt->min++;
-				if (xt->min > 59) {
-					xt->min = 0;
-					xt->hour++;
-					if (xt->hour > 23) {
-						xt->hour = 0;
-					}
-				}
-			}
-		}
-	}
-}
-
-void cia_irq(c64cia* cia, int msk) {
-	cia->intrq |= msk;	// set irq
-	cia->intrq &= 0x1f;
-	cia->irq = (cia->intrq & cia->inten) ? 1 : 0;
-	if (cia->irq)
-		cia->intrq |= 0x80;
-}
-
-void cia_timer_tick(ciaTimer* tmr, int mod) {
-	if (!(tmr->flags & CIA_CR_START)) return;
-	switch (mod & 3) {
-		case 0:	tmr->value--;	// CLK
-			break;
-		case 1:			// CNT input (TODO)
-			break;
-		case 2:	if (mod & 0x80)	// TB: TA overflows
-				tmr->value--;
-			break;
-		case 3:			// TB: TA overflows while CNT is high (TODO)
-			break;
-	}
-	if (tmr->value == 0xffff) {				// overflow
-		tmr->value = tmr->inival;
-		tmr->overflow = 1;
-		if (tmr->flags & CIA_CR_ONESHOT)		// one-shot - stop timer
-			tmr->flags &= ~CIA_CR_START;
-	}
-}
-
-// ~1MHz ticks
-void cia_sync(c64cia* cia, int ns, int nspt) {
-	cia_sync_time(&cia->time, ns);
-	cia->ns += ns;
-	while (cia->ns >= nspt) {	// to mks
-		cia->ns -= nspt;
-		int mod = ((cia->timerB.flags & 0x60) >> 5);
-		cia_timer_tick(&cia->timerA, (cia->timerA.flags & 0x20) >> 5);
-		if ((cia->timerA.flags & (CIA_CR_PBXON | CIA_CR_TOGGLE)) == CIA_CR_PBXON)	// reset b6, reg b if it was set by timer A in 1-pulse mode
-			cia->reg[11] &= ~0x40;
-		if (cia->timerA.overflow) {
-			mod |= 0x80;
-			cia->timerA.overflow = 0;
-			if (cia->timerA.flags & CIA_CR_PBXON) {			// overflow appears in bit 6 of reg B
-				if (cia->timerA.flags & CIA_CR_TOGGLE) {	// 1: inverse bit 6, 0:set 1 bit but reset it on next cycle
-					cia->reg[11] ^= 0x40;
-				} else {
-					cia->reg[11] |= 0x40;
-				}
-			}
-			cia_irq(cia, CIA_IRQ_TIMA);
-		}
-		cia_timer_tick(&cia->timerB, mod);
-		if ((cia->timerB.flags & (CIA_CR_PBXON | CIA_CR_TOGGLE)) == CIA_CR_PBXON)
-			cia->reg[11] &= ~0x80;
-		if (cia->timerB.overflow) {
-			cia->timerB.overflow = 0;
-			if (cia->timerB.flags & CIA_CR_PBXON) {
-				if (cia->timerB.flags & CIA_CR_TOGGLE) {
-					cia->reg[11] ^= 0x80;
-				} else {
-					cia->reg[11] |= 0x80;
-				}
-			}
-			cia_irq(cia, CIA_IRQ_TIMB);
-		}
-	}
-}
-
 void c64_init(Computer* comp) {
 	vidUpdateTimings(comp->vid, comp->nsPerTick >> 3);
 	fdc_set_hd(comp->dif->fdc, 0);
 	comp->vid->mrd = c64_vic_mrd;
+//	comp->tape->xen = 1;
+	cia_set_port(comp->c64.cia1, 0, cia1_porta_rd, cia1_porta_wr);
+	cia_set_port(comp->c64.cia1, 1, cia1_portb_rd, NULL);
+	cia_set_port(comp->c64.cia2, 0, NULL, cia2_porta_wr);
+	cia_set_port(comp->c64.cia2, 1, NULL, NULL);
+}
+
+void c64_irq(Computer* comp, int t) {
+//	printf("c64irq\n");
+	switch (t) {
+		case IRQ_CIA1:
+		case IRQ_CIA2:
+			comp->cpu->intrq |= MOS6502_INT_IRQ;
+			break;
+		case IRQ_TAP_0:
+			cia_irq(comp->c64.cia1, CIA_IRQ_FLAG);
+			break;
+		case IRQ_VID_INT:
+			comp->cpu->intrq |= MOS6502_INT_IRQ;
+			break;
+	}
 }
 
 void c64_sync(Computer* comp, int ns) {
-	// vic->cpu irq
-	if (comp->vid->irq) {
-		comp->cpu->intrq |= MOS6502_INT_IRQ;
-		comp->vid->irq = 0;
-	}
-
-	if (comp->tape->on) {
+	if (comp->tape->on && !comp->tape->xen) {
 		int vol = comp->tape->volPlay;
 		tapSync(comp->tape, ns);
 		if ((vol > 0x80) && (comp->tape->volPlay < 0x80)) {	// front 1->0
-			cia_irq(&comp->c64.cia1, CIA_IRQ_FLAG);
+			cia_irq(comp->c64.cia1, CIA_IRQ_FLAG);
 		}
 	}
-	cia_sync(&comp->c64.cia1, ns, comp->nsPerTick);
-	cia_sync(&comp->c64.cia2, ns, comp->nsPerTick);
-
-	if (comp->c64.cia1.irq || comp->c64.cia2.irq) {
-		comp->c64.cia1.irq = 0;
-		comp->c64.cia2.irq = 0;
-		comp->cpu->intrq |= MOS6502_INT_IRQ;
-	}
+	cia_sync(comp->c64.cia1, ns, comp->nsPerTick);
+	cia_sync(comp->c64.cia2, ns, comp->nsPerTick);
 }
 
 typedef struct {

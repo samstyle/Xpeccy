@@ -96,8 +96,8 @@ extern int botSkip;
 void vid_dot_full(Video*, unsigned char);
 void vid_dot_half(Video*, unsigned char);
 
-typedef int(*vcbmrd)(int, void*);
-typedef void(*vcbmwr)(int, int, void*);
+//typedef int(*vcbmrd)(int, void*);
+//typedef void(*vcbmwr)(int, int, void*);
 typedef void(*cbvid)(Video*);
 typedef void(*vcbptr)(void*);
 
@@ -159,10 +159,10 @@ struct Video {
 	cbvid cbLine;		// @ hblank end
 	cbvid cbFrame;		// call every frame
 
-	vcbmrd mrd;		// external memory reading
-	vcbmwr mwr;		// external memory writing
+	cbxrd mrd;		// external memory reading
+	cbxwr mwr;		// external memory writing
 	cbirq xirq;		// interrupt
-	void* data;
+	void* xptr;
 
 	int fcnt;
 	int lcnt;
@@ -337,12 +337,12 @@ struct Video {
 
 };
 
-Video* vidCreate(vcbmrd, cbirq, void*);
+Video* vidCreate(cbxrd, cbirq, void*);
 void vidDestroy(Video*);
 
 void vidReset(Video*);
 void vidSync(Video*,int);
-void vidSetMode(Video*,int);
+void vid_set_mode(Video*,int);
 void vid_reset_ray(Video*);
 void vid_set_ray(Video*, int);
 

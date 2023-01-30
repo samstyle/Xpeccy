@@ -70,7 +70,7 @@ void prfOut7FFD(Computer* comp, int port, int val) {
 void prfOutDFFD(Computer* comp, int port, int val) {
 	comp->pDFFD = val;
 	comp->cpm = (val & 0x20) ? 1 : 0;
-	vidSetMode(comp->vid, (val & 0x80) ? VID_PRF_MC : VID_NORMAL);
+	vid_set_mode(comp->vid, (val & 0x80) ? VID_PRF_MC : VID_NORMAL);
 	prfMapMem(comp);
 //	printf("OUT DFFD,%.2X\n",val);
 }

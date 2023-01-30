@@ -64,14 +64,6 @@ typedef int(*cbiack)(void*);
 // memrd external
 typedef int(*cbdmr)(int, void*);
 
-#ifdef WORDS_BIG_ENDIAN
-	#define PAIR(p,h,l) union{unsigned short p; struct {unsigned char h; unsigned char l;};}
-#else
-	#define PAIR(p,h,l) union{unsigned short p; struct {unsigned char l; unsigned char h;};}
-#endif
-
-typedef PAIR(w,h,l) xpair;
-
 #define OF_PREFIX	1
 #define OF_EXT		OF_PREFIX
 #define OF_SKIPABLE	(1<<1)		// opcode is skipable by f8

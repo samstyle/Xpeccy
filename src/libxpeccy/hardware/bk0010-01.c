@@ -319,7 +319,7 @@ void bk_reset(Computer* comp) {
 	comp->cpu->reset(comp->cpu);
 	comp->vid->curscr = 0;
 	comp->vid->paln = 0;
-	vidSetMode(comp->vid, VID_BK_BW);
+	vid_set_mode(comp->vid, VID_BK_BW);
 	comp->keyb->flag = 0x00;
 	comp->keyb->keycode = 0;
 	bk_mem_map(comp);
@@ -445,11 +445,11 @@ void bk_keyp(Computer* comp, keyEntry xkey) {
 			switch(comp->vid->vmode) {
 				case VID_BK_BW:
 					comp->msg = bkvidcol;
-					vidSetMode(comp->vid, VID_BK_COL);
+					vid_set_mode(comp->vid, VID_BK_COL);
 					break;
 				case VID_BK_COL:
 					comp->msg = bkvidbw;
-					vidSetMode(comp->vid, VID_BK_BW);
+					vid_set_mode(comp->vid, VID_BK_BW);
 					break;
 			}
 			break;

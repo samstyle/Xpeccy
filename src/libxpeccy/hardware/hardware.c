@@ -71,7 +71,7 @@ HardWare hwTab[] = {
 		nes_init,nesMaper,NULL,NULL,nesMemRd,nesMemWr,nes_irq,nesReset,nesSync,nes_keyp,nes_keyr,nes_vol
 	},{
 		HW_C64,HWG_COMMODORE,"Commodore64","Commodore64",16,MEM_128K,1.0,&cmdrLay,16,
-		c64_init,c64_maper,NULL,NULL,c64_mrd,c64_mwr,NULL,c64_reset,c64_sync,c64_keyp,c64_keyr,c64_vol
+		c64_init,c64_maper,NULL,NULL,c64_mrd,c64_mwr,c64_irq,c64_reset,c64_sync,c64_keyp,c64_keyr,c64_vol
 //	},{
 //		HW_NULL,HWG_NULL,"","",16,0,1.0,NULL,16,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL		// separator
 	},{

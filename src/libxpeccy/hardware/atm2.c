@@ -54,11 +54,11 @@ void atm2OutFE(Computer* comp, int port, int val) {
 
 void atm2Out77(Computer* comp, int port, int val) {		// dos
 	switch (val & 7) {
-		case 0: vidSetMode(comp->vid,VID_ATM_EGA); break;
-		case 2: vidSetMode(comp->vid,VID_ATM_HWM); break;
-		case 3: vidSetMode(comp->vid,VID_NORMAL); break;
-		case 6: vidSetMode(comp->vid,VID_ATM_TEXT); break;
-		default: vidSetMode(comp->vid,VID_UNKNOWN); break;
+		case 0: vid_set_mode(comp->vid,VID_ATM_EGA); break;
+		case 2: vid_set_mode(comp->vid,VID_ATM_HWM); break;
+		case 3: vid_set_mode(comp->vid,VID_NORMAL); break;
+		case 6: vid_set_mode(comp->vid,VID_ATM_TEXT); break;
+		default: vid_set_mode(comp->vid,VID_UNKNOWN); break;
 	}
 	compSetTurbo(comp,(val & 0x08) ? 2 : 1);
 	comp->z_i = (val & 0x20) ? 1 : 0;

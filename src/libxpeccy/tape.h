@@ -4,6 +4,8 @@
 extern "C" {
 #endif
 
+#include "defines.h"
+
 // ZX spectrum signal timings
 // 1T ~ 284ns ~ 0.284mks @ 3.51MHz
 // pilot	2168T	615 mks
@@ -81,10 +83,14 @@ typedef struct {
 	TapeBlock tmpBlock;
 	int blkCount;
 	TapeBlock* blkData;
+
+	unsigned xen:1;
+	cbirq xirq;
+	void* xptr;
 } Tape;
 
-Tape* tapCreate();
-void tapDestroy(Tape*);
+Tape* tape_create(cbirq, void*);
+void tape_destroy(Tape*);
 
 void tape_set_path(Tape*, const char*);
 

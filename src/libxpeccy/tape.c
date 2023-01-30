@@ -6,18 +6,20 @@
 
 // NEW STUFF
 
-Tape* tapCreate() {
+Tape* tape_create(cbirq cb, void* p) {
 	Tape* tap = (Tape*)malloc(sizeof(Tape));
 	memset(tap,0x00,sizeof(Tape));
 	tap->isData = 1;
 	tap->path = NULL;
 	tap->blkData = NULL;
 	tap->tmpBlock.data = NULL;
+	tap->xirq = cb;
+	tap->xptr = p;
 	blkClear(&tap->tmpBlock);
 	return tap;
 }
 
-void tapDestroy(Tape* tap) {
+void tape_destroy(Tape* tap) {
 	if (tap->path) free(tap->path);
 	tapEject(tap);
 	if (tap->tmpBlock.data)
@@ -373,6 +375,7 @@ void tapRewind(Tape* tap, int blk) {
 void tapSync(Tape* tap, int ns) {
 	tap->time += ns;
 	int mks = tap->time / 1000;
+	int sig;
 	tap->time %= 1000;
 	if (tap->on) {
 		if (tap->rec) {
@@ -407,9 +410,13 @@ void tapSync(Tape* tap, int ns) {
 						tap->on = 0;
 					}
 				} else {
+					sig = tap->volPlay;
 					tap->sigLen += tap->blkData[tap->block].data[tap->pos].size;
 					tap->volPlay = tap->blkData[tap->block].data[tap->pos].vol;
 					tap->pos++;
+					if (tap->xen && ((sig ^ tap->volPlay) & 0x80)) {	// signal changed
+						tap->xirq(tap->volPlay & 0x80 ? IRQ_TAP_1 : IRQ_TAP_0, tap->xptr);
+					}
 				}
 			}
 		} else {

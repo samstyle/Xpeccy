@@ -14,7 +14,7 @@ void spcv_ini(Video* vid) {
 void spc_dot(Video* vid) {
 	if ((vid->ray.x & 7) == 0) {					// every 8 dots
 		adr = (vid->ray.y & 0xff) | (vid->ray.x << 5);		// 0x9000 + y + (x / 8 * 256)
-		scrbyte = vid->mrd(adr, vid->data);
+		scrbyte = vid->mrd(adr, vid->xptr);
 	}
 	col = (scrbyte & 0x80) ? 1 : 0;
 	scrbyte <<= 1;

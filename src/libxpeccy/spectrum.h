@@ -19,6 +19,7 @@ extern "C" {
 #include "i8259_pic.h"
 #include "i8042_kbd.h"
 #include "i8237_dma.h"
+#include "mos6526_cia.h"
 
 #include "sound/ayym.h"
 #include "sound/gs.h"
@@ -59,37 +60,6 @@ typedef struct {
 	unsigned char flag;
 	unsigned char page;
 } memEntry;
-
-// CIA (c64)
-typedef struct {
-	int ns;
-	unsigned char tenth;	// 1/10 sec (each 1e8 ns)
-	unsigned char sec;
-	unsigned char min;
-	unsigned char hour;
-} ciaTime;
-
-typedef struct {
-	unsigned overflow:1;
-	unsigned char flags;		// cia E/F registers
-	PAIR(inival,inih,inil);		// initial value
-	PAIR(value,valh,vall);		// countdown
-} ciaTimer;
-
-typedef struct {
-	unsigned irq:1;
-	unsigned char portA_mask;
-	unsigned char portB_mask;
-	ciaTimer timerA;
-	ciaTimer timerB;
-	ciaTime time;
-	ciaTime alarm;
-	int ns;
-	unsigned char ssr;		// serial shift register
-	unsigned char intrq;		// reg D - interrupt state
-	unsigned char inten;		// reg D - interrupt mask
-	unsigned char reg[16];
-} c64cia;
 
 typedef struct {
 	unsigned brk:1;			// breakpoint
@@ -270,8 +240,8 @@ typedef struct {
 		unsigned char vicBank;	// b0,1 = b14,15 of VIC address
 		unsigned char rs232a;	// rs232 output line
 		unsigned char rs232b;
-		c64cia cia1;
-		c64cia cia2;
+		CIA* cia1;
+		CIA* cia2;
 	} c64;
 	CMOS cmos;
 // ibm

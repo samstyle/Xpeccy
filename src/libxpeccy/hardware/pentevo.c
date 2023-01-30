@@ -12,14 +12,14 @@ void evoReset(Computer* comp) {
 void evoSetVideoMode(Computer* comp) {
 	int mode = (comp->pEFF7 & 0x20) | ((comp->pEFF7 & 0x01) << 1) | (comp->prt2 & 0x07);	// z5.z0.0.b2.b1.b0	b:FF77, z:eff7
 	switch (mode) {
-		case 0x03: vidSetMode(comp->vid,VID_NORMAL); break;		// common
-		case 0x13: vidSetMode(comp->vid,VID_ALCO); break;		// alco 16c
-		case 0x23: vidSetMode(comp->vid,VID_HWMC); break;		// zx hardware multicolor
-		case 0x02: vidSetMode(comp->vid,VID_ATM_HWM); break;	// atm hardware multicolor
-		case 0x00: vidSetMode(comp->vid,VID_ATM_EGA); break;	// atm ega
-		case 0x06: vidSetMode(comp->vid,VID_ATM_TEXT); break;	// atm text
-		case 0x07: vidSetMode(comp->vid,VID_EVO_TEXT); break;	// pentevo text
-		default: vidSetMode(comp->vid,VID_UNKNOWN); break;
+		case 0x03: vid_set_mode(comp->vid,VID_NORMAL); break;		// common
+		case 0x13: vid_set_mode(comp->vid,VID_ALCO); break;		// alco 16c
+		case 0x23: vid_set_mode(comp->vid,VID_HWMC); break;		// zx hardware multicolor
+		case 0x02: vid_set_mode(comp->vid,VID_ATM_HWM); break;	// atm hardware multicolor
+		case 0x00: vid_set_mode(comp->vid,VID_ATM_EGA); break;	// atm ega
+		case 0x06: vid_set_mode(comp->vid,VID_ATM_TEXT); break;	// atm text
+		case 0x07: vid_set_mode(comp->vid,VID_EVO_TEXT); break;	// pentevo text
+		default: vid_set_mode(comp->vid,VID_UNKNOWN); break;
 	}
 }
 
