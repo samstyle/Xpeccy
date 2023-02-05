@@ -14,12 +14,15 @@ static int xscr,yscr,adr;
 static unsigned char col,ink,pap,scrbyte,atrbyte;
 
 void vic_irq(Video* vid, int mask) {
+	unsigned char irq = vid->intrq;
 	vid->intrq |= mask;
 	vid->intrq &= 0x0f;
-	if (vid->intrq & vid->inten) {
+	irq ^= vid->intrq;	// 1 if line changed
+	irq &= vid->intrq;	// leave 0->1 only
+	if (irq & vid->inten) {	// if 0->1 enabled
 		vid->intrq |= 0x80;
 		//vid->irq = 1;
-		vid->xirq(IRQ_VID_INT, vid->xptr);
+		vid->xirq(IRQ_VIC, vid->xptr);
 	}
 }
 
@@ -219,7 +222,16 @@ void vidC64BDraw(Video* vid) {
 					pap = ink & 0x0f;		// 0
 					ink = (ink >> 4) & 0x0f;	// 1
 				}
-				col = (scrbyte & 0x80) ? ink : pap;
+				if (vid->line[vid->ray.x] != 0xff) {
+					col = vid->line[vid->ray.x];
+				} else if (scrbyte & 0x80) {
+					col = ink;
+				} else if (vid->linb[vid->ray.x] != 0xff) {
+					col = vid->linb[vid->ray.x];
+				} else {
+					col = pap;
+				}
+				// col = (scrbyte & 0x80) ? ink : pap;
 				scrbyte <<= 1;
 			}
 		}
@@ -290,6 +302,8 @@ void vidC64Fram(Video* vid) {
 // d026		spr extra color 2
 // d027..2e	sprite colors
 
+// sprite: hight:21 pix, width:3 bytes (24 bytes)
+
 void vidC64Line(Video* vid) {
 	if (vid->intp.y == vid->ray.y) {		// if current line == interrupt line and raster interrupt is enabled
 		vic_irq(vid, VIC_IRQ_RASTER);
@@ -297,7 +311,7 @@ void vidC64Line(Video* vid) {
 	// sprites
 	memset(vid->line, 0xff, 512);	// ff as transparent color
 	memset(vid->linb, 0xff, 512);
-	int yscr = vid->ray.yb;// - vid->lay.bord.y;	// current screen line
+	int yscr = vid->ray.yb - 24;		// current line (where is start?)
 	unsigned char sprxh = vid->reg[0x10];	// bit x : sprite x X 8th bit
 	unsigned char spren = vid->reg[0x15];	// bit x : sprite x enabled
 	unsigned char sprmc = vid->reg[0x1c];	// bit x : sprite x multicolor
@@ -317,17 +331,18 @@ void vidC64Line(Video* vid) {
 	vid->sprxspr = 0;
 	for (i = 0; i < 8; i++) {
 		if (spren & msk) {
-			posy = yscr - vid->reg[i * 2 + 1];		// line inside sprite
-			if (sprhi & msk)
-				posy = posy / 2;
-			if ((posy >= 0) && (posy < 21)) {
-				posx = vid->reg[i * 2];
-				if (sprxh & msk)
+			posy = yscr - vid->reg[i * 2 + 1];		// line inside sprite. Yscr - spr.Y
+			if (sprhi & msk)				// if sprite is double height, divide line by 2
+				posy >>= 1;
+			if ((posy >= 0) && (posy < 21)) {		// if sprite is crossing current line
+				posx = vid->reg[i * 2];			// spr.X
+				if (sprxh & msk)			// add bit 8
 					posx |= 0x100;
 //				printf("%.2X, %.4X, %.2X\n",vid->reg[0x18] & 0x07, (((vid->reg[0x18] & 0x07) << 11) | 0x7f8) + i, vid->vbank);
 //				assert(0);
-				sadr = vid->mrd(((vid->reg[0x18] & 0xf0) << 6) + 0x3f8 + i, vid->xptr) << 6;		// address of sprite data
-				sadr += posy * 3;									// address of current line
+				sadr = ((vid->reg[0x18] & 0xf0) << 6) | 0x3f8 | i;	// sprite nr adr
+				sadr = vid->mrd(sadr, vid->xptr);			// sprite nr
+				sadr = (sadr << 6) | (posy * 3);			// sprite data adr
 				for (bn = 0; bn < 3; bn++) {
 					dat = vid->mrd(sadr, vid->xptr);
 					sadr++;

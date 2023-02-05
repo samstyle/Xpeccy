@@ -58,7 +58,7 @@ static xFileTypeInfo ft_tab[] = {
 	{FL_MX2, 0, ".mx2", "*.mx2", loadMSX, NULL, "MSX2 cartrige"},
 	{FL_CAS, 0, ".cas", "*.cas", loadCAS, NULL, "MSX cassette"},
 	{FL_NES, 0, ".nes", "*.nes", loadNes, NULL, "NES cartrige"},
-//	{FL_T64, 0, ".t64", "*.t64", loadT64, NULL, "T64 tape image"},
+	{FL_T64, 0, ".t64", "*.t64", loadT64, NULL, "T64 tape image"},
 	{FL_C64TAP, 0, ".tap", "*.tap", loadC64RawTap, NULL, "C64 raw tape image"},
 	{FL_C64PRG, 0, ".prg", "*.prg", loadC64prg, NULL, "C64 PRG snapshot"},
 	{FL_BKBIN, 0, ".bin", "*.bin", loadBIN, NULL, "BK bin data"},

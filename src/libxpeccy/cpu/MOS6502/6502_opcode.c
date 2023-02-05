@@ -1090,7 +1090,7 @@ void mosop99(CPU* cpu) {
 	cpu->mwr(cpu->mptr, cpu->a, cpu->data);
 }
 
-// txs
+// txs (not affect flags)
 void mosop9A(CPU* cpu) {
 	cpu->lsp = cpu->lx;
 }

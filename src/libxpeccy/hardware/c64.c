@@ -50,12 +50,12 @@ void vic_wr(Video*, int, int);
 
 int c64_vic_rd(int adr, void* data) {
 	Computer* comp = (Computer*)data;
-	return vic_rd(comp->vid, adr);
+	return vic_rd(comp->vid, adr & 0x3f);
 }
 
 void c64_vic_wr(int adr, int val, void* data) {
 	Computer* comp = (Computer*)data;
-	vic_wr(comp->vid, adr, val);
+	vic_wr(comp->vid, adr & 0x3f, val);
 }
 
 // d400..d7ff	sid
@@ -256,7 +256,7 @@ void c64_mwr(Computer* comp, int adr, int val) {
 			val &= comp->c64.reg00;					// reset ro bits in value
 			comp->c64.reg01 |= val;					// set new output bits in R0
 			c64_maper(comp);
-			comp->tape->levRec = (val & 8) ? 0xa0 : 0x60;		// datasette output
+			comp->tape->levRec = (val & 8) ? 0xb0 : 0x50;		// datasette output
 			if (val & 0x20) {
 				comp->tape->on = 0;
 				comp->tape->rec = 0;
@@ -307,7 +307,8 @@ void c64_irq(Computer* comp, int t) {
 		case IRQ_TAP_0:
 			cia_irq(comp->c64.cia1, CIA_IRQ_FLAG);
 			break;
-		case IRQ_VID_INT:
+		case IRQ_VIC:
+			printf("vic int\n");
 			comp->cpu->intrq |= MOS6502_INT_IRQ;
 			break;
 	}

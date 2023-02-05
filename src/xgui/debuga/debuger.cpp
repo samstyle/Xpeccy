@@ -297,6 +297,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	lst.clear();
 	p.icon = QIcon(":/images/commodore.png"); p.wid = ui.ciaTab; lst.append(p);
 	p.icon = QIcon(":/images/tape.png"); p.wid = ui.tapeTab; lst.append(p);
+	p.icon = QIcon(); p.name = "VIC"; p.wid = ui.vicTab; lst.append(p);
 	tablist[HWG_COMMODORE] = lst;
 	lst.clear();
 	p.icon = QIcon(":/images/speaker2.png"); p.wid = ui.ayTab; lst.append(p);
@@ -595,6 +596,8 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.tableDMA->setModel(new xDmaTableModel());
 	ui.tabCmos->setModel(new xCmosDumpModel());
 	ui.tablePIC->setModel(new xPicModel());
+// c64 tabs
+	ui.tabVicRegs->setModel(new xVicRegsModel());
 // subwindows
 	dui.setupUi(dumpwin);
 	dui.tbSave->addAction(dui.aSaveBin);
@@ -1077,6 +1080,10 @@ void DebugWin::fillTabs() {
 		ui.cia2inten->setText(getbinbyte(comp->c64.cia2->inten));
 		ui.cia2cra->setText(getbinbyte(comp->c64.cia2->timerA.flags));
 		ui.cia2crb->setText(getbinbyte(comp->c64.cia2->timerB.flags));
+	}
+	// vic
+	if (ui.tabsPanel->currentWidget() == ui.vicTab) {
+		ui.tabVicRegs->update();
 	}
 
 	updateScreen();

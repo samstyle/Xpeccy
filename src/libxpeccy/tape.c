@@ -15,6 +15,7 @@ Tape* tape_create(cbirq cb, void* p) {
 	tap->tmpBlock.data = NULL;
 	tap->xirq = cb;
 	tap->xptr = p;
+	tap->volPlay = 0x80;
 	blkClear(&tap->tmpBlock);
 	return tap;
 }
@@ -338,6 +339,7 @@ void tapStop(Tape* tap) {
 		if (tap->rec)
 			tapStoreBlock(tap);
 		tap->volPlay = (tap->volPlay & 0x80) ? 0x7f : 0x81;
+		//tap->volPlay = 0x80;
 		// tap->pos = 0;
 	}
 }

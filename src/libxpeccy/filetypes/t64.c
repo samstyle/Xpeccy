@@ -31,6 +31,30 @@ typedef struct {
 // L/M: next byte
 // ...
 
+static int wavs,wavm,wavl;
+
+void t64_add_bit(TapeBlock* blk, int bit) {
+	if (bit) {
+		blkAddWave(blk, wavm);
+		blkAddWave(blk, wavs);
+	} else {
+		blkAddWave(blk, wavs);
+		blkAddWave(blk, wavm);
+	}
+}
+
+// 8 bits + parity
+void t64_add_byte(TapeBlock* blk, int dat) {
+	int prt = parity(dat);
+	blkAddWave(blk,wavl);		// byte start: L/M
+	blkAddWave(blk,wavm);
+	for (int j = 0; j < 8; j++) {	// bits
+		t64_add_bit(blk, dat & 1);
+		dat >>= 1;
+	}
+	t64_add_bit(blk, prt);	// parity
+}
+
 int loadT64(Computer* comp, const char* fname, int drv) {
 	char buf[32];
 	int err = ERR_OK;
@@ -45,8 +69,16 @@ int loadT64(Computer* comp, const char* fname, int drv) {
 	int dataoff;
 	char name[16];
 
+	TapeBlock blk;
+	blk.data = NULL;
+	blkClear(&blk);
+
+	// length of half-wave for small,medium,long waves
+	wavs = 0x30 * comp->nsPerTick / 250;
+	wavm = 0x44 * comp->nsPerTick / 250;
+	wavl = 0x56 * comp->nsPerTick / 250;
+
 	int i;
-//	t64file desc;
 	long offset;
 	FILE* file = fopen(fname, "rb");
 	if (!file) {
@@ -69,23 +101,34 @@ int loadT64(Computer* comp, const char* fname, int drv) {
 			for(i = 0; i < totent; i++) {
 				// fread((char*)(&desc), sizeof(t64file), 1, file);
 				filetype = fgetc(file) & 0xff;
-				ft_1541 = fgetc(file) & 0xff;
+				ft_1541 = fgetc(file) & 0xff;		// 0x82 PRG
 				start = fgetw(file);
 				end = fgetw(file);
 				fseek(file, 2, SEEK_SET);
 				dataoff = fgeti(file);
-				fseek(file, 2, SEEK_SET);
+				fseek(file, 4, SEEK_SET);
 				fread(name, 16, 1, file);
 				offset = ftell(file);
-				fseek(file, dataoff, SEEK_SET);		// ???
-
-				//fread(comp->mem->ramData + start, end - start + 1, 1, file);
-
+				fseek(file, dataoff, SEEK_SET);
+#if 0
+				for (j = 0; j < 5000; j++) {		// pilot
+					blkAddWave(&blk, wavs);
+					blkAddWave(&blk, wavs);
+				}
+				while (start <= end) {
+					data = fgetc(file) & 0xff;
+					t64_add_byte(&blk, data);
+					start++;
+				}
+				blkAddWave(&blk, wavl);		// L/S end of file
+				blkAddWave(&blk, wavs);
+				blkAddWave(&blk, 5e5);		// pause
+				tap_add_block(comp->tape, blk);
+				blkClear(&blk);
+#endif
 				fseek(file, offset, SEEK_SET);
 			}
 		}
-//		if (start)
-//			comp->cpu->pc = start;
 		fclose(file);
 	}
 	return err;
@@ -100,8 +143,7 @@ int loadT64(Computer* comp, const char* fname, int drv) {
 // each data byte = period of amplitude change its sign in 1/8 T
 // pulse length (in seconds) = (8 * data byte) / (clock cycles)
 // 0 = overflow. #00,#11,#22,#33 = period #332211
-// (N * 8) / 985248 (pal) <-- use this
-// (N * 8) / 1022730 (ntsc)
+// (N * 8) / Fcpu	Fcpu in Hz, result in secs
 
 int loadC64RawTap(Computer* comp, const char* name, int dsk) {
 	char buf[20];
@@ -111,8 +153,8 @@ int loadC64RawTap(Computer* comp, const char* name, int dsk) {
 	int per;
 	TapeBlock blk;
 	blk.data = NULL;
+	blkClear(&blk);
 	FILE* file = fopen(name, "rb");
-	int flg = 0;
 	if (file) {
 		fread(buf, 12, 1, file);
 		if (!strncmp(buf, "C64-TAPE-RAW", 12)) {
@@ -122,26 +164,23 @@ int loadC64RawTap(Computer* comp, const char* name, int dsk) {
 				len = fgeti(file);		// data length
 				tapEject(comp->tape);		// clear old tape
 				blkClear(&blk);
-				blk.vol = 0;
+				blk.vol = 1;
 				while (len > 0) {
 					per = fgetc(file) & 0xff;
 					if (per == 0) {
-						per = fgett(file);
+						switch (ver) {
+							case 0: per = 256; break;
+							case 1: per = fgett(file); break;
+						}
 						// printf("%i\n",per);
 					}
-					per = 8 * per / comp->cpuFrq;		// comp->cpuFrq - MHz (1e6), result period in mks (1e-6)
-					if (per > 1e5) {
-						blkAddPause(&blk, per);		// pause
-						tap_add_block(comp->tape, blk);
-						blkClear(&blk);
-					} else {
-						//blkAddWave(&blk, per/2);
-						blkAddPulse(&blk, per, flg ? 0xa0 : 0x60);
-						flg = !flg;
-					}
+					per = per * comp->nsPerTick / 125;	// 8 * per * nspt / 1000	mks
+					blkAddPulse(&blk, per/2, 0x50);		// add full wave 0/1
+					blkAddPulse(&blk, per/2, 0xb0);
 					len--;
 				}
 				tap_add_block(comp->tape, blk);
+				blkClear(&blk);
 			} else {
 				printf("2:err\n");
 				err = ERR_C64T_SIGN;	// version 2+

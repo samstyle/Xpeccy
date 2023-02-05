@@ -32,9 +32,14 @@ void cia_set_port(CIA* cia, int p, cbxrd cr, cbxwr cw) {
 	}
 }
 
+// intrq is cleared by reading reg0D
+// no irq front control?
 void cia_irq(CIA* cia, int msk) {
+//	int irq = cia->intrq;	// old value
 	cia->intrq |= msk;	// set irq
 	cia->intrq &= 0x1f;
+//	irq ^= cia->intrq;	// 1: changed
+//	irq &= cia->intrq;	// 1: changed 0->1
 	if (cia->intrq & cia->inten) {
 		cia->intrq |= 0x80;
 		cia->xirq(cia->xirqn, cia->xptr);
@@ -148,7 +153,7 @@ void cia_timer_tick(ciaTimer* tmr, int mod) {
 	switch (mod & 3) {
 		case 0:	tmr->value--;	// CLK
 			break;
-		case 1:			// CNT input (TODO)
+		case 1:			// CNT input 0->1 [external slot signal]
 			break;
 		case 2:	if (mod & 0x80)	// TB: TA overflows
 				tmr->value--;
@@ -171,9 +176,9 @@ void cia_sync(CIA* cia, int ns, int nspt) {
 	cia->ns += ns;
 	while (cia->ns >= nspt) {
 		cia->ns -= nspt;
-		int mod = ((cia->timerB.flags & 0x60) >> 5);
+		int mod = (cia->timerB.flags >> 5) & 3;
 
-		cia_timer_tick(&cia->timerA, (cia->timerA.flags & 0x20) >> 5);
+		cia_timer_tick(&cia->timerA, (cia->timerA.flags >> 5) & 1);
 		if ((cia->timerA.flags & (CIA_CR_PBXON | CIA_CR_TOGGLE)) == CIA_CR_PBXON)	// reset b6, reg b if it was set by timer A in 1-pulse mode
 			cia->reg[11] &= ~0x40;
 		if (cia->timerA.overflow) {

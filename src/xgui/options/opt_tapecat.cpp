@@ -48,6 +48,7 @@ void xTapeCatModel::fill(Tape* tap) {
 					inf[i].size = 0;
 					inf[i].time = 0;
 					inf[i].curtime = 0;
+					inf[i].breakPoint = 0;
 				}
 				break;
 		}

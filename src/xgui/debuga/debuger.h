@@ -29,6 +29,7 @@
 #include "dbg_pit.h"
 #include "dbg_pic.h"
 #include "dbg_vga_regs.h"
+#include "dbg_vic_regs.h"
 #include "dbg_dma.h"
 
 #include "ui_dumpdial.h"
