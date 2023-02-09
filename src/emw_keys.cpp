@@ -17,6 +17,7 @@ void MainWin::kRelease(QKeyEvent* ev) {
 
 #ifdef __WIN32
 static QMap<qint32, int> key_press_map;
+#define STICKY_KEY 1
 #endif
 
 // TODO: realtime autorepeat on xt keyboard (no runtime emulation)

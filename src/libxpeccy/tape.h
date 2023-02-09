@@ -61,6 +61,7 @@ typedef struct {
 	int dataPos;
 	int sigCount;
 	int time;
+	int crc;
 	TapeSignal* data;
 } TapeBlock;
 

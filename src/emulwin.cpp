@@ -26,8 +26,6 @@
 
 #include "version.h"
 
-#define STICKY_KEY 1
-
 #define STR_EXPAND(tok) #tok
 #define	STR(tok) STR_EXPAND(tok)
 #ifdef USEOPENGL

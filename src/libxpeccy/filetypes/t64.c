@@ -1,5 +1,7 @@
 #include "filetypes.h"
 
+#include <string.h>
+
 /*
 #pragma pack (push, 1)
 
@@ -33,6 +35,14 @@ typedef struct {
 
 static int wavs,wavm,wavl;
 
+void t64_add_pilot(TapeBlock* blk, int cnt) {
+	while (cnt > 0) {
+		blkAddWave(blk, wavs);
+		blkAddWave(blk, wavs);
+		cnt--;
+	}
+}
+
 void t64_add_bit(TapeBlock* blk, int bit) {
 	if (bit) {
 		blkAddWave(blk, wavm);
@@ -45,7 +55,8 @@ void t64_add_bit(TapeBlock* blk, int bit) {
 
 // 8 bits + parity
 void t64_add_byte(TapeBlock* blk, int dat) {
-	int prt = parity(dat);
+	int prt = parity(dat & 0xff);
+	blk->crc ^= dat;
 	blkAddWave(blk,wavl);		// byte start: L/M
 	blkAddWave(blk,wavm);
 	for (int j = 0; j < 8; j++) {	// bits
@@ -55,8 +66,37 @@ void t64_add_byte(TapeBlock* blk, int dat) {
 	t64_add_bit(blk, prt);	// parity
 }
 
+void t64_add_192(TapeBlock* blk, char* buf, int eod) {
+	int j;
+	for (j = 0x89; j > 0x80; j--) {		// sequence 89 to 81
+		t64_add_byte(blk, j);
+	}
+	blk->crc = 0;				// 1st copy of data
+	for (j = 0; j < 192; j++) {
+		t64_add_byte(blk, buf[j]);
+	}
+	t64_add_byte(blk, blk->crc);		// crc
+	blkAddWave(blk, wavl);			// long wave
+	t64_add_pilot(blk, 60);			// 60 sync pulses
+	for (j = 0x09; j > 0x00; j--) {		// sequence 09 to 01
+		t64_add_byte(blk, j);
+	}
+	blk->crc = 0;				// 2nd copy of data
+	for (j = 0; j < 192; j++) {
+		t64_add_byte(blk, buf[j]);
+	}
+	t64_add_byte(blk, blk->crc);		// crc
+	if (eod) {				// if end of data, L/S marker
+		blkAddWave(blk, wavl);
+		blkAddWave(blk, wavs);
+	} else {
+		blkAddWave(blk, wavl);			// long wave
+	}
+	t64_add_pilot(blk, 60);			// 60 sync pulses
+}
+
 int loadT64(Computer* comp, const char* fname, int drv) {
-	char buf[32];
+	char buf[192];
 	int err = ERR_OK;
 	unsigned short ver;
 	unsigned short maxent;
@@ -64,8 +104,9 @@ int loadT64(Computer* comp, const char* fname, int drv) {
 
 	unsigned char filetype;
 	unsigned char ft_1541;
-	unsigned short start;
-	unsigned short end;
+	int start;
+	int end;
+	int len;
 	int dataoff;
 	char name[16];
 
@@ -89,44 +130,57 @@ int loadT64(Computer* comp, const char* fname, int drv) {
 			err = ERR_T64_SIGN;
 		} else {
 			ver = fgetw(file);
-			maxent = fgetw(file);
-			totent = fgetw(file);
+			maxent = fgetw(file);		// number of directory entries
+			totent = fgetw(file);		// number of used entries
 			fgetw(file);			// not used
-			fread(buf, 24, 1, file);	// container name
+			fread(buf, 24, 1, file);	// description
 			buf[24] = 0x00;
 			printf("ver: %.4X\n",ver);
 			printf("max ent: %i\n",maxent);
 			printf("tot ent: %i\n",totent);
 			printf("container: %s\n",buf);
 			for(i = 0; i < totent; i++) {
-				// fread((char*)(&desc), sizeof(t64file), 1, file);
-				filetype = fgetc(file) & 0xff;
-				ft_1541 = fgetc(file) & 0xff;		// 0x82 PRG
-				start = fgetw(file);
+				filetype = fgetc(file) & 0xff;		// 00:free entry(skip), 01:normal tape file, 02:block with header, 03:snapshot, 04:tape block, 05:digitize
+				ft_1541 = fgetc(file) & 0xff;		// C64 file type (82:prg)
+				start = fgetw(file);			// end-start+1 = data len
 				end = fgetw(file);
-				fseek(file, 2, SEEK_SET);
+				if (end == 0) end += 0x10000;
+				fseek(file, 2, SEEK_CUR);
 				dataoff = fgeti(file);
-				fseek(file, 4, SEEK_SET);
+				fseek(file, 4, SEEK_CUR);
 				fread(name, 16, 1, file);
-				offset = ftell(file);
-				fseek(file, dataoff, SEEK_SET);
-#if 0
-				for (j = 0; j < 5000; j++) {		// pilot
-					blkAddWave(&blk, wavs);
-					blkAddWave(&blk, wavs);
-				}
-				while (start <= end) {
-					data = fgetc(file) & 0xff;
-					t64_add_byte(&blk, data);
-					start++;
-				}
-				blkAddWave(&blk, wavl);		// L/S end of file
-				blkAddWave(&blk, wavs);
-				blkAddWave(&blk, 5e5);		// pause
-				tap_add_block(comp->tape, blk);
-				blkClear(&blk);
+				if (filetype != 0x00) {
+					offset = ftell(file);
+					fseek(file, dataoff, SEEK_SET);
+#if 1
+					t64_add_pilot(&blk, 14000);		// pilot (usually 10 sec)
+					memset(buf, 0x20, 192);			// header
+					buf[0] = filetype & 0xff;
+					buf[1] = start & 0xff;
+					buf[2] = (start >> 8) & 0xff;
+					buf[3] = end & 0xff;
+					buf[4] = (end >> 8) & 0xff;
+					memcpy(buf+5, name, 16);
+					t64_add_192(&blk, buf, 1);
+					blkAddPause(&blk, 1e6);
+					t64_add_pilot(&blk, 2800);		// 2sec pilot
+					while (start <= end) {			// data
+						if (end - start > 192) {
+							len = 192;
+						} else {
+							len = end + 1 - start;
+						}
+						memset(buf, 0x00, 192);
+						fread(buf, len, 1, file);
+						start += len;
+						t64_add_192(&blk, buf, start > end);
+					}
+					blkAddWave(&blk, 1e6);		// pause (1sec)
+					tap_add_block(comp->tape, blk);
+					blkClear(&blk);
 #endif
-				fseek(file, offset, SEEK_SET);
+					fseek(file, offset, SEEK_SET);
+				}
 			}
 		}
 		fclose(file);
@@ -160,7 +214,7 @@ int loadC64RawTap(Computer* comp, const char* name, int dsk) {
 		if (!strncmp(buf, "C64-TAPE-RAW", 12)) {
 			ver = fgetc(file);
 			if (ver < 2) {
-				fseek(file, 3, SEEK_CUR);	// skip 3 bytes
+				fseek(file, 3, SEEK_CUR);	// skip 3 bytes (platform, video standard, reserved)
 				len = fgeti(file);		// data length
 				tapEject(comp->tape);		// clear old tape
 				blkClear(&blk);
