@@ -19,7 +19,8 @@
 #include "vkeyboard.h"
 #include "ethread.h"
 
-// Qt nativeScanCode
+// for windows
+#define STICKY_KEY 1
 
 typedef struct {
 	int showTime;	// in 1/50 sec
