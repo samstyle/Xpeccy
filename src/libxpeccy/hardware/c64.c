@@ -87,16 +87,15 @@ void c64_pal_wr(int adr, int val, void* data) {
 
 extern unsigned char toBCD(unsigned char);
 
-
 // dc00..dcff	cia1 (0x10 registers + mirrors)
 
 // cia1 port A rd: joystick
-int cia1_porta_rd(int, void*) {
+int cia1_porta_rd(int adr, void* p) {
 	return 0xff;
 }
 
 // cia1 port B rd: keyboard scan
-int cia1_portb_rd(int, void* p) {
+int cia1_portb_rd(int adr, void* p) {
 	Computer* comp = (Computer*)p;
 	int row = comp->c64.keyrow;
 	int res = 0xff;
@@ -109,7 +108,7 @@ int cia1_portb_rd(int, void* p) {
 	return res;
 }
 
-void cia1_porta_wr(int, int v, void* p) {
+void cia1_porta_wr(int adr, int v, void* p) {
 	((Computer*)p)->c64.keyrow = v & 0xff;
 }
 
@@ -123,7 +122,7 @@ void c64_cia1_wr(int adr, int val, void* p) {
 
 // dd00..ddff	cia2 (0x10 registers + mirrors)
 
-void cia2_porta_wr(int, int v, void* p) {
+void cia2_porta_wr(int adr, int v, void* p) {
 	((Computer*)p)->vid->vbank = ~v & 3;
 }
 
