@@ -1702,7 +1702,7 @@ void DebugWin::saveDasm() {
 	if (file.open(QFile::WriteOnly)) {
 		QTextStream strm(&file);
 		int adr = (blockStart < 0) ? 0 : (blockStart & comp->mem->busmask);
-		int end = (blockEnd < 0) ? 0 : (blockEnd & comp->mem->busmask);
+		int end = (blockEnd < 0) ? comp->mem->busmask : (blockEnd & comp->mem->busmask);
 		int work = 1;
 		strm << "; Created by Xpeccy deBUGa\n\n";
 		strm << "\tORG 0x" << gethexword(adr) << "\n\n";

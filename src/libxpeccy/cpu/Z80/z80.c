@@ -34,6 +34,30 @@ void z80_reset(CPU* cpu) {
 	cpu->wait = 0;
 }
 
+// if block opcode is interrupted, flags will be like this:
+
+void z80_blkio_interrupt(CPU* cpu) {
+	cpu->f &= ~(Z80_F3 | Z80_F5);
+	cpu->f |= cpu->hpc & (Z80_F3 | Z80_F5);
+	if (cpu->f & Z80_FC) {
+		cpu->f &= ~Z80_FH;
+		if (cpu->tmp & 0x80) {
+			if (parity((cpu->b - 1) & 7) ^ 1)
+				cpu->f ^= Z80_FP;
+			if ((cpu->b & 15) == 0)
+				cpu->f |= Z80_FH;
+		} else {
+			if (parity((cpu->b + 1) & 7) ^ 1)
+				cpu->f ^= Z80_FP;
+			if ((cpu->b & 15) == 15)
+				cpu->f |= Z80_FH;
+
+		}
+	} else if (parity(cpu->b & 7) ^ 1) {
+		cpu->f ^= Z80_FP;
+	}
+}
+
 int z80_int(CPU* cpu) {
 	int res = 0;
 	if (cpu->wait) return res;
@@ -44,9 +68,13 @@ int z80_int(CPU* cpu) {
 			if (cpu->halt) {
 				cpu->pc++;
 				cpu->halt = 0;
-			}
-			if (cpu->resPV) {
+			} else if (cpu->resPV) {
 				cpu->f &= ~Z80_FP;
+			} else if (cpu->blk) {
+				cpu->f &= ~(Z80_F3 | Z80_F5);
+				cpu->f |= cpu->hpc & (Z80_F3 | Z80_F5);
+			} else if (cpu->blkio) {
+				z80_blkio_interrupt(cpu);
 			}
 			cpu->opTab = npTab;
 			switch(cpu->imode) {

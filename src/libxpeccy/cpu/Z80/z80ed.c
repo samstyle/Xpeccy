@@ -389,6 +389,9 @@ void edB0(CPU* cpu) {
 		cpu->pc -= 2;
 		cpu->t += 5;
 		cpu->mptr = cpu->pc + 1;
+		cpu->blk = 1;
+	} else {
+		cpu->blk = 0;
 	}
 }
 
@@ -399,6 +402,9 @@ void edB1(CPU* cpu) {
 		cpu->pc -= 2;
 		cpu->t += 5;
 		cpu->mptr = cpu->pc + 1;
+		cpu->blk = 1;
+	} else {
+		cpu->blk = 0;
 	}
 }
 
@@ -409,6 +415,9 @@ void edB2(CPU* cpu) {
 		cpu->pc -= 2;
 		cpu->t += 5;
 		cpu->mptr = cpu->pc + 1;
+		cpu->blkio = 1;
+	} else {
+		cpu->blkio = 0;
 	}
 }
 
@@ -419,6 +428,9 @@ void edB3(CPU* cpu) {
 		cpu->pc -= 2;
 		cpu->t += 5;
 		cpu->mptr = cpu->pc + 1;
+		cpu->blkio = 1;
+	} else {
+		cpu->blkio = 0;
 	}
 }
 
@@ -429,6 +441,9 @@ void edB8(CPU* cpu) {
 		cpu->pc -= 2;
 		cpu->t += 5;
 		cpu->mptr = cpu->pc + 1;
+		cpu->blk = 1;
+	} else {
+		cpu->blk = 0;
 	}
 }
 
@@ -439,6 +454,9 @@ void edB9(CPU* cpu) {
 		cpu->pc -= 2;
 		cpu->t += 5;
 		cpu->mptr = cpu->pc + 1;
+		cpu->blk = 1;
+	} else {
+		cpu->blk = 0;
 	}
 }
 
@@ -449,6 +467,9 @@ void edBA(CPU* cpu) {
 		cpu->pc -= 2;
 		cpu->t += 5;
 		cpu->mptr = cpu->pc + 1;
+		cpu->blkio = 1;
+	} else {
+		cpu->blkio = 0;
 	}
 }
 
@@ -459,6 +480,9 @@ void edBB(CPU* cpu) {
 		cpu->pc -= 2;
 		cpu->t += 5;
 		cpu->mptr = cpu->pc + 1;
+		cpu->blkio = 1;
+	} else {
+		cpu->blkio = 0;
 	}
 }
 

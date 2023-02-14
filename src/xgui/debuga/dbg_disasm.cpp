@@ -5,7 +5,9 @@
 #include <QDebug>
 #include <QFont>
 #include <QPainter>
+#include <QClipboard>
 #include <QHeaderView>
+#include <QApplication>
 
 extern int blockStart;
 extern int blockEnd;
@@ -879,6 +881,37 @@ void xDisasmTable::t_update(int oadr, int nadr) {
 		emit s_adrch(nadr);
 }
 
+void xDisasmTable::copyToCbrd() {
+	QList<dasmData> dasm;
+	dasmData drow;
+	QString str;
+	QClipboard* cbrd = QApplication::clipboard();
+	int adr = (blockStart < 0) ? model->dasm[currentIndex().row()].adr : blockStart;
+	int end = (blockEnd < 0) ? model->dasm[currentIndex().row()].adr : blockEnd;
+	int work = 1;
+	str = "\tORG 0x" + QString::number(adr, 16).toUpper() + "\n";
+	while ((adr <= end) && work) {
+		dasm = getDisasm(conf.prof.cur->zx, adr);
+		foreach (drow, dasm) {
+			if (adr > conf.prof.cur->zx->mem->busmask)
+				work = 0;		// address overfill (FFFF+)
+			if (drow.isequ) {
+				str += drow.aname + ":";
+			} else if (drow.islab) {
+				if (drow.iscom) {
+					str += drow.aname;
+				} else {
+					str += drow.aname + ":";
+				}
+			} else {
+				str += "\t" + drow.command;
+			}
+			str += "\n";
+		}
+		cbrd->setText(str);
+	}
+}
+
 void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 	QModelIndex idx = currentIndex();
 	int i;
@@ -986,6 +1019,10 @@ void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 		case Qt::Key_Return:
 			if (state() == QAbstractItemView::EditingState) break;
 			edit(currentIndex());
+			break;
+		case Qt::Key_C:
+			if (ev->modifiers() & Qt::ControlModifier)
+				copyToCbrd();
 			break;
 		default:
 			QTableView::keyPressEvent(ev);

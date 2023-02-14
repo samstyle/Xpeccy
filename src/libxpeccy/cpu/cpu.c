@@ -9,11 +9,10 @@
 int parity(int val) {
 	int parity = 1;
 	while (val) {
-		if (val & 1)
-			parity = !parity;
+		parity ^= val;		// bit 0 is only significant
 		val >>= 1;
 	}
-	return parity;
+	return parity & 1;
 }
 
 // no-proc
