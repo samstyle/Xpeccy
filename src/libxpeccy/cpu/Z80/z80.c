@@ -32,6 +32,8 @@ void z80_reset(CPU* cpu) {
 	cpu->intrq = 0;
 	cpu->inten = Z80_NMI;	// NMI allways enabled, INT is controlled by ei/di
 	cpu->wait = 0;
+	cpu->blk = 0;
+	cpu->blkio = 0;
 }
 
 // if block opcode is interrupted, flags will be like this:

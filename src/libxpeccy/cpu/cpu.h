@@ -106,7 +106,7 @@ typedef struct {
 
 typedef struct {
 	int idx;			// 'visible' value
-	unsigned char flag;		// acess flag
+	unsigned char flag;		// access flag
 	unsigned base:24;		// segment base addr
 	unsigned short limit;		// segment size in bytes
 } xSegPtr;				// aka segment table descriptor
