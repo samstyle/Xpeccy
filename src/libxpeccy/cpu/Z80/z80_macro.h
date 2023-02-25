@@ -10,9 +10,10 @@ extern const unsigned char FVsubTab[8];
 // mem i/o
 #define	MEMRD(adr,tk) cpu->mrd(adr,0,cpu->data);cpu->t+=tk;
 #define	MEMWR(adr,val,tk) cpu->mwr(adr,val,cpu->data);cpu->t+=tk;
-#define	IORD(port,tk) cpu->ird(port,cpu->data);cpu->t+=tk;
+// #define	IORD(port,tk) cpu->ird(port,cpu->data);cpu->t+=tk;
 
 // ariphmetic
+/*
 #define INC(val) {\
 	val++; \
 	cpu->f = (cpu->f & Z80_FC) | (val ? 0 : Z80_FZ) | (val & (Z80_FS | Z80_F5 | Z80_F3)) | ((val == 0x80) ? Z80_FV : 0) | ((val & 0x0f) ? 0 : Z80_FH);\
@@ -55,9 +56,11 @@ extern const unsigned char FVsubTab[8];
 #define CP(val) {\
 	cpu->tmpw = cpu->a - val;\
 	cpu->tmp = ((cpu->a & 0x88) >> 3) | ((val & 0x88) >> 2) | ((cpu->tmpw & 0x88) >> 1);\
-	cpu->f = (cpu->tmpw & Z80_FS) | (val & (Z80_F5 | Z80_F3)) | ((cpu->tmpw & 0x100) ? Z80_FC : (cpu->tmpw ? 0 : Z80_FZ)) | Z80_FN | FHsubTab[cpu->tmp & 0x07] | FVsubTab[cpu->tmp >> 4];\
+	cpu->f = (cpu->tmpw & Z80_FS) | (val & (Z80_F5 | Z80_F3)) | ((cpu->tmpw & 0x100) ? Z80_FC : 0) | (cpu->tmpw ? 0 : Z80_FZ)) | Z80_FN | FHsubTab[cpu->tmp & 0x07] | FVsubTab[cpu->tmp >> 4];\
 }
+*/
 
+/*
 #define ADD16(val1,val2) {\
 	cpu->tmpi = val1 + val2;\
 	cpu->tmp = ((val1 & 0x800) >> 11) | ((val2 & 0x800) >> 10) | ((cpu->tmpi & 0x800) >> 9);\
@@ -81,16 +84,17 @@ extern const unsigned char FVsubTab[8];
 	cpu->hl = cpu->tmpi;\
 	cpu->f = (cpu->tmpi & 0x10000 ? Z80_FC : 0) | Z80_FN | FVsubTab[cpu->tmp >> 4] | (cpu->h & (Z80_FS | Z80_F5 | Z80_F3 )) | FHsubTab[cpu->tmp & 0x07] | (cpu->hl ? 0 : Z80_FZ);\
 }
+*/
 
 // misc
 
 #define JR(offset) {cpu->pc += (signed char)offset; cpu->mptr = cpu->pc; cpu->t += 5;}
 
-#define POP(rh,rl) {rl = MEMRD(cpu->sp++,3); rh = MEMRD(cpu->sp++,3);}
-#define PUSH(rh,rl) {MEMWR(--cpu->sp,rh,3); MEMWR(--cpu->sp,rl,3);}
+//#define POP(rh,rl) {rl = MEMRD(cpu->sp++,3); rh = MEMRD(cpu->sp++,3);}
+//#define PUSH(rh,rl) {MEMWR(--cpu->sp,rh,3); MEMWR(--cpu->sp,rl,3);}
 
-#define RST(adr) {PUSH(cpu->hpc,cpu->lpc); cpu->mptr = adr; cpu->pc = cpu->mptr;}
-#define RET {POP(cpu->hpc,cpu->lpc); cpu->mptr = cpu->pc;}
+//#define RST(adr) {PUSH(cpu->hpc,cpu->lpc); cpu->mptr = adr; cpu->pc = cpu->mptr;}
+//#define RET {POP(cpu->hpc,cpu->lpc); cpu->mptr = cpu->pc;}
 
 // shift
 

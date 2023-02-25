@@ -6,7 +6,7 @@
 // 40	in b,(c)	4 4in		mptr = bc+1
 void ed40(CPU* cpu) {
 	cpu->mptr = cpu->bc;
-	cpu->b = IORD(cpu->mptr++,4);
+	cpu->b = z80_iord(cpu, cpu->mptr++); // IORD(cpu->mptr++,4);
 	cpu->f = (cpu->f & Z80_FC) | sz53pTab[cpu->b];
 }
 
@@ -19,7 +19,7 @@ void ed41(CPU* cpu) {
 
 // 42	sbc hl,bc	11
 void ed42(CPU* cpu) {
-	SBC16(cpu->bc);
+	cpu->hl = z80_sub16(cpu, cpu->hl, cpu->bc, cpu->fz.c); //SBC16(cpu->bc);
 }
 
 // 43	ld (nn),bc	4 3rd 3rd 3wr 3wr	mptr = nn + 1
@@ -34,13 +34,13 @@ void ed43(CPU* cpu) {
 void ed44(CPU* cpu) {
 	cpu->tmpb = cpu->a;
 	cpu->a = 0;
-	SUB(cpu->tmpb);
+	cpu->a = z80_sub8(cpu, cpu->tmpb, 0); //SUB(cpu->tmpb);
 }
 
 // 45	retn	4 3rd 3rd
 void ed45(CPU* cpu) {
 	cpu->iff1 = cpu->iff2;
-	RET;
+	z80_ret(cpu);
 }
 
 // 46	im0	4
@@ -56,7 +56,7 @@ void ed47(CPU* cpu) {
 // 48	in c,(c)	4 4in		mptr = port + 1
 void ed48(CPU* cpu) {
 	cpu->mptr = cpu->bc;
-	cpu->c = IORD(cpu->mptr++,4);
+	cpu->c = z80_iord(cpu, cpu->mptr++);
 	cpu->f = (cpu->f & Z80_FC) | sz53pTab[cpu->c];
 }
 
@@ -69,7 +69,7 @@ void ed49(CPU* cpu) {
 
 // 4a	adc hl,bc	11
 void ed4A(CPU* cpu) {
-	ADC16(cpu->bc);
+	cpu->hl = z80_adc16(cpu, cpu->hl, cpu->bc, cpu->fz.c); // ADC16(cpu->bc);
 }
 
 // 4b	ld bc,(nn)	4 3rd 3rd 3rd 3rd	mptr = nn+1
@@ -83,7 +83,7 @@ void ed4B(CPU* cpu) {
 // 4d	reti	4 3rd 3rd
 void ed4D(CPU* cpu) {
 	// cpu->iff1 = cpu->iff2;
-	RET;
+	z80_ret(cpu);
 }
 
 // 4f	ld r,a	5
@@ -95,7 +95,7 @@ void ed4F(CPU* cpu) {
 // 50	in d,(c)	4 4in	mptr = port + 1
 void ed50(CPU* cpu) {
 	cpu->mptr = cpu->bc;
-	cpu->d = IORD(cpu->mptr++,4);
+	cpu->d = z80_iord(cpu, cpu->mptr++);
 	cpu->f = (cpu->f & Z80_FC) | sz53pTab[cpu->d];
 }
 
@@ -108,7 +108,7 @@ void ed51(CPU* cpu) {
 
 // 52	sbc hl,de	11
 void ed52(CPU* cpu) {
-	SBC16(cpu->de);
+	cpu->hl = z80_sub16(cpu, cpu->hl, cpu->de, cpu->fz.c); //SBC16(cpu->de);
 }
 
 // 53	ld (nn),de	4 3rd 3rd 3wr 3wr	mptr = nn + 1
@@ -134,7 +134,7 @@ void ed57(CPU* cpu) {
 // 58	in e,(c)	4 4in		mptr = port + 1
 void ed58(CPU* cpu) {
 	cpu->mptr = cpu->bc;
-	cpu->e = IORD(cpu->mptr++,4);
+	cpu->e = z80_iord(cpu, cpu->mptr++);
 	cpu->f = (cpu->f & Z80_FC) | sz53pTab[cpu->e];
 }
 
@@ -147,7 +147,7 @@ void ed59(CPU* cpu) {
 
 // 5a	adc hl,de	11
 void ed5A(CPU* cpu) {
-	ADC16(cpu->de);
+	cpu->hl = z80_adc16(cpu, cpu->hl, cpu->de, cpu->fz.c); //ADC16(cpu->de);
 }
 
 // 5b	ld de,(nn)	4 3rd 3rd 3rd 3rd	mptr = nn + 1
@@ -173,7 +173,7 @@ void ed5F(CPU* cpu) {
 // 60	in h,(c)	4 4in		mptr = port + 1
 void ed60(CPU* cpu) {
 	cpu->mptr = cpu->bc;
-	cpu->h = IORD(cpu->mptr++,4);
+	cpu->h = z80_iord(cpu, cpu->mptr++);
 	cpu->f = (cpu->f & Z80_FC) | sz53pTab[cpu->h];
 }
 
@@ -186,7 +186,7 @@ void ed61(CPU* cpu) {
 
 // 62	sbc hl,hl	11
 void ed62(CPU* cpu) {
-	SBC16(cpu->hl);
+	cpu->hl = z80_sub16(cpu, cpu->hl, cpu->hl, cpu->fz.c); //SBC16(cpu->hl);
 }
 
 // 67	rrd		4 3rd 4 3wr	mptr = hl + 1
@@ -202,7 +202,7 @@ void ed67(CPU* cpu) {
 // 68	in l,(c)	4 4in		mptr = port + 1
 void ed68(CPU* cpu) {
 	cpu->mptr = cpu->bc;
-	cpu->l = IORD(cpu->mptr++,4);
+	cpu->l = z80_iord(cpu, cpu->mptr++);
 	cpu->f = (cpu->f & Z80_FC) | sz53pTab[cpu->l];
 }
 
@@ -215,7 +215,7 @@ void ed69(CPU* cpu) {
 
 // 6a	adc hl,hl	11
 void ed6A(CPU* cpu) {
-	ADC16(cpu->hl);
+	cpu->hl = z80_adc16(cpu, cpu->hl, cpu->hl, cpu->fz.c); //ADC16(cpu->hl);
 }
 
 // 6f	rld		4 3rd 4 3wr	mptr = hl+1
@@ -231,7 +231,7 @@ void ed6F(CPU* cpu) {
 // 70	in (c)		4 4in		mptr = port + 1
 void ed70(CPU* cpu) {
 	cpu->mptr = cpu->bc;
-	cpu->tmp = IORD(cpu->mptr++,4);
+	cpu->tmp = z80_iord(cpu, cpu->mptr++);
 	cpu->f = (cpu->f & Z80_FC) | sz53pTab[cpu->tmp];
 }
 
@@ -244,7 +244,7 @@ void ed71(CPU* cpu) {
 
 // 72	sbc hl,sp	11
 void ed72(CPU* cpu) {
-	SBC16(cpu->sp);
+	cpu->hl = z80_sub16(cpu, cpu->hl, cpu->sp, cpu->fz.c); //SBC16(cpu->sp);
 }
 
 // 73	ld (nn),sp	4 3rd 3rd 3wr 3wr	mptr = nn + 1
@@ -258,7 +258,7 @@ void ed73(CPU* cpu) {
 // 78	in a,(c)	4 4in		mptr = port + 1
 void ed78(CPU* cpu) {
 	cpu->mptr = cpu->bc;
-	cpu->a = IORD(cpu->mptr++,4);
+	cpu->a = z80_iord(cpu, cpu->mptr++);
 	cpu->f = (cpu->f & Z80_FC) | sz53pTab[cpu->a];
 }
 
@@ -271,7 +271,7 @@ void ed79(CPU* cpu) {
 
 // 7a	adc hl,sp	11
 void ed7A(CPU* cpu) {
-	ADC16(cpu->sp);
+	cpu->hl = z80_adc16(cpu, cpu->hl, cpu->sp, cpu->fz.c); //ADC16(cpu->sp);
 }
 
 // 7b	ld sp,(nn)	4 3rd 3rd 3rd 3rd	mptr = nn + 1
@@ -308,7 +308,7 @@ void edA1(CPU* cpu) {
 // a2	ini	5 4in 3wr	mptr = bc + 1 (before dec)
 void edA2(CPU* cpu) {
 	cpu->mptr = cpu->bc + 1;
-	cpu->tmp = IORD(cpu->bc,4);
+	cpu->tmp = z80_iord(cpu, cpu->bc);
 	MEMWR(cpu->hl++,cpu->tmp,3);
 	cpu->b--;
 	cpu->f = (cpu->tmp & 0x80 ? Z80_FN : 0) | (cpu->b & (Z80_FS | Z80_F5 | Z80_F3)) | (cpu->b ? 0 : Z80_FZ);
@@ -358,7 +358,7 @@ void edA9(CPU* cpu) {
 // aa	ind	5 4in 3wr	mptr = bc - 1 (before dec)
 void edAA(CPU* cpu) {
 	cpu->mptr = cpu->bc - 1;
-	cpu->tmp = IORD(cpu->bc,4);
+	cpu->tmp = z80_iord(cpu, cpu->bc);
 	MEMWR(cpu->hl--,cpu->tmp,3);
 	cpu->b--;
 	cpu->f = ((cpu->tmp & 0x80) ? Z80_FN : 0) | (cpu->b & (Z80_FS | Z80_F5 | Z80_F3)) | (cpu->b ? 0 : Z80_FZ);

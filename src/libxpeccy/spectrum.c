@@ -58,7 +58,7 @@ void memwr(int adr, int val, void* ptr) {
 			*fptr = flag;
 		}
 	}
-	if (comp->hw->id != HW_IBM_PC)
+	if (comp->mem->busmask < 0x10000)
 		flag |= comp->brkAdrMap[adr & 0xffff];
 	if (flag & MEM_BRK_WR) {
 		comp->brk = 1;

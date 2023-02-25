@@ -37,6 +37,9 @@ typedef struct {
 
 xLRInt lr_intab[] = {{1,0x40},{2,0x48},{4,0x50},{8,0x58},{16,0x60},{0,0}};
 
+void z80_push(CPU*, unsigned short);
+void z80_call(CPU*, unsigned short);
+
 int lr_int(CPU* cpu) {
 	if (cpu->halt) {		// free HALT anyway
 		cpu->halt = 0;
@@ -54,7 +57,7 @@ int lr_int(CPU* cpu) {
 		if (cpu->intrq & lr_intab[idx].mask) {
 			cpu->iff1 = 0;
 			cpu->intrq ^= lr_intab[idx].mask;	// reset int request flag
-			RST(lr_intab[idx].inta);		// execute call
+			z80_call(cpu, lr_intab[idx].inta);	// execute call	{RST(lr_intab[idx].inta);}
 			res = 15;				// TODO: to know how much T eats INT handle
 			break;
 		}

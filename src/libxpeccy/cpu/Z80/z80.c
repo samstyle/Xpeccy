@@ -5,7 +5,6 @@
 
 #include "../cpu.h"
 
-
 extern opCode npTab[256];
 extern opCode ddTab[256];
 extern opCode fdTab[256];
@@ -13,6 +12,9 @@ extern opCode cbTab[256];
 extern opCode edTab[256];
 extern opCode ddcbTab[256];
 extern opCode fdcbTab[256];
+
+void lr_call(CPU*, unsigned short);
+void lr_push(CPU*, unsigned short);
 
 void z80_reset(CPU* cpu) {
 	cpu->pc = 0;
@@ -96,12 +98,12 @@ int z80_int(CPU* cpu) {
 				case 1:
 					cpu->r++;
 					cpu->t = 2 + 5;	// 2 extra + 5 on RST38 fetch
-					RST(0x38);	// +3 +3 execution. 13 total
+					lr_call(cpu, 0x38);	// +3 +3 execution. 13 total
 					break;
 				case 2:
 					cpu->r++;
 					cpu->t = 7;
-					PUSH(cpu->hpc,cpu->lpc);		// +3 (10) +3 (13)
+					lr_push(cpu, cpu->pc);			// +3 (10) +3 (13)
 					cpu->lptr = cpu->irq(cpu->data);	// int vector (FF)
 					cpu->hptr = cpu->i;
 					cpu->lpc = MEMRD(cpu->mptr++,3);	// +3 (16)
@@ -118,7 +120,7 @@ int z80_int(CPU* cpu) {
 			cpu->iff2 = cpu->iff1;
 			cpu->iff1 = 0;
 			cpu->t = 5;
-			PUSH(cpu->hpc,cpu->lpc);
+			lr_push(cpu, cpu->pc);
 			cpu->pc = 0x0066;
 			cpu->mptr = cpu->pc;
 			res = cpu->t;		// always 11

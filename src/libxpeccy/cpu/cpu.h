@@ -128,8 +128,6 @@ enum {
 	CPU_VM1			// BK
 };
 
-// typedef struct CPU CPU;
-
 struct CPU {
 	unsigned halt:1;		// cpu halted, undo on interrput
 	unsigned resPV:1;		// Z80: reset PV flag on INT
@@ -169,7 +167,11 @@ struct CPU {
 
 	unsigned char a;
 #if 1
-	unsigned short f;
+	union {
+		unsigned int f;		// value
+		z80flag_t fz;		// bits for z80 (TODO: check endianess)
+	};
+//	unsigned short f;
 #else
 	struct {
 		unsigned c:1;		// all: carry
@@ -202,7 +204,7 @@ struct CPU {
 	PAIR(hl,h,l);
 
 	unsigned char a_;
-	unsigned short f_;
+	unsigned int f_;
 	PAIR(bc_,b_,c_);
 	PAIR(de_,d_,e_);
 	PAIR(hl_,h_,l_);
@@ -223,7 +225,7 @@ struct CPU {
 	// segment registers (+hidden parts)
 	xSegPtr cs;		// cs value,flag,base,limit
 	xSegPtr ss;		// ss value,flag,base,limit
-	xSegPtr ds;		// es value,flag,base,limit
+	xSegPtr ds;		// ds value,flag,base,limit
 	xSegPtr es;		// es value,flag,base,limit
 	xSegPtr gdtr;		// gdt (40 bits:base,limit)
 	xSegPtr idtr;		// idt (40 bits:base,limit)

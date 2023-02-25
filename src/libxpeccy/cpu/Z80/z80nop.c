@@ -12,7 +12,13 @@ void z80_iowr(CPU* cpu, int adr, int data) {
 	cpu->t += 4;
 }
 
-// TODO: use this
+int z80_iord(CPU* cpu, int adr) {
+	int v = cpu->ird(adr, cpu->data);
+	cpu->t += 4;
+	return v & 0xff;
+}
+
+// TODO: use this (somehow...)
 int z80_mrd(CPU* cpu, int adr) {
 	cpu->t++;		// T1
 	cpu->xirq(IRQ_CPU_SYNC, cpu->data);
@@ -37,6 +43,148 @@ void z80_mwr(CPU *cpu, int adr, int data) {
 	cpu->mwr(adr, data, cpu->data);
 }
 
+// push/pop
+
+unsigned short z80_pop(CPU* cpu) {
+	xpair p;
+	p.l = MEMRD(cpu->sp++, 3);
+	p.h = MEMRD(cpu->sp++, 3);
+	return p.w;
+}
+
+void z80_push(CPU* cpu, unsigned short w) {
+	xpair p;
+	p.w = w;
+	MEMWR(--cpu->sp, p.h, 3);
+	MEMWR(--cpu->sp, p.l, 3);
+}
+
+void z80_call(CPU* cpu, unsigned short a) {
+	cpu->mptr = a;
+	z80_push(cpu, cpu->pc);
+	cpu->pc = cpu->mptr;
+}
+
+void z80_ret(CPU* cpu) {
+	cpu->pc = z80_pop(cpu);
+	cpu->mptr = cpu->pc;
+}
+
+// ALU
+unsigned char z80_inc8(CPU* cpu, unsigned char v) {
+	v++;
+	cpu->fz.s = !!(v & 0x80);
+	cpu->fz.z = !v;
+	cpu->fz.f5 = !!(v & 0x20);
+	cpu->fz.h = !(v & 0x0f);
+	cpu->fz.f3 = !!(v & 0x80);
+	cpu->fz.n = 0;
+	return v;
+}
+
+unsigned char z80_dec8(CPU* cpu, unsigned char v) {
+	cpu->fz.h = !(v & 0x0f);
+	v--;
+	cpu->fz.s = !!(v & 0x80);
+	cpu->fz.z = !v;
+	cpu->fz.f5 = !!(v & 0x20);
+	cpu->fz.f3 = !!(v & 0x80);
+	cpu->fz.n = 1;
+	return v;
+}
+
+unsigned char z80_add8(CPU* cpu, unsigned char v, unsigned char c) {
+	cpu->tmpw = cpu->a + v + c;
+	cpu->tmp = ((cpu->a & 0x88) >> 3) | ((v & 0x88) >> 2) | ((cpu->tmpw & 0x88) >> 1);
+	cpu->fz.s = !!(cpu->ltw & 0x80);
+	cpu->fz.z = !cpu->ltw;
+	cpu->fz.f5 = !!(cpu->ltw & 0x20);
+	cpu->fz.h = !!FHaddTab[cpu->tmp & 7];
+	cpu->fz.f3 = !!(cpu->ltw & 0x08);
+	cpu->fz.pv = !!FVaddTab[(cpu->tmp >> 4) & 7];
+	cpu->fz.n = 0;
+	cpu->fz.c = !!cpu->htw;
+	return cpu->ltw;
+}
+
+// F3,F5 taked from result
+unsigned char z80_sub8(CPU* cpu, unsigned char v, unsigned char c) {
+	cpu->tmpw = cpu->a - v - c;
+	cpu->tmp = ((cpu->a & 0x88) >> 3) | ((v & 0x88) >> 2) | ((cpu->tmpw & 0x88) >> 1);
+	cpu->fz.s = !!(cpu->ltw & 0x80);
+	cpu->fz.z = !cpu->ltw;
+	cpu->fz.f5 = !!(cpu->ltw & 0x20);
+	cpu->fz.h = !!FHsubTab[cpu->tmp & 7];
+	cpu->fz.f3 = !!(cpu->ltw & 0x08);
+	cpu->fz.pv = !!FVsubTab[(cpu->tmp >> 4) & 7];
+	cpu->fz.n = 1;
+	cpu->fz.c = !!cpu->htw;
+	return cpu->ltw;
+}
+
+// F3,F5 taked from operand
+void z80_cp8(CPU* cpu, unsigned char v) {
+	cpu->tmpw = cpu->a - v;
+	cpu->tmp = ((cpu->a & 0x88) >> 3) | ((v & 0x88) >> 2) | ((cpu->tmpw & 0x88) >> 1);
+	cpu->fz.s = !!(cpu->ltw & 0x80);
+	cpu->fz.z = !cpu->ltw;
+	cpu->fz.f5 = !!(v & 0x20);
+	cpu->fz.h = !!FHsubTab[cpu->tmp & 7];
+	cpu->fz.f3 = !!(v & 0x08);
+	cpu->fz.pv = !!FVsubTab[(cpu->tmp >> 4) & 7];
+	cpu->fz.n = 1;
+	cpu->fz.c = !!cpu->htw;
+}
+
+// S,Z,PV flags affected only by ADC
+unsigned short z80_add16(CPU* cpu, unsigned short v1, unsigned short v2) {
+	cpu->mptr = v1;
+	cpu->tmpi = v1 + v2;
+	cpu->tmp = ((v1 & 0x8800) >> 11) | ((v2 & 0x8800) >> 10) | ((cpu->tmpi & 0x8800) >> 9);
+	v1 = cpu->tmpi & 0xffff;
+	cpu->fz.f5 = !!(v1 & 0x2000);
+	cpu->fz.h = !!FHaddTab[cpu->tmp & 7];
+	cpu->fz.f3 = !!(v1 & 0x0800);
+	cpu->fz.n = 0;
+	cpu->fz.c = !!(cpu->tmpi & ~0xffff);
+	cpu->mptr++;
+	return v1;
+}
+
+unsigned short z80_adc16(CPU* cpu, unsigned short v1, unsigned short v2, unsigned char c) {
+	cpu->mptr = v1;
+	cpu->tmpi = v1 + v2 + c;
+	cpu->tmp = ((v1 & 0x8800) >> 11) | ((v2 & 0x8800) >> 10) | ((cpu->tmpi & 0x8800) >> 9);
+	v1 = cpu->tmpi & 0xffff;
+	cpu->fz.s = !!(v1 & 0x8000);
+	cpu->fz.z = !v1;
+	cpu->fz.f5 = !!(v1 & 0x2000);
+	cpu->fz.h = !!FHaddTab[cpu->tmp & 7];
+	cpu->fz.f3 = !!(v1 & 0x0800);
+	cpu->fz.pv = !!FVaddTab[cpu->tmp >> 4];
+	cpu->fz.n = 0;
+	cpu->fz.c = !!(cpu->tmpi & ~0xffff);
+	cpu->mptr++;
+	return v1;
+}
+
+unsigned short z80_sub16(CPU* cpu, unsigned short v1, unsigned short v2, unsigned char c) {
+	cpu->tmpi = v1 - v2 - c;
+	cpu->tmp = ((v1 & 0x8800) >> 11) | ((v2 & 0x8800) >> 10) | ((cpu->tmpi & 0x8800) >> 9);
+	cpu->mptr = v1 + 1;
+	v1 = cpu->tmpi & 0xffff;
+	cpu->fz.s = !!(v1 & 0x8000);
+	cpu->fz.z = !v1;
+	cpu->fz.f5 = !!(v1 & 0x2000);
+	cpu->fz.h = !!FHsubTab[cpu->tmp & 7];
+	cpu->fz.f3 = !!(v1 & 0x0800);
+	cpu->fz.pv = !!FVsubTab[cpu->tmp >> 4];
+	cpu->fz.n = 1;
+	cpu->fz.c = !!(cpu->tmpi & ~0xffff);
+	return v1;
+}
+
+// opcodes
 // 00	nop		4
 void npr00(CPU* cpu) {}
 
@@ -60,12 +208,12 @@ void npr03(CPU* cpu) {
 
 // 04	inc b		4
 void npr04(CPU* cpu) {
-	INC(cpu->b);
+	cpu->b = z80_inc8(cpu, cpu->b); //	INC(cpu->b);
 }
 
 // 05	dec b		4
 void npr05(CPU* cpu) {
-	DEC(cpu->b);
+	cpu->b = z80_dec8(cpu, cpu->b); //	DEC(cpu->b);
 }
 
 // 06	ld b,n		4 3rd
@@ -82,12 +230,12 @@ void npr07(CPU* cpu) {
 // 08	ex af,af'	4
 void npr08(CPU* cpu) {
 	cpu->ltw = cpu->a; cpu->a = cpu->a_; cpu->a_ = cpu->ltw;
-	cpu->tmpw = cpu->f; cpu->f = cpu->f_; cpu->f_ = cpu->tmpw;
+	cpu->tmpi = cpu->f; cpu->f = cpu->f_; cpu->f_ = cpu->tmpi;
 }
 
 // 09	add hl,bc	11		mptr = hl+1 before adding
 void npr09(CPU* cpu) {
-	ADD16(cpu->hl, cpu->bc);
+	cpu->hl = z80_add16(cpu, cpu->hl, cpu->bc); //ADD16(cpu->hl, cpu->bc);
 }
 
 // 0A	ld a,(bc)	4 3rd		mptr = bc+1
@@ -103,12 +251,12 @@ void npr0B(CPU* cpu) {
 
 // 0C	inc c		4
 void npr0C(CPU* cpu) {
-	INC(cpu->c);
+	cpu->c = z80_inc8(cpu, cpu->c); //	INC(cpu->c);
 }
 
 // 0D	dec c		4
 void npr0D(CPU* cpu) {
-	DEC(cpu->c);
+	cpu->c = z80_dec8(cpu, cpu->c);	//	DEC(cpu->c);
 }
 
 // 0E	ld c,n		4 3rd
@@ -150,12 +298,12 @@ void npr13(CPU* cpu) {
 
 // 14	inc d		4
 void npr14(CPU* cpu) {
-	INC(cpu->d);
+	cpu->d = z80_inc8(cpu, cpu->d);	// INC(cpu->d);
 }
 
 // 15	dec d		4
 void npr15(CPU* cpu) {
-	DEC(cpu->d);
+	cpu->d = z80_dec8(cpu, cpu->d); // DEC(cpu->d);
 }
 
 // 16	ld d,n		4 3rd
@@ -178,7 +326,7 @@ void npr18(CPU* cpu) {
 
 // 19	add hl,de	11	mptr = hl+1 before adding
 void npr19(CPU* cpu) {
-	ADD16(cpu->hl,cpu->de);
+	cpu->hl = z80_add16(cpu, cpu->hl, cpu->de); //ADD16(cpu->hl,cpu->de);
 }
 
 // 1A	ld a,(de)	4 3rd	mptr = de + 1
@@ -194,12 +342,12 @@ void npr1B(CPU* cpu) {
 
 // 1C	inc e		4
 void npr1C(CPU* cpu) {
-	INC(cpu->e);
+	cpu->e = z80_inc8(cpu, cpu->e); // INC(cpu->e);
 }
 
 // 1D	dec e		4
 void npr1D(CPU* cpu) {
-	DEC(cpu->e);
+	cpu->e = z80_dec8(cpu, cpu->e); // DEC(cpu->e);
 }
 
 // 1E	ld e,n		4 3rd
@@ -241,12 +389,12 @@ void npr23(CPU* cpu) {
 
 // 24	inc h		4
 void npr24(CPU* cpu) {
-	INC(cpu->h);
+	cpu->h = z80_inc8(cpu, cpu->h);	// INC(cpu->h);
 }
 
 // 25	dec h		4
 void npr25(CPU* cpu) {
-	DEC(cpu->h);
+	cpu->h = z80_dec8(cpu, cpu->h); // DEC(cpu->h);
 }
 
 // 26	ld h,n		4 3rd
@@ -269,7 +417,7 @@ void npr28(CPU* cpu) {
 
 // 29	add hl,hl	11
 void npr29(CPU* cpu) {
-	ADD16(cpu->hl,cpu->hl);
+	cpu->hl = z80_add16(cpu, cpu->hl, cpu->hl); //ADD16(cpu->hl,cpu->hl);
 }
 
 // 2A	ld hl,(nn)	4 3rd 3rd 3rd 3rd	mptr = nn+1
@@ -287,12 +435,12 @@ void npr2B(CPU* cpu) {
 
 // 2C	inc l		4
 void npr2C(CPU* cpu) {
-	INC(cpu->l);
+	cpu->l = z80_inc8(cpu, cpu->l); // INC(cpu->l);
 }
 
 // 2D	dec l		4
 void npr2D(CPU* cpu) {
-	DEC(cpu->l);
+	cpu->l = z80_dec8(cpu, cpu->l); // DEC(cpu->l);
 }
 
 // 2E	ld l,n		4 3rd
@@ -334,14 +482,14 @@ void npr33(CPU* cpu) {
 // 34	inc (hl)	4 3rd 4wr
 void npr34(CPU* cpu) {
 	cpu->tmpb = MEMRD(cpu->hl,3);
-	INC(cpu->tmpb);
+	cpu->tmpb = z80_inc8(cpu, cpu->tmpb); // INC(cpu->tmpb);
 	MEMWR(cpu->hl,cpu->tmpb,4);
 }
 
 // 35	dec (hl)	4 3rd 4wr
 void npr35(CPU* cpu) {
 	cpu->tmpb = MEMRD(cpu->hl,3);
-	DEC(cpu->tmpb);
+	cpu->tmpb = z80_dec8(cpu, cpu->tmpb); // DEC(cpu->tmpb);
 	MEMWR(cpu->hl,cpu->tmpb,4);
 }
 
@@ -364,7 +512,7 @@ void npr38(CPU* cpu) {
 
 // 39	add hl,sp	11
 void npr39(CPU* cpu) {
-	ADD16(cpu->hl,cpu->sp);
+	cpu->hl = z80_add16(cpu, cpu->hl, cpu->sp); //ADD16(cpu->hl,cpu->sp);
 }
 
 // 3A	ld a,(nn)	4 3rd 3rd 3rd	mptr = nn+1
@@ -381,12 +529,12 @@ void npr3B(CPU* cpu) {
 
 // 3C	inc a		4
 void npr3C(CPU* cpu) {
-	INC(cpu->a);
+	cpu->a = z80_inc8(cpu, cpu->a); // INC(cpu->a);
 }
 
 // 3D	dec a		4
 void npr3D(CPU* cpu) {
-	DEC(cpu->a);
+	cpu->a = z80_dec8(cpu, cpu->a); // DEC(cpu->a);
 }
 
 // 3E	ld a,n		4 3rd
@@ -472,41 +620,41 @@ void npr7D(CPU* cpu) {cpu->a = cpu->l;}
 void npr7E(CPU* cpu) {cpu->a = MEMRD(cpu->hl,3);}
 void npr7F(CPU* cpu) {}
 // 80..87	add a,r		4 [3rd]
-void npr80(CPU* cpu) {ADD(cpu->b);}
-void npr81(CPU* cpu) {ADD(cpu->c);}
-void npr82(CPU* cpu) {ADD(cpu->d);}
-void npr83(CPU* cpu) {ADD(cpu->e);}
-void npr84(CPU* cpu) {ADD(cpu->h);}
-void npr85(CPU* cpu) {ADD(cpu->l);}
-void npr86(CPU* cpu) {cpu->tmpb = MEMRD(cpu->hl,3); ADD(cpu->tmpb);}
-void npr87(CPU* cpu) {ADD(cpu->a);}
+void npr80(CPU* cpu) {cpu->a = z80_add8(cpu, cpu->b, 0);} //ADD(cpu->b);}
+void npr81(CPU* cpu) {cpu->a = z80_add8(cpu, cpu->c, 0);} //ADD(cpu->c);}
+void npr82(CPU* cpu) {cpu->a = z80_add8(cpu, cpu->d, 0);} //ADD(cpu->d);}
+void npr83(CPU* cpu) {cpu->a = z80_add8(cpu, cpu->e, 0);} //ADD(cpu->e);}
+void npr84(CPU* cpu) {cpu->a = z80_add8(cpu, cpu->h, 0);} //ADD(cpu->h);}
+void npr85(CPU* cpu) {cpu->a = z80_add8(cpu, cpu->l, 0);} //ADD(cpu->l);}
+void npr86(CPU* cpu) {cpu->tmpb = MEMRD(cpu->hl,3); cpu->a = z80_add8(cpu, cpu->tmpb, 0);} //ADD(cpu->tmpb);}
+void npr87(CPU* cpu) {cpu->a = z80_add8(cpu, cpu->a, 0);} //ADD(cpu->a);}
 // 88..8F	adc a,r		4 [3rd]
-void npr88(CPU* cpu) {ADC(cpu->b);}
-void npr89(CPU* cpu) {ADC(cpu->c);}
-void npr8A(CPU* cpu) {ADC(cpu->d);}
-void npr8B(CPU* cpu) {ADC(cpu->e);}
-void npr8C(CPU* cpu) {ADC(cpu->h);}
-void npr8D(CPU* cpu) {ADC(cpu->l);}
-void npr8E(CPU* cpu) {cpu->tmpb = MEMRD(cpu->hl,3); ADC(cpu->tmpb);}
-void npr8F(CPU* cpu) {ADC(cpu->a);}
+void npr88(CPU* cpu) {cpu->a = z80_add8(cpu, cpu->b, cpu->fz.c);} //ADC(cpu->b);}
+void npr89(CPU* cpu) {cpu->a = z80_add8(cpu, cpu->c, cpu->fz.c);} //ADC(cpu->c);}
+void npr8A(CPU* cpu) {cpu->a = z80_add8(cpu, cpu->d, cpu->fz.c);} //ADC(cpu->d);}
+void npr8B(CPU* cpu) {cpu->a = z80_add8(cpu, cpu->e, cpu->fz.c);} //ADC(cpu->e);}
+void npr8C(CPU* cpu) {cpu->a = z80_add8(cpu, cpu->h, cpu->fz.c);} //ADC(cpu->h);}
+void npr8D(CPU* cpu) {cpu->a = z80_add8(cpu, cpu->l, cpu->fz.c);} //ADC(cpu->l);}
+void npr8E(CPU* cpu) {cpu->tmpb = MEMRD(cpu->hl,3); cpu->a = z80_add8(cpu, cpu->tmpb, cpu->fz.c);} //ADC(cpu->tmpb);}
+void npr8F(CPU* cpu) {cpu->a = z80_add8(cpu, cpu->a, cpu->fz.c);} //ADC(cpu->a);}
 // 90..97	sub r		4 [3rd]
-void npr90(CPU* cpu) {SUB(cpu->b);}
-void npr91(CPU* cpu) {SUB(cpu->c);}
-void npr92(CPU* cpu) {SUB(cpu->d);}
-void npr93(CPU* cpu) {SUB(cpu->e);}
-void npr94(CPU* cpu) {SUB(cpu->h);}
-void npr95(CPU* cpu) {SUB(cpu->l);}
-void npr96(CPU* cpu) {cpu->tmpb = MEMRD(cpu->hl,3); SUB(cpu->tmpb);}
-void npr97(CPU* cpu) {SUB(cpu->a);}
+void npr90(CPU* cpu) {cpu->a = z80_sub8(cpu, cpu->b, 0);} //SUB(cpu->b);}
+void npr91(CPU* cpu) {cpu->a = z80_sub8(cpu, cpu->c, 0);} //SUB(cpu->c);}
+void npr92(CPU* cpu) {cpu->a = z80_sub8(cpu, cpu->d, 0);} //SUB(cpu->d);}
+void npr93(CPU* cpu) {cpu->a = z80_sub8(cpu, cpu->e, 0);} //SUB(cpu->e);}
+void npr94(CPU* cpu) {cpu->a = z80_sub8(cpu, cpu->h, 0);} //SUB(cpu->h);}
+void npr95(CPU* cpu) {cpu->a = z80_sub8(cpu, cpu->l, 0);} //SUB(cpu->l);}
+void npr96(CPU* cpu) {cpu->tmpb = MEMRD(cpu->hl,3); cpu->a = z80_sub8(cpu, cpu->tmpb, 0);} //SUB(cpu->tmpb);}
+void npr97(CPU* cpu) {cpu->a = z80_sub8(cpu, cpu->a, 0);} //SUB(cpu->a);}
 // 98..9F	sbc a,r		4 [3rd]
-void npr98(CPU* cpu) {SBC(cpu->b);}
-void npr99(CPU* cpu) {SBC(cpu->c);}
-void npr9A(CPU* cpu) {SBC(cpu->d);}
-void npr9B(CPU* cpu) {SBC(cpu->e);}
-void npr9C(CPU* cpu) {SBC(cpu->h);}
-void npr9D(CPU* cpu) {SBC(cpu->l);}
-void npr9E(CPU* cpu) {cpu->tmpb = MEMRD(cpu->hl,3); SBC(cpu->tmpb);}
-void npr9F(CPU* cpu) {SBC(cpu->a);}
+void npr98(CPU* cpu) {cpu->a = z80_sub8(cpu, cpu->b, cpu->fz.c);} //SBC(cpu->b);}
+void npr99(CPU* cpu) {cpu->a = z80_sub8(cpu, cpu->c, cpu->fz.c);} //SBC(cpu->c);}
+void npr9A(CPU* cpu) {cpu->a = z80_sub8(cpu, cpu->d, cpu->fz.c);} //SBC(cpu->d);}
+void npr9B(CPU* cpu) {cpu->a = z80_sub8(cpu, cpu->e, cpu->fz.c);} //SBC(cpu->e);}
+void npr9C(CPU* cpu) {cpu->a = z80_sub8(cpu, cpu->h, cpu->fz.c);} //SBC(cpu->h);}
+void npr9D(CPU* cpu) {cpu->a = z80_sub8(cpu, cpu->l, cpu->fz.c);} //SBC(cpu->l);}
+void npr9E(CPU* cpu) {cpu->tmpb = MEMRD(cpu->hl,3); cpu->a = z80_sub8(cpu, cpu->tmpb, cpu->fz.c);} //SBC(cpu->tmpb);}
+void npr9F(CPU* cpu) {cpu->a = z80_sub8(cpu, cpu->a, cpu->fz.c);} //SBC(cpu->a);}
 // a0..a7	and r		4 [3rd]
 void nprA0(CPU* cpu) {cpu->a &= cpu->b; cpu->f = sz53pTab[cpu->a] | Z80_FH;}
 void nprA1(CPU* cpu) {cpu->a &= cpu->c; cpu->f = sz53pTab[cpu->a] | Z80_FH;}
@@ -535,23 +683,24 @@ void nprB5(CPU* cpu) {cpu->a |= cpu->l; cpu->f = sz53pTab[cpu->a];}
 void nprB6(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,3); cpu->a |= cpu->tmp; cpu->f = sz53pTab[cpu->a];}
 void nprB7(CPU* cpu) {cpu->f = sz53pTab[cpu->a];}
 // b9..bf	cp r		4 [3rd]
-void nprB8(CPU* cpu) {CP(cpu->b);}
-void nprB9(CPU* cpu) {CP(cpu->c);}
-void nprBA(CPU* cpu) {CP(cpu->d);}
-void nprBB(CPU* cpu) {CP(cpu->e);}
-void nprBC(CPU* cpu) {CP(cpu->h);}
-void nprBD(CPU* cpu) {CP(cpu->l);}
-void nprBE(CPU* cpu) {cpu->tmpb = MEMRD(cpu->hl,3); CP(cpu->tmpb);}
-void nprBF(CPU* cpu) {CP(cpu->a);}
+void nprB8(CPU* cpu) {z80_cp8(cpu, cpu->b);} //CP(cpu->b);}
+void nprB9(CPU* cpu) {z80_cp8(cpu, cpu->c);} //CP(cpu->c);}
+void nprBA(CPU* cpu) {z80_cp8(cpu, cpu->d);} //CP(cpu->d);}
+void nprBB(CPU* cpu) {z80_cp8(cpu, cpu->e);} //CP(cpu->e);}
+void nprBC(CPU* cpu) {z80_cp8(cpu, cpu->h);} //CP(cpu->h);}
+void nprBD(CPU* cpu) {z80_cp8(cpu, cpu->l);} //CP(cpu->l);}
+void nprBE(CPU* cpu) {cpu->tmpb = MEMRD(cpu->hl,3); z80_cp8(cpu, cpu->tmpb);} //CP(cpu->tmpb);}
+void nprBF(CPU* cpu) {z80_cp8(cpu, cpu->a);} //CP(cpu->a);}
 
 // c0	ret nz		5 [3rd 3rd]	mptr = ret.adr (if ret)
 void nprC0(CPU* cpu) {
-	if (!(cpu->f & Z80_FZ)) RET
+	if (!(cpu->f & Z80_FZ))
+		z80_ret(cpu);
 }
 
 // c1	pop bc		4 3rd 3rd
 void nprC1(CPU* cpu) {
-	POP(cpu->b,cpu->c);
+	cpu->bc = z80_pop(cpu); // POP(cpu->b,cpu->c);
 }
 
 // c2	jp nz,nn	4 3rd 3rd	mptr = nn
@@ -574,35 +723,35 @@ void nprC4(CPU* cpu) {
 	cpu->hptr = MEMRD(cpu->pc++,3);
 	if (!(cpu->f & Z80_FZ)) {
 		cpu->t++;
-		PUSH(cpu->hpc,cpu->lpc);
+		z80_push(cpu, cpu->pc); //PUSH(cpu->hpc,cpu->lpc);
 		cpu->pc = cpu->mptr;
 	}
 }
 
 // c5	push bc		5 3wr 3wr
 void nprC5(CPU* cpu) {
-	PUSH(cpu->b, cpu->c);
+	z80_push(cpu, cpu->bc); // PUSH(cpu->b, cpu->c);
 }
 
 // c6	add a,n		4 3rd
 void nprC6(CPU* cpu) {
 	cpu->tmpb = MEMRD(cpu->pc++,3);
-	ADD(cpu->tmpb);
+	cpu->a = z80_add8(cpu, cpu->tmpb, 0); //ADD(cpu->tmpb);
 }
 
 // c7	rst00		5 3wr 3wr	mptr = 0
 void nprC7(CPU* cpu) {
-	RST(0x00);
+	z80_call(cpu, 0x00);
 }
 
 // c8	ret z		5 [3rd 3rd]	[mptr = ret.adr]
 void nprC8(CPU* cpu) {
-	if (cpu->f & Z80_FZ) RET;
+	if (cpu->f & Z80_FZ) z80_ret(cpu);
 }
 
 // c9	ret		5 3rd 3rd	mptr = ret.adr
 void nprC9(CPU* cpu) {
-	RET;
+	z80_ret(cpu);
 }
 
 // ca	jp z,nn		4 3rd 3rd	mptr = nn
@@ -623,7 +772,7 @@ void nprCC(CPU* cpu) {
 	cpu->hptr = MEMRD(cpu->pc++,3);
 	if (cpu->f & Z80_FZ) {
 		cpu->t++;
-		PUSH(cpu->hpc,cpu->lpc);
+		z80_push(cpu, cpu->pc);
 		cpu->pc = cpu->mptr;
 	}
 }
@@ -632,29 +781,29 @@ void nprCC(CPU* cpu) {
 void nprCD(CPU* cpu) {
 	cpu->lptr = MEMRD(cpu->pc++,3);
 	cpu->hptr = MEMRD(cpu->pc++,4);
-	PUSH(cpu->hpc,cpu->lpc);
+	z80_push(cpu, cpu->pc);
 	cpu->pc = cpu->mptr;
 }
 
 // ce	adc a,n		4 3rd
 void nprCE(CPU* cpu) {
 	cpu->tmpb = MEMRD(cpu->pc++,3);
-	ADC(cpu->tmpb);
+	cpu->a = z80_add8(cpu, cpu->tmpb, cpu->fz.c); //ADC(cpu->tmpb);
 }
 
 // cf	rst08		5 3wr 3wr		mptr = 8
 void nprCF(CPU* cpu) {
-	RST(0x08);
+	z80_call(cpu, 0x08);
 }
 
 // d0	ret nc		5 [3rd 3rd]		[mptr = ret.adr]
 void nprD0(CPU* cpu) {
-	if (!(cpu->f & Z80_FC)) RET;
+	if (!(cpu->f & Z80_FC)) z80_ret(cpu);
 }
 
 // d1	pop de		4 3rd 3rd
 void nprD1(CPU* cpu) {
-	POP(cpu->d,cpu->e);
+	cpu->de = z80_pop(cpu);
 }
 
 // d2	jp nc,nn	4 3rd 3rd		mptr = nn
@@ -678,30 +827,30 @@ void nprD4(CPU* cpu) {
 	cpu->hptr = MEMRD(cpu->pc++,3);
 	if (!(cpu->f & Z80_FC)) {
 		cpu->t++;
-		PUSH(cpu->hpc,cpu->lpc);
+		z80_push(cpu, cpu->pc);
 		cpu->pc = cpu->mptr;
 	}
 }
 
 // d5	push de		5 3wr 3wr
 void nprD5(CPU* cpu) {
-	PUSH(cpu->d,cpu->e);
+	z80_push(cpu, cpu->de);
 }
 
 // d6	sub n		4 3rd
 void nprD6(CPU* cpu) {
 	cpu->tmpb = MEMRD(cpu->pc++,3);
-	SUB(cpu->tmpb);
+	cpu->a = z80_sub8(cpu, cpu->tmpb, 0); // SUB(cpu->tmpb);
 }
 
 // d7	rst10		5 3wr 3wr	mptr = 0x10
 void nprD7(CPU* cpu) {
-	RST(0x10);
+	z80_call(cpu, 0x10);
 }
 
 // d8	ret c		5 [3rd 3rd]	[mptr = ret.adr]
 void nprD8(CPU* cpu) {
-	if (cpu->f & Z80_FC) RET;
+	if (cpu->f & Z80_FC) z80_ret(cpu);
 }
 
 // d9	exx		4
@@ -722,7 +871,7 @@ void nprDA(CPU* cpu) {
 void nprDB(CPU* cpu) {
 	cpu->lptr = MEMRD(cpu->pc++,3);
 	cpu->hptr = cpu->a;
-	cpu->a = IORD(cpu->mptr++,4);
+	cpu->a = z80_iord(cpu, cpu->mptr++);
 }
 
 // dc	call c,nn	4 3rd 3rd[+1] [3wr 3wr]		mptr = nn
@@ -731,7 +880,7 @@ void nprDC(CPU* cpu) {
 	cpu->hptr = MEMRD(cpu->pc++,3);
 	if (cpu->f & Z80_FC) {
 		cpu->t++;
-		PUSH(cpu->hpc,cpu->lpc);
+		z80_push(cpu, cpu->pc);
 		cpu->pc = cpu->mptr;
 	}
 }
@@ -744,22 +893,22 @@ void nprDD(CPU* cpu) {
 // de	sbc a,n		4 3rd
 void nprDE(CPU* cpu) {
 	cpu->tmpb = MEMRD(cpu->pc++,3);
-	SBC(cpu->tmpb);
+	cpu->a = z80_sub8(cpu, cpu->tmpb, cpu->fz.c); // SBC(cpu->tmpb);
 }
 
 // df	rst18		5 3wr 3wr	mptr = 0x18;
 void nprDF(CPU* cpu) {
-	RST(0x18);
+	z80_call(cpu, 0x18);
 }
 
 // e0	ret po		5 [3rd 3rd]	[mptr = ret.adr]
 void nprE0(CPU* cpu) {
-	if (!(cpu->f & Z80_FP)) RET
+	if (!(cpu->f & Z80_FP)) z80_ret(cpu);
 }
 
 // e1	pop hl		4 3rd 3rd
 void nprE1(CPU* cpu) {
-	POP(cpu->h, cpu->l);
+	cpu->hl = z80_pop(cpu);
 }
 
 // e2	jp po,nn	4 3rd 3rd	mptr = nn
@@ -771,8 +920,8 @@ void nprE2(CPU* cpu) {
 
 // e3	ex (sp),hl	4 3rd 4rd 3wr 5wr	mptr = hl
 void nprE3(CPU* cpu) {
-	POP(cpu->htw,cpu->ltw); cpu->t++;	// 3,3+1
-	PUSH(cpu->h, cpu->l); cpu->t += 2;	// 3,3+2
+	cpu->tmpw = z80_pop(cpu); cpu->t++;	// 3,3+1
+	z80_push(cpu, cpu->hl); cpu->t += 2;	// 3,3+2
 	cpu->hl = cpu->tmpw;
 	cpu->mptr = cpu->hl;
 }
@@ -783,14 +932,14 @@ void nprE4(CPU* cpu) {
 	cpu->hptr = MEMRD(cpu->pc++,3);
 	if (!(cpu->f & Z80_FP)) {
 		cpu->t++;
-		PUSH(cpu->hpc,cpu->lpc);
+		z80_push(cpu, cpu->pc);
 		cpu->pc = cpu->mptr;
 	}
 }
 
 // e5	push hl		5 3wr 3wr
 void nprE5(CPU* cpu) {
-	PUSH(cpu->h, cpu->l);
+	z80_push(cpu, cpu->hl);
 }
 
 // e6	and n		4 3rd
@@ -802,12 +951,12 @@ void nprE6(CPU* cpu) {
 
 // e7	rst20		5 3wr 3wr	mptr = 0x20
 void nprE7(CPU* cpu) {
-	RST(0x20);
+	z80_call(cpu, 0x20);
 }
 
 // e8	ret pe		5 [3rd 3rd]	[mptr = ret.adr]
 void nprE8(CPU* cpu) {
-	if (cpu->f & Z80_FP) RET;
+	if (cpu->f & Z80_FP) z80_ret(cpu);
 }
 
 // e9	jp (hl)		4
@@ -833,7 +982,7 @@ void nprEC(CPU* cpu) {
 	cpu->hptr = MEMRD(cpu->pc++,3);
 	if (cpu->f & Z80_FP) {
 		cpu->t++;
-		PUSH(cpu->hpc,cpu->lpc);
+		z80_push(cpu, cpu->pc);
 		cpu->pc = cpu->mptr;
 	}
 }
@@ -852,17 +1001,19 @@ void nprEE(CPU* cpu) {
 
 // ef	rst28		5 3wr 3wr	mptr = 0x28
 void nprEF(CPU* cpu) {
-	RST(0x28);
+	z80_call(cpu, 0x28);
 }
 
 // f0	ret p		5 [3rd 3rd]	[mptr = ret.adr]
 void nprF0(CPU* cpu) {
-	if (!(cpu->f & Z80_FS)) RET;
+	if (!(cpu->f & Z80_FS)) z80_ret(cpu);
 }
 
 // f1	pop af		4 3rd 3rd
 void nprF1(CPU* cpu) {
-	POP(cpu->a,cpu->f);
+	cpu->tmpw = z80_pop(cpu);
+	cpu->f = cpu->ltw;
+	cpu->a = cpu->htw;
 }
 
 // f2	jp p,nn		4 3rd 3rd	mptr = nn
@@ -885,14 +1036,16 @@ void nprF4(CPU* cpu) {
 	cpu->hptr = MEMRD(cpu->pc++,3);
 	if (!(cpu->f & Z80_FS)) {
 		cpu->t++;
-		PUSH(cpu->hpc,cpu->lpc);
+		z80_push(cpu, cpu->pc);
 		cpu->pc = cpu->mptr;
 	}
 }
 
 // f5	push af		5 3wr 3wr
 void nprF5(CPU* cpu) {
-	PUSH(cpu->a,cpu->f & 0xff);
+	cpu->ltw = cpu->f;
+	cpu->htw = cpu->a;
+	z80_push(cpu, cpu->tmpw);
 }
 
 // f6	or n		4 3rd
@@ -904,12 +1057,12 @@ void nprF6(CPU* cpu) {
 
 // f7	rst30		5 3wr 3wr		mptr = 0x30
 void nprF7(CPU* cpu) {
-	RST(0x30);
+	z80_call(cpu, 0x30);
 }
 
 // f8	ret m		5 [3rd 3rd]		[mptr = ret.adr]
 void nprF8(CPU* cpu) {
-	if (cpu->f & Z80_FS) RET;
+	if (cpu->f & Z80_FS) z80_ret(cpu);
 }
 
 // f9	ld sp,hl	6
@@ -938,7 +1091,7 @@ void nprFC(CPU* cpu) {
 	cpu->hptr = MEMRD(cpu->pc++,3);
 	if (cpu->f & Z80_FS) {
 		cpu->t++;
-		PUSH(cpu->hpc,cpu->lpc);
+		z80_push(cpu, cpu->pc);
 		cpu->pc = cpu->mptr;
 	}
 }
@@ -951,12 +1104,12 @@ void nprFD(CPU* cpu) {
 // fe	cp n		4 3rd
 void nprFE(CPU* cpu) {
 	cpu->tmpb = MEMRD(cpu->pc++,3);
-	CP(cpu->tmpb);
+	z80_cp8(cpu, cpu->tmpb); // CP(cpu->tmpb);
 }
 
 // ff	rst38		5 3rd 3rd	mptr = 0x38;
 void nprFF(CPU* cpu) {
-	RST(0x38);
+	z80_call(cpu, 0x38);
 }
 
 //==================

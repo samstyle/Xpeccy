@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdint.h>
+
 // compilation flags
 #define USE_HOST_KEYBOARD	1
 
@@ -42,9 +44,13 @@ typedef void(*cbxwr)(int, int, void*);
 // 16bit reg
 
 #ifdef WORDS_BIG_ENDIAN
-	#define PAIR(p,h,l) union{unsigned short p; struct {unsigned char h; unsigned char l;};}
+	#define PAIR(p,h,l) union{uint16_t p; struct {uint8_t h; uint8_t l;};}
+	typedef union{uint16_t w; struct{uint8_t h; uint8_t l;};} reg16;
+	typedef union{uint32_t i; struct{uint16_t wh; reg16 wl;};} reg32;
 #else
-	#define PAIR(p,h,l) union{unsigned short p; struct {unsigned char l; unsigned char h;};}
+	#define PAIR(p,h,l) union{uint16_t p; struct {uint8_t l; uint8_t h;};}
+	typedef union{uint16_t w; struct{uint8_t l; uint8_t h;};} reg16;
+	typedef union{uint32_t i; struct{reg16 wl; uint16_t wh;};} reg32;
 #endif
 
 typedef PAIR(w,h,l) xpair;
