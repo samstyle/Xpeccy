@@ -19,24 +19,24 @@
 unsigned char i286_mrd(CPU* cpu, xSegPtr seg, int rpl, unsigned short adr) {
 	if (rpl && (cpu->seg.idx >= 0)) seg = cpu->seg;
 	cpu->t++;
-	return cpu->mrd(seg.base + adr, 0, cpu->data) & 0xff;
+	return cpu->mrd(seg.base + adr, 0, cpu->xptr) & 0xff;
 }
 
 void i286_mwr(CPU* cpu, xSegPtr seg, int rpl, unsigned short adr, int val) {
 	if (rpl && (cpu->seg.idx >= 0)) seg = cpu->seg;
 	cpu->t++;
-	cpu->mwr(seg.base + adr, val, cpu->data);
+	cpu->mwr(seg.base + adr, val, cpu->xptr);
 }
 
 // iord/wr
 
 unsigned short i286_ird(CPU* cpu, int adr) {
-	return cpu->ird(adr, cpu->data) & 0xffff;
+	return cpu->ird(adr, cpu->xptr) & 0xffff;
 }
 
 void i286_iwr(CPU* cpu, int adr, int val, int w) {
 	cpu->wrd = !!w;
-	cpu->iwr(adr, val, cpu->data);
+	cpu->iwr(adr, val, cpu->xptr);
 	cpu->wrd = 0;
 }
 
@@ -66,14 +66,14 @@ xSegPtr i286_cash_seg(CPU* cpu, unsigned short val) {
 	if (cpu->msw & I286_FPE) {
 		adr = (val & 4) ? cpu->ldtr.base : cpu->gdtr.base;
 		adr += val & 0xfff8;
-		off.l = cpu->mrd(adr++, 0, cpu->data);	// limit:16
-		off.h = cpu->mrd(adr++, 0, cpu->data);
+		off.l = cpu->mrd(adr++, 0, cpu->xptr);	// limit:16
+		off.h = cpu->mrd(adr++, 0, cpu->xptr);
 		p.limit = off.w;
-		off.l = cpu->mrd(adr++, 0, cpu->data);	// base:24
-		off.h = cpu->mrd(adr++, 0, cpu->data);
-		tmp = cpu->mrd(adr++, 0, cpu->data);
+		off.l = cpu->mrd(adr++, 0, cpu->xptr);	// base:24
+		off.h = cpu->mrd(adr++, 0, cpu->xptr);
+		tmp = cpu->mrd(adr++, 0, cpu->xptr);
 		p.base = (tmp << 16) | off.w;
-		p.flag = cpu->mrd(adr, 0, cpu->data);	// flags:8
+		p.flag = cpu->mrd(adr, 0, cpu->xptr);	// flags:8
 	} else {
 		p.flag = 0xf2;		// present, dpl=3, segment, data, writeable
 		p.base = val << 4;

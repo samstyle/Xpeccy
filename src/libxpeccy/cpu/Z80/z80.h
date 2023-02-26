@@ -33,6 +33,19 @@ enum {
 #define Z80_INT	1
 #define Z80_NMI	(1<<1)
 
+#ifdef WORDS_BIG_ENDIAN
+typedef struct {
+	unsigned _nu:24;		// not used (padding to 32 bits)
+	unsigned s:1;
+	unsigned z:1;
+	unsigned f5:1;
+	unsigned h:1;
+	unsigned f3:1;
+	unsigned pv:1;
+	unsigned n:1;
+	unsigned c:1;
+} z80flag_t;
+#else
 typedef struct {
 	unsigned c:1;
 	unsigned n:1;
@@ -44,6 +57,7 @@ typedef struct {
 	unsigned s:1;
 	unsigned _nu:24;		// not used (padding to 32 bits)
 } z80flag_t;
+#endif
 
 void z80_reset(CPU*);
 int z80_exec(CPU*);

@@ -2,6 +2,7 @@
 
 extern unsigned char FLHaddTab[8];
 extern unsigned char FLHsubTab[8];
+/*
 
 // ariphmetic
 #define INCL(val) {\
@@ -45,7 +46,7 @@ extern unsigned char FLHsubTab[8];
 #define CMP(val) {\
 	cpu->tmpw = cpu->a - val;\
 	cpu->tmp = ((cpu->a & 0x88) >> 3) | ((val & 0x88) >> 2) | ((cpu->tmpw & 0x88) >> 1);\
-	cpu->f = ((cpu->tmpw & 0x100) ? FLC : (cpu->tmpw ? 0 : FLZ)) | FLN | FLHsubTab[cpu->tmp & 7];\
+	cpu->f = ((cpu->tmpw & 0x100) ? FLC : 0) | (cpu->ltw ? 0 : FLZ)) | FLN | FLHsubTab[cpu->tmp & 7];\
 }
 
 #define ADDL16(val1,val2) {\
@@ -55,10 +56,11 @@ extern unsigned char FLHsubTab[8];
 	val1 = cpu->tmpi;\
 	cpu->f = (cpu->f & FLZ) | ((cpu->tmpi & 0x10000) ? FLC : 0) | FLHaddTab[cpu->tmp & 7];\
 }
+*/
 
 // misc
 
-#define SWAPH(rp) {rp = ((rp & 0xf0) >> 4) | ((rp & 0x0f) << 4); cpu->f = (rp ? 0 : FLZ);}		// swap hi/lo halfbyte
+// #define SWAPH(rp) {rp = ((rp & 0xf0) >> 4) | ((rp & 0x0f) << 4); cpu->f = (rp ? 0 : FLZ);}		// swap hi/lo halfbyte
 
 // shift
 

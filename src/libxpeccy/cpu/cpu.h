@@ -168,18 +168,17 @@ struct CPU {
 	unsigned char a;
 #if 1
 	union {
-		unsigned int f;		// value
-		z80flag_t fz;		// bits for z80 (TODO: check endianess)
+		unsigned int f;		// 32-bit value
+		z80flag_t fz;		// bits for Z80
+		lrflag_t fl;		// bits for LR35902
+		mosflag_t fm;
 	};
 //	unsigned short f;
 #else
 	struct {
 		unsigned c:1;		// all: carry
-		union {
-			unsigned n:1;		// z80: set on substraction
-			unsigned f1:1;		// 8080: unnamed flag (always set)
-		};
-		unsigned pv:1;		// all: parity z80:overflow
+		unsigned n:1;		// z80: substraction
+		unsigned p:1;		// all: parity z80:+overflow
 		unsigned f3:1;		// z80: f3
 		union {
 			unsigned h:1;	// all: half-carry
@@ -193,7 +192,10 @@ struct CPU {
 		unsigned i:1;		// x86, 6502: interrrupt
 		unsigned d:1;		// x86: direction, 6502:bcd mode
 		unsigned o:1;		// x86: overflow
-		unsigned ip:2;		// x86: iopl
+		union {
+			unsigned ip:2;		// x86: iopl
+			unsigned im:2;		// z80: int mode
+		}
 		unsigned f7:1;		// vm1: unnamed flags
 		unsigned f10:1;
 		unsigned f11:1;
@@ -251,7 +253,7 @@ struct CPU {
 	cbiw iwr;
 	cbiack irq;
 	cbirq xirq;
-	void* data;
+	void* xptr;
 
 // opcode
 	PAIR(com, hcom, lcom);

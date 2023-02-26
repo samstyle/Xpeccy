@@ -14,18 +14,18 @@ void pdp_wrb(CPU* cpu, int adr, int val) {	// val is 00..FF
 		val &= 0xff;
 	}
 	adr &= ~1;
-	cpu->mwr(adr, val, cpu->data);
+	cpu->mwr(adr, val, cpu->xptr);
 }
 
 // nod = 3: write both bytes
 void pdp_wr(CPU* cpu, int adr, int val) {
 	cpu->nod = 3;
 	adr &= ~1;
-	cpu->mwr(adr, val, cpu->data);
+	cpu->mwr(adr, val, cpu->xptr);
 }
 
 int pdp_rd(CPU* cpu, int adr) {
-	return cpu->mrd(adr & 0xfffe, 0, cpu->data) & 0xffff;
+	return cpu->mrd(adr & 0xfffe, 0, cpu->xptr) & 0xffff;
 }
 
 // read byte = read word and take high or low byte from there
@@ -261,7 +261,7 @@ void pdp_res(CPU* cpu) {
 	cpu->timer.val = 0xffff;
 	cpu->timer.ival = 0xffff;
 	cpu->timer.flag = 0xff;
-	cpu->iwr(0, PDP11_INIT, cpu->data);
+	cpu->iwr(0, PDP11_INIT, cpu->xptr);
 }
 
 // 0006:rtt

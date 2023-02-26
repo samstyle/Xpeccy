@@ -41,7 +41,7 @@ typedef void(*cbirq)(int, void*);
 typedef int(*cbxrd)(int, void*);
 typedef void(*cbxwr)(int, int, void*);
 
-// 16bit reg
+// 16/32-bits reg
 
 #ifdef WORDS_BIG_ENDIAN
 	#define PAIR(p,h,l) union{uint16_t p; struct {uint8_t h; uint8_t l;};}

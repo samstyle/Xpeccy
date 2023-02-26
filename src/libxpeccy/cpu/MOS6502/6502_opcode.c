@@ -8,56 +8,56 @@
 // cpu->mptr = address on misc addressing types
 // cpu->tmp = operand
 // IMM : next byte
-#define mosGetImm(_op) _op = cpu->mrd(cpu->pc++, 0, cpu->data);
+#define mosGetImm(_op) _op = cpu->mrd(cpu->pc++, 0, cpu->xptr);
 
 // ZP : peek(n) +1T
 void mosGetZPw(CPU* cpu) {
-	cpu->lptr = cpu->mrd(cpu->pc++, 0, cpu->data);
+	cpu->lptr = cpu->mrd(cpu->pc++, 0, cpu->xptr);
 	cpu->hptr = 0;
 }
 
 void mosGetZP(CPU* cpu) {
 	mosGetZPw(cpu);
-	cpu->tmp = cpu->mrd(cpu->mptr, 0, cpu->data);
+	cpu->tmp = cpu->mrd(cpu->mptr, 0, cpu->xptr);
 }
 
 // ZPX : peek((X + n) & 0xff)
 void mosGetZPXw(CPU* cpu) {
-	cpu->tmp = cpu->mrd(cpu->pc++, 0, cpu->data);
+	cpu->tmp = cpu->mrd(cpu->pc++, 0, cpu->xptr);
 	cpu->mptr = (cpu->lx + cpu->tmp) & 0xff;
 }
 
 void mosGetZPX(CPU* cpu) {
 	mosGetZPXw(cpu);
-	cpu->tmp = cpu->mrd(cpu->mptr, 0, cpu->data);
+	cpu->tmp = cpu->mrd(cpu->mptr, 0, cpu->xptr);
 }
 
 // ZPY : peek((Y + n) & 0xff)
 void mosGetZPYw(CPU* cpu) {
-	cpu->tmp = cpu->mrd(cpu->pc++, 0, cpu->data);
+	cpu->tmp = cpu->mrd(cpu->pc++, 0, cpu->xptr);
 	cpu->mptr = (cpu->ly + cpu->tmp) & 0xff;
 }
 
 void mosGetZPY(CPU* cpu) {
 	mosGetZPYw(cpu);
-	cpu->tmp = cpu->mrd(cpu->mptr, 0, cpu->data);
+	cpu->tmp = cpu->mrd(cpu->mptr, 0, cpu->xptr);
 }
 
 // ABS: peek(nn)
 void mosGetABSw(CPU* cpu) {
-	cpu->lptr = cpu->mrd(cpu->pc++, 0, cpu->data);
-	cpu->hptr = cpu->mrd(cpu->pc++, 0, cpu->data);
+	cpu->lptr = cpu->mrd(cpu->pc++, 0, cpu->xptr);
+	cpu->hptr = cpu->mrd(cpu->pc++, 0, cpu->xptr);
 }
 
 void mosGetABS(CPU* cpu) {
 	mosGetABSw(cpu);
-	cpu->tmp = cpu->mrd(cpu->mptr, 0, cpu->data);
+	cpu->tmp = cpu->mrd(cpu->mptr, 0, cpu->xptr);
 }
 
 // ABSX: peek(nn + x) ! +1T if nn high byte changed
 void mosGetABSXw(CPU* cpu) {
-	cpu->lptr = cpu->mrd(cpu->pc++, 0, cpu->data);
-	cpu->hptr = cpu->mrd(cpu->pc++, 0, cpu->data);
+	cpu->lptr = cpu->mrd(cpu->pc++, 0, cpu->xptr);
+	cpu->hptr = cpu->mrd(cpu->pc++, 0, cpu->xptr);
 	cpu->tmp = cpu->hptr;
 	cpu->mptr += cpu->lx;
 	if ((cpu->hptr != cpu->tmp) && !cpu->sta)
@@ -66,13 +66,13 @@ void mosGetABSXw(CPU* cpu) {
 
 void mosGetABSX(CPU* cpu) {
 	mosGetABSXw(cpu);
-	cpu->tmp = cpu->mrd(cpu->mptr, 0, cpu->data);
+	cpu->tmp = cpu->mrd(cpu->mptr, 0, cpu->xptr);
 }
 
 // ABSY: peek(nn + y) ! +1T if nn high byte changed
 void mosGetABSYw(CPU* cpu) {
-	cpu->lptr = cpu->mrd(cpu->pc++, 0, cpu->data);
-	cpu->hptr = cpu->mrd(cpu->pc++, 0, cpu->data);
+	cpu->lptr = cpu->mrd(cpu->pc++, 0, cpu->xptr);
+	cpu->hptr = cpu->mrd(cpu->pc++, 0, cpu->xptr);
 	cpu->tmp = cpu->hptr;
 	cpu->mptr += cpu->ly;
 	if ((cpu->hptr != cpu->tmp) && !cpu->sta)
@@ -81,33 +81,33 @@ void mosGetABSYw(CPU* cpu) {
 
 void mosGetABSY(CPU* cpu) {
 	mosGetABSYw(cpu);
-	cpu->tmp = cpu->mrd(cpu->mptr, 0, cpu->data);
+	cpu->tmp = cpu->mrd(cpu->mptr, 0, cpu->xptr);
 }
 
 // INDX: 4T
 // val = PEEK(PEEK((arg + X) & 0xff) + PEEK((arg + X + 1) & 0xff) * 256)
 void mosGetINDXw(CPU* cpu) {
-	cpu->tmp = cpu->mrd(cpu->pc++, 0, cpu->data);
+	cpu->tmp = cpu->mrd(cpu->pc++, 0, cpu->xptr);
 	cpu->mptr = (cpu->tmp + cpu->lx) & 0xff;
-	cpu->tmp = cpu->mrd(cpu->mptr, 0, cpu->data);	// low adr byte
+	cpu->tmp = cpu->mrd(cpu->mptr, 0, cpu->xptr);	// low adr byte
 	cpu->lptr++;					// hi byte didn't changed (00FF -> 0000)
-	cpu->hptr = cpu->mrd(cpu->mptr, 0, cpu->data);	// hi adr byte
+	cpu->hptr = cpu->mrd(cpu->mptr, 0, cpu->xptr);	// hi adr byte
 	cpu->lptr = cpu->tmp;				// mptr = address
 }
 
 void mosGetINDX(CPU* cpu) {
 	mosGetINDXw(cpu);
-	cpu->tmp = cpu->mrd(cpu->mptr, 0, cpu->data);
+	cpu->tmp = cpu->mrd(cpu->mptr, 0, cpu->xptr);
 }
 
 // INDY: 4(5)T
 // val = PEEK(PEEK(arg) + PEEK((arg + 1) & 0xff) * 256 + Y)
 void mosGetINDYw(CPU* cpu) {
-	cpu->lptr = cpu->mrd(cpu->pc++, 0, cpu->data);		// zp adr
+	cpu->lptr = cpu->mrd(cpu->pc++, 0, cpu->xptr);		// zp adr
 	cpu->hptr = 0;
-	cpu->tmp = cpu->mrd(cpu->mptr, 0, cpu->data);		// pick abs.adr
+	cpu->tmp = cpu->mrd(cpu->mptr, 0, cpu->xptr);		// pick abs.adr
 	cpu->lptr++;
-	cpu->hptr = cpu->mrd(cpu->mptr, 0, cpu->data);
+	cpu->hptr = cpu->mrd(cpu->mptr, 0, cpu->xptr);
 	cpu->lptr = cpu->tmp;
 	cpu->tmp = cpu->hptr;
 	cpu->mptr += cpu->ly;
@@ -117,7 +117,7 @@ void mosGetINDYw(CPU* cpu) {
 
 void mosGetINDY(CPU* cpu) {
 	mosGetINDYw(cpu);
-	cpu->tmp = cpu->mrd(cpu->mptr, 0, cpu->data);
+	cpu->tmp = cpu->mrd(cpu->mptr, 0, cpu->xptr);
 }
 
 // opcodes
@@ -125,14 +125,14 @@ void mosGetINDY(CPU* cpu) {
 // brk
 void mosop00(CPU* cpu) {
 //	cpu->f |= (MFB | 0x20);
-	cpu->mwr(cpu->sp, cpu->hpc, cpu->data);
+	cpu->mwr(cpu->sp, cpu->hpc, cpu->xptr);
 	cpu->lsp--;
-	cpu->mwr(cpu->sp, cpu->lpc, cpu->data);
+	cpu->mwr(cpu->sp, cpu->lpc, cpu->xptr);
 	cpu->lsp--;
-	cpu->mwr(cpu->sp, cpu->f | MFB | 0x20, cpu->data);		// set B flag
+	cpu->mwr(cpu->sp, cpu->f | MFB | 0x20, cpu->xptr);		// set B flag
 	cpu->lsp--;
-	cpu->lpc = cpu->mrd(0xfffe, 0, cpu->data);
-	cpu->hpc = cpu->mrd(0xffff, 0, cpu->data);
+	cpu->lpc = cpu->mrd(0xfffe, 0, cpu->xptr);
+	cpu->hpc = cpu->mrd(0xffff, 0, cpu->xptr);
 }
 
 // ora ind,x n : 6T
@@ -149,7 +149,7 @@ void mosop02(CPU* cpu) {
 void mosop03(CPU* cpu) {
 	mosGetINDX(cpu);
 	MASL(cpu->tmp);
-	cpu->mwr(cpu->mptr, cpu->tmp, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->tmp, cpu->xptr);
 	MORA(cpu->tmp);
 }
 
@@ -168,7 +168,7 @@ void mosop05(CPU* cpu) {
 void mosop06(CPU* cpu) {
 	mosGetZP(cpu);
 	MASL(cpu->tmp);
-	cpu->mwr(cpu->mptr, cpu->tmp, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->tmp, cpu->xptr);
 }
 
 // slo zp,n
@@ -180,7 +180,7 @@ void mosop07(CPU* cpu) {
 
 // php = push f
 void mosop08(CPU* cpu) {
-	cpu->mwr(cpu->sp, cpu->f | MFB, cpu->data);		// push B flag 1, but don't change it in F
+	cpu->mwr(cpu->sp, cpu->f | MFB, cpu->xptr);		// push B flag 1, but don't change it in F
 	cpu->lsp--;
 }
 
@@ -218,7 +218,7 @@ void mosop0D(CPU* cpu) {
 void mosop0E(CPU* cpu) {
 	mosGetABS(cpu);
 	MASL(cpu->tmp);
-	cpu->mwr(cpu->mptr, cpu->tmp, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->tmp, cpu->xptr);
 }
 
 // slo abs nn
@@ -248,7 +248,7 @@ void mosop12(CPU* cpu) {
 void mosop13(CPU* cpu) {
 	mosGetINDY(cpu);
 	MASL(cpu->tmp);
-	cpu->mwr(cpu->mptr, cpu->tmp, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->tmp, cpu->xptr);
 	MORA(cpu->tmp);
 }
 
@@ -267,7 +267,7 @@ void mosop15(CPU* cpu) {
 void mosop16(CPU* cpu) {
 	mosGetZPX(cpu);
 	MASL(cpu->tmp);
-	cpu->mwr(cpu->mptr, cpu->tmp, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->tmp, cpu->xptr);
 }
 
 // slo zp,x n
@@ -294,7 +294,7 @@ void mosop1A(CPU* cpu) {
 void mosop1B(CPU* cpu) {
 	mosGetABSY(cpu);
 	MASL(cpu->tmp);
-	cpu->mwr(cpu->mptr, cpu->tmp, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->tmp, cpu->xptr);
 	MORA(cpu->tmp);
 }
 
@@ -313,7 +313,7 @@ void mosop1D(CPU* cpu) {
 void mosop1E(CPU* cpu) {
 	mosGetABSX(cpu);
 	MASL(cpu->tmp);
-	cpu->mwr(cpu->mptr, cpu->tmp, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->tmp, cpu->xptr);
 }
 
 // slo abs,x nn
@@ -324,12 +324,12 @@ void mosop1F(CPU* cpu) {
 
 // jsr nn = call nn
 void mosop20(CPU* cpu) {
-	cpu->lptr = cpu->mrd(cpu->pc++, 0, cpu->data);		// fetch low addr byte
-	cpu->mwr(cpu->sp, cpu->hpc, cpu->data);			// push pch
+	cpu->lptr = cpu->mrd(cpu->pc++, 0, cpu->xptr);		// fetch low addr byte
+	cpu->mwr(cpu->sp, cpu->hpc, cpu->xptr);			// push pch
 	cpu->lsp--;
-	cpu->mwr(cpu->sp, cpu->lpc, cpu->data);			// push pcl
+	cpu->mwr(cpu->sp, cpu->lpc, cpu->xptr);			// push pcl
 	cpu->lsp--;
-	cpu->hpc = cpu->mrd(cpu->pc, 0, cpu->data);		// fetch hi addr byte
+	cpu->hpc = cpu->mrd(cpu->pc, 0, cpu->xptr);		// fetch hi addr byte
 	cpu->lpc = cpu->lptr;
 }
 
@@ -348,7 +348,7 @@ void mosop22(CPU* cpu) {
 void mosop23(CPU* cpu) {
 	mosGetINDX(cpu);
 	MROL(cpu->tmp);
-	cpu->mwr(cpu->mptr, cpu->tmp, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->tmp, cpu->xptr);
 	MAND(cpu->tmp);
 }
 
@@ -368,7 +368,7 @@ void mosop25(CPU* cpu) {
 void mosop26(CPU* cpu) {
 	mosGetZP(cpu);
 	MROL(cpu->tmp);
-	cpu->mwr(cpu->mptr, cpu->tmp, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->tmp, cpu->xptr);
 }
 
 // rla zp n
@@ -379,9 +379,9 @@ void mosop27(CPU* cpu) {
 
 // plp = pop f
 void mosop28(CPU* cpu) {
-	cpu->tmpb = cpu->mrd(cpu->pc, 0, cpu->data);
+	cpu->tmpb = cpu->mrd(cpu->pc, 0, cpu->xptr);
 	cpu->lsp++;
-	cpu->f = cpu->mrd(cpu->sp, 0 ,cpu->data);
+	cpu->f = cpu->mrd(cpu->sp, 0 ,cpu->xptr);
 	cpu->f &= ~MFB;					// reset B flag
 	cpu->f |= MF5;					// set bit 5
 }
@@ -418,7 +418,7 @@ void mosop2D(CPU* cpu) {
 void mosop2E(CPU* cpu) {
 	mosGetABS(cpu);
 	MROL(cpu->tmp);
-	cpu->mwr(cpu->mptr, cpu->tmp, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->tmp, cpu->xptr);
 }
 
 // rla abs nn
@@ -449,7 +449,7 @@ void mosop32(CPU* cpu) {
 void mosop33(CPU* cpu) {
 	mosGetINDY(cpu);
 	MROL(cpu->tmp);
-	cpu->mwr(cpu->mptr, cpu->tmp, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->tmp, cpu->xptr);
 	MAND(cpu->tmp);
 }
 
@@ -468,7 +468,7 @@ void mosop35(CPU* cpu) {
 void mosop36(CPU* cpu) {
 	mosGetZPX(cpu);
 	MROL(cpu->tmp);
-	cpu->mwr(cpu->mptr, cpu->tmp, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->tmp, cpu->xptr);
 }
 
 // rla zp,x n
@@ -495,7 +495,7 @@ void mosop3A(CPU* cpu) {
 void mosop3B(CPU* cpu) {
 	mosGetABSY(cpu);
 	MROL(cpu->tmp);
-	cpu->mwr(cpu->mptr, cpu->tmp, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->tmp, cpu->xptr);
 	MAND(cpu->tmp);
 }
 
@@ -514,7 +514,7 @@ void mosop3D(CPU* cpu) {
 void mosop3E(CPU* cpu) {
 	mosGetABSX(cpu);
 	MROL(cpu->tmp);
-	cpu->mwr(cpu->mptr, cpu->tmp, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->tmp, cpu->xptr);
 }
 
 // rla abs,x nn
@@ -526,13 +526,13 @@ void mosop3F(CPU* cpu) {
 // rti
 void mosop40(CPU* cpu) {
 	cpu->lsp++;
-	cpu->f = cpu->mrd(cpu->sp, 0, cpu->data);
+	cpu->f = cpu->mrd(cpu->sp, 0, cpu->xptr);
 	cpu->f |= MF5;			// set bit 5
 //	cpu->f &= ~MFI;
 	cpu->lsp++;
-	cpu->lpc = cpu->mrd(cpu->sp, 0, cpu->data);
+	cpu->lpc = cpu->mrd(cpu->sp, 0, cpu->xptr);
 	cpu->lsp++;
-	cpu->hpc = cpu->mrd(cpu->sp, 0, cpu->data);
+	cpu->hpc = cpu->mrd(cpu->sp, 0, cpu->xptr);
 }
 
 // eor ind,x n
@@ -549,7 +549,7 @@ void mosop42(CPU* cpu) {
 void mosop43(CPU* cpu) {
 	mosGetINDX(cpu);
 	MLSR(cpu->tmp);
-	cpu->mwr(cpu->mptr, cpu->tmp, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->tmp, cpu->xptr);
 	MEOR(cpu->tmp);
 }
 
@@ -568,7 +568,7 @@ void mosop45(CPU* cpu) {
 void mosop46(CPU* cpu) {
 	mosGetZP(cpu);
 	MLSR(cpu->tmp);
-	cpu->mwr(cpu->mptr, cpu->tmp, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->tmp, cpu->xptr);
 }
 
 // sre zp n
@@ -580,7 +580,7 @@ void mosop47(CPU* cpu) {
 
 // pha : push a
 void mosop48(CPU* cpu) {
-	cpu->mwr(cpu->sp, cpu->a, cpu->data);		// push a
+	cpu->mwr(cpu->sp, cpu->a, cpu->xptr);		// push a
 	cpu->lsp--;
 }
 
@@ -605,8 +605,8 @@ void mosop4B(CPU* cpu) {
 
 // jmp nn
 void mosop4C(CPU* cpu) {
-	cpu->lptr = cpu->mrd(cpu->pc++, 0, cpu->data);
-	cpu->hptr = cpu->mrd(cpu->pc, 0, cpu->data);
+	cpu->lptr = cpu->mrd(cpu->pc++, 0, cpu->xptr);
+	cpu->hptr = cpu->mrd(cpu->pc, 0, cpu->xptr);
 	cpu->pc = cpu->mptr;
 }
 
@@ -620,7 +620,7 @@ void mosop4D(CPU* cpu) {
 void mosop4E(CPU* cpu) {
 	mosGetABS(cpu);
 	MLSR(cpu->tmp);
-	cpu->mwr(cpu->mptr, cpu->tmp, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->tmp, cpu->xptr);
 }
 
 // sre abs nn
@@ -650,7 +650,7 @@ void mosop52(CPU* cpu) {
 void mosop53(CPU* cpu) {
 	mosGetINDY(cpu);
 	MLSR(cpu->tmp);
-	cpu->mwr(cpu->mptr, cpu->tmp, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->tmp, cpu->xptr);
 	MEOR(cpu->tmp);
 }
 
@@ -669,7 +669,7 @@ void mosop55(CPU* cpu) {
 void mosop56(CPU* cpu) {
 	mosGetZPX(cpu);
 	MLSR(cpu->tmp);
-	cpu->mwr(cpu->mptr, cpu->tmp, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->tmp, cpu->xptr);
 }
 
 // sre zp,x n
@@ -698,7 +698,7 @@ void mosop5A(CPU* cpu) {
 void mosop5B(CPU* cpu) {
 	mosGetABSY(cpu);
 	MLSR(cpu->tmp);
-	cpu->mwr(cpu->mptr, cpu->tmp, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->tmp, cpu->xptr);
 	MEOR(cpu->tmp);
 }
 
@@ -717,7 +717,7 @@ void mosop5D(CPU* cpu) {
 void mosop5E(CPU* cpu) {
 	mosGetABSX(cpu);
 	MLSR(cpu->tmp);
-	cpu->mwr(cpu->mptr, cpu->tmp, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->tmp, cpu->xptr);
 }
 
 // sre abs,x nn
@@ -729,9 +729,9 @@ void mosop5F(CPU* cpu) {
 // rts
 void mosop60(CPU* cpu) {
 	cpu->lsp++;
-	cpu->lpc = cpu->mrd(cpu->sp, 0, cpu->data);		// pop pcl
+	cpu->lpc = cpu->mrd(cpu->sp, 0, cpu->xptr);		// pop pcl
 	cpu->lsp++;
-	cpu->hpc = cpu->mrd(cpu->sp, 0, cpu->data);		// pop pch
+	cpu->hpc = cpu->mrd(cpu->sp, 0, cpu->xptr);		// pop pch
 	cpu->pc++;						// inc pc, cuz of jsr push algorithm
 }
 
@@ -749,7 +749,7 @@ void mosop62(CPU* cpu) {
 void mosop63(CPU* cpu) {
 	mosGetINDX(cpu);
 	MROR(cpu->tmp);
-	cpu->mwr(cpu->mptr, cpu->tmp, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->tmp, cpu->xptr);
 	MADC(cpu->a, cpu->tmp);
 }
 
@@ -768,7 +768,7 @@ void mosop65(CPU* cpu) {
 void mosop66(CPU* cpu) {
 	mosGetZP(cpu);
 	MROR(cpu->tmp);
-	cpu->mwr(cpu->mptr, cpu->tmp, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->tmp, cpu->xptr);
 }
 
 // rra zp n
@@ -780,9 +780,9 @@ void mosop67(CPU* cpu) {
 
 // pla = pop a
 void mosop68(CPU* cpu) {
-	cpu->tmpb = cpu->mrd(cpu->pc, 0, cpu->data);
+	cpu->tmpb = cpu->mrd(cpu->pc, 0, cpu->xptr);
 	cpu->lsp++;
-	cpu->a = cpu->mrd(cpu->sp, 0, cpu->data);
+	cpu->a = cpu->mrd(cpu->sp, 0, cpu->xptr);
 	MFLAGZN(cpu->a);
 }
 
@@ -812,11 +812,11 @@ void mosop6B(CPU* cpu) {
 
 // jmp (nn)
 void mosop6C(CPU* cpu) {
-	cpu->lptr = cpu->mrd(cpu->pc++, 0, cpu->data);
-	cpu->hptr = cpu->mrd(cpu->pc, 0, cpu->data);
-	cpu->lpc = cpu->mrd(cpu->mptr, 0, cpu->data);
+	cpu->lptr = cpu->mrd(cpu->pc++, 0, cpu->xptr);
+	cpu->hptr = cpu->mrd(cpu->pc, 0, cpu->xptr);
+	cpu->lpc = cpu->mrd(cpu->mptr, 0, cpu->xptr);
 	cpu->lptr++;		// do not change segment
-	cpu->hpc = cpu->mrd(cpu->mptr, 0, cpu->data);
+	cpu->hpc = cpu->mrd(cpu->mptr, 0, cpu->xptr);
 }
 
 // adc abs nn
@@ -829,7 +829,7 @@ void mosop6D(CPU* cpu) {
 void mosop6E(CPU* cpu) {
 	mosGetABS(cpu);
 	MROR(cpu->tmp);
-	cpu->mwr(cpu->mptr, cpu->tmp, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->tmp, cpu->xptr);
 }
 
 // rra abs nn
@@ -860,7 +860,7 @@ void mosop72(CPU* cpu) {
 void mosop73(CPU* cpu) {
 	mosGetINDY(cpu);
 	MROR(cpu->tmp);
-	cpu->mwr(cpu->mptr, cpu->tmp, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->tmp, cpu->xptr);
 	MADC(cpu->a, cpu->tmp);
 }
 
@@ -879,7 +879,7 @@ void mosop75(CPU* cpu) {
 void mosop76(CPU* cpu) {
 	mosGetZPX(cpu);
 	MROR(cpu->tmp);
-	cpu->mwr(cpu->mptr, cpu->tmp, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->tmp, cpu->xptr);
 }
 
 // rra zp,x n
@@ -907,7 +907,7 @@ void mosop7A(CPU* cpu) {
 void mosop7B(CPU* cpu) {
 	mosGetABSY(cpu);
 	MROR(cpu->tmp);
-	cpu->mwr(cpu->mptr, cpu->tmp, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->tmp, cpu->xptr);
 	MADC(cpu->a, cpu->tmp);
 }
 
@@ -926,7 +926,7 @@ void mosop7D(CPU* cpu) {
 void mosop7E(CPU* cpu) {
 	mosGetABSX(cpu);
 	MROR(cpu->tmp);
-	cpu->mwr(cpu->mptr, cpu->tmp, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->tmp, cpu->xptr);
 }
 
 // rra abs,x nn
@@ -943,7 +943,7 @@ void mosop80(CPU* cpu) {
 // sta ind,x n
 void mosop81(CPU* cpu) {
 	mosGetINDXw(cpu);
-	cpu->mwr(cpu->mptr, cpu->a, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->a, cpu->xptr);
 }
 
 void mosop82(CPU* cpu) {
@@ -954,25 +954,25 @@ void mosop83(CPU* cpu) {
 	mosGetINDXw(cpu);
 	cpu->tmp = cpu->a & cpu->lx;
 //	MFLAGZN(cpu->tmp);				// ??? SAX doesn't affect flags?
-	cpu->mwr(cpu->mptr, cpu->tmp, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->tmp, cpu->xptr);
 }
 
 // sty zp n
 void mosop84(CPU* cpu) {
 	mosGetZPw(cpu);
-	cpu->mwr(cpu->mptr, cpu->ly, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->ly, cpu->xptr);
 }
 
 // sta zp n
 void mosop85(CPU* cpu) {
 	mosGetZPw(cpu);
-	cpu->mwr(cpu->mptr, cpu->a, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->a, cpu->xptr);
 }
 
 // stx zp n
 void mosop86(CPU* cpu) {
 	mosGetZPw(cpu);
-	cpu->mwr(cpu->mptr, cpu->lx, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->lx, cpu->xptr);
 }
 
 // *sax zp n
@@ -980,7 +980,7 @@ void mosop87(CPU* cpu) {
 	mosGetZPw(cpu);
 	cpu->tmp = cpu->a & cpu->lx;
 //	MFLAGZN(cpu->tmp);
-	cpu->mwr(cpu->mptr, cpu->tmp, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->tmp, cpu->xptr);
 }
 
 // dey
@@ -1004,19 +1004,19 @@ void mosop8B(CPU* cpu) {
 // sty abs nn
 void mosop8C(CPU* cpu) {
 	mosGetABSw(cpu);
-	cpu->mwr(cpu->mptr, cpu->ly, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->ly, cpu->xptr);
 }
 
 // sta abs nn
 void mosop8D(CPU* cpu) {
 	mosGetABSw(cpu);
-	cpu->mwr(cpu->mptr, cpu->a, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->a, cpu->xptr);
 }
 
 // stx abs nn
 void mosop8E(CPU* cpu) {
 	mosGetABSw(cpu);
-	cpu->mwr(cpu->mptr, cpu->lx, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->lx, cpu->xptr);
 }
 
 // *sax abs nn
@@ -1024,7 +1024,7 @@ void mosop8F(CPU* cpu) {
 	mosGetABSw(cpu);
 	cpu->tmp = cpu->a & cpu->lx;
 //	MFLAGZN(cpu->tmp);
-	cpu->mwr(cpu->mptr, cpu->tmp, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->tmp, cpu->xptr);
 }
 
 // bcc e = jr nc,e
@@ -1037,7 +1037,7 @@ void mosop90(CPU* cpu) {
 // sta ind,y n
 void mosop91(CPU* cpu) {
 	mosGetINDYw(cpu);
-	cpu->mwr(cpu->mptr, cpu->a, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->a, cpu->xptr);
 }
 
 void mosop92(CPU* cpu) {
@@ -1049,25 +1049,25 @@ void mosop93(CPU* cpu) {
 	cpu->lx &= cpu->a;
 	mosGetINDYw(cpu);
 	cpu->tmp = cpu->lx & 7;
-	cpu->mwr(cpu->mptr, cpu->tmp, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->tmp, cpu->xptr);
 }
 
 // sty zp,x n
 void mosop94(CPU* cpu) {
 	mosGetZPXw(cpu);
-	cpu->mwr(cpu->mptr, cpu->ly, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->ly, cpu->xptr);
 }
 
 // sta zp,x n
 void mosop95(CPU* cpu) {
 	mosGetZPXw(cpu);
-	cpu->mwr(cpu->mptr, cpu->a, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->a, cpu->xptr);
 }
 
 // stx zp,y n
 void mosop96(CPU* cpu) {
 	mosGetZPYw(cpu);
-	cpu->mwr(cpu->mptr, cpu->lx, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->lx, cpu->xptr);
 }
 
 // *sax zp,y n
@@ -1075,7 +1075,7 @@ void mosop97(CPU* cpu) {
 	mosGetZPYw(cpu);
 	cpu->tmp = cpu->a & cpu->lx;
 //	MFLAGZN(cpu->tmp);
-	cpu->mwr(cpu->mptr, cpu->tmp, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->tmp, cpu->xptr);
 }
 
 // tya
@@ -1087,7 +1087,7 @@ void mosop98(CPU* cpu) {
 // sta abs,y nn
 void mosop99(CPU* cpu) {
 	mosGetABSYw(cpu);
-	cpu->mwr(cpu->mptr, cpu->a, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->a, cpu->xptr);
 }
 
 // txs (not affect flags)
@@ -1103,13 +1103,13 @@ void mosop9B(CPU* cpu) {
 void mosop9C(CPU* cpu) {
 	mosGetABSXw(cpu);
 	cpu->tmp = cpu->ly & (cpu->hptr + 1);
-	cpu->mwr(cpu->mptr, cpu->tmp, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->tmp, cpu->xptr);
 }
 
 // sta abs,x nn
 void mosop9D(CPU* cpu) {
 	mosGetABSXw(cpu);
-	cpu->mwr(cpu->mptr, cpu->a, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->a, cpu->xptr);
 }
 
 // sxa abs,y nn
@@ -1117,7 +1117,7 @@ void mosop9D(CPU* cpu) {
 void mosop9E(CPU* cpu) {
 	mosGetABSYw(cpu);
 	cpu->tmp = cpu->lx & (cpu->hptr + 1);
-	cpu->mwr(cpu->mptr, cpu->tmp, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->tmp, cpu->xptr);
 }
 
 // axa abs,y nn
@@ -1126,12 +1126,12 @@ void mosop9F(CPU* cpu) {
 	cpu->lx &= cpu->a;
 	mosGetABSYw(cpu);
 	cpu->tmp = cpu->lx & 7;
-	cpu->mwr(cpu->mptr, cpu->tmp, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->tmp, cpu->xptr);
 }
 
 // ldy n
 void mosopA0(CPU* cpu) {
-	cpu->ly = cpu->mrd(cpu->pc++, 0, cpu->data);
+	cpu->ly = cpu->mrd(cpu->pc++, 0, cpu->xptr);
 	MFLAGZN(cpu->ly);
 }
 
@@ -1144,7 +1144,7 @@ void mosopA1(CPU* cpu) {
 
 // ldx n
 void mosopA2(CPU* cpu) {
-	cpu->lx = cpu->mrd(cpu->pc++, 0, cpu->data);
+	cpu->lx = cpu->mrd(cpu->pc++, 0, cpu->xptr);
 	MFLAGZN(cpu->lx);
 }
 
@@ -1192,7 +1192,7 @@ void mosopA8(CPU* cpu) {
 
 // lda n
 void mosopA9(CPU* cpu) {
-	cpu->a = cpu->mrd(cpu->pc++, 0, cpu->data);
+	cpu->a = cpu->mrd(cpu->pc++, 0, cpu->xptr);
 	MFLAGZN(cpu->a);
 }
 
@@ -1368,7 +1368,7 @@ void mosopC3(CPU* cpu) {
 	mosGetINDX(cpu);
 	cpu->tmp--;
 	MFLAGZN(cpu->tmp);
-	cpu->mwr(cpu->mptr, cpu->tmp, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->tmp, cpu->xptr);
 	MCMP(cpu->a, cpu->tmp);
 }
 
@@ -1389,7 +1389,7 @@ void mosopC6(CPU* cpu) {
 	mosGetZP(cpu);
 	cpu->tmp--;
 	MFLAGZN(cpu->tmp);
-	cpu->mwr(cpu->mptr, cpu->tmp, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->tmp, cpu->xptr);
 }
 
 // *dcp zp n
@@ -1443,7 +1443,7 @@ void mosopCE(CPU* cpu) {
 	mosGetABS(cpu);
 	cpu->tmp--;
 	MFLAGZN(cpu->tmp);
-	cpu->mwr(cpu->mptr, cpu->tmp, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->tmp, cpu->xptr);
 }
 
 // dcp abs nn
@@ -1474,7 +1474,7 @@ void mosopD3(CPU* cpu) {
 	mosGetINDY(cpu);
 	cpu->tmp--;
 	MFLAGZN(cpu->tmp);
-	cpu->mwr(cpu->mptr, cpu->tmp, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->tmp, cpu->xptr);
 	MCMP(cpu->a, cpu->tmp);
 }
 
@@ -1494,7 +1494,7 @@ void mosopD6(CPU* cpu) {
 	mosGetZPX(cpu);
 	cpu->tmp--;
 	MFLAGZN(cpu->tmp);
-	cpu->mwr(cpu->mptr, cpu->tmp, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->tmp, cpu->xptr);
 }
 
 // dcp zp,x n
@@ -1522,7 +1522,7 @@ void mosopDB(CPU* cpu) {
 	mosGetABSY(cpu);
 	cpu->tmp--;
 	MFLAGZN(cpu->tmp);
-	cpu->mwr(cpu->mptr, cpu->tmp, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->tmp, cpu->xptr);
 	MCMP(cpu->a, cpu->tmp);
 }
 
@@ -1542,7 +1542,7 @@ void mosopDE(CPU* cpu) {
 	mosGetABSX(cpu);
 	cpu->tmp--;
 	MFLAGZN(cpu->tmp);
-	cpu->mwr(cpu->mptr, cpu->tmp, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->tmp, cpu->xptr);
 }
 
 // dcp abs,x nn
@@ -1571,7 +1571,7 @@ void mosopE3(CPU* cpu) {
 	mosGetINDX(cpu);
 	cpu->tmp++;
 	MFLAGZN(cpu->tmp);
-	cpu->mwr(cpu->mptr, cpu->tmp, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->tmp, cpu->xptr);
 	MSBC(cpu->a, cpu->tmp);
 }
 
@@ -1592,7 +1592,7 @@ void mosopE6(CPU* cpu) {
 	mosGetZP(cpu);
 	cpu->tmp++;
 	MFLAGZN(cpu->tmp);
-	cpu->mwr(cpu->mptr, cpu->tmp, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->tmp, cpu->xptr);
 }
 
 // isb zp n
@@ -1640,7 +1640,7 @@ void mosopEE(CPU* cpu) {
 	mosGetABS(cpu);
 	cpu->tmp++;
 	MFLAGZN(cpu->tmp);
-	cpu->mwr(cpu->mptr, cpu->tmp, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->tmp, cpu->xptr);
 }
 
 // isb abs nn
@@ -1672,7 +1672,7 @@ void mosopF3(CPU* cpu) {
 	mosGetINDY(cpu);
 	cpu->tmp++;
 	MFLAGZN(cpu->tmp);
-	cpu->mwr(cpu->mptr, cpu->tmp, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->tmp, cpu->xptr);
 	MSBC(cpu->a, cpu->tmp);
 }
 
@@ -1692,7 +1692,7 @@ void mosopF6(CPU* cpu) {
 	mosGetZPX(cpu);
 	cpu->tmp++;
 	MFLAGZN(cpu->tmp);
-	cpu->mwr(cpu->mptr, cpu->tmp, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->tmp, cpu->xptr);
 }
 
 // isb zp,x n
@@ -1720,7 +1720,7 @@ void mosopFB(CPU* cpu) {
 	mosGetABSX(cpu);
 	cpu->tmp++;
 	MFLAGZN(cpu->tmp);
-	cpu->mwr(cpu->mptr, cpu->tmp, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->tmp, cpu->xptr);
 	MSBC(cpu->a, cpu->tmp);
 }
 
@@ -1740,7 +1740,7 @@ void mosopFE(CPU* cpu) {
 	mosGetABSX(cpu);
 	cpu->tmp++;
 	MFLAGZN(cpu->tmp);
-	cpu->mwr(cpu->mptr, cpu->tmp, cpu->data);
+	cpu->mwr(cpu->mptr, cpu->tmp, cpu->xptr);
 }
 
 // isb abs,x nn

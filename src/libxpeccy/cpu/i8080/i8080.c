@@ -26,7 +26,7 @@ int i8080_exec(CPU* cpu) {
 	if (cpu->intrq & cpu->inten)
 		cpu->t = i8080_int(cpu);
 	if (cpu->t) return cpu->t;
-	cpu->com = cpu->mrd(cpu->pc++, 1, cpu->data) & 0xff;
+	cpu->com = cpu->mrd(cpu->pc++, 1, cpu->xptr) & 0xff;
 	cpu->op = &i8080_tab[cpu->com];
 	cpu->t = cpu->op->t;
 	cpu->op->exec(cpu);

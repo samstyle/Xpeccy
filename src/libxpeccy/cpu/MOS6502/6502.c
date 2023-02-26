@@ -14,17 +14,17 @@ void m6502_reset(CPU* cpu) {
 	cpu->a = 0;
 	cpu->lx = 0;
 	cpu->ly = 0;
-	cpu->lpc = cpu->mrd(0xfffc, 0, cpu->data);
-	cpu->hpc = cpu->mrd(0xfffd, 0, cpu->data);
+	cpu->lpc = cpu->mrd(0xfffc, 0, cpu->xptr);
+	cpu->hpc = cpu->mrd(0xfffd, 0, cpu->xptr);
 //	printf("mos pc = %.4X\n", cpu->pc);
 }
 
 void m6502_push_int(CPU* cpu) {
-	cpu->mwr(cpu->sp, cpu->hpc, cpu->data);
+	cpu->mwr(cpu->sp, cpu->hpc, cpu->xptr);
 	cpu->lsp--;
-	cpu->mwr(cpu->sp, cpu->lpc, cpu->data);
+	cpu->mwr(cpu->sp, cpu->lpc, cpu->xptr);
 	cpu->lsp--;
-	cpu->mwr(cpu->sp, cpu->f, cpu->data);
+	cpu->mwr(cpu->sp, cpu->f, cpu->xptr);
 	cpu->lsp--;
 }
 
@@ -32,16 +32,16 @@ int m6502_int(CPU* cpu) {
 	if (cpu->intrq & MOS6502_INT_NMI) {		// NMI (VBlank)
 		cpu->intrq &= ~MOS6502_INT_NMI;
 		m6502_push_int(cpu);
-		cpu->lpc = cpu->mrd(0xfffa, 0, cpu->data);
-		cpu->hpc = cpu->mrd(0xfffb, 0, cpu->data);
+		cpu->lpc = cpu->mrd(0xfffa, 0, cpu->xptr);
+		cpu->hpc = cpu->mrd(0xfffb, 0, cpu->xptr);
 	} else if (cpu->intrq & MOS6502_INT_IRQ) {	// IRQ
 		cpu->intrq &= ~MOS6502_INT_IRQ;
 		if (!(cpu->f & MFI)) {			// IRQ enabled, I flag = 0
 			cpu->f &= ~MFB;			// reset B flag
 			m6502_push_int(cpu);
 			cpu->f |= MFI;			// disable IRQ
-			cpu->lpc = cpu->mrd(0xfffe, 0, cpu->data);
-			cpu->hpc = cpu->mrd(0xffff, 0, cpu->data);
+			cpu->lpc = cpu->mrd(0xfffe, 0, cpu->xptr);
+			cpu->hpc = cpu->mrd(0xffff, 0, cpu->xptr);
 		}
 	}
 	return 7;				// real: 7T
@@ -58,7 +58,7 @@ int m6502_exec(CPU* cpu) {
 		res = m6502_int(cpu);
 	} else {
 		cpu->noint = 0;
-		com = cpu->mrd(cpu->pc++, 1, cpu->data);
+		com = cpu->mrd(cpu->pc++, 1, cpu->xptr);
 		opCode* op = &mosTab[com];
 		cpu->t = op->t;
 		cpu->sta = op->flag & OF_EXT;

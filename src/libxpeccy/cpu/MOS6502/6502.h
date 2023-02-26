@@ -1,7 +1,5 @@
 #pragma once
 
-#include "../cpu.h"
-
 enum {
 	M6502_REG_PC = 1,
 	M6502_REG_A,
@@ -20,9 +18,35 @@ enum {
 #define MFZ 0x02	// zero
 #define MFC 0x01	// carry
 
+#ifdef WORDS_LITTLE_ENDIAN
+typedef struct {
+	unsigned c:1;
+	unsigned z:1;
+	unsigned i:1;
+	unsigned d:1;
+	unsigned b:1;
+	unsigned f5:1;
+	unsigned v:1;
+	unsigned n:1;
+} mosflag_t;
+#else
+typedef struct {
+	unsigned n:1;
+	unsigned v:1;
+	unsigned f5:1;
+	unsigned b:1;
+	unsigned d:1;
+	unsigned i:1;
+	unsigned z:1;
+	unsigned c:1;
+} mosflag_t;
+#endif
+
 #define MOS6502_INT_NMI	1
 #define MOS6502_INT_RES	2
 #define MOS6502_INT_IRQ	4
+
+#include "../cpu.h"
 
 void m6502_reset(CPU*);
 int m6502_exec(CPU*);

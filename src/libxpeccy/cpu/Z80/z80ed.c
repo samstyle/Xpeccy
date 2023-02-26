@@ -24,10 +24,10 @@ void ed42(CPU* cpu) {
 
 // 43	ld (nn),bc	4 3rd 3rd 3wr 3wr	mptr = nn + 1
 void ed43(CPU* cpu) {
-	cpu->lptr = MEMRD(cpu->pc++,3);
-	cpu->hptr = MEMRD(cpu->pc++,3);
-	MEMWR(cpu->mptr++,cpu->c,3);
-	MEMWR(cpu->mptr,cpu->b,3);
+	cpu->lptr = z80_mrd(cpu, cpu->pc++);
+	cpu->hptr = z80_mrd(cpu, cpu->pc++);
+	z80_mwr(cpu, cpu->mptr++, cpu->c);
+	z80_mwr(cpu, cpu->mptr, cpu->b);
 }
 
 // 44	neg	4
@@ -74,10 +74,10 @@ void ed4A(CPU* cpu) {
 
 // 4b	ld bc,(nn)	4 3rd 3rd 3rd 3rd	mptr = nn+1
 void ed4B(CPU* cpu) {
-	cpu->lptr = MEMRD(cpu->pc++,3);
-	cpu->hptr = MEMRD(cpu->pc++,3);
-	cpu->c = MEMRD(cpu->mptr++,3);
-	cpu->b = MEMRD(cpu->mptr,3);
+	cpu->lptr = z80_mrd(cpu, cpu->pc++);
+	cpu->hptr = z80_mrd(cpu, cpu->pc++);
+	cpu->c = z80_mrd(cpu, cpu->mptr++);
+	cpu->b = z80_mrd(cpu, cpu->mptr);
 }
 
 // 4d	reti	4 3rd 3rd
@@ -113,10 +113,10 @@ void ed52(CPU* cpu) {
 
 // 53	ld (nn),de	4 3rd 3rd 3wr 3wr	mptr = nn + 1
 void ed53(CPU* cpu) {
-	cpu->lptr = MEMRD(cpu->pc++,3);
-	cpu->hptr = MEMRD(cpu->pc++,3);
-	MEMWR(cpu->mptr++,cpu->e,3);
-	MEMWR(cpu->mptr,cpu->d,3);
+	cpu->lptr = z80_mrd(cpu, cpu->pc++);
+	cpu->hptr = z80_mrd(cpu, cpu->pc++);
+	z80_mwr(cpu, cpu->mptr++,cpu->e);
+	z80_mwr(cpu, cpu->mptr,cpu->d);
 }
 
 // 56	im1		4
@@ -152,10 +152,10 @@ void ed5A(CPU* cpu) {
 
 // 5b	ld de,(nn)	4 3rd 3rd 3rd 3rd	mptr = nn + 1
 void ed5B(CPU* cpu) {
-	cpu->lptr = MEMRD(cpu->pc++,3);
-	cpu->hptr = MEMRD(cpu->pc++,3);
-	cpu->e = MEMRD(cpu->mptr++,3);
-	cpu->d = MEMRD(cpu->mptr,3);
+	cpu->lptr = z80_mrd(cpu, cpu->pc++);
+	cpu->hptr = z80_mrd(cpu, cpu->pc++);
+	cpu->e = z80_mrd(cpu, cpu->mptr++);
+	cpu->d = z80_mrd(cpu, cpu->mptr);
 }
 
 // 5e	im2		4
@@ -192,9 +192,9 @@ void ed62(CPU* cpu) {
 // 67	rrd		4 3rd 4 3wr	mptr = hl + 1
 void ed67(CPU* cpu) {
 	cpu->mptr = cpu->hl;
-	cpu->tmpb = MEMRD(cpu->mptr,3);
+	cpu->tmpb = z80_mrd(cpu, cpu->mptr);
 	cpu->t += 4;
-	MEMWR(cpu->mptr++,(cpu->a << 4) | (cpu->tmpb >> 4),3);
+	z80_mwr(cpu, cpu->mptr++, (cpu->a << 4) | (cpu->tmpb >> 4));
 	cpu->a = (cpu->a & 0xf0) | (cpu->tmpb & 0x0f);
 	cpu->f = (cpu->f & Z80_FC) | sz53pTab[cpu->a];
 }
@@ -221,9 +221,9 @@ void ed6A(CPU* cpu) {
 // 6f	rld		4 3rd 4 3wr	mptr = hl+1
 void ed6F(CPU* cpu) {
 	cpu->mptr = cpu->hl;
-	cpu->tmpb = MEMRD(cpu->mptr,3);
+	cpu->tmpb = z80_mrd(cpu, cpu->mptr);
 	cpu->t += 4;
-	MEMWR(cpu->mptr++, (cpu->tmpb << 4 ) | (cpu->a & 0x0f), 3);
+	z80_mwr(cpu, cpu->mptr++, (cpu->tmpb << 4 ) | (cpu->a & 0x0f));
 	cpu->a = (cpu->a & 0xf0) | (cpu->tmpb >> 4);
 	cpu->f = (cpu->f & Z80_FC) | sz53pTab[cpu->a];
 }
@@ -249,10 +249,10 @@ void ed72(CPU* cpu) {
 
 // 73	ld (nn),sp	4 3rd 3rd 3wr 3wr	mptr = nn + 1
 void ed73(CPU* cpu) {
-	cpu->lptr = MEMRD(cpu->pc++,3);
-	cpu->hptr = MEMRD(cpu->pc++,3);
-	MEMWR(cpu->mptr++,cpu->lsp,3);
-	MEMWR(cpu->mptr,cpu->hsp,3);
+	cpu->lptr = z80_mrd(cpu, cpu->pc++);
+	cpu->hptr = z80_mrd(cpu, cpu->pc++);
+	z80_mwr(cpu, cpu->mptr++, cpu->lsp);
+	z80_mwr(cpu, cpu->mptr,cpu->hsp);
 }
 
 // 78	in a,(c)	4 4in		mptr = port + 1
@@ -276,16 +276,17 @@ void ed7A(CPU* cpu) {
 
 // 7b	ld sp,(nn)	4 3rd 3rd 3rd 3rd	mptr = nn + 1
 void ed7B(CPU* cpu) {
-	cpu->lptr = MEMRD(cpu->pc++,3);
-	cpu->hptr = MEMRD(cpu->pc++,3);
-	cpu->lsp = MEMRD(cpu->mptr++,3);
-	cpu->hsp = MEMRD(cpu->mptr,3);
+	cpu->lptr = z80_mrd(cpu, cpu->pc++);
+	cpu->hptr = z80_mrd(cpu, cpu->pc++);
+	cpu->lsp = z80_mrd(cpu, cpu->mptr++);
+	cpu->hsp = z80_mrd(cpu, cpu->mptr);
 }
 
 // a0	ldi	4 3rd 5wr
 void edA0(CPU* cpu) {
-	cpu->tmp = MEMRD(cpu->hl++,3);
-	MEMWR(cpu->de++,cpu->tmp,5);
+	cpu->tmp = z80_mrd(cpu, cpu->hl++);
+	z80_mwr(cpu, cpu->de++, cpu->tmp);
+	cpu->t += 2;
 	cpu->bc--;
 	cpu->tmp += cpu->a;
 	cpu->f = (cpu->f & (Z80_FC | Z80_FZ | Z80_FS)) | (cpu->bc ? Z80_FV : 0 ) | (cpu->tmp & Z80_F3) | ((cpu->tmp & 0x02) ? Z80_F5 : 0);
@@ -293,7 +294,7 @@ void edA0(CPU* cpu) {
 
 // a1	cpi	4 3rd 5?	mptr++
 void edA1(CPU* cpu) {
-	cpu->tmpb = MEMRD(cpu->hl,3);
+	cpu->tmpb = z80_mrd(cpu, cpu->hl);
 	cpu->tmpw = cpu->a - cpu->tmpb;
 	cpu->tmp = ((cpu->a & 0x08) >> 3) | ((cpu->tmpb & 0x08) >> 2) | ((cpu->tmpw & 0x08 ) >> 1);
 	cpu->hl++;
@@ -309,7 +310,7 @@ void edA1(CPU* cpu) {
 void edA2(CPU* cpu) {
 	cpu->mptr = cpu->bc + 1;
 	cpu->tmp = z80_iord(cpu, cpu->bc);
-	MEMWR(cpu->hl++,cpu->tmp,3);
+	z80_mwr(cpu, cpu->hl++, cpu->tmp);
 	cpu->b--;
 	cpu->f = (cpu->tmp & 0x80 ? Z80_FN : 0) | (cpu->b & (Z80_FS | Z80_F5 | Z80_F3)) | (cpu->b ? 0 : Z80_FZ);
 
@@ -320,7 +321,7 @@ void edA2(CPU* cpu) {
 
 // a3	outi	5 3rd 4wr	mptr = bc + 1 (after dec)
 void edA3(CPU* cpu) {
-	cpu->tmp = MEMRD(cpu->hl,3);
+	cpu->tmp = z80_mrd(cpu, cpu->hl);
 	cpu->b--;
 	cpu->mptr = cpu->bc + 1;
 	z80_iowr(cpu, cpu->bc, cpu->tmp);
@@ -334,8 +335,9 @@ void edA3(CPU* cpu) {
 
 // a8	ldd	4 3rd 5wr
 void edA8(CPU* cpu) {
-	cpu->tmp = MEMRD(cpu->hl--,3);
-	MEMWR(cpu->de--,cpu->tmp,5);
+	cpu->tmp = z80_mrd(cpu, cpu->hl--);
+	z80_mwr(cpu, cpu->de--,cpu->tmp);
+	cpu->t += 2;
 	cpu->bc--;
 	cpu->tmp += cpu->a;
 	cpu->f = (cpu->f & (Z80_FC | Z80_FZ | Z80_FS)) | (cpu->bc ? Z80_FV : 0 ) | (cpu->tmp & Z80_F3) | ((cpu->tmp & 0x02) ? Z80_F5 : 0);
@@ -343,7 +345,7 @@ void edA8(CPU* cpu) {
 
 // a9	cpd	4 3rd 5?	mptr--
 void edA9(CPU* cpu) {
-	cpu->tmpb = MEMRD(cpu->hl,3);
+	cpu->tmpb = z80_mrd(cpu, cpu->hl);
 	cpu->tmpw = cpu->a - cpu->tmpb;
 	cpu->tmp = ((cpu->a & 0x08) >> 3) | ((cpu->tmpb & 0x08) >> 2) | ((cpu->tmpw & 0x08 ) >> 1);
 	cpu->hl--;
@@ -359,7 +361,7 @@ void edA9(CPU* cpu) {
 void edAA(CPU* cpu) {
 	cpu->mptr = cpu->bc - 1;
 	cpu->tmp = z80_iord(cpu, cpu->bc);
-	MEMWR(cpu->hl--,cpu->tmp,3);
+	z80_mwr(cpu, cpu->hl--, cpu->tmp);
 	cpu->b--;
 	cpu->f = ((cpu->tmp & 0x80) ? Z80_FN : 0) | (cpu->b & (Z80_FS | Z80_F5 | Z80_F3)) | (cpu->b ? 0 : Z80_FZ);
 
@@ -370,7 +372,7 @@ void edAA(CPU* cpu) {
 
 // ab	outd	5 3rd 4wr	mptr = bc - 1 (after dec)
 void edAB(CPU* cpu) {
-	cpu->tmp = MEMRD(cpu->hl,3);
+	cpu->tmp = z80_mrd(cpu, cpu->hl);
 	cpu->b--;
 	cpu->mptr = cpu->bc - 1;
 	z80_iowr(cpu, cpu->bc, cpu->tmp);

@@ -39,12 +39,12 @@ xSegPtr i286_get_dsc(CPU* cpu, int sel) {
 	} else {
 		dt.idx = sel;
 		cpu->tmpi += (sel & 0xfff8);
-		cpu->lwr = cpu->mrd(cpu->tmpi, 0, cpu->data);	// limit
-		cpu->hwr = cpu->mrd(cpu->tmpi+1, 0, cpu->data);
+		cpu->lwr = cpu->mrd(cpu->tmpi, 0, cpu->xptr);	// limit
+		cpu->hwr = cpu->mrd(cpu->tmpi+1, 0, cpu->xptr);
 		dt.limit = cpu->twrd;
-		cpu->lwr = cpu->mrd(cpu->tmpi+2, 0, cpu->data);	// base
-		cpu->hwr = cpu->mrd(cpu->tmpi+3, 0, cpu->data);
-		cpu->tmp = cpu->mrd(cpu->tmpi+4, 0, cpu->data);
+		cpu->lwr = cpu->mrd(cpu->tmpi+2, 0, cpu->xptr);	// base
+		cpu->hwr = cpu->mrd(cpu->tmpi+3, 0, cpu->xptr);
+		cpu->tmp = cpu->mrd(cpu->tmpi+4, 0, cpu->xptr);
 		dt.base = (cpu->tmp << 16) | cpu->twrd;
 	}
 	return dt;
@@ -200,7 +200,7 @@ void i286_0F02(CPU* cpu) {
 		} else {
 			cpu->tmpi += (cpu->tmpw & 0xfff8);
 			cpu->tmpi += 5;
-			cpu->htw = cpu->mrd(cpu->tmpi, 0, cpu->data);
+			cpu->htw = cpu->mrd(cpu->tmpi, 0, cpu->xptr);
 			cpu->ltw = 0;
 			i286_set_reg(cpu, cpu->tmpw, 1);
 		}
@@ -219,8 +219,8 @@ void i286_0F03(CPU* cpu) {
 			// TODO: int?
 		} else {
 			cpu->tmpi += (cpu->tmpw & 0xfff8);
-			cpu->ltw = cpu->mrd(cpu->tmpi, 0, cpu->data);		// +0,1 : limit
-			cpu->htw = cpu->mrd(cpu->tmpi+1, 0, cpu->data);
+			cpu->ltw = cpu->mrd(cpu->tmpi, 0, cpu->xptr);		// +0,1 : limit
+			cpu->htw = cpu->mrd(cpu->tmpi+1, 0, cpu->xptr);
 			i286_set_reg(cpu, cpu->tmpw, 1);
 		}
 	}

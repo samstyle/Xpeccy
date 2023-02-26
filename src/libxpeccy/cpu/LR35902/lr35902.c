@@ -76,7 +76,7 @@ int lr_exec(CPU* cpu) {
 		cpu->t = 0;
 		cpu->opTab = lrTab;
 		do {
-			cpu->tmp = cpu->mrd(cpu->pc++, 1, cpu->data);
+			cpu->tmp = cpu->mrd(cpu->pc++, 1, cpu->xptr);
 			cpu->op = &cpu->opTab[cpu->tmp];
 			cpu->t += cpu->op->t;
 			cpu->op->exec(cpu);

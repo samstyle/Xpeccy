@@ -8,8 +8,8 @@ extern const unsigned char FVaddTab[8];
 extern const unsigned char FVsubTab[8];
 
 // mem i/o
-#define	MEMRD(adr,tk) cpu->mrd(adr,0,cpu->data);cpu->t+=tk;
-#define	MEMWR(adr,val,tk) cpu->mwr(adr,val,cpu->data);cpu->t+=tk;
+//#define	MEMRD(adr,tk) cpu->mrd(adr,0,cpu->xptr);cpu->t+=tk;
+//#define	MEMWR(adr,val,tk) cpu->mwr(adr,val,cpu->xptr);cpu->t+=tk;
 // #define	IORD(port,tk) cpu->ird(port,cpu->data);cpu->t+=tk;
 
 // ariphmetic
@@ -88,7 +88,7 @@ extern const unsigned char FVsubTab[8];
 
 // misc
 
-#define JR(offset) {cpu->pc += (signed char)offset; cpu->mptr = cpu->pc; cpu->t += 5;}
+// #define JR(offset) {cpu->pc += (signed char)offset; cpu->mptr = cpu->pc; cpu->t += 5;}
 
 //#define POP(rh,rl) {rl = MEMRD(cpu->sp++,3); rh = MEMRD(cpu->sp++,3);}
 //#define PUSH(rh,rl) {MEMWR(--cpu->sp,rh,3); MEMWR(--cpu->sp,rl,3);}
@@ -115,17 +115,17 @@ extern const unsigned char FVsubTab[8];
 
 // bit
 
-#define BIT(bit,val) {cpu->f = (cpu->f & Z80_FC ) | Z80_FH | sz53pTab[val & (0x01 << bit)] | (val & (Z80_F5 | Z80_F3));}
+#define BIT(bit,val) {cpu->f = (cpu->f & Z80_FC ) | Z80_FH | (sz53pTab[val & (0x01 << bit)] & ~(Z80_F5 | Z80_F3)) | (val & (Z80_F5 | Z80_F3));}
 #define BITM(bit,val) {cpu->f = (cpu->f & Z80_FC) | Z80_FH | (sz53pTab[val & (1 << bit)] & ~(Z80_F5 | Z80_F3)) | (cpu->hptr & (Z80_F5 | Z80_F3));}
-#define SET(bit,val) {val |= (1 << bit);}
-#define RES(bit,val) {val &= ~(1 << bit);}
+//#define SET(bit,val) {val |= (1 << bit);}
+//#define RES(bit,val) {val &= ~(1 << bit);}
 
 // extend
 
 #define SWAP(rp1,rp2) {cpu->tmpw = rp1; rp1 = rp2; rp2 = cpu->tmpw;}		// swap 16bit regs
 
 #define	RDSHIFT(base) {\
-	cpu->tmp = MEMRD(cpu->pc++,3);\
+	cpu->tmp = z80_mrd(cpu, cpu->pc++);\
 	cpu->mptr = base + (signed char)cpu->tmp;\
 	cpu->t += 5;\
 }
@@ -133,9 +133,9 @@ extern const unsigned char FVsubTab[8];
 #define XDCB(base,name) {\
 	cpu->mptr = base + (signed char)cpu->tmp;\
 	cpu->t += 5;\
-	cpu->tmpb = MEMRD(cpu->mptr,4);\
+	cpu->tmpb = z80_mrd(cpu, cpu->mptr); cpu->t++;\
 	name(cpu->tmpb);\
-	MEMWR(cpu->mptr,cpu->tmpb,3);\
+	z80_mwr(cpu, cpu->mptr, cpu->tmpb);\
 }
 
 #define XDCBR(base,name,reg) {\
@@ -146,16 +146,16 @@ extern const unsigned char FVsubTab[8];
 #define	BITX(base,bit) {\
 	cpu->mptr = base + (signed char)cpu->tmp;\
 	cpu->t += 5;\
-	cpu->tmpb = MEMRD(cpu->mptr,4);\
+	cpu->tmpb = z80_mrd(cpu, cpu->mptr); cpu->t++;\
 	BITM(bit,cpu->tmpb);\
 }
 
 #define RESX(base,bit) {\
 	cpu->mptr = base + (signed char)cpu->tmp;\
 	cpu->t += 5;\
-	cpu->tmpb = MEMRD(cpu->mptr,4);\
+	cpu->tmpb = z80_mrd(cpu, cpu->mptr); cpu->t++;\
 	cpu->tmpb &= ~(0x01 << bit);\
-	MEMWR(cpu->mptr,cpu->tmpb,3);\
+	z80_mwr(cpu, cpu->mptr, cpu->tmpb);\
 }
 
 #define RESXR(base,bit,reg) {\
@@ -166,9 +166,9 @@ extern const unsigned char FVsubTab[8];
 #define SETX(base,bit) {\
 	cpu->mptr = base + (signed char)cpu->tmp;\
 	cpu->t += 5;\
-	cpu->tmpb = MEMRD(cpu->mptr,4);\
+	cpu->tmpb = z80_mrd(cpu, cpu->mptr); cpu->t++;\
 	cpu->tmpb |= (0x01 << bit);\
-	MEMWR(cpu->mptr,cpu->tmpb,3);\
+	z80_mwr(cpu, cpu->mptr, cpu->tmpb);\
 }
 
 #define SETXR(base,bit,reg) {\

@@ -89,7 +89,7 @@ void cpuSetType(CPU* cpu, int type) {
 CPU* cpuCreate(int type, cbmr fmr, cbmw fmw, cbir fir, cbiw fiw, cbiack frq, cbirq xirq, void* dt) {
 	CPU* cpu = (CPU*)malloc(sizeof(CPU));
 	memset(cpu, 0x00, sizeof(CPU));
-	cpu->data = dt;
+	cpu->xptr = dt;
 	cpu->mrd = fmr;
 	cpu->mwr = fmw;
 	cpu->ird = fir;

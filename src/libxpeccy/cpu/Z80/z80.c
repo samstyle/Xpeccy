@@ -84,12 +84,12 @@ int z80_int(CPU* cpu) {
 			switch(cpu->imode) {
 				case 0:
 					cpu->t = 2;
-					cpu->op = &cpu->opTab[cpu->irq(cpu->data)];
+					cpu->op = &cpu->opTab[cpu->irq(cpu->xptr)];
 					cpu->r++;
 					cpu->t += cpu->op->t;		// +5 (RST38 fetch)
 					cpu->op->exec(cpu);		// +3 +3 execution. 13 total
 					while (cpu->op->flag & OF_PREFIX) {
-						cpu->op = &cpu->opTab[cpu->mrd(cpu->pc++,1,cpu->data)];
+						cpu->op = &cpu->opTab[cpu->mrd(cpu->pc++,1,cpu->xptr)];
 						cpu->r++;
 						cpu->t += cpu->op->t;
 						cpu->op->exec(cpu);
@@ -104,10 +104,10 @@ int z80_int(CPU* cpu) {
 					cpu->r++;
 					cpu->t = 7;
 					lr_push(cpu, cpu->pc);			// +3 (10) +3 (13)
-					cpu->lptr = cpu->irq(cpu->data);	// int vector (FF)
+					cpu->lptr = cpu->irq(cpu->xptr);	// int vector (FF)
 					cpu->hptr = cpu->i;
-					cpu->lpc = MEMRD(cpu->mptr++,3);	// +3 (16)
-					cpu->hpc = MEMRD(cpu->mptr,3);		// +3 (19)
+					cpu->lpc = z80_mrd(cpu, cpu->mptr++);	// +3 (16)
+					cpu->hpc = z80_mrd(cpu, cpu->mptr);		// +3 (19)
 					cpu->mptr = cpu->pc;
 					break;
 			}
@@ -143,7 +143,7 @@ int z80_exec(CPU* cpu) {
 		cpu->t = 0;
 		cpu->opTab = npTab;
 		do {
-			cpu->com = cpu->mrd(cpu->pc++,1,cpu->data);
+			cpu->com = cpu->mrd(cpu->pc++,1,cpu->xptr);
 			cpu->op = &cpu->opTab[cpu->com];
 			cpu->r++;
 			cpu->t += cpu->op->t;

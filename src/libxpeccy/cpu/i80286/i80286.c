@@ -65,11 +65,11 @@ void i286_int_prt(CPU* cpu, int vec) {
 		PAIR(w,h,l)seg;
 		PAIR(w,h,l)off;
 		int adr = cpu->idtr.base + (vec & 0xfff8);
-		off.l = cpu->mrd(adr, 0, cpu->data);	// offset
-		off.w = cpu->mrd(adr+1, 0, cpu->data);
-		seg.l = cpu->mrd(adr+2, 0, cpu->data);	// segment
-		seg.h = cpu->mrd(adr+3, 0, cpu->data);
-		unsigned char fl = cpu->mrd(adr+5, 0, cpu->data);	// flags
+		off.l = cpu->mrd(adr, 0, cpu->xptr);	// offset
+		off.w = cpu->mrd(adr+1, 0, cpu->xptr);
+		seg.l = cpu->mrd(adr+2, 0, cpu->xptr);	// segment
+		seg.h = cpu->mrd(adr+3, 0, cpu->xptr);
+		unsigned char fl = cpu->mrd(adr+5, 0, cpu->xptr);	// flags
 		cpu->tmpdr = i286_cash_seg(cpu, seg.w);
 		if ((cpu->tmpdr.flag & 0x60) < (fl & 0x60)) {	// check priv
 			i286_int_prt(cpu, 13);
@@ -161,7 +161,7 @@ xMnem i286_mnem(CPU* cpu, int sadr, cbdmr mrd, void* data) {
 	int adr = sadr;
 	unsigned char com;
 	do {
-		com = cpu->mrd(adr, 0, cpu->data);
+		com = cpu->mrd(adr, 0, cpu->xptr);
 		adr++;
 		op = &tab[com];
 		if (tab == i80286_tab) {
@@ -191,20 +191,20 @@ xMnem i286_mnem(CPU* cpu, int sadr, cbdmr mrd, void* data) {
 			ptr++;
 			switch(*ptr) {
 				case '1':
-					rx.l = cpu->mrd(adr, 0, cpu->data);
+					rx.l = cpu->mrd(adr, 0, cpu->xptr);
 					adr++;
 					dptr += sprintf(dptr, "#%.2X", rx.l);
 					break;
 				case '2':
-					rx.l = cpu->mrd(adr, 0, cpu->data);
+					rx.l = cpu->mrd(adr, 0, cpu->xptr);
 					adr++;
-					rx.h = cpu->mrd(adr, 0, cpu->data);
+					rx.h = cpu->mrd(adr, 0, cpu->xptr);
 					adr++;
 					dptr += sprintf(dptr, "#%.4X", rx.w);
 					mn.oadr = rx.w + cpu->cs.base;
 					break;
 				case '3':
-					rx.l = cpu->mrd(adr, 0, cpu->data);
+					rx.l = cpu->mrd(adr, 0, cpu->xptr);
 					adr++;
 					rx.h = (rx.l & 0x80) ? 0xff : 0x00;
 					rx.w += adr - cpu->cs.base;
@@ -212,9 +212,9 @@ xMnem i286_mnem(CPU* cpu, int sadr, cbdmr mrd, void* data) {
 					mn.oadr = rx.w + cpu->cs.base;
 					break;
 				case 'n':
-					rx.l = cpu->mrd(adr, 0, cpu->data);
+					rx.l = cpu->mrd(adr, 0, cpu->xptr);
 					adr++;
-					rx.h = cpu->mrd(adr, 0, cpu->data);
+					rx.h = cpu->mrd(adr, 0, cpu->xptr);
 					adr++;
 					rx.w += (adr - cpu->cs.base);
 					dptr += sprintf(dptr, "near #%.4X", rx.w);
@@ -222,28 +222,28 @@ xMnem i286_mnem(CPU* cpu, int sadr, cbdmr mrd, void* data) {
 					break;
 				case '4':
 				case 'p':
-					rx.l = cpu->mrd(adr, 0, cpu->data);
+					rx.l = cpu->mrd(adr, 0, cpu->xptr);
 					adr++;
-					rx.h = cpu->mrd(adr, 0, cpu->data);
+					rx.h = cpu->mrd(adr, 0, cpu->xptr);
 					adr++;
-					seg.l = cpu->mrd(adr, 0, cpu->data);
+					seg.l = cpu->mrd(adr, 0, cpu->xptr);
 					adr++;
-					seg.h = cpu->mrd(adr, 0, cpu->data);
+					seg.h = cpu->mrd(adr, 0, cpu->xptr);
 					adr++;
 					dptr += sprintf(dptr, "#%.4X::%.4X", seg.w, rx.w);
 					// mn.oadr = rx.w;
 					break;
-				case 'r': if (!mod) {mod = 1; mb = cpu->mrd(adr, 0, cpu->data); adr++;}
+				case 'r': if (!mod) {mod = 1; mb = cpu->mrd(adr, 0, cpu->xptr); adr++;}
 					if (op->flag & OF_WORD) {	// word
 						dptr += sprintf(dptr, "%s", str_regw[(mb >> 3) & 7]);
 					} else {
 						dptr += sprintf(dptr, "%s", str_regb[(mb >> 3) & 7]);
 					}
 					break;
-				case 's': if (!mod) {mod = 1; mb = cpu->mrd(adr, 0, cpu->data); adr++;}
+				case 's': if (!mod) {mod = 1; mb = cpu->mrd(adr, 0, cpu->xptr); adr++;}
 					dptr += sprintf(dptr, "%s", str_regs[(mb >> 3) & 3]);
 					break;
-				case 'e': if (!mod) {mod = 1; mb = cpu->mrd(adr, 0, cpu->data); adr++;}
+				case 'e': if (!mod) {mod = 1; mb = cpu->mrd(adr, 0, cpu->xptr); adr++;}
 					if ((mb & 0xc0) == 0xc0) {		// reg
 						if (op->flag & OF_WORD) {
 							dptr += sprintf(dptr, "%s", str_regw[mb & 7]);
@@ -253,13 +253,13 @@ xMnem i286_mnem(CPU* cpu, int sadr, cbdmr mrd, void* data) {
 					} else {
 						disp.w = 0;
 						if ((mb & 0xc0) == 0x40) {
-							disp.l = cpu->mrd(adr, 0, cpu->data);
+							disp.l = cpu->mrd(adr, 0, cpu->xptr);
 							disp.h = (disp.l & 0x80) ? 0xff : 0x00;
 							adr++;
 						} else if ((mb & 0xc0) == 0x80) {
-							disp.l = cpu->mrd(adr, 0, cpu->data);
+							disp.l = cpu->mrd(adr, 0, cpu->xptr);
 							adr++;
-							disp.h = cpu->mrd(adr, 0, cpu->data);
+							disp.h = cpu->mrd(adr, 0, cpu->xptr);
 							adr++;
 						}
 						*(dptr++) = '[';
@@ -267,9 +267,9 @@ xMnem i286_mnem(CPU* cpu, int sadr, cbdmr mrd, void* data) {
 							rseg = ((mb & 7)==6) ? ((mb & 0xc0) ? 2 : 3) : seg_ea[mb & 7];	// default segment if not overriden
 						dptr += sprintf(dptr, "%s::", str_regs[rseg & 3]);
 						if ((mb & 0xc7) == 0x06) {	// immw, [seg:disp]
-							disp.l = cpu->mrd(adr, 0, cpu->data);
+							disp.l = cpu->mrd(adr, 0, cpu->xptr);
 							adr++;
-							disp.h = cpu->mrd(adr, 0, cpu->data);
+							disp.h = cpu->mrd(adr, 0, cpu->xptr);
 							adr++;
 							dptr += sprintf(dptr, "#%.4X", disp.w);
 							// disp.w = 0;
@@ -306,34 +306,34 @@ xMnem i286_mnem(CPU* cpu, int sadr, cbdmr mrd, void* data) {
 						dptr += sprintf(dptr, "REP ");
 					}
 					break;
-				case 'A': if (!mod) {mod = 1; mb = cpu->mrd(adr, 0, cpu->data); adr++;}
+				case 'A': if (!mod) {mod = 1; mb = cpu->mrd(adr, 0, cpu->xptr); adr++;}
 					dptr += sprintf(dptr, "%s", str_alu[(mb >> 3) & 7]);
 					break;
-				case 'R': if (!mod) {mod = 1; mb = cpu->mrd(adr, 0, cpu->data); adr++;}
+				case 'R': if (!mod) {mod = 1; mb = cpu->mrd(adr, 0, cpu->xptr); adr++;}
 					dptr += sprintf(dptr, "%s", str_rot[(mb >> 3) & 7]);
 					break;
-				case 'X': if (!mod) {mod = 1; mb = cpu->mrd(adr, 0, cpu->data); adr++;}
+				case 'X': if (!mod) {mod = 1; mb = cpu->mrd(adr, 0, cpu->xptr); adr++;}
 					if (!(mb & 0x30)) {		// f6 /0 and f6 /1 : test :e,:1
 						strcat(ptr, ",:1");
 					}
 					dptr += sprintf(dptr, "%s", str_opX[(mb >> 3) & 7]);
 					break;
-				case 'Y': if (!mod) {mod = 1; mb = cpu->mrd(adr, 0, cpu->data); adr++;}
+				case 'Y': if (!mod) {mod = 1; mb = cpu->mrd(adr, 0, cpu->xptr); adr++;}
 					if (!(mb & 0x30)) {		// f7 /0 and f7 /1 : test :e,:2
 						strcat(ptr, ",:2");
 					}
 					dptr += sprintf(dptr, "%s", str_opX[(mb >> 3) & 7]);
 					break;
-				case 'E': if (!mod) {mod = 1; mb = cpu->mrd(adr, 0, cpu->data); adr++;}
+				case 'E': if (!mod) {mod = 1; mb = cpu->mrd(adr, 0, cpu->xptr); adr++;}
 					dptr += sprintf(dptr, "%s", str_opE[(mb >> 3) & 7]);
 					break;
-				case 'F': if (!mod) {mod = 1; mb = cpu->mrd(adr, 0, cpu->data); adr++;}
+				case 'F': if (!mod) {mod = 1; mb = cpu->mrd(adr, 0, cpu->xptr); adr++;}
 					dptr += sprintf(dptr, "%s", str_opF[(mb >> 3) & 7]);
 					break;
-				case 'Q': if (!mod) {mod = 1; mb = cpu->mrd(adr, 0, cpu->data); adr++;}
+				case 'Q': if (!mod) {mod = 1; mb = cpu->mrd(adr, 0, cpu->xptr); adr++;}
 					dptr += sprintf(dptr, "%s", str_opQ[(mb >> 3) & 7]);
 					break;
-				case 'W': if (!mod) {mod = 1; mb = cpu->mrd(adr, 0, cpu->data); adr++;}
+				case 'W': if (!mod) {mod = 1; mb = cpu->mrd(adr, 0, cpu->xptr); adr++;}
 					dptr += sprintf(dptr, "%s", str_opW[(mb >> 3) & 7]);
 					break;
 				case ':':
