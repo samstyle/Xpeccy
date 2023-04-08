@@ -94,7 +94,7 @@ QVariant xDisasmModel::data(const QModelIndex& idx, int role) const {
 			if (clr.isValid())
 				res = clr;
 			break;
-		case Qt::BackgroundColorRole:
+		case X_BackgroundRole:
 			if (dasm[row].ispc && !dasm[row].islab) {
 				clr = conf.pal["dbg.pc.bg"];
 			} else if (dasm[row].issel) {

@@ -26,6 +26,36 @@ enum {
 #define PDP_F10	(1 << 10)
 #define PDP_F11 (1 << 11)
 
+#ifdef WORDS_LITTLE_ENDIAN
+typedef struct {
+	unsigned c:1;
+	unsigned v:1;
+	unsigned z:1;
+	unsigned n:1;
+	unsigned t:1;
+	unsigned _nu5:2;
+	unsigned f7:1;
+	unsigned _nu8:2;
+	unsigned f10:1;
+	unsigned f11:1;
+	unsigned _nu:20;
+} vm1flag_t;
+#else
+typedef struct {
+	unsigned _nu:20;
+	unsigned f11:1;
+	unsigned f10:1;
+	unsigned _nu8:2;
+	unsigned f7:1;
+	unsigned _nu5:2;
+	unsigned t:1;
+	unsigned n:1;
+	unsigned z:1;
+	unsigned v:1;
+	unsigned c:1;
+} vm1flag_t;
+#endif
+
 #define PDP_INT_IRQ1	(1 << 0)
 #define PDP_INT_IRQ2	(1 << 1)
 #define PDP_INT_IRQ3	(1 << 2)

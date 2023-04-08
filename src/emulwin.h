@@ -29,11 +29,24 @@ typedef struct {
 	QString imgName;
 } xLed;
 
+// QWindow since Qt5.0
+// QOpenGLWindow since Qt5.4
+
 #ifdef USEOPENGL
-#include <QtOpenGL>
-class MainWin : public QGLWidget {
+	#include <QtOpenGL>
+
+	#if QT_VERSION >= QT_VERSION_CHECK(6,0,0)
+		#include <QOpenGLWidget>
+		typedef QSurfaceFormat QGLFormat;
+		typedef QOpenGLContext QGLContext;
+		typedef QOpenGLShaderProgram QGLShaderProgram;
+		typedef QOpenGLShader QGLShader;
+		class MainWin : public QOpenGLWidget, protected QOpenGLFunctions {
+	#else
+		class MainWin : public QGLWidget {
+	#endif
 #else
-class MainWin : public QWidget {
+	class MainWin : public QWidget {
 #endif
 	Q_OBJECT
 	public:
@@ -54,6 +67,7 @@ class MainWin : public QWidget {
 		void s_tape_show();
 		void s_tape_progress(Tape*);
 		void s_tape_upd(Tape*);
+		void s_tape_blk(Tape*);
 
 		void s_step();
 

@@ -4,6 +4,8 @@
 extern "C" {
 #endif
 
+#include <stddef.h>
+
 #include "../defines.h"
 
 typedef unsigned char xbyte;
@@ -36,6 +38,7 @@ typedef struct {
 	int id;
 	int type;
 	const char* name;
+//	void* ptr;	// pointer to value inside CPU struct
 	int value;	// register value (selector)
 	int base;	// base address for segment register
 } xRegister;
@@ -171,7 +174,10 @@ struct CPU {
 		unsigned int f;		// 32-bit value
 		z80flag_t fz;		// bits for Z80
 		lrflag_t fl;		// bits for LR35902
-		mosflag_t fm;
+		mosflag_t fm;		// bits for MOS6502
+		i80flag_t fi;		// bits for i8080
+		vm1flag_t fv;		// bits for 1801vm1
+		x86flag_t fx;		// bits for 80286
 	};
 //	unsigned short f;
 #else

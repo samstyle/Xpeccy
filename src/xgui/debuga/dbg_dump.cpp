@@ -203,7 +203,11 @@ QVariant xDumpModel::data(const QModelIndex& idx, int role) const {
 	QByteArray arr;
 	QColor clr;
 	switch(role) {
+#if QT_VERSION < QT_VERSION_CHECK(6,0,0)
 		case Qt::BackgroundColorRole:
+#else
+		case Qt::BackgroundRole:
+#endif
 			if ((col > 0) && (col < 9)) {
 				if ((cadr >= blockStart) && (cadr <= blockEnd) && (mode == XVIEW_CPU)) {	// selection
 					clr = conf.pal["dbg.sel.bg"];
@@ -538,7 +542,7 @@ void xDumpTable::mousePressEvent(QMouseEvent* ev) {
 			}
 			emit rqRefill();
 			break;
-		case Qt::MidButton:
+		case X_MidButton:
 			blockStart = -1;
 			blockEnd = -1;
 			markAdr = -1;

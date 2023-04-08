@@ -80,7 +80,11 @@ int loadLabels(const char* fn) {
 				line = file.readLine();
 				if (line.startsWith(":"))
 					line.prepend("FF");
+#if QT_VERSION >= QT_VERSION_CHECK(6,0,0)
+				arr = line.split(QRegularExpression("[: \r\n]"),X_SkipEmptyParts);
+#else
 				arr = line.split(QRegExp("[: \r\n]"),X_SkipEmptyParts);
+#endif
 				if (arr.size() > 2) {
 					xadr.type = MEM_RAM;
 					xadr.bank = arr.at(0).toInt(NULL,16);

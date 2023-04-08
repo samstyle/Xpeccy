@@ -1,7 +1,5 @@
 #pragma once
 
-#include "../cpu.h"
-
 // flag
 #define I286_FC	0x0001	// carry
 #define I286_FP 0x0004	// parity
@@ -14,6 +12,45 @@
 #define I286_FO 0x0800	// overflow
 #define I286_FIP 0x3000	// 2bits: IOPL
 #define I286_FN	0x4000	// nested flag
+
+#ifdef WORDS_LITTLE_ENDIAN
+typedef struct {
+	unsigned c:1;
+	unsigned f1:1;
+	unsigned p:1;
+	unsigned f3:1;
+	unsigned a:1;
+	unsigned f5:1;
+	unsigned z:1;
+	unsigned s:1;
+	unsigned i:1;
+	unsigned d:1;
+	unsigned o:1;
+	unsigned iopl:2;
+	unsigned n:1;
+	unsigned md:1;
+	unsigned _nu:16;
+} x86flag_t;
+#else
+typedef struct {
+	unsigned _nu:16;
+	unsigned md:1;
+	unsigned n:1;
+	unsigned iopl:2;
+	unsigned o:1;
+	unsigned d:1;
+	unsigned i:1;
+	unsigned s:1;
+	unsigned z:1;
+	unsigned f5:1;
+	unsigned a:1;
+	unsigned f3:1;
+	unsigned p:1;
+	unsigned f1:1;
+	unsigned c:1;
+} x86flag_t;
+#endif
+
 // msw
 #define I286_FPE 0x0001	// protected mode
 #define I286_FMP 0x0002 // allow int7 on wait
@@ -50,10 +87,6 @@ enum {
 	I286_REP_NONE = 0,
 	I286_REPNZ,
 	I286_REPZ,
-	I286_SEG_ES,
-	I286_SEG_CS,
-	I286_SEG_SS,
-	I286_SEG_DS
 };
 
 enum {
@@ -75,6 +108,8 @@ enum {
 	I286_LDT,
 	I286_IDT
 };
+
+#include "../cpu.h"
 
 void i286_interrupt(CPU*, int);
 void i286_rd_ea(CPU*, int);

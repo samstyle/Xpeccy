@@ -79,7 +79,7 @@ QVariant xDiskDumpModel::data(const QModelIndex& idx, int role) const {
 	Floppy* flp = conf.prof.cur->zx->dif->fdc->flop[drv];
 	QFont fnt;
 	switch (role) {
-		case Qt::BackgroundColorRole:
+		case X_BackgroundRole:
 			if (col == 0) break;
 			if (col > 8) break;
 			if (offset >= flp->trklen) break;

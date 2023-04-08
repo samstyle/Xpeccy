@@ -32,26 +32,47 @@
 // if (smpNeed == 0) conf.snd.fill = 0 (end of emulation cycle)
 // after emulation cycle: wait for smpNeed!=0 (instead of sleepy)
 
-#if QT_VERSION >= QT_VERSION_CHECK(5,0,0)
-#define yDelta angleDelta().y()
+#if QT_VERSION >= QT_VERSION_CHECK(6,0,0)
+	#define yDelta angleDelta().y()
+	#define xEventX position().x()
+	#define xEventY position().y()
+	#define xGlobalX globalPosition().x()
+	#define xGlobalY globalPosition().y()
+#elif QT_VERSION >= QT_VERSION_CHECK(5,0,0)
+	#define yDelta angleDelta().y()
+	#define xEventX x()
+	#define xEventY y()
+	#define xGlobalX globalX()
+	#define xGlobalY globalY()
 #else
-#define yDelta delta()
+	#define yDelta delta()
+	#define xEventX x()
+	#define xEventY y()
 #endif
 
 #if QT_VERSION >= QT_VERSION_CHECK(5,14,0)
-#define X_SkipEmptyParts Qt::SkipEmptyParts
-#define X_KeepEmptyParts Qt::KeepEmptyParts
+	#define	X_SkipEmptyParts Qt::SkipEmptyParts
+	#define X_KeepEmptyParts Qt::KeepEmptyParts
+	#include <QScreen>
+	#define SCREENSIZE screen()->size()
 #else
-#define X_SkipEmptyParts QString::SkipEmptyParts
-#define X_KeepEmptyParts QString::KeepEmptyParts
+	#define X_SkipEmptyParts QString::SkipEmptyParts
+	#define X_KeepEmptyParts QString::KeepEmptyParts
+	#include <QDesktopWidget>
+	#define SCREENSIZE QApplication::desktop()->screenGeometry().size()
 #endif
 
-#if QT_VERSION >= QT_VERSION_CHECK(5,14,0)
-#include <QScreen>
-#define SCREENSIZE screen()->size()
+#if QT_VERSION >= QT_VERSION_CHECK(6,0,0)
+	#include <QtCore5Compat>
+	#include <QSurfaceFormat>
+	#define X_BackgroundRole Qt::BackgroundRole
+	#define X_MidButton Qt::MiddleButton
+	typedef QSurfaceFormat QGLFormat;
+	typedef QOpenGLContext QGLContext;
 #else
-#include <QDesktopWidget>
-#define SCREENSIZE QApplication::desktop()->screenGeometry().size()
+	#include <QRegExp>
+	#define X_BackgroundRole Qt::BackgroundColorRole
+	#define X_MidButton Qt::MidButton
 #endif
 
 // common

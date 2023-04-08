@@ -10,8 +10,11 @@
 // flag:
 // [7:P][6,5:DPL][4:1][3:1][2:C][1:R][0:A]	code; R:segment can be readed (not only imm adr)
 // [7:P][6,5:DPL][4:1][3:0][2:D][1:W][0:A]	data; W:segment is writeable
-// [7:P][6,5:DPL][4:0][3-0:TYPE]		system
+// [7:P][6,5:DPL][4:0][3-0:TYPE]		system (gates)
 // rd/wr with segment P=0 -> interrupt
+
+// about gates:
+// if jmpf/callf is pointing on call gate segment (type 4), activate task switching
 
 // NOTE: x86 parity counts on LSB
 
@@ -61,25 +64,48 @@ xSegPtr i286_cash_seg(CPU* cpu, unsigned short val) {
 	xSegPtr p;
 	PAIR(w,h,l)off;
 	int adr;
+	unsigned short lim;
 	unsigned char tmp;
 	p.idx = val;
 	if (cpu->msw & I286_FPE) {
-		adr = (val & 4) ? cpu->ldtr.base : cpu->gdtr.base;
-		adr += val & 0xfff8;
-		off.l = cpu->mrd(adr++, 0, cpu->xptr);	// limit:16
-		off.h = cpu->mrd(adr++, 0, cpu->xptr);
-		p.limit = off.w;
-		off.l = cpu->mrd(adr++, 0, cpu->xptr);	// base:24
-		off.h = cpu->mrd(adr++, 0, cpu->xptr);
-		tmp = cpu->mrd(adr++, 0, cpu->xptr);
-		p.base = (tmp << 16) | off.w;
-		p.flag = cpu->mrd(adr, 0, cpu->xptr);	// flags:8
+		if (val & 2) {
+			adr = cpu->idtr.base;
+			lim = cpu->idtr.limit;
+		} else if (val & 4) {
+			adr = cpu->ldtr.base;
+			lim = cpu->ldtr.limit;
+		} else {
+			adr = cpu->gdtr.base;
+			lim = cpu->gdtr.limit;
+		}
+		val &= 0xfff8;					// offset in a table
+		if (val > lim) {				// check gdt/ldt segment limit
+			i286_interrupt(cpu, I286_INT_SL);
+		} else {
+			adr += val;
+			off.l = cpu->mrd(adr++, 0, cpu->xptr);	// limit:16
+			off.h = cpu->mrd(adr++, 0, cpu->xptr);
+			p.limit = off.w;
+			off.l = cpu->mrd(adr++, 0, cpu->xptr);	// base:24
+			off.h = cpu->mrd(adr++, 0, cpu->xptr);
+			tmp = cpu->mrd(adr++, 0, cpu->xptr);
+			p.base = (tmp << 16) | off.w;
+			p.flag = cpu->mrd(adr, 0, cpu->xptr);	// flags:8
+		}
 	} else {
 		p.flag = 0xf2;		// present, dpl=3, segment, data, writeable
 		p.base = val << 4;
 		p.limit = 0xffff;
 	}
 	return p;
+}
+
+// TODO: gates
+// check if CS is pointing on a gate segment in protected mode
+void i286_call_gate(CPU* cpu) {
+	if ((cpu->msw & I286_FPE) && !(cpu->cs.flag & 4)) {	// protected mode && segment is a gate
+
+	}
 }
 
 // stack
@@ -1502,6 +1528,7 @@ void i286_op9A(CPU* cpu) {
 	cpu->cs = cpu->ea.seg;
 	cpu->pc = cpu->ea.adr;
 	cpu->t = 41;
+	i286_call_gate(cpu);
 }
 
 // 9b: wait
@@ -2553,7 +2580,6 @@ void i286_opFF(CPU* cpu) {
 	}
 }
 
-// com.b0 = word operation
 // :e - effective address/register
 // :r - register (n)
 // :1 - imm.byte

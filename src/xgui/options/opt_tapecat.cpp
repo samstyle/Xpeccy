@@ -15,7 +15,7 @@ int xTapeCatModel::rowCount(const QModelIndex&) const {
 }
 
 int xTapeCatModel::columnCount(const QModelIndex&) const {
-	return 6;
+	return 5;	// 6
 }
 
 void xTapeCatModel::fill(Tape* tap) {
@@ -61,7 +61,7 @@ void xTapeCatModel::update() {
 	emit dataChanged(index(0,0), index(columnCount() - 1, rowCount() - 1));
 }
 
-static QVariant tcmName[6] = {"Cur","Brk","Dur","Time","Bytes","Name"};
+static QVariant tcmName[5] = {"Brk","Dur","Time","Bytes","Name"};
 
 QVariant xTapeCatModel::headerData(int sec, Qt::Orientation ori, int role) const {
 	QVariant res;
@@ -84,28 +84,33 @@ QVariant xTapeCatModel::data(const QModelIndex& idx, int role) const {
 	if ((row < 0) || (row >= rowCount())) return res;
 	if ((col < 0) || (col >= columnCount())) return res;
 	if (inf == NULL) return res;
+	QFont fnt;
 	switch (role) {
 		case Qt::CheckStateRole:
 			switch(col) {
-				case 0:	if (row == rcur)
-						res = Qt::Checked;
-					break;
-				case 1: if (inf[row].breakPoint)
+				//case 0:	if (row == rcur)
+				//		res = Qt::Checked;
+				//	break;
+				case 0: if (inf[row].breakPoint)
 						res = Qt::Checked;
 					break;
 			}
 			break;
+		case Qt::FontRole:
+			if (row == rcur) fnt.setBold(true);
+			res = fnt;
+			break;
 		case Qt::DisplayRole:
 			switch(col) {
-				case 2: res = QString(getTimeString(inf[row].time / 1e6).c_str());
+				case 1: res = QString(getTimeString(inf[row].time / 1e6).c_str());
 					break;
-				case 3: if (row == rcur)
+				case 2: if (row == rcur)
 						res = QString(getTimeString(inf[row].curtime).c_str());
 					break;
-				case 4:	if (inf[row].size > 0)
+				case 3:	if (inf[row].size > 0)
 						res = inf[row].size;
 					break;
-				case 5: res = QString::fromLocal8Bit(inf[row].name);
+				case 4: res = QString::fromLocal8Bit(inf[row].name);
 					break;
 			}
 			break;

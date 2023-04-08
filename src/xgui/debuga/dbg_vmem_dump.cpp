@@ -34,7 +34,7 @@ QVariant xVMemDumpModel::data(const QModelIndex& idx, int role) const {
 						if (vmem[radr + i] < 32) {
 							str.append(".");
 						} else {
-							str.append(vmem[radr + i]);
+							str.append(QChar(vmem[radr + i]));
 						}
 					}
 					res = str;

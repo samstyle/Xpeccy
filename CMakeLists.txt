@@ -116,7 +116,7 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
 else()
 
-	message(ERROR "Unsupported system : ${CMAKE_SYSTEM_NAME}")
+	message(FATAL_ERROR "Unsupported system : ${CMAKE_SYSTEM_NAME}")
 
 endif()
 
@@ -169,10 +169,19 @@ set(MOCFILES
 	./src/xgui/labelist.h
 )
 
-# Qt4 / Qt5
+# Qt4 / Qt5 / Qt6
 
-if(${QT4BUILD})
+if (DEFINED QT4BUILD)
+	if (${QT4BUILD})
+		set(QTVERSION 4)
+	else(${QT4BUILD})
+		set(QTVERSION 5)
+	endif(${QT4BUILD})
+elseif(NOT DEFINED QTVERSION)
+	set(QTVERSION 5)
+endif()
 
+if(${QTVERSION} EQUAL 4)
 	find_package(Qt4 COMPONENTS QtCore QtGui REQUIRED)
 	include(${QT_USE_FILE})
 	qt4_add_resources(RESOURCES ${QRCFILES})
@@ -197,7 +206,7 @@ if(${QT4BUILD})
 	set(LIBRARIES ${LIBRARIES} ${QT_LIBRARIES})
 	set(QT_VER ${QT_VERSION_MAJOR}.${QT_VERSION_MINOR}.${QT_VERSION_PATCH})
 
-else(${QT4BUILD})
+elseif(${QTVERSION} EQUAL 5)
 
 	find_package(Qt5 COMPONENTS Core Gui Widgets REQUIRED)
 	set(LIBRARIES ${LIBRARIES} Qt5::Widgets)
@@ -225,7 +234,39 @@ else(${QT4BUILD})
 
 	set(QT_VER ${Qt5Widgets_VERSION})
 
-endif(${QT4BUILD})
+elseif(${QTVERSION} EQUAL 6)
+#	message(FATAL_ERROR "Qt6 usage is not implemented yet")
+# Qt6 requires c++17 standart
+	set(CMAKE_CXX_STANDARD 17)
+	set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+	find_package(Qt6 COMPONENTS Core Gui Widgets Core5Compat REQUIRED)
+	set(LIBRARIES ${LIBRARIES} Qt6::Widgets Qt6::Core Qt6::Gui Qt6::Core5Compat)
+	qt6_add_resources(RESOURCES ${QRCFILES})
+	qt6_wrap_ui(UIHEADERS ${UIFILES})
+	qt6_wrap_cpp(MOCHEADERS ${MOCFILES})
+	set(CPACK_RPM_PACKAGE_REQUIRES "libQt6Gui6 >= 6.1, libQt6Widgets6 >= 6.1, libQt6Core5Compat6 >= 6.1")
+	set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt6gui6 (>=6.1), libqt6widgets6 (>=6.1), libqt6core5compat6 >= 6.1")
+	if(${USEQTNETWORK})
+		find_package(Qt6 COMPONENTS Network REQUIRED)
+		set(LIBRARIES ${LIBRARIES} Qt6::Network)
+		set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, libqt6network6 (>=6.1)")
+		set(CPACK_RPM_PACKAGE_REQUIRES "${CPACK_RPM_PACKAGE}, libQt6Network6 >= 6.1 | libqt6-network >= 6.1")
+		add_definitions("-DUSENETWORK")
+	endif()
+	if (${USEOPENGL})
+		find_package(OpenGL REQUIRED)
+		find_package(Qt6 COMPONENTS OpenGLWidgets REQUIRED)
+		set(LIBRARIES ${LIBRARIES} Qt6::OpenGLWidgets ${OPENGL_LIBRARIES})
+		set(CPACK_RPM_PACKAGE_REQUIRES "${CPACK_RPM_PACKAGE}, libQt6OpenGL6 >= 6.1 | libqt6-opengl >= 6.1")
+		set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, libqt6opengl6 (>=6.1)")
+		add_definitions("-DUSEOPENGL")
+	endif()
+
+	set(QT_VER ${Qt6Widgets_VERSION})
+else()
+	message(FATAL_ERROR "Unknown Qt version defined")
+endif()
 
 # SDL
 

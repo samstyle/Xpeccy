@@ -77,8 +77,8 @@ int main(int ac,char** av) {
 #endif
 	printf("Using Qt ver %s\n",qVersion());
 
-// this works since Qt5.6 (must be set before QCoreApplication is created)
-	#if QT_VERSION >= QT_VERSION_CHECK(5,6,0)
+// this works since Qt5.6 (must be set before QCoreApplication is created). Set by default in Qt6
+	#if (QT_VERSION >= QT_VERSION_CHECK(5,6,0)) && (QT_VERSION < QT_VERSION_CHECK(6,0,0))
 		QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 		QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 	#endif
@@ -139,6 +139,7 @@ int main(int ac,char** av) {
 	app.connect(&optw, SIGNAL(s_prf_change(std::string)), &mwin, SLOT(setProfile(std::string)));
 
 	app.connect(&mwin, SIGNAL(s_tape_upd(Tape*)), &tapw, SLOT(upd(Tape*)));
+	app.connect(&mwin, SIGNAL(s_tape_blk(Tape*)), &tapw, SLOT(updList(Tape*)));
 	app.connect(&mwin, SIGNAL(s_tape_progress(Tape*)), &tapw, SLOT(updProgress(Tape*)));
 	app.connect(&mwin, SIGNAL(s_tape_show()), &tapw, SLOT(show()));
 

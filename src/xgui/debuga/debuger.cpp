@@ -257,7 +257,11 @@ QWidget* xItemDelegate::createEditor(QWidget* par, const QStyleOptionViewItem&, 
 	if (edt && (rpt > 0)) {
 		edt->setInputMask(QString(rpt,'h'));
 		edt->setMaxLength(rpt);
+#if QT_VERSION < QT_VERSION_CHECK(6,0,0)
 		edt->setValidator(new QRegExpValidator(QRegExp(QString("%0+").arg(pat))));
+#else
+		edt->setValidator(new QRegularExpressionValidator(QRegularExpression(QString("%0+").arg(pat))));
+#endif
 	}
 	return edt;
 }
@@ -1512,7 +1516,7 @@ void DebugWin::fillFDC() {
 	ui.flpDma->setText(comp->dif->fdc->dma ? "1" : "0");
 	ui.flpIntEn->setText(comp->dif->fdc->inten ? "1" : "0");
 
-	ui.flpCurL->setText(QString('A' + comp->dif->fdc->flp->id));
+	ui.flpCurL->setText(QString(QChar(('A' + comp->dif->fdc->flp->id) & 0xff)));
 	ui.flpRdyL->setText((comp->dif->fdc->flp->insert && comp->dif->fdc->flp->door) ? "1" : "0");
 	ui.flpTrkL->setText(gethexbyte(comp->dif->fdc->flp->trk));
 	ui.flpPosL->setText(gethexword(comp->dif->fdc->flp->pos));

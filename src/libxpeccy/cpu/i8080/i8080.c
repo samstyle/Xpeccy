@@ -1,6 +1,8 @@
 #include "i8080.h"
 #include <string.h>
 
+extern opCode i8080_tab[256];
+
 void i8080_reset(CPU* cpu) {
 	cpu->pc = 0x0000;
 	cpu->bc = cpu->de = cpu->hl = 0xffff;

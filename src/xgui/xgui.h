@@ -6,9 +6,15 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QKeyEvent>
-#include <QRegExpValidator>
 #include <QTreeView>
 #include <QWheelEvent>
+
+#if QT_VERSION < QT_VERSION_CHECK(6,0,0)
+	#include <QRegExpValidator>
+#else
+	#include <QRegularExpressionValidator>
+	typedef QRegularExpressionValidator QRegExpValidator;
+#endif
 
 // common
 
@@ -108,6 +114,7 @@ class TapeWin : public QDialog {
 		TapeWin(QWidget*);
 	public slots:
 		void updProgress(Tape*);
+		void updList(Tape*);
 		void upd(Tape*);
 		void show();
 	private:

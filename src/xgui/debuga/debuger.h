@@ -10,7 +10,11 @@
 #include <QItemDelegate>
 #include <QMenu>
 #include <QTableWidget>
+#if QT_VERSION >= QT_VERSION_CHECK(5,4,0)
+#include <QRegularExpressionValidator>
+#else
 #include <QRegExpValidator>
+#endif
 
 #include "../xgui.h"
 #include "../labelist.h"

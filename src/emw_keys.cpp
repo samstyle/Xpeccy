@@ -381,8 +381,8 @@ void MainWin::xkey_release(int keyid) {
 }
 
 void MainWin::calcCoords(QMouseEvent* ev) {
-	int x = ((ev->x() - pixSkip) * 256 / xstep) + comp->vid->lcut.x - comp->vid->bord.x;
-	int y = (ev->y() * 256 / ystep - topSkip) + comp->vid->lcut.y - comp->vid->bord.y;
+	int x = ((ev->xEventX - pixSkip) * 256 / xstep) + comp->vid->lcut.x - comp->vid->bord.x;
+	int y = (ev->xEventY * 256 / ystep - topSkip) + comp->vid->lcut.y - comp->vid->bord.y;
 #if 0
 	setMessage(QString("%0 (%1) : %2 (%3)").arg(x).arg(pixSkip).arg(y).arg(topSkip));
 #else

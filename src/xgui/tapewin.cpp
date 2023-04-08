@@ -6,11 +6,11 @@ TapeWin::TapeWin(QWidget *par):QDialog(par) {
 	ui.setupUi(this);
 	setWindowFlags(Qt::Tool);
 	ui.stopBut->setEnabled(false);
+	//ui.tapeList->setColumnWidth(0,25);
 	ui.tapeList->setColumnWidth(0,25);
-	ui.tapeList->setColumnWidth(1,25);
-	ui.tapeList->setColumnWidth(2,50);
+	ui.tapeList->setColumnWidth(1,50);
+	ui.tapeList->hideColumn(2);
 	ui.tapeList->hideColumn(3);
-	ui.tapeList->hideColumn(4);
 	connect(ui.playBut,SIGNAL(released()),this,SLOT(doPlay()));
 	connect(ui.recBut,SIGNAL(released()),this,SLOT(doRec()));
 	connect(ui.stopBut,SIGNAL(released()),this,SLOT(doStop()));
@@ -23,8 +23,10 @@ TapeWin::TapeWin(QWidget *par):QDialog(par) {
 void TapeWin::show() {
 	QDialog::show();
 	upd(conf.prof.cur->zx->tape);
+	updList(conf.prof.cur->zx->tape);
 }
 
+// on timer
 void TapeWin::updProgress(Tape* tape) {
 	if (!isVisible()) return;
 	if (!tape->on || tape->rec) {
@@ -35,6 +37,7 @@ void TapeWin::updProgress(Tape* tape) {
 	}
 }
 
+// TODO: on play state changed
 void TapeWin::upd(Tape* tape) {
 	if (isVisible()) {
 		if (tape->blkCount > 0) {
@@ -43,7 +46,7 @@ void TapeWin::upd(Tape* tape) {
 			ui.stopBut->setEnabled(tape->on);
 			ui.tapeList->setEnabled(true);
 			ui.tbRewind->setEnabled(!tape->on);
-			ui.tapeList->fill(tape);
+			// ui.tapeList->fill(tape);
 		} else {
 			ui.playBut->setEnabled(false);
 			ui.recBut->setEnabled(false);
@@ -52,6 +55,11 @@ void TapeWin::upd(Tape* tape) {
 			ui.tbRewind->setEnabled(false);
 		}
 	}
+}
+
+// on block changed
+void TapeWin::updList(Tape* tape) {
+	ui.tapeList->fill(tape);
 }
 
 // slots
@@ -88,7 +96,8 @@ void TapeWin::doRewind() {
 void TapeWin::doLoad() {
 	conf.emu.pause |= PR_FILE;
 	load_file(conf.prof.cur->zx, nullptr, FG_TAPE, -1);
-	ui.tapeList->fill(conf.prof.cur->zx->tape);
+	updList(conf.prof.cur->zx->tape);
+	// ui.tapeList->fill(conf.prof.cur->zx->tape);
 	conf.emu.pause &= ~PR_FILE;
 }
 
@@ -97,7 +106,8 @@ void TapeWin::doDClick(QModelIndex idx) {
 	int col = idx.column();
 	if (col == 1) return;
 	tapRewind(conf.prof.cur->zx->tape, row);
-	ui.tapeList->fill(conf.prof.cur->zx->tape);
+	updList(conf.prof.cur->zx->tape);
+	//ui.tapeList->fill(conf.prof.cur->zx->tape);
 }
 
 void TapeWin::doClick(QModelIndex idx) {
@@ -105,5 +115,6 @@ void TapeWin::doClick(QModelIndex idx) {
 	int col = idx.column();
 	if (col != 1) return;
 	conf.prof.cur->zx->tape->blkData[row].breakPoint ^= 1;
-	ui.tapeList->fill(conf.prof.cur->zx->tape);
+	updList(conf.prof.cur->zx->tape);
+	// ui.tapeList->fill(conf.prof.cur->zx->tape);
 }

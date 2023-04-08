@@ -4,7 +4,6 @@
 #include "xcore.h"
 
 #include <QApplication>
-#include <QDesktopWidget>
 #include <QScreen>
 
 void vid_upd_scale() {

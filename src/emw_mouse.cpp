@@ -15,7 +15,8 @@ void MainWin::mousePressEvent(QMouseEvent *ev){
 					comp->mouse->lmb = 1;
 					mouse_interrupt(comp->mouse);
 				} else if (comp->hw->grp == HWG_ZX) {	// zx: print dot address
-					calcCoords(ev);
+					if (ev->modifiers() & Qt::ControlModifier)
+						calcCoords(ev);
 				}
 				break;
 			case Qt::RightButton:
@@ -24,7 +25,7 @@ void MainWin::mousePressEvent(QMouseEvent *ev){
 					mouse_interrupt(comp->mouse);
 				} else {
 					fillUserMenu();
-					userMenu->popup(QPoint(ev->globalX(),ev->globalY()));
+					userMenu->popup(QPoint(ev->xGlobalX,ev->xGlobalY));
 					userMenu->setFocus();
 				}
 				break;
@@ -57,7 +58,7 @@ void MainWin::mouseReleaseEvent(QMouseEvent *ev) {
 					mouse_interrupt(comp->mouse);
 				}
 				break;
-			case Qt::MidButton:
+			case X_MidButton:
 				grabMice = !grabMice;
 				if (grabMice) {
 					grabMouse(QCursor(Qt::BlankCursor));
@@ -104,8 +105,8 @@ void MainWin::mouseMoveEvent(QMouseEvent *ev) {
 		dumove = 0;
 	} else {
 		QPoint dpos = pos() + QPoint(width()/2, height()/2);
-		comp->mouse->xdelta = ev->globalX() - dpos.x();
-		comp->mouse->ydelta = dpos.y() - ev->globalY();		// revert sign
+		comp->mouse->xdelta = ev->xGlobalX - dpos.x();
+		comp->mouse->ydelta = dpos.y() - ev->xGlobalY;		// revert sign
 		comp->mouse->xpos += comp->mouse->xdelta;
 		comp->mouse->ypos += comp->mouse->ydelta;
 		mouse_interrupt(comp->mouse);

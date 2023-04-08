@@ -72,8 +72,8 @@ void keyWindow::mousePressEvent(QMouseEvent* ev) {
 	if (!kb) return;
 	int row;
 	int col;
-	row = ev->y() * 4 / height();
-	col = ev->x() * 10 / width();
+	row = ev->xEventY * 4 / height();
+	col = ev->xEventX * 10 / width();
 	xent.zxKey[0] = kwMap[row][col];
 	xent.zxKey[1] = 0;
 	switch(ev->button()) {

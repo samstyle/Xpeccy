@@ -6,11 +6,20 @@
 QString gethexword(int);
 QString gethexbyte(uchar);
 
+void setRegExp(QRegExpValidator& v, QString s) {
+#if QT_VERSION < QT_VERSION_CHECK(6,0,0)
+	v.setRegExp(QRegExp(s));
+#else
+	v.setRegularExpression(QRegularExpression(s));
+#endif
+}
+
 xHexSpin::xHexSpin(QWidget* p):QLineEdit(p) {
 	setMinimumWidth(60);
 	setAutoFillBackground(true);
 	setUpdatesEnabled(true);
-	vldtr.setRegExp(QRegExp(""));
+	//vldtr.setRegExp(QRegExp(""));
+	setRegExp(vldtr, "");
 	min = 0x0000;
 	max = 0xffff;
 	value = 0x0000;
@@ -65,7 +74,8 @@ void xHexSpin::setBase(int b) {
 
 	// setMaxLength(len);
 	setInputMask(QString(len, 'h'));	// to enter overwrite cursor mode. TODO:is there some legit method?
-	vldtr.setRegExp(QRegExp(rxp));		// set available chars
+	//vldtr.setRegExp(QRegExp(rxp));		// set available chars
+	setRegExp(vldtr, rxp);
 	hsflag |= XHS_UPD;			// update even if value doesn't changed
 	setValue(tmp);
 }

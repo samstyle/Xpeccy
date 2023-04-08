@@ -180,7 +180,11 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	ui.sdrvBox->addItem("Soundrive 1.05 mode 1",SDRV_105_1);
 	ui.sdrvBox->addItem("Soundrive 1.05 mode 2",SDRV_105_2);
 
+#if QT_VERSION < QT_VERSION_CHECK(6,0,0)
 	QRegExpValidator* vld = new QRegExpValidator(QRegExp("^[0-9]\\.\\d{0,6}$"));
+#else
+	QRegularExpressionValidator* vld = new QRegularExpressionValidator(QRegularExpression("^[0-9]\\.\\d{0,6}$"));
+#endif
 	ui.psg1frq->setValidator(vld);
 	ui.psg2frq->setValidator(vld);
 	ui.psg3frq->setValidator(vld);

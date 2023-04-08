@@ -7,8 +7,12 @@
 #include <QUrl>
 #include <QMimeData>
 #include <QPainter>
-#include <QDesktopWidget>
 #include <QFileDialog>
+
+// QDesktopWidget removed in Qt6
+#if QT_VERSION < QT_VERSION_CHECK(6,0,0)
+	#include <QDesktopWidget>
+#endif
 
 #include <fstream>
 #include <unistd.h>
@@ -144,6 +148,7 @@ void MainWin::pause(bool p, int msk) {
 // Main window
 
 MainWin::MainWin() {
+	qDebug() << "constructor";
 	setWindowTitle(XPTITLE);
 	setMouseTracking(true);
 	icon = QIcon(":/images/xpeccy.png");
@@ -204,18 +209,36 @@ MainWin::MainWin() {
 	openServer();
 	connect(&srv, SIGNAL(newConnection()),this, SLOT(connected()));
 #endif
+
 #ifdef USEOPENGL
+#if QT_VERSION < QT_VERSION_CHECK(6,0,0)
 	frmt.setDoubleBuffer(false);
 	cont = new QGLContext(frmt);
+// TODO: how to do this with QOpenGLWidget
 	setContext(cont);
 	setAutoBufferSwap(true);
 	makeCurrent();
+#else
+// Doesn't working
+// TODO: how to create and set QOpenGLContext for current wiget/window
+
+	cont = new QOpenGLContext(windowHandle());
+	cont->setFormat(frmt);
+	cont->create();
+	initializeOpenGLFunctions();
+	cont->makeCurrent(this->windowHandle());
+#endif
+
+
 	shd_support = QGLShader::hasOpenGLShaders(QGLShader::Vertex) && QGLShader::hasOpenGLShaders(QGLShader::Fragment);
 	curtex = 0;
-	vtx_shd = new QGLShader(QGLShader::Vertex, cont);
+	qDebug() << "vtx_shd";
+	vtx_shd = new QGLShader(QGLShader::Vertex, cont);		// ERROR: create QOpenGLFunctions with non-current context
+	qDebug() << "frg_shd";
 	frg_shd = new QGLShader(QGLShader::Fragment, cont);
 	if (!shd_support) setMessage(" Shaders not supported ");
 #endif
+
 }
 
 MainWin::~MainWin() {
@@ -660,6 +683,7 @@ void MainWin::paintEvent(QPaintEvent*) {
 #ifdef USEOPENGL
 
 void MainWin::initializeGL() {
+	qDebug() << "initializeGL";
 	glGenTextures(4, texids);	// create texture
 	glEnable(GL_TEXTURE_2D);
 	glEnable(GL_MULTISAMPLE);
@@ -675,6 +699,8 @@ void MainWin::initializeGL() {
 }
 
 void MainWin::resizeGL(int w, int h) {
+	qDebug() << "resizeGL" << w << h;
+	makeCurrent();
 	glViewport(0, 0, w, h);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
@@ -999,8 +1025,11 @@ void MainWin::updateSatellites() {
 		emit s_tape_progress(comp->tape);
 	if ((comp->tape->on && !comp->tape->rec) || comp->tape->blkChange || comp->tape->newBlock) {
 		emit s_tape_upd(comp->tape);
-		if (comp->tape->blkChange) comp->tape->blkChange = 0;
-		if (comp->tape->newBlock) comp->tape->newBlock = 0;
+		if (comp->tape->blkChange || comp->tape->newBlock) {
+			emit s_tape_blk(comp->tape);
+			comp->tape->blkChange = 0;
+			comp->tape->newBlock = 0;
+		}
 	}
 // update watcher
 	emit s_watch_upd(comp);
