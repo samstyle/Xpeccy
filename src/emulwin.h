@@ -32,15 +32,18 @@ typedef struct {
 // QWindow since Qt5.0
 // QOpenGLWindow since Qt5.4
 
+#define USELEGACYGL 1
+#define ISLEGACY ((QT_VERSION < QT_VERSION_CHECK(5,4,0)) || (USELEGACYGL && (QT_VERSION < QT_VERSION_CHECK(6,0,0))))
+
 #ifdef USEOPENGL
 	#include <QtOpenGL>
 
-	#if QT_VERSION >= QT_VERSION_CHECK(6,0,0)
+	#if !ISLEGACY
 		#include <QOpenGLWidget>
-		typedef QSurfaceFormat QGLFormat;
-		typedef QOpenGLContext QGLContext;
-		typedef QOpenGLShaderProgram QGLShaderProgram;
-		typedef QOpenGLShader QGLShader;
+//		typedef QSurfaceFormat QGLFormat;
+//		typedef QOpenGLContext QGLContext;
+//		typedef QOpenGLShaderProgram QGLShaderProgram;
+//		typedef QOpenGLShader QGLShader;
 		class MainWin : public QOpenGLWidget, protected QOpenGLFunctions {
 	#else
 		class MainWin : public QGLWidget {
@@ -189,19 +192,24 @@ typedef struct {
 		void focusInEvent(QFocusEvent*);
 		void timerEvent(QTimerEvent*);
 		void moveEvent(QMoveEvent*);
-
 #ifdef USEOPENGL
 		bool shd_support;
 		unsigned curtex:2;
 		GLuint texids[4];
 		GLuint curtxid;
 		QList<GLuint> queue;
-		QGLFormat frmt;
-		QGLContext* cont;
 		void initializeGL();
 		void resizeGL(int,int);
+#if ISLEGACY
+		QGLContext* cont;
 		QGLShaderProgram prg;
 		QGLShader* vtx_shd;
 		QGLShader* frg_shd;
+#else
+		QOpenGLContext* cont;
+		QOpenGLShaderProgram prg;
+		QOpenGLShader* vtx_shd;
+		QOpenGLShader* frg_shd;
+#endif
 #endif
 };

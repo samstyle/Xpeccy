@@ -205,40 +205,28 @@ MainWin::MainWin() {
 
 	fillUserMenu();
 
+	curtex = 0;
+
 #ifdef USENETWORK
 	openServer();
 	connect(&srv, SIGNAL(newConnection()),this, SLOT(connected()));
 #endif
 
-#ifdef USEOPENGL
-#if QT_VERSION < QT_VERSION_CHECK(6,0,0)
+#if (defined(USEOPENGL) && ISLEGACY)
+	QGLFormat frmt;
 	frmt.setDoubleBuffer(false);
 	cont = new QGLContext(frmt);
-// TODO: how to do this with QOpenGLWidget
 	setContext(cont);
 	setAutoBufferSwap(true);
 	makeCurrent();
-#else
-// Doesn't working
-// TODO: how to create and set QOpenGLContext for current wiget/window
-
-	cont = new QOpenGLContext(windowHandle());
-	cont->setFormat(frmt);
-	cont->create();
-	initializeOpenGLFunctions();
-	cont->makeCurrent(this->windowHandle());
-#endif
-
-
 	shd_support = QGLShader::hasOpenGLShaders(QGLShader::Vertex) && QGLShader::hasOpenGLShaders(QGLShader::Fragment);
-	curtex = 0;
 	qDebug() << "vtx_shd";
 	vtx_shd = new QGLShader(QGLShader::Vertex, cont);		// ERROR: create QOpenGLFunctions with non-current context
 	qDebug() << "frg_shd";
 	frg_shd = new QGLShader(QGLShader::Fragment, cont);
-	if (!shd_support) setMessage(" Shaders not supported ");
 #endif
 
+	qDebug() << "end:constructor";
 }
 
 MainWin::~MainWin() {
@@ -640,6 +628,8 @@ void drawText(QPainter* pnt, int x, int y, const char* buf) {
 	}
 }
 
+// bug? QOpenGLWidget crash during show->event (ResizeEvent): calling random slot-signal connection
+
 void MainWin::paintEvent(QPaintEvent*) {
 #ifdef USEOPENGL
 	QPainter pnt(this);
@@ -669,102 +659,15 @@ void MainWin::paintEvent(QPaintEvent*) {
 	glDisable(GL_TEXTURE_2D);
 	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
+	glFlush();
 	drawIcons(pnt);
 	pnt.end();
-	glFlush();
 #else
 	QPainter pnt(this);
 	pnt.drawImage(0,0, QImage(comp->debug ? scrimg : bufimg, width(), height(), QImage::Format_RGBA8888));
 	drawIcons(pnt);
 	pnt.end();
 #endif
-}
-
-#ifdef USEOPENGL
-
-void MainWin::initializeGL() {
-	qDebug() << "initializeGL";
-	glGenTextures(4, texids);	// create texture
-	glEnable(GL_TEXTURE_2D);
-	glEnable(GL_MULTISAMPLE);
-	for (int i = 0; i < 4; i++) {
-		// select texture
-		glBindTexture(GL_TEXTURE_2D, texids[i]);
-		// set filters for this texture
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	}
-}
-
-void MainWin::resizeGL(int w, int h) {
-	qDebug() << "resizeGL" << w << h;
-	makeCurrent();
-	glViewport(0, 0, w, h);
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	glOrtho(0.0, 1.0, 1.0, 0.0, 1, 0);
-	glMatrixMode(GL_MODELVIEW);
-}
-
-#endif
-
-void MainWin::loadShader() {
-#ifdef USEOPENGL
-	QString path(std::string(conf.path.shdDir + SLASH + conf.vid.shader).c_str());
-	QFile file(path);
-	int mode = 0;
-	QString vtx;
-	QString frg;
-	QString lin;
-	prg.removeAllShaders();
-	if (!conf.vid.shader.empty() && shd_support) {			// no shader selected
-		if (file.open(QFile::ReadOnly)) {
-			while(!file.atEnd()) {
-				lin = file.readLine().trimmed().append("\n");
-				if (lin.startsWith("vertex:")) {
-					mode = 1;
-				} else if (lin.startsWith("fragment:")) {
-					mode = 2;
-				} else {
-					switch(mode) {
-						case 1: vtx.append(lin); break;
-						case 2: frg.append(lin); break;
-					}
-				}
-			}
-			file.close();
-			if (!vtx.isEmpty()) {
-				if (!vtx_shd->compileSourceCode(vtx)) {
-					qDebug() << vtx_shd->log();
-				}
-			}
-			if (!frg.isEmpty()) {
-				if (!frg_shd->compileSourceCode(frg)) {
-					qDebug() << frg_shd->log();
-				}
-			}
-			if (vtx_shd->isCompiled() && frg_shd->isCompiled()) {
-				prg.addShader(vtx_shd);
-				prg.addShader(frg_shd);
-				prg.link();
-				setMessage(" Shader compiled ");
-			} else {
-				setMessage(" Shader compile error ");
-				conf.vid.shader.clear();
-				loadShader();
-			}
-		} else {
-			shitHappens("Can't open shader file");
-		}
-	}
-#endif
-}
-
-void MainWin::shdSelected(QAction* act) {
-	conf.vid.shader = act->data().toString().toLocal8Bit().data();
-	loadShader();
 }
 
 void MainWin::drawIcons(QPainter& pnt) {
