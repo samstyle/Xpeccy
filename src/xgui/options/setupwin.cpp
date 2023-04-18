@@ -73,7 +73,7 @@ void fill_shader_list(QComboBox* box) {
 	QFileInfo inf;
 	box->clear();
 	box->addItem("none", 0);
-#ifdef USEOPENGL
+#if defined(USEOPENGL)
 	foreach(inf, lst) {
 		box->addItem(inf.fileName(), 1);
 	}
@@ -152,7 +152,7 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	for (it = shotFormat.begin(); it != shotFormat.end(); it++) {
 		ui.ssfbox->addItem(QString(it->first.c_str()),it->second);
 	}
-#if USEOPENGL
+#if defined(USEOPENGL)
 	ui.cbScanlines->setVisible(false);
 	fill_shader_list(ui.cbShader);
 #else

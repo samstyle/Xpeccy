@@ -1,25 +1,21 @@
 #include "emulwin.h"
 
-#ifdef USEOPENGL
+#if defined(USEOPENGL) && !BLOCKGL
 
 void MainWin::initializeGL() {
 	qDebug() << __FUNCTION__;
 #if !ISLEGACY
+	QOpenGLFunctions::initializeOpenGLFunctions();
 	QSurfaceFormat frmt;
-	frmt.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
+	frmt.setSwapBehavior(QSurfaceFormat::DoubleBuffer);	// since Qt5.5
 	frmt.setSwapInterval(0);
-	cont = new QOpenGLContext(windowHandle());
-	cont->create();
-	cont->setFormat(frmt);
-	Q_ASSERT(context() != nullptr);
-	context()->setShareContext(cont);
-	initializeOpenGLFunctions();
+	context()->setFormat(frmt);
 	shd_support = QOpenGLShader::hasOpenGLShaders(QOpenGLShader::Vertex) && QOpenGLShader::hasOpenGLShaders(QOpenGLShader::Fragment);
 	curtex = 0;
 	qDebug() << "vtx_shd";
-	vtx_shd = new QOpenGLShader(QOpenGLShader::Vertex, cont);		// ERROR: create QOpenGLFunctions with non-current context
+	vtx_shd = new QOpenGLShader(QOpenGLShader::Vertex);
 	qDebug() << "frg_shd";
-	frg_shd = new QOpenGLShader(QOpenGLShader::Fragment, cont);
+	frg_shd = new QOpenGLShader(QOpenGLShader::Fragment);
 #endif
 	glGenTextures(4, texids);	// create texture
 	glEnable(GL_TEXTURE_2D);
@@ -37,19 +33,17 @@ void MainWin::initializeGL() {
 }
 
 void MainWin::resizeGL(int w, int h) {
-	qDebug() << __FUNCTION__ << w << h;
 	glViewport(0, 0, w, h);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	glOrtho(0.0, 1.0, 1.0, 0.0, 1, 0);
 	glMatrixMode(GL_MODELVIEW);
-	qDebug() << "end:" << __FUNCTION__;
 }
 
 #endif
 
 void MainWin::loadShader() {
-#ifdef USEOPENGL
+#if defined(USEOPENGL) && !BLOCKGL
 	QString path(std::string(conf.path.shdDir + SLASH + conf.vid.shader).c_str());
 	QFile file(path);
 	int mode = 0;

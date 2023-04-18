@@ -32,7 +32,7 @@ void vid_upd_scale() {
 			// calculate black spaces
 			// TODO: recalculate for OpenGL
 			topSkip = (dhei - ((conf.prof.cur->zx->vid->vsze.y * ystep) >> 8)) / 2;
-#ifdef USEOPENGL
+#if defined(USEOPENGL)
 			pixSkip = (dwid * 256 / xstep - conf.prof.cur->zx->vid->vsze.x) / 2;	// unscaled
 			lefSkip = pixSkip * 8;
 			pixSkip = pixSkip * xstep / 256;					// scaled (to substract from cursor X)

@@ -29,24 +29,20 @@ typedef struct {
 	QString imgName;
 } xLed;
 
-// QWindow since Qt5.0
-// QOpenGLWindow since Qt5.4
+// QOpenGLWidget since Qt5.4
 
+#define BLOCKGL 0
 #define USELEGACYGL 1
 #define ISLEGACY ((QT_VERSION < QT_VERSION_CHECK(5,4,0)) || (USELEGACYGL && (QT_VERSION < QT_VERSION_CHECK(6,0,0))))
 
 #ifdef USEOPENGL
 	#include <QtOpenGL>
 
-	#if !ISLEGACY
-		#include <QOpenGLWidget>
-//		typedef QSurfaceFormat QGLFormat;
-//		typedef QOpenGLContext QGLContext;
-//		typedef QOpenGLShaderProgram QGLShaderProgram;
-//		typedef QOpenGLShader QGLShader;
-		class MainWin : public QOpenGLWidget, protected QOpenGLFunctions {
-	#else
+	#if ISLEGACY
 		class MainWin : public QGLWidget {
+	#else
+		#include <QOpenGLWidget>
+		class MainWin : public QOpenGLWidget, protected QOpenGLFunctions {
 	#endif
 #else
 	class MainWin : public QWidget {
@@ -192,7 +188,7 @@ typedef struct {
 		void focusInEvent(QFocusEvent*);
 		void timerEvent(QTimerEvent*);
 		void moveEvent(QMoveEvent*);
-#ifdef USEOPENGL
+#if defined(USEOPENGL) && !BLOCKGL
 		bool shd_support;
 		unsigned curtex:2;
 		GLuint texids[4];
@@ -206,7 +202,6 @@ typedef struct {
 		QGLShader* vtx_shd;
 		QGLShader* frg_shd;
 #else
-		QOpenGLContext* cont;
 		QOpenGLShaderProgram prg;
 		QOpenGLShader* vtx_shd;
 		QOpenGLShader* frg_shd;

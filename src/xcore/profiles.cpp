@@ -313,7 +313,7 @@ int prf_load_conf(xProfile* prf, std::string cfname, int flag) {
 	std::ifstream file(cfname);
 	std::pair<std::string,std::string> spl;
 	std::string line,pnam,pval;
-	std::vector<std::string> vect;
+//	std::vector<std::string> vect;
 	size_t pos;
 	char buf[0x4000];
 	int tmask = -1;

@@ -380,6 +380,7 @@ bool xDumpModel::setData(const QModelIndex& idx, const QVariant& val, int role) 
 
 xDumpTable::xDumpTable(QWidget* p):QTableView(p) {
 	markAdr = -1;
+	mode = XVIEW_CPU;
 	model = new xDumpModel();
 	setModel(model);
 

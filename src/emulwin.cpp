@@ -149,6 +149,7 @@ void MainWin::pause(bool p, int msk) {
 
 MainWin::MainWin() {
 	qDebug() << "constructor";
+
 	setWindowTitle(XPTITLE);
 	setMouseTracking(true);
 	icon = QIcon(":/images/xpeccy.png");
@@ -184,9 +185,7 @@ MainWin::MainWin() {
 		printf("Joystick not opened\n");
 		conf.joy.joy = NULL;
 	}
-
 	initFileDialog(this);
-
 	initUserMenu();
 	setFocus();
 
@@ -202,17 +201,16 @@ MainWin::MainWin() {
 
 	connect(userMenu,SIGNAL(aboutToShow()),SLOT(menuShow()));
 	connect(userMenu,SIGNAL(aboutToHide()),SLOT(menuHide()));
-
 	fillUserMenu();
-
-	curtex = 0;
 
 #ifdef USENETWORK
 	openServer();
 	connect(&srv, SIGNAL(newConnection()),this, SLOT(connected()));
 #endif
 
-#if (defined(USEOPENGL) && ISLEGACY)
+#if defined(USEOPENGL) && !BLOCKGL
+#if ISLEGACY
+	curtex = 0;
 	QGLFormat frmt;
 	frmt.setDoubleBuffer(false);
 	cont = new QGLContext(frmt);
@@ -224,13 +222,16 @@ MainWin::MainWin() {
 	vtx_shd = new QGLShader(QGLShader::Vertex, cont);		// ERROR: create QOpenGLFunctions with non-current context
 	qDebug() << "frg_shd";
 	frg_shd = new QGLShader(QGLShader::Fragment, cont);
+#else
+	// ...
 #endif
-
+#endif
+	disconnect(this, SIGNAL(resized()));
 	qDebug() << "end:constructor";
 }
 
 MainWin::~MainWin() {
-#ifdef USEOPENGL
+#if defined(USEOPENGL) && !BLOCKGL
 	delete(vtx_shd);
 	delete(frg_shd);
 //	for(int i = 0; i < 4; i++)
@@ -592,7 +593,7 @@ void MainWin::frame_timer() {
 		frm_tmr.setInterval(frm_ns / 1000000);		// 1e6 ns = 1 ms. next frame shot
 		frm_ns = frm_ns % 1000000;			// remains
 	}
-#ifdef USEOPENGL
+#if defined(USEOPENGL) && !BLOCKGL
 	if (conf.emu.fast || conf.emu.pause) {
 		glBindTexture(GL_TEXTURE_2D, texids[curtex]);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, bytesPerLine / 4, comp->vid->vsze.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, comp->debug ? scrimg : bufimg);
@@ -606,9 +607,8 @@ void MainWin::frame_timer() {
 }
 
 void MainWin::d_frame() {
-	// printf("d_frame\n");
 	if (conf.emu.fast) return;
-#ifdef USEOPENGL
+#if defined(USEOPENGL) && !BLOCKGL
 	queue.append(texids[curtex]);
 	if (queue.size() > 3)
 		queue.takeFirst();
@@ -631,8 +631,9 @@ void drawText(QPainter* pnt, int x, int y, const char* buf) {
 // bug? QOpenGLWidget crash during show->event (ResizeEvent): calling random slot-signal connection
 
 void MainWin::paintEvent(QPaintEvent*) {
-#ifdef USEOPENGL
-	QPainter pnt(this);
+#if defined(USEOPENGL)
+#if !BLOCKGL
+	makeCurrent();
 	if (prg.isLinked() && shd_support) {
 		prg.bind();
 		prg.setUniformValue("rubyInputSize",GLfloat(bytesPerLine/4.0), GLfloat(conf.prof.cur->zx->vid->vsze.y));
@@ -660,8 +661,10 @@ void MainWin::paintEvent(QPaintEvent*) {
 	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
 	glFlush();
+	QPainter pnt(this);
 	drawIcons(pnt);
 	pnt.end();
+#endif
 #else
 	QPainter pnt(this);
 	pnt.drawImage(0,0, QImage(comp->debug ? scrimg : bufimg, width(), height(), QImage::Format_RGBA8888));
@@ -837,7 +840,7 @@ void MainWin::screenShot() {
 	fnams.append(QString("xpeccy_%0.%1").arg(QTime::currentTime().toString("HHmmss_zzz")).arg(fext.c_str()));
 	std::string fnam(fnams.toUtf8().data());
 	std::ofstream file;
-#if USEOPENGL
+#if defined(USEOPENGL)
 	QImage img(bufimg, bytesPerLine / 4, comp->vid->vsze.y, QImage::Format_RGBA8888);
 	img = img.scaled(width(), height());
 #else
@@ -1037,7 +1040,7 @@ void MainWin::fillUserMenu() {
 	act->setData("");
 	act->setCheckable(true);
 	if (conf.vid.shader.empty()) act->setChecked(true);
-#ifdef USEOPENGL
+#if defined(USEOPENGL) && !BLOCKGL
 	if (shd_support) {
 		QDir dir(conf.path.shdDir.c_str());
 		QFileInfoList lst = dir.entryInfoList(QStringList() << "*.txt", QDir::Files, QDir::Name);
@@ -1070,7 +1073,7 @@ void MainWin::optApply() {
 
 	}
 #endif
-#ifdef USEOPENGL
+#if defined(USEOPENGL) && !BLOCKGL
 	loadShader();
 #endif
 	emit s_tape_upd(comp->tape);

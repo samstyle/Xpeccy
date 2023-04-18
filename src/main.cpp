@@ -269,19 +269,18 @@ int main(int ac,char** av) {
 	}
 	dbgw.move(conf.dbg.pos);
 	dbgw.resize(conf.dbg.siz);
-
 #ifdef __APPLE__
 	if (!style) {
 		app.setStyle(QStyleFactory::create("Fusion"));
 	}
 #endif
 	if (!hlp) {
+		mwin.show();		// causes an exception on resizeEvent -> emit resized()
+		mwin.raise();
+		mwin.activateWindow();
 		mwin.updateWindow();
 		mwin.checkState();
 		if (dbg) mwin.doDebug();
-		mwin.show();
-		mwin.raise();
-		mwin.activateWindow();
 		conf.running = 1;
 		ethread.start();
 		if (!lab) shitHappens("Can't open labels file");

@@ -6,7 +6,7 @@
 
 #include "video.h"
 
-#if USEOPENGL
+#if defined(USEOPENGL)
 #define SCRBUF_SIZE	2048*768*4
 #else
 #define SCRBUF_SIZE	3700*2050*4
@@ -37,7 +37,7 @@ unsigned char pscr[SCRBUF_SIZE];		// previous screen (raw)
 static unsigned char* pptr = pscr;
 static xColor xcol;
 
-#ifndef USEOPENGL
+#if !defined(USEOPENGL)
 static int xpos = 0;
 static int ypos = 0;
 #elif !DRAWING_F
@@ -59,7 +59,7 @@ static int32_t outcol;
 inline void vid_dot_full(Video* vid, unsigned char idx) {
 	if (vid->hvis && vid->vvis) {
 		outcol = greyScale ? vid->gpal[idx] : vid->pal[idx];
-#ifdef USEOPENGL
+#if defined(USEOPENGL)
 		*(int32_t*)(vid->ray.ptr) = outcol;
 		vid->ray.ptr += 4;
 		*(int32_t*)(vid->ray.ptr) = outcol;
@@ -78,7 +78,7 @@ inline void vid_dot_full(Video* vid, unsigned char idx) {
 inline void vid_dot_half(Video* vid, unsigned char idx) {
 	if (vid->hvis && vid->vvis) {
 		outcol = greyScale ? vid->gpal[idx] : vid->pal[idx];
-#ifdef USEOPENGL
+#if defined(USEOPENGL)
 		*(int32_t*)(vid->ray.ptr) = outcol;
 		vid->ray.ptr += 4;
 #else
@@ -110,7 +110,7 @@ void vid_line(Video* vid) {
 		vid->ray.lptr += bytesPerLine;
 	}
 	vid->ray.lptr += bytesPerLine;
-#ifndef USEOPENGL
+#if !defined(USEOPENGL)
 	ypos += ystep;
 	if (vid->linedbl) ypos += ystep;
 	ypos -= 0x100;		// 1 line is already drawn
@@ -140,7 +140,7 @@ void vid_line(Video* vid) {
 
 void vid_line_fill(Video* vid) {
 	// TODO: apply scanlines here
-#ifndef USEOPENGL
+#if !defined(USEOPENGL)
 	int ytmp = ypos;
 	unsigned char* ptr = vid->ray.lptr;
 	ytmp += ystep;
@@ -157,7 +157,7 @@ void vid_frame(Video* vid) {
 		vid_fill_black(vid->ray.lptr, botSkip * bytesPerLine);
 	}
 // scanlines TODO: bad @ fullscreen
-#ifndef USEOPENGL
+#if !defined(USEOPENGL)
 	ypos = 0;
 	/*
 	int x,y,ys;
@@ -358,7 +358,7 @@ void vidDarkTail(Video* vid) {
 		zptr++;
 		ptr++;
 	}
-#ifndef USEOPENGL
+#if !defined(USEOPENGL)
 	// copy current line
 	vid_line_fill(vid);				// copy filled line due zoom value
 	int ytmp = ypos + ystep;

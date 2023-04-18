@@ -235,7 +235,7 @@ int prfSave(std::string);
 #define	SCR_HOB		5
 #define	SCR_DISK	6
 
-void conf_init(char*, char* confdir=NULL);
+void conf_init(char*, char* confdir = NULL);
 void loadConfig();
 void saveConfig();
 
