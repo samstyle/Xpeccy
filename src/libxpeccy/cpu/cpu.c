@@ -3,6 +3,7 @@
 
 #include "cpu.h"
 #include <stdio.h>
+#include <string.h>
 
 // common
 
@@ -18,6 +19,10 @@ int parity(int val) {
 // no-proc
 
 const char nomnem[] = "undef";
+
+xRegDsc nil_reg_tab[] = {
+	{REG_NONE, "", 0, 0}
+};
 
 void nil_reset(CPU* cpu) {}
 int nil_exec(CPU* cpu) {return 1;}
@@ -43,14 +48,21 @@ extern opCode npTab[256];
 extern opCode lrTab[256];
 extern opCode mosTab[256];
 
+extern xRegDsc z80RegTab[];
+extern xRegDsc m6502RegTab[];
+extern xRegDsc lrRegTab[];
+extern xRegDsc i8080RegTab[];
+extern xRegDsc i286RegTab[];
+extern xRegDsc pdp11RegTab[];
+
 cpuCore cpuTab[] = {
-	{CPU_Z80, "Z80", npTab, z80_reset, z80_exec, z80_asm, z80_mnem, z80_get_regs, z80_set_regs},
-	{CPU_I8080, "i8080", NULL, i8080_reset, i8080_exec, i8080_asm, i8080_mnem, i8080_get_regs, i8080_set_regs},
-	{CPU_I80286,"i80286", NULL, i286_reset, i286_exec, i286_asm, i286_mnem, i286_get_regs, i286_set_regs},
-	{CPU_LR35902, "LR35902", lrTab, lr_reset, lr_exec, lr_asm, lr_mnem, lr_get_regs, lr_set_regs},
-	{CPU_6502, "MOS6502", mosTab, m6502_reset, m6502_exec, m6502_asm, m6502_mnem, m6502_get_regs, m6502_set_regs},
-	{CPU_VM1, "1801VM1", NULL, pdp11_reset, pdp11_exec, pdp11_asm, pdp11_mnem, pdp11_get_regs, pdp11_set_regs},
-	{CPU_NONE, "none", NULL, nil_reset, nil_exec, nil_asm, nil_mnem, nil_get_regs, nil_set_regs}
+	{CPU_Z80, "Z80", z80RegTab, z80_reset, z80_exec, z80_asm, z80_mnem, z80_get_regs, z80_set_regs},
+	{CPU_I8080, "i8080", i8080RegTab, i8080_reset, i8080_exec, i8080_asm, i8080_mnem, i8080_get_regs, i8080_set_regs},
+	{CPU_I80286,"i80286", i286RegTab, i286_reset, i286_exec, i286_asm, i286_mnem, i286_get_regs, i286_set_regs},
+	{CPU_LR35902, "LR35902", lrRegTab, lr_reset, lr_exec, lr_asm, lr_mnem, lr_get_regs, lr_set_regs},
+	{CPU_6502, "MOS6502", m6502RegTab, m6502_reset, m6502_exec, m6502_asm, m6502_mnem, m6502_get_regs, m6502_set_regs},
+	{CPU_VM1, "1801VM1", pdp11RegTab, pdp11_reset, pdp11_exec, pdp11_asm, pdp11_mnem, pdp11_get_regs, pdp11_set_regs},
+	{CPU_NONE, "none", nil_reg_tab, nil_reset, nil_exec, nil_asm, nil_mnem, nil_get_regs, nil_set_regs}
 };
 
 cpuCore* findCore(int type) {
@@ -76,14 +88,16 @@ const char* getCoreName(int type) {
 
 void cpuSetType(CPU* cpu, int type) {
 	cpuCore* core = findCore(type);
-	cpu->type = core->type;
-	cpu->reset = core->reset;
-	cpu->exec = core->exec;
-	cpu->asmbl = core->asmbl;
-	cpu->mnem = core->mnem;
-	// cpu->tab = core->tab;
-	cpu->getregs = core->getregs;
-	cpu->setregs = core->setregs;
+	if (core != NULL) {
+		cpu->core = core;
+		cpu->type = core->type;
+		cpu->reset = core->reset;
+		cpu->exec = core->exec;
+		cpu->asmbl = core->asmbl;
+		cpu->mnem = core->mnem;
+		cpu->getregs = core->getregs;
+		cpu->setregs = core->setregs;
+	}
 }
 
 CPU* cpuCreate(int type, cbmr fmr, cbmw fmw, cbir fir, cbiw fiw, cbiack frq, cbirq xirq, void* dt) {
@@ -361,8 +375,33 @@ xRegBunch cpuGetRegs(CPU* cpu) {
 }
 
 int cpuGetReg(CPU* cpu, const char* name) {
-	xRegBunch bunch = cpuGetRegs(cpu);
 	int res = -1;
+#if 1
+	xRegDsc* rt = cpu->core->rdsctab;
+	int i = 0;
+	int work = 1;
+	void* ptr;
+	while (work && (rt[i].id != REG_NONE)) {
+		if (!strcmp(name, rt[i].name) && (rt[i].offset != 0)) {
+			work = 0;
+			if (rt[i].type & REG_SEG) {
+				res = ((xSegPtr*)((cpu + rt[i].offset)))->idx & 0xffff;
+			} else {
+				ptr = ((void*)cpu) + rt[i].offset;
+				switch(rt[i].type & REG_TMASK) {
+					// case REG_BIT: res = (*(cpu + rt[i].offset)) & 1; break;
+					case REG_BYTE: res = (*(unsigned char*)ptr) & 0xff; break;
+					case REG_WORD: res = (*(unsigned short*)ptr) & 0xffff; break;
+					case REG_24: res = (*(int*)ptr) & 0xffffff; break;
+					case REG_32: res = (*(int*)ptr) & 0xffffffff; break;
+					default: work = 1; break;
+				}
+			}
+		}
+		i++;
+	}
+#else
+	xRegBunch bunch = cpuGetRegs(cpu);
 	for (int i = 0; (i < 32) && (res == -1); i++) {
 		if (bunch.regs[i].id != REG_NONE) {
 			if (!strcmp(name, bunch.regs[i].name)) {
@@ -370,6 +409,7 @@ int cpuGetReg(CPU* cpu, const char* name) {
 			}
 		}
 	}
+#endif
 	return res;
 }
 

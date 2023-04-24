@@ -289,27 +289,31 @@ xAsmScan z80_asm(const char* cbuf, char* buf) {
 
 // registers
 
-static xRegDsc z80RegTab[] = {
-	{Z80_REG_PC, "PC", REG_WORD},
-	{Z80_REG_AF, "AF", REG_WORD},
-	{Z80_REG_BC, "BC", REG_WORD},
-	{Z80_REG_DE, "DE", REG_WORD},
-	{Z80_REG_HL, "HL", REG_WORD},
+xRegDsc z80RegTab[] = {
+	{Z80_REG_PC, "PC", REG_WORD, offsetof(CPU, pc)},
+	{Z80_REG_AF, "AF", REG_WORD, 0},
+	{Z80_REG_BC, "BC", REG_WORD, offsetof(CPU, bc)},
+	{Z80_REG_DE, "DE", REG_WORD, offsetof(CPU, de)},
+	{Z80_REG_HL, "HL", REG_WORD, offsetof(CPU, hl)},
 
-	{Z80_REG_SP, "SP", REG_WORD},
-	{Z80_REG_AFA, "AF'", REG_WORD},
-	{Z80_REG_BCA, "BC'", REG_WORD},
-	{Z80_REG_DEA, "DE'", REG_WORD},
-	{Z80_REG_HLA, "HL'", REG_WORD},
+	{Z80_REG_SP, "SP", REG_WORD, offsetof(CPU, sp)},
+	{Z80_REG_AFA, "AF'", REG_WORD, 0},
+	{Z80_REG_BCA, "BC'", REG_WORD, offsetof(CPU, bc_)},
+	{Z80_REG_DEA, "DE'", REG_WORD, offsetof(CPU, de_)},
+	{Z80_REG_HLA, "HL'", REG_WORD, offsetof(CPU, hl_)},
 
-	{Z80_REG_IX, "IX", REG_WORD},
-	{Z80_REG_IY, "IY", REG_WORD},
-	{Z80_REG_I, "I", REG_BYTE},
-	{Z80_REG_R, "R", REG_BYTE},
+	{Z80_REG_IX, "IX", REG_WORD, offsetof(CPU, ix)},
+	{Z80_REG_IY, "IY", REG_WORD, offsetof(CPU, iy)},
+	{Z80_REG_I, "I", REG_BYTE, offsetof(CPU, i)},
+	{Z80_REG_R, "R", REG_BYTE, offsetof(CPU, r)},
+	{REG_EMPTY, "A", REG_BYTE, offsetof(CPU, a)},
+	{REG_EMPTY, "F", REG_32, offsetof(CPU, f)},
+	{REG_EMPTY, "A'", REG_BYTE, offsetof(CPU, a_)},
+	{REG_EMPTY, "F'", REG_32, offsetof(CPU, f_)},
 #ifdef ISDEBUG
-	{REG_MPTR, "WZ", REG_WORD},
+	{REG_MPTR, "WZ", REG_WORD, offsetof(CPU, mptr)},
 #endif
-	{REG_NONE, "", 0}
+	{REG_NONE, "", 0, 0}
 };
 
 static char* z80Flags = "SZ5H3PNC";

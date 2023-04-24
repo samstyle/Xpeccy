@@ -30,6 +30,7 @@ typedef struct {
 #define REG_BYTE	8
 #define REG_WORD	16
 #define REG_24		24
+#define REG_32		32
 #define REG_TMASK	0xff
 #define REG_RO		0x100	// protect from changes in debuga
 #define REG_SEG		0x200	// register is segment
@@ -52,6 +53,7 @@ typedef struct {
 	int id;
 	const char* name;
 	int type;
+	size_t offset;		// = offsetof(CPU, <member>), e.g offsetof(CPU, pc)
 } xRegDsc;
 
 // memrq rd
@@ -274,6 +276,8 @@ struct CPU {
 	void (*getregs)(CPU*, xRegBunch*);
 	void (*setregs)(CPU*, xRegBunch);
 
+	struct cpuCore* core;
+
 // temp
 	int t;			// ticks counter
 	unsigned short oldpc;
@@ -285,17 +289,18 @@ struct CPU {
 	int tmpf;
 };
 
-typedef struct {
+struct cpuCore {
 	int type;				// cpu type
 	const char* name;			// printable name
-	opCode* tab;				// start opcode tab;
+	xRegDsc* rdsctab;			// registers descriptors table
 	void (*reset)(CPU*);			// reset
 	int (*exec)(CPU*);			// exec opcode, return T
 	xAsmScan (*asmbl)(const char*, char*);	// compile mnemonic
 	xMnem (*mnem)(CPU*, int, cbdmr, void*);
 	void (*getregs)(CPU*,xRegBunch*);	// get cpu registers: name,id,value
 	void (*setregs)(CPU*,xRegBunch);	// set cpu registers
-} cpuCore;
+};
+typedef struct cpuCore cpuCore;
 
 CPU* cpuCreate(int,cbmr,cbmw,cbir,cbiw,cbiack,cbirq,void*);
 void cpuDestroy(CPU*);

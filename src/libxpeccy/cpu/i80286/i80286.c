@@ -360,25 +360,25 @@ xMnem i286_mnem(CPU* cpu, int sadr, cbdmr mrd, void* data) {
 
 // asm
 
-static xRegDsc i286RegTab[] = {
-	{I286_IP, "IP", REG_WORD},
-	{I286_SP, "SP", REG_WORD},
-	{I286_BP, "BP", REG_WORD},
-	{I286_SI, "SI", REG_WORD},
-	{I286_DI, "DI", REG_WORD},
-	{I286_AX, "AX", REG_WORD},
-	{I286_BX, "BX", REG_WORD},
-	{I286_CX, "CX", REG_WORD},
-	{I286_DX, "DX", REG_WORD},
-	{I286_CS, "CS", REG_WORD|REG_SEG},
-	{I286_SS, "SS", REG_WORD|REG_SEG},
-	{I286_DS, "DS", REG_WORD|REG_SEG},
-	{I286_ES, "ES", REG_WORD|REG_SEG},
-	{I286_MSW, "MSW", REG_RO|REG_WORD},
-	{I286_LDT, "LDT", REG_RO|REG_WORD|REG_SEG},
-	{I286_GDT, "GDT", REG_RO|REG_24},
-	{I286_IDT, "IDT", REG_RO|REG_24|REG_SEG},
-	{REG_NONE, "", 0}
+xRegDsc i286RegTab[] = {
+	{I286_IP, "IP", REG_WORD, offsetof(CPU, pc)},
+	{I286_SP, "SP", REG_WORD, offsetof(CPU, sp)},
+	{I286_BP, "BP", REG_WORD, offsetof(CPU, bp)},
+	{I286_SI, "SI", REG_WORD, offsetof(CPU, si)},
+	{I286_DI, "DI", REG_WORD, offsetof(CPU, di)},
+	{I286_AX, "AX", REG_WORD, offsetof(CPU, ax)},
+	{I286_BX, "BX", REG_WORD, offsetof(CPU, bx)},
+	{I286_CX, "CX", REG_WORD, offsetof(CPU, cx)},
+	{I286_DX, "DX", REG_WORD, offsetof(CPU, dx)},
+	{I286_CS, "CS", REG_WORD|REG_SEG, offsetof(CPU, cs)},
+	{I286_SS, "SS", REG_WORD|REG_SEG, offsetof(CPU, ss)},
+	{I286_DS, "DS", REG_WORD|REG_SEG, offsetof(CPU, ds)},
+	{I286_ES, "ES", REG_WORD|REG_SEG, offsetof(CPU, es)},
+	{I286_MSW, "MSW", REG_RO|REG_WORD, offsetof(CPU, msw)},
+	{I286_LDT, "LDT", REG_RO|REG_WORD|REG_SEG, offsetof(CPU, ldtr)},
+	{I286_GDT, "GDT", REG_RO|REG_24, offsetof(CPU, gdtr)},
+	{I286_IDT, "IDT", REG_RO|REG_24|REG_SEG, offsetof(CPU, idtr)},
+	{REG_NONE, "", 0, 0}
 };
 
 xAsmScan i286_asm(const char* mnm, char* buf) {

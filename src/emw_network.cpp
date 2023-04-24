@@ -50,10 +50,10 @@ void MainWin::socketRead() {
 	QTcpSocket* sock = (QTcpSocket*)sender();
 	QByteArray arr = sock->readAll();
 	QString com(arr);
-	QString str;
 	com = com.remove("\n");
 	com = com.remove("\r");
 	QStringList prm = com.split(" ",X_SkipEmptyParts);
+	com = prm[0];
 	xMnem mnm;
 	int adr, cnt, val;
 	// and do something with this
@@ -76,12 +76,18 @@ void MainWin::socketRead() {
 	} else if (com == "cpu") {
 		sock->write(getCoreName(comp->cpu->type));
 		sock->write("\n");
+	} else if (com == "reg") {
+		if (prm.size() > 1) {
+			val = cpuGetReg(comp->cpu, prm[1].toUpper().toLocal8Bit().data());
+			sock->write(QString::number(val, 16).toUpper().toUtf8());
+			sock->write("\r\n");
+		}
 	} else if (com == "cpuregs") {
 		xRegBunch rb = cpuGetRegs(comp->cpu);
 		xRegister reg;
 		for (cnt = 0; cnt < 32; cnt++) {
 			reg = rb.regs[cnt];
-			if (reg.id != REG_NONE) {
+			if ((reg.id != REG_NONE) && (reg.id != REG_EMPTY)) {
 				sock->write(reg.name);
 				sock->write(" : ");
 				switch(reg.type & REG_TMASK) {
@@ -89,29 +95,30 @@ void MainWin::socketRead() {
 					case REG_BYTE: sock->write(gethexbyte(reg.value).toUtf8()); break;
 					case REG_WORD: sock->write(gethexword(reg.value).toUtf8()); break;
 					case REG_24: sock->write(gethex6(reg.value).toUtf8()); break;
+					case REG_32: sock->write(gethexint(reg.value).toUtf8()); break;
 					default: sock->write("??"); break;
 				}
 				sock->write("\r\n");
 			}
 		}
-
-	} else if (com.startsWith("load ")) {
-		str = com.mid(5);
-		load_file(comp, str.toLocal8Bit().data(), FG_ALL, 0);
-	} else if (com.startsWith("poke ") || com.startsWith("memwr ")) {
+	} else if (com == "load") {
+		if (prm.size() > 1) {
+			load_file(comp, prm[1].toLocal8Bit().data(), FG_ALL, 0);
+		}
+	} else if ((com == "poke") || (com == "memwr")) {
 		if (prm.size() > 2) {
 			adr = str_to_adr(comp, prm[1]);
 			val = str_to_adr(comp, prm[2]);
 			comp->hw->mwr(comp, adr, val & 0xff);
 		}
-	} else if (com.startsWith("pokew ") || com.startsWith("memwrw ")) {
+	} else if ((com == "pokew") || (com == "memwrw")) {
 		if (prm.size() > 2) {
 			adr = str_to_adr(comp, prm[1]);
 			val = str_to_adr(comp, prm[2]);
 			comp->hw->mwr(comp, adr, val & 0xff);
 			comp->hw->mwr(comp, adr+1, (val >> 8) & 0xff);
 		}
-	} else if (com.startsWith("memfill ")) {
+	} else if (com == "memfill") {
 		if (prm.size() > 3) {
 			adr = str_to_adr(comp, prm[1]);
 			cnt = str_to_adr(comp, prm[2]);
@@ -122,7 +129,7 @@ void MainWin::socketRead() {
 				cnt--;
 			}
 		}
-	} else if (com.startsWith("memcopy ")) {
+	} else if (com == "memcopy") {
 		if (prm.size() > 3) {
 			adr = str_to_adr(comp, prm[1]);
 			cnt = str_to_adr(comp, prm[2]);
@@ -139,7 +146,7 @@ void MainWin::socketRead() {
 				cnt--;
 			}
 		}
-	} else if (com.startsWith("disasm ")) {
+	} else if (com == "disasm") {
 		if (prm.size() > 1) {
 			adr = str_to_adr(comp, prm[1]);
 			cnt = (prm.size() > 2) ? prm[2].toInt() : 1;
@@ -154,7 +161,7 @@ void MainWin::socketRead() {
 				cnt--;
 			}
 		}
-	} else if (com.startsWith("dump ")) {
+	} else if (com == "dump") {
 		if (prm.size() > 1) {
 			adr = str_to_adr(comp, prm[1]);
 			if (prm.size() > 2) {

@@ -108,14 +108,14 @@ xAsmScan m6502_asm(const char* cbuf, char* buf) {
 	return res;
 }
 
-static xRegDsc m6502RegTab[] = {
-	{M6502_REG_PC, "PC", REG_WORD},
-	{M6502_REG_A, "A", REG_BYTE},
-	{M6502_REG_X, "X", REG_BYTE},
-	{M6502_REG_Y, "Y", REG_BYTE},
-	{M6502_REG_S, "S", REG_BYTE},
-	{M6502_REG_F, "P", REG_BYTE},
-	{REG_NONE, "", 0}
+xRegDsc m6502RegTab[] = {
+	{M6502_REG_PC, "PC", REG_WORD, offsetof(CPU, pc)},
+	{M6502_REG_A, "A", REG_BYTE, offsetof(CPU, a)},
+	{M6502_REG_X, "X", REG_BYTE, offsetof(CPU, lx)},
+	{M6502_REG_Y, "Y", REG_BYTE, offsetof(CPU, ly)},
+	{M6502_REG_S, "S", REG_BYTE, offsetof(CPU, lsp)},
+	{M6502_REG_F, "P", REG_32, offsetof(CPU, f)},
+	{REG_NONE, "", 0, 0}
 };
 
 static char* mosFlags = "NV-BDIZC";

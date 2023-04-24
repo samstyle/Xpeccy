@@ -226,7 +226,6 @@ MainWin::MainWin() {
 	// ...
 #endif
 #endif
-	disconnect(this, SIGNAL(resized()));
 	qDebug() << "end:constructor";
 }
 

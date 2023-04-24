@@ -175,14 +175,16 @@ xMnem lr_mnem(CPU* cpu, int qadr, cbdmr mrd, void* data) {
 
 // registers
 
-static xRegDsc lrRegTab[] = {
-	{LR_REG_PC, "PC", REG_WORD},
-	{LR_REG_AF, "AF", REG_WORD},
-	{LR_REG_BC, "BC", REG_WORD},
-	{LR_REG_DE, "DE", REG_WORD},
-	{LR_REG_HL, "HL", REG_WORD},
-	{LR_REG_SP, "SP", REG_WORD},
-	{REG_NONE, "", 0}
+xRegDsc lrRegTab[] = {
+	{LR_REG_PC, "PC", REG_WORD, offsetof(CPU, pc)},
+	{LR_REG_AF, "AF", REG_WORD, 0},
+	{LR_REG_BC, "BC", REG_WORD, offsetof(CPU, bc)},
+	{LR_REG_DE, "DE", REG_WORD, offsetof(CPU, de)},
+	{LR_REG_HL, "HL", REG_WORD, offsetof(CPU, hl)},
+	{LR_REG_SP, "SP", REG_WORD, offsetof(CPU, sp)},
+	{REG_EMPTY, "A", REG_BYTE, offsetof(CPU, a)},
+	{REG_EMPTY, "F", REG_32, offsetof(CPU, f)},
+	{REG_NONE, "", 0, 0}
 };
 
 static char* lrFlags = "ZNHC----";
