@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #ifdef __cplusplus
 extern "C" {
@@ -317,7 +317,8 @@ xAsmScan scanAsmTab(const char*, opCode*);
 
 xRegBunch cpuGetRegs(CPU*);
 void cpuSetRegs(CPU*, xRegBunch);
-int cpuGetReg(CPU*, const char*);
+int cpu_get_reg(CPU*, const char*);
+void cpu_set_reg(CPU*, const char*, int);
 
 int parity(int);
 

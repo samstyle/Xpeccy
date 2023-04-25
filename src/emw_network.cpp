@@ -76,11 +76,15 @@ void MainWin::socketRead() {
 	} else if (com == "cpu") {
 		sock->write(getCoreName(comp->cpu->type));
 		sock->write("\n");
-	} else if (com == "reg") {
+	} else if (com == "getreg") {
 		if (prm.size() > 1) {
-			val = cpuGetReg(comp->cpu, prm[1].toUpper().toLocal8Bit().data());
+			val = cpu_get_reg(comp->cpu, prm[1].toUpper().toLocal8Bit().data());
 			sock->write(QString::number(val, 16).toUpper().toUtf8());
 			sock->write("\r\n");
+		}
+	} else if (com == "setreg") {
+		if (prm.size() > 2) {
+			cpu_set_reg(comp->cpu, prm[1].toUpper().toLocal8Bit().data(), str_to_adr(comp, prm[2]));
 		}
 	} else if (com == "cpuregs") {
 		xRegBunch rb = cpuGetRegs(comp->cpu);

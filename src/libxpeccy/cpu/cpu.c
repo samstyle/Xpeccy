@@ -374,7 +374,7 @@ xRegBunch cpuGetRegs(CPU* cpu) {
 	return bunch;
 }
 
-int cpuGetReg(CPU* cpu, const char* name) {
+int cpu_get_reg(CPU* cpu, const char* name) {
 	int res = -1;
 #if 1
 	xRegDsc* rt = cpu->core->rdsctab;
@@ -411,6 +411,27 @@ int cpuGetReg(CPU* cpu, const char* name) {
 	}
 #endif
 	return res;
+}
+
+void cpu_set_reg(CPU* cpu, const char* name, int val) {
+	int i = 0;
+	int work = 1;
+	void* ptr;
+	xRegDsc* rt = cpu->core->rdsctab;
+	while (work && (rt[i].id != REG_NONE)) {
+		if (!strcmp(name, rt[i].name) && (rt[i].offset != 0) && !(rt[i].type & REG_SEG)) {
+			ptr = ((void*)cpu) + rt[i].offset;
+			work = 0;
+			switch(rt[i].type & REG_TMASK) {
+				case REG_BYTE: *(unsigned char*)ptr = val & 0xff; break;
+				case REG_WORD: *(unsigned short*)ptr = val & 0xffff; break;
+				case REG_24: *(int*)ptr = val & 0xffffff; break;
+				case REG_32: *(int*)ptr = val & 0xffffffff; break;
+				default: work = 1; break;
+			}
+		}
+		i++;
+	}
 }
 
 void cpuSetRegs(CPU* cpu, xRegBunch bunch) {
