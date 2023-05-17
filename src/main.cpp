@@ -108,6 +108,9 @@ int main(int ac,char** av) {
 //	}
 
 	loadConfig();
+	mwin.onPrfChange();
+	dbgw.onPrfChange();
+
 	dbgw.setFont(conf.dbg.font);
 
 	mwin.loadShader();
@@ -128,7 +131,7 @@ int main(int ac,char** av) {
 
 	app.connect(&mwin, SIGNAL(s_debug(Computer*)), &dbgw, SLOT(start(Computer*)));
 	app.connect(&mwin, SIGNAL(s_debug_off()), &dbgw, SLOT(close()));
-	app.connect(&mwin, SIGNAL(s_prf_change(xProfile*)), &dbgw, SLOT(onPrfChange(xProfile*)));
+//	app.connect(&mwin, SIGNAL(s_prf_change(xProfile*)), &dbgw, SLOT(onPrfChange(xProfile*)));
 	app.connect(&mwin, SIGNAL(s_step()), &dbgw, SLOT(doStep()));
 	app.connect(&mwin, SIGNAL(s_scradr(int,int)), &dbgw, SLOT(setScrAtr(int,int)));
 
@@ -136,7 +139,8 @@ int main(int ac,char** av) {
 	app.connect(&mwin, SIGNAL(s_gamepad_plug()), &optw, SLOT(setPadName()));
 	app.connect(&optw, SIGNAL(closed()), &mwin, SLOT(optApply()));
 	app.connect(&optw, SIGNAL(s_apply()), &dbgw, SLOT(chaPal()));
-	app.connect(&optw, SIGNAL(s_prf_change(std::string)), &mwin, SLOT(setProfile(std::string)));
+	app.connect(&optw, SIGNAL(s_prf_changed()), &mwin, SLOT(onPrfChange()));
+	app.connect(&optw, SIGNAL(s_prf_changed()), &dbgw, SLOT(onPrfChange()));
 
 	app.connect(&mwin, SIGNAL(s_tape_upd(Tape*)), &tapw, SLOT(upd(Tape*)));
 	app.connect(&mwin, SIGNAL(s_tape_blk(Tape*)), &tapw, SLOT(updList(Tape*)));
@@ -162,7 +166,7 @@ int main(int ac,char** av) {
 	int i = 1;
 	char* parg;
 	int adr = 0x4000;
-	mwin.setProfile("");
+
 	int dbg = 0;
 	int hlp = 0;
 	int drv = 0;
@@ -196,7 +200,10 @@ int main(int ac,char** av) {
 #endif
 		} else if (i < ac) {
 			if (!strcmp(parg,"-p") || !strcmp(parg,"--profile")) {
-				mwin.setProfile(std::string(av[i]));
+				prfSetCurrent(av[i]);
+				mwin.onPrfChange();
+				dbgw.onPrfChange();
+				//mwin.setProfile(std::string(av[i]));
 				i++;
 			} else if (!strcmp(parg,"--pc")) {
 				mwin.comp->cpu->pc = strtol(av[i],NULL,0) & 0xffff;
@@ -275,6 +282,7 @@ int main(int ac,char** av) {
 	}
 #endif
 	if (!hlp) {
+//		mwin.blockSignals(true);
 		mwin.show();		// causes an exception on resizeEvent -> emit resized()
 		mwin.raise();
 		mwin.activateWindow();
@@ -284,6 +292,7 @@ int main(int ac,char** av) {
 		conf.running = 1;
 		ethread.start();
 		if (!lab) shitHappens("Can't open labels file");
+//		mwin.blockSignals(false);
 		app.exec();
 		ethread.stop();
 		ethread.wait();

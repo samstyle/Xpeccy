@@ -96,7 +96,7 @@ void conf_init(char* wpath, char* confdir) {
 	conf.emu.pause = 0;
 	conf.emu.fast = 0;
 	conf.joy.dead = 8192;
-	conf.prof.changed = 0;
+//	conf.prof.changed = 0;
 	addProfile("default","xpeccy.conf");
 }
 
@@ -537,7 +537,7 @@ void loadConfig() {
 		}
 	} else {
 		if (!prfSetCurrent(pnm.c_str())) {
-			printf("Cannot set profile '%s', default will be used\n",pnm.c_str());
+			printf("Can't set profile '%s', default will be used\n",pnm.c_str());
 			if (!prfSetCurrent("default")) {
 				printf("...and default too? Really, shit happens\n");
 				throw(0);

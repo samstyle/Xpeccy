@@ -5,6 +5,7 @@ extern "C" {
 #endif
 
 #include <stddef.h>
+#include <stdbool.h>
 
 #include "../defines.h"
 
@@ -317,8 +318,8 @@ xAsmScan scanAsmTab(const char*, opCode*);
 
 xRegBunch cpuGetRegs(CPU*);
 void cpuSetRegs(CPU*, xRegBunch);
-int cpu_get_reg(CPU*, const char*);
-void cpu_set_reg(CPU*, const char*, int);
+int cpu_get_reg(CPU*, const char*, bool*);
+bool cpu_set_reg(CPU*, const char*, int);
 
 int parity(int);
 

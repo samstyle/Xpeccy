@@ -237,7 +237,7 @@ opCode i286_0f_tab[256] = {
 	{OF_PRT | OF_WORD, 1, i286_0F02, 0, "lar :r,:e"},	// lar rw,ew
 	{OF_PRT | OF_WORD, 1, i286_0F03, 0, "lsl :r,:e"},	// lsl rw,ew
 	{0, 1, i286_0Fxx, 0, "undef"},
-	{0, 1, i286_0Fxx, 0, "undef"},
+	{0, 1, i286_0Fxx, 0, "undef"},				// (?) loadall
 	{0, 1, i286_0F06, 0, "clts"},				// clts
 	{0, 1, i286_0Fxx, 0, "undef"},
 	{0, 1, i286_0Fxx, 0, "undef"},

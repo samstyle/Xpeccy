@@ -55,6 +55,7 @@ void MainWin::socketRead() {
 	QStringList prm = com.split(" ",X_SkipEmptyParts);
 	com = prm[0];
 	xMnem mnm;
+	bool f;
 	int adr, cnt, val;
 	// and do something with this
 	if ((com == "debug") || (com == "dbg")) {
@@ -78,13 +79,18 @@ void MainWin::socketRead() {
 		sock->write("\n");
 	} else if (com == "getreg") {
 		if (prm.size() > 1) {
-			val = cpu_get_reg(comp->cpu, prm[1].toUpper().toLocal8Bit().data());
-			sock->write(QString::number(val, 16).toUpper().toUtf8());
-			sock->write("\r\n");
+			val = cpu_get_reg(comp->cpu, prm[1].toUpper().toLocal8Bit().data(), &f);
+			if (f) {
+				sock->write(QString::number(val, 16).toUpper().toUtf8());
+				sock->write("\r\n");
+			} else {
+				sock->write("Wrong register name\r\n");
+			}
 		}
 	} else if (com == "setreg") {
 		if (prm.size() > 2) {
-			cpu_set_reg(comp->cpu, prm[1].toUpper().toLocal8Bit().data(), str_to_adr(comp, prm[2]));
+			if (!cpu_set_reg(comp->cpu, prm[1].toUpper().toLocal8Bit().data(), str_to_adr(comp, prm[2])))
+				sock->write("Wrong register name\r\n");
 		}
 	} else if (com == "cpuregs") {
 		xRegBunch rb = cpuGetRegs(comp->cpu);

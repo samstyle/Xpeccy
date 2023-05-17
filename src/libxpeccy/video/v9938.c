@@ -904,7 +904,7 @@ void vdpRegWr(Video* vid, int reg, unsigned char val) {
 			break;
 		case 0x08: break;						// mode reg 2
 		case 0x09: vid->scrn.y = (val & 0x80) ? 212 : 192;		// mode reg 3
-			vidUpdateLayout(vid);
+			vid_upd_layout(vid);
 			break;
 			// address registers
 		case 0x02:

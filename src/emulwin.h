@@ -32,13 +32,13 @@ typedef struct {
 // QOpenGLWidget since Qt5.4
 
 #define BLOCKGL 0
-#define USELEGACYGL 1
-#define ISLEGACY ((QT_VERSION < QT_VERSION_CHECK(5,4,0)) || (USELEGACYGL && (QT_VERSION < QT_VERSION_CHECK(6,0,0))))
+#define USELEGACYGL 0
+#define ISLEGACYGL ((QT_VERSION < QT_VERSION_CHECK(5,4,0)) || (USELEGACYGL && (QT_VERSION < QT_VERSION_CHECK(6,0,0))))
 
 #ifdef USEOPENGL
 	#include <QtOpenGL>
 
-	#if ISLEGACY
+	#if ISLEGACYGL
 		class MainWin : public QGLWidget {
 	#else
 		#include <QOpenGLWidget>
@@ -59,7 +59,7 @@ typedef struct {
 		void s_options(xProfile*);
 		void s_debug(Computer*);
 		void s_debug_off();
-		void s_prf_change(xProfile*);
+		// void s_prf_change(xProfile*);
 		void s_gamepad_plug();
 		void s_scradr(int, int);
 
@@ -88,7 +88,7 @@ typedef struct {
 		void updateWindow();
 		void pause(bool, int);
 		void tapStateChanged(int,int);
-		void setProfile(std::string);
+		void onPrfChange();
 		void kPress(QKeyEvent*);
 		void kRelease(QKeyEvent*);
 		void loadShader();
@@ -196,7 +196,7 @@ typedef struct {
 		QList<GLuint> queue;
 		void initializeGL();
 		void resizeGL(int,int);
-#if ISLEGACY
+#if ISLEGACYGL
 		QGLContext* cont;
 		QGLShaderProgram prg;
 		QGLShader* vtx_shd;

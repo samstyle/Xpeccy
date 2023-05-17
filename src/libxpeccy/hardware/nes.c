@@ -275,10 +275,10 @@ void nes_init(Computer* comp) {
 			comp->cpuFrq = 1.66;
 			//perNoTurbo = 1e3 / comp->cpuFrq;		// ~601
 			perNoTurbo = 592;		// 1.6(891)MHz
-			vidSetLayout(comp->vid, &nesPALLay);
+			vid_set_layout(comp->vid, &nesPALLay);
 			comp->vid->vbsline = 240;
 			comp->vid->vbrline = 311;
-			vidUpdateTimings(comp->vid, perNoTurbo / 3.2);		// 16 ticks = 5 dots
+			vid_upd_timings(comp->vid, perNoTurbo / 3.2);		// 16 ticks = 5 dots
 			//vidUpdateTimings(comp->vid, 185);
 			comp->nesapu->wdiv = 3107;		// 5/6 = 3107? or 166/179 = 3458
 			break;
@@ -287,10 +287,10 @@ void nes_init(Computer* comp) {
 			comp->cpuFrq = 1.79;
 			//perNoTurbo = 1e3 / comp->cpuFrq;		// ~559
 			perNoTurbo = 555;		// 1.8(018) MHz
-			vidSetLayout(comp->vid, &nesNTSCLay);
+			vid_set_layout(comp->vid, &nesNTSCLay);
 			comp->vid->vbsline = 241;
 			comp->vid->vbrline = 261;
-			vidUpdateTimings(comp->vid, perNoTurbo / 3);		// 15 ticks = 5 dots
+			vid_upd_timings(comp->vid, perNoTurbo / 3);		// 15 ticks = 5 dots
 			//vidUpdateTimings(comp->vid, 185);
 			comp->nesapu->wdiv = 3729;
 			comp->vid->ntsc = 1;
@@ -300,10 +300,10 @@ void nes_init(Computer* comp) {
 			comp->cpuFrq = 1.77;
 			//perNoTurbo = 1e3 / comp->cpuFrq;
 			perNoTurbo = 555;
-			vidSetLayout(comp->vid, &nesPALLay);
+			vid_set_layout(comp->vid, &nesPALLay);
 			comp->vid->vbsline = 291;
 			comp->vid->vbrline = 311;
-			vidUpdateTimings(comp->vid, perNoTurbo / 3);
+			vid_upd_timings(comp->vid, perNoTurbo / 3);
 			//vidUpdateTimings(comp->vid, 185);
 			comp->nesapu->wdiv = 3729;
 			break;

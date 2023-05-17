@@ -113,19 +113,19 @@ void DebugWin::start(Computer* c) {
 	}
 	blockStart = -1;
 	blockEnd = -1;
+	comp = c;
+	if (comp->hw->grp != tabMode) {
+		onPrfChange();		// update tabs
+	}
 	save_mem_map();
 	chLayout();
 	if (!comp->vid->tail)
-		vidDarkTail(comp->vid);
+		vid_dark_tail(comp->vid);
 
 	this->move(conf.dbg.pos);
 	comp->vid->debug = 1;
 	comp->debug = 1;
 	comp->brk = 0;
-
-	if (comp->hw->grp != tabMode) {
-		onPrfChange(conf.prof.cur);		// update tabs
-	}
 
 	brk_clear_tmp(comp);		// clear temp breakpoints
 
@@ -171,8 +171,8 @@ void DebugWin::resetTCount() {
 	}
 }
 
-void DebugWin::onPrfChange(xProfile* prf) {
-	if (!prf) prf = conf.prof.cur;
+void DebugWin::onPrfChange() {
+	xProfile* prf = conf.prof.cur;
 	if (!prf) return;
 	comp = prf->zx;
 	save_mem_map();
@@ -2146,7 +2146,7 @@ void DebugWin::updateScreen() {
 	int flag = ui.cbScrAtr->isChecked() ? 1 : 0;
 	flag |= ui.cbScrPix->isChecked() ? 2 : 0;
 	flag |= ui.cbScrGrid->isChecked() ? 4 : 0;
-	vidGetScreen(comp->vid, scrImg.bits(), ui.sbScrBank->value(), ui.leScrAdr->getValue(), flag);
+	vid_get_screen(comp->vid, scrImg.bits(), ui.sbScrBank->value(), ui.leScrAdr->getValue(), flag);
 	xColor bcol;// = comp->vid->pal[comp->vid->nextbrd];
 	bcol.b = (comp->vid->nextbrd & 1) ? ((comp->vid->nextbrd & 8) ? 0xff : 0xa0) : 0x00;
 	bcol.r = (comp->vid->nextbrd & 2) ? ((comp->vid->nextbrd & 8) ? 0xff : 0xa0) : 0x00;

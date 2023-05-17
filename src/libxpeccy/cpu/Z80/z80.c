@@ -359,33 +359,35 @@ void z80_get_regs(CPU* cpu, xRegBunch* bunch) {
 
 void z80_set_regs(CPU* cpu, xRegBunch bunch) {
 	int idx;
+	xRegister* rd;
 	PAIR(w,h,l)rx;
 	for (idx = 0; idx < 32; idx++) {
-		switch(bunch.regs[idx].id) {
-			case Z80_REG_PC: cpu->pc = bunch.regs[idx].value; break;
-			case Z80_REG_SP: cpu->sp = bunch.regs[idx].value; break;
-			case Z80_REG_AF: rx.w = bunch.regs[idx].value;
+		rd = &bunch.regs[idx];
+		switch(rd->id) {
+			case Z80_REG_PC: cpu->pc = rd->value; break;
+			case Z80_REG_SP: cpu->sp = rd->value; break;
+			case Z80_REG_AF: rx.w = rd->value;
 					cpu->a = rx.h;
 					cpu->f = rx.l;
 					break;
-			case Z80_REG_BC: cpu->bc = bunch.regs[idx].value; break;
-			case Z80_REG_DE: cpu->de = bunch.regs[idx].value; break;
-			case Z80_REG_HL: cpu->hl = bunch.regs[idx].value; break;
-			case Z80_REG_AFA: rx.w = bunch.regs[idx].value;
+			case Z80_REG_BC: cpu->bc = rd->value; break;
+			case Z80_REG_DE: cpu->de = rd->value; break;
+			case Z80_REG_HL: cpu->hl = rd->value; break;
+			case Z80_REG_AFA: rx.w = rd->value;
 					cpu->a_ = rx.h;
 					cpu->f_ = rx.l;
 					break;
-			case Z80_REG_BCA: cpu->bc_ = bunch.regs[idx].value; break;
-			case Z80_REG_DEA: cpu->de_ = bunch.regs[idx].value; break;
-			case Z80_REG_HLA: cpu->hl_ = bunch.regs[idx].value; break;
-			case Z80_REG_IX: cpu->ix = bunch.regs[idx].value; break;
-			case Z80_REG_IY: cpu->iy = bunch.regs[idx].value; break;
-			case Z80_REG_I: cpu->i = bunch.regs[idx].value & 0xff; break;
+			case Z80_REG_BCA: cpu->bc_ = rd->value; break;
+			case Z80_REG_DEA: cpu->de_ = rd->value; break;
+			case Z80_REG_HLA: cpu->hl_ = rd->value; break;
+			case Z80_REG_IX: cpu->ix = rd->value; break;
+			case Z80_REG_IY: cpu->iy = rd->value; break;
+			case Z80_REG_I: cpu->i = rd->value & 0xff; break;
 			case Z80_REG_R:
-				cpu->r = bunch.regs[idx].value;
-				cpu->r7 = bunch.regs[idx].value & 0x80;
+				cpu->r = rd->value;
+				cpu->r7 = rd->value & 0x80;
 				break;
-			case REG_MPTR: cpu->mptr = bunch.regs[idx].value; break;
+			case REG_MPTR: cpu->mptr = rd->value; break;
 			case REG_NONE: idx = 100; break;
 		}
 	}

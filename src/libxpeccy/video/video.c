@@ -34,7 +34,6 @@ int topSkip = 0;
 int botSkip = 0;
 
 unsigned char pscr[SCRBUF_SIZE];		// previous screen (raw)
-static unsigned char* pptr = pscr;
 static xColor xcol;
 
 #if !defined(USEOPENGL)
@@ -194,7 +193,6 @@ void vid_frame(Video* vid) {
 	if (lefSkip > 0)
 		vid_fill_black(vid->ray.lptr, lefSkip);
 	vid->ray.ptr = vid->ray.lptr + lefSkip;
-	pptr = pscr;				// previous screen ptr
 	vid->newFrame = 1;
 }
 
@@ -209,12 +207,12 @@ Video* vidCreate(cbxrd cb, cbirq ci, void* dptr) {
 	vid->res.y = -1;
 	vid_set_mode(vid, VID_UNKNOWN);
 	vLayout vlay = {{448,320},{74,48},{64,32},{256,192},{0,0},64};
-	vidSetLayout(vid, &vlay);
+	vid_set_layout(vid, &vlay);
 	vid->inten = 0x01;		// FRAME INT for all
 
 	vid->ula = ula_create();
 
-	vidSetBorder(vid, 0.5);
+	vid_set_border(vid, 0.5);
 
 	vid->brdstep = 1;
 	vid->nextbrd = 0;
@@ -237,7 +235,7 @@ void vidDestroy(Video* vid) {
 	free(vid);
 }
 
-void vidUpdateTimings(Video* vid, int nspd) {
+void vid_upd_timings(Video* vid, int nspd) {
 	vid->nsPerDot = nspd;
 	vid->nsPerLine = vid->nsPerDot * vid->full.x;
 	vid->nsPerFrame = vid->nsPerLine * vid->full.y;
@@ -247,7 +245,7 @@ void vidUpdateTimings(Video* vid, int nspd) {
 }
 
 // TODO: for zx only?
-void vidReset(Video* vid) {
+void vid_reset(Video* vid) {
 	int i;
 	for (i = 0; i<16; i++) {
 		xcol.b = (i & 1) ? ((i & 8) ? 0xff : 0xa0) : 0x00;
@@ -263,6 +261,7 @@ void vidReset(Video* vid) {
 
 // move ray to 1 dot before INT
 void vid_reset_ray(Video* vid) {
+/*
 	vid->ray.x = vid->intp.x - 1;
 	vid->ray.y = vid->intp.y;
 	if (vid->ray.x < 0) {
@@ -271,6 +270,8 @@ void vid_reset_ray(Video* vid) {
 		if (vid->ray.y < 0)
 			vid->ray.y += vid->full.y;
 	}
+*/
+	vid_set_ray(vid, -1);
 }
 
 void vid_set_ray(Video* vid, int dots) {
@@ -286,7 +287,7 @@ void vid_set_ray(Video* vid, int dots) {
 // [ bord ][ scr ][ ? ][ blank ]
 // [ <--------- full --------> ]
 // ? = brdr = full - bord - scr - blank
-void vidUpdateLayout(Video* vid) {
+void vid_upd_layout(Video* vid) {
 	vCoord brdr;	// size of right/bottom border parts
 	vid->vend.x = vid->full.x - vid->blank.x;		// visible right dot
 	vid->vend.y = vid->full.y - vid->blank.y;		// visible bottom line
@@ -300,12 +301,12 @@ void vidUpdateLayout(Video* vid) {
 	vid->vsze.y = vid->rcut.y - vid->lcut.y;
 	vid->send.x = vid->bord.x + vid->scrn.x;		// screen end column
 	vid->send.y = vid->bord.y + vid->scrn.y;		// screen end line
-	vid->vBytes = vid->vsze.x * vid->vsze.y * 6;		// real size of image buffer (3 bytes/dot x2:x1)
+	vid->vBytes = vid->vsze.x * vid->vsze.y * 8;		// real size of image buffer (4 bytes/dot x2:x1)
 	vid->dotPerFrame = vid->full.y * vid->full.x;
-	vidUpdateTimings(vid, vid->nsPerDot);
+	vid_upd_timings(vid, vid->nsPerDot);
 }
 
-void vidSetLayout(Video* vid, vLayout* lay) {
+void vid_set_layout(Video* vid, vLayout* lay) {
 	vid->full = lay->full;
 	vid->bord = lay->bord;
 	vid->blank = lay->blank;
@@ -313,7 +314,7 @@ void vidSetLayout(Video* vid, vLayout* lay) {
 	vid->intp = lay->intpos;
 	vid->intsize = lay->intSize;
 	vid->frmsz = lay->full.x * lay->full.y;
-	vidUpdateLayout(vid);
+	vid_upd_layout(vid);
 }
 
 // set visible area size
@@ -326,15 +327,15 @@ void vid_set_resolution(Video* vid, int w, int h) {
 	vid->scrn = vid->res;
 	vid->blank.y = vid->full.y - h;
 	vid->blank.x = vid->full.x - w;
-	vidUpdateLayout(vid);
+	vid_upd_layout(vid);
 	vid->upd = 1;
 }
 
-void vidSetBorder(Video* vid, double brd) {
+void vid_set_border(Video* vid, double brd) {
 	if (brd < 0.0) brd = 0.0;
 	else if (brd > 1.0) brd = 1.0;
 	vid->brdsize = brd;
-	vidUpdateLayout(vid);
+	vid_upd_layout(vid);
 }
 
 static int xscr = 0;
@@ -347,7 +348,7 @@ static unsigned char scrbyte = 0;
 static unsigned char nxtbyte = 0;
 static unsigned char nxtatr = 0;
 
-void vidDarkTail(Video* vid) {
+void vid_dark_tail(Video* vid) {
 	if (vid->tail) return;				// no filling while current fill is active (till end of frame)
 	unsigned char* ptr = vid->ray.ptr;		// fill current line till EOL
 	unsigned char* zptr = bufimg + (vid->ray.ptr - scrimg); // ptr to prev.frame (place is same as ray at cur.frame)
@@ -394,7 +395,7 @@ void vid_dark_all() {
 //const unsigned char emptyBox[8] = {0x81,0x00,0x00,0x00,0x00,0x00,0x00,0x81};
 static unsigned char emptyBox[8] = {0x00,0x00,0x00,0x18,0x18,0x00,0x00,0x00};
 
-void vidGetScreen(Video* vid, unsigned char* dst, int bank, int shift, int flag) {
+void vid_get_screen(Video* vid, unsigned char* dst, int bank, int shift, int flag) {
 	if ((bank == 0xff) && (shift > 0x2800)) shift = 0x2800;
 	int pixadr = MADR(bank, shift);
 	int atradr = pixadr + 0x1800;
@@ -1027,7 +1028,7 @@ void vid_tick(Video* vid) {
 	if (vid->intf > 0) vid->intf--;
 }
 
-void vidSync(Video* vid, int ns) {
+void vid_sync(Video* vid, int ns) {
 	vid->nsDraw += ns;
 	while (vid->nsDraw >= vid->nsPerDot) {
 		vid->nsDraw -= vid->nsPerDot;

@@ -74,13 +74,13 @@ void zx_cont_delay(Computer* comp) {
 		wns -= comp->nsPerTick;
 		tns += comp->nsPerTick;
 	}
-	vidSync(comp->vid, tns);
+	vid_sync(comp->vid, tns);
 	res4 = comp->cpu->t;
 }
 
 void zx_free_ticks(Computer* comp, int t) {
 	comp->cpu->t += t;
-	vidSync(comp->vid, t * comp->nsPerTick);
+	vid_sync(comp->vid, t * comp->nsPerTick);
 	res4 = comp->cpu->t;
 }
 
@@ -145,7 +145,7 @@ int iord(int port, void* ptr) {
 			zx_cont_t1(comp, port);
 			zx_cont_tn(comp, port);
 		} else {
-			vidSync(comp->vid,(comp->cpu->t + 3 - res4) * comp->nsPerTick);
+			vid_sync(comp->vid,(comp->cpu->t + 3 - res4) * comp->nsPerTick);
 			res4 = comp->cpu->t + 3;
 		}
 	}
@@ -178,7 +178,7 @@ void iowr(int port, int val, void* ptr) {
 	comp->bdiz = (comp->dos && (comp->dif->type == DIF_BDI)) ? 1 : 0;
 	if (comp->hw->grp == HWG_ZX) {
 		// sync video to current T
-		vidSync(comp->vid, (comp->cpu->t - res4) * comp->nsPerTick);
+		vid_sync(comp->vid, (comp->cpu->t - res4) * comp->nsPerTick);
 		res4 = comp->cpu->t;
 		if (comp->contIO) {
 			zx_cont_t1(comp, port);
@@ -186,7 +186,7 @@ void iowr(int port, int val, void* ptr) {
 			zx_cont_tn(comp, port);
 			comp->cpu->t -= 4;
 		} else {
-			vidSync(comp->vid, comp->nsPerTick);
+			vid_sync(comp->vid, comp->nsPerTick);
 			res4++;
 			comp->hw->out(comp, port, val);
 		}
@@ -388,7 +388,7 @@ void compReset(Computer* comp,int res) {
 	kbdSetMode(comp->keyb, KBD_SPECTRUM);
 	ps2c_reset(comp->ps2c);
 
-	vidReset(comp->vid);
+	vid_reset(comp->vid);
 	comp->ext = 0;
 	comp->prt2 = 0;
 	comp->p1FFD = 0;
@@ -435,7 +435,7 @@ void compSetTurbo(Computer* comp, double mult) {
 void comp_set_layout(Computer* comp, vLayout* lay) {
 	if (comp->hw->lay)
 		lay = comp->hw->lay;
-	vidSetLayout(comp->vid, lay);
+	vid_set_layout(comp->vid, lay);
 }
 
 void comp_kbd_release(Computer* comp) {
@@ -501,11 +501,11 @@ int compExec(Computer* comp) {
 	if (res2 > res4) {
 		if (comp->hw->grp == HWG_ZX) {
 			if (res2 > res4 + 1)
-				vidSync(comp->vid, (res2 - res4 - 1) * comp->nsPerTick);
+				vid_sync(comp->vid, (res2 - res4 - 1) * comp->nsPerTick);
 			comp->cpu->ack = comp->vid->intFRAME ? 1 : 0;
-			vidSync(comp->vid, comp->nsPerTick);
+			vid_sync(comp->vid, comp->nsPerTick);
 		} else {
-			vidSync(comp->vid, (res2 - res4) * comp->nsPerTick);
+			vid_sync(comp->vid, (res2 - res4) * comp->nsPerTick);
 		}
 	}
 #else

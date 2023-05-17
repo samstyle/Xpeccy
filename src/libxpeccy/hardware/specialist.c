@@ -82,7 +82,7 @@ int spc_vid_rd(int adr, void* p) {
 
 void spc_init(Computer* comp) {
 	vid_set_mode(comp->vid, VID_SPCLST);
-	vidUpdateTimings(comp->vid, comp->nsPerTick >> 2);			// CPU:2MHz, dots:8MHz
+	vid_upd_timings(comp->vid, comp->nsPerTick >> 2);			// CPU:2MHz, dots:8MHz
 	comp->vid->mrd = spc_vid_rd;
 	ppi_set_cb(comp->ppi, comp, spc_rd_io_a, NULL,\
 				spc_rd_io_b, NULL,\

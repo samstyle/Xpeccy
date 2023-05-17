@@ -377,7 +377,7 @@ xRegDsc i286RegTab[] = {
 	{I286_MSW, "MSW", REG_RO|REG_WORD, offsetof(CPU, msw)},
 	{I286_LDT, "LDT", REG_RO|REG_WORD|REG_SEG, offsetof(CPU, ldtr)},
 	{I286_GDT, "GDT", REG_RO|REG_24, offsetof(CPU, gdtr)},
-	{I286_IDT, "IDT", REG_RO|REG_24|REG_SEG, offsetof(CPU, idtr)},
+	{I286_IDT, "IDT", REG_RO|REG_24, offsetof(CPU, idtr)},
 	{REG_NONE, "", 0, 0}
 };
 

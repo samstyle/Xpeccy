@@ -340,22 +340,22 @@ struct Video {
 Video* vidCreate(cbxrd, cbirq, void*);
 void vidDestroy(Video*);
 
-void vidReset(Video*);
-void vidSync(Video*,int);
+void vid_reset(Video*);
+void vid_sync(Video*,int);
 void vid_set_mode(Video*,int);
 void vid_reset_ray(Video*);
 void vid_set_ray(Video*, int);
 
 int vid_wait(Video*);
-void vidDarkTail(Video*);
+void vid_dark_tail(Video*);
 
-void vidSetLayout(Video*, vLayout*);
+void vid_set_layout(Video*, vLayout*);
 void vid_set_resolution(Video*, int, int);
-void vidSetBorder(Video*, double);
-void vidUpdateLayout(Video*);
-void vidUpdateTimings(Video*, int);
+void vid_set_border(Video*, double);
+void vid_upd_layout(Video*);
+void vid_upd_timings(Video*, int);
 
-void vidGetScreen(Video*, unsigned char*, int, int, int);
+void vid_get_screen(Video*, unsigned char*, int, int, int);
 
 void vid_set_grey(int);
 xColor vid_get_col(Video*, int);

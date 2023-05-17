@@ -65,7 +65,7 @@ class SetupWin : public QDialog {
 	signals:
 		void closed();
 		void s_apply();
-		void s_prf_change(std::string);
+		void s_prf_changed();
 	private slots:
 		void reject();
 		void apply();

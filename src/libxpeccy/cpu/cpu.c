@@ -1,9 +1,9 @@
 #include <stdlib.h>
 #include <string.h>
-
-#include "cpu.h"
 #include <stdio.h>
 #include <string.h>
+
+#include "cpu.h"
 
 // common
 
@@ -374,7 +374,8 @@ xRegBunch cpuGetRegs(CPU* cpu) {
 	return bunch;
 }
 
-int cpu_get_reg(CPU* cpu, const char* name) {
+// f is pointer to bool variable: false if register doesn't exists
+int cpu_get_reg(CPU* cpu, const char* name, bool* f) {
 	int res = -1;
 #if 1
 	xRegDsc* rt = cpu->core->rdsctab;
@@ -400,6 +401,7 @@ int cpu_get_reg(CPU* cpu, const char* name) {
 		}
 		i++;
 	}
+	if (f != NULL) {*f = work ? false : true;}
 #else
 	xRegBunch bunch = cpuGetRegs(cpu);
 	for (int i = 0; (i < 32) && (res == -1); i++) {
@@ -413,7 +415,7 @@ int cpu_get_reg(CPU* cpu, const char* name) {
 	return res;
 }
 
-void cpu_set_reg(CPU* cpu, const char* name, int val) {
+bool cpu_set_reg(CPU* cpu, const char* name, int val) {
 	int i = 0;
 	int work = 1;
 	void* ptr;
@@ -432,9 +434,9 @@ void cpu_set_reg(CPU* cpu, const char* name, int val) {
 		}
 		i++;
 	}
+	return work ? false : true;
 }
 
 void cpuSetRegs(CPU* cpu, xRegBunch bunch) {
 	cpu->setregs(cpu, bunch);
-	// cpu->r7 = cpu->r & 0x80;
 }

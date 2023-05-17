@@ -1727,8 +1727,8 @@ void SetupWin::chProfile(int row, int col) {
 	if (row > conf.prof.list.size()) return;
 	std::string nm = conf.prof.list[row]->name;
 	prfSetCurrent(nm);
-	emit s_prf_change(nm);
 	start(conf.prof.cur);
+	emit s_prf_changed();
 }
 
 void SetupWin::rmProfile() {
@@ -1740,8 +1740,9 @@ void SetupWin::rmProfile() {
 		idx = delProfile(pnam);
 		switch(idx) {
 			case DELP_OK_CURR:
-				conf.prof.changed = 1;
+//				conf.prof.changed = 1;
 				start(conf.prof.cur);
+				emit s_prf_changed();
 				break;
 			case DELP_ERR:
 				shitHappens("Sorry, i can't delete this profile");

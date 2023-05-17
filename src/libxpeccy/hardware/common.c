@@ -100,7 +100,7 @@ void zx_irq(Computer* comp, int t) {
 			comp->cpu->intrq |= Z80_INT;
 			break;
 		case IRQ_CPU_SYNC:			// sync cpu-vid
-			vidSync(comp->vid, comp->cpu->t - res4);
+			vid_sync(comp->vid, comp->cpu->t - res4);
 			res4 = comp->cpu->t;
 			// comp->cpu->wait = vid_wait(comp->vid) ? 1 : 0;
 			break;
@@ -110,7 +110,7 @@ void zx_irq(Computer* comp, int t) {
 void zx_init(Computer* comp) {
 	comp->nsPerTick &= ~1;		// make even
 	comp->fps = 50;
-	vidUpdateTimings(comp->vid, comp->nsPerTick >> 1);
+	vid_upd_timings(comp->vid, comp->nsPerTick >> 1);
 	fdc_set_hd(comp->dif->fdc, 0);
 }
 

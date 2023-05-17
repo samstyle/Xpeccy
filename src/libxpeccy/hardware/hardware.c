@@ -112,14 +112,14 @@ static int wns;
 
 void zx_cont_mem(Computer* comp) {
 	if ((pg->type == MEM_RAM) && (pg->num & 0x40)) {
-		vidSync(comp->vid, comp->nsPerTick * (comp->cpu->t - res4));	// before
+		vid_sync(comp->vid, comp->nsPerTick * (comp->cpu->t - res4));	// before
 		res4 = comp->cpu->t;
 		wns = vid_wait(comp->vid);
 		while (wns > 0) {
 			comp->cpu->t++;
 			wns -= comp->nsPerTick;
 		}
-		vidSync(comp->vid, (comp->cpu->t - res4) * comp->nsPerTick);
+		vid_sync(comp->vid, (comp->cpu->t - res4) * comp->nsPerTick);
 		res4 = comp->cpu->t;
 	}
 }

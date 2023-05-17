@@ -55,8 +55,8 @@ void MainWin::updateHead() {
 	title.append(" | debug");
 #endif
 	if (conf.prof.cur) {
-		title.append(" | ").append(QString::fromLocal8Bit(conf.prof.cur->name.c_str()));
-		title.append(" | ").append(QString::fromLocal8Bit(conf.prof.cur->layName.c_str()));
+		title.append(" | ").append(conf.prof.cur->name.c_str());
+		title.append(" | ").append(conf.prof.cur->layName.c_str());
 	}
 	if (conf.emu.fast) {
 		title.append(" | fast");
@@ -113,7 +113,7 @@ bool MainWin::saveChanged() {
 				res = askYNC(str.toLocal8Bit().data());
 				switch(res) {
 					case QMessageBox::Yes:
-						yep &= save_file(comp, flp->path, FG_DISK, i);
+						yep &= save_file(prf->zx, flp->path, FG_DISK, i);
 						break;
 					case QMessageBox::Cancel:
 						yep = false;
@@ -209,7 +209,7 @@ MainWin::MainWin() {
 #endif
 
 #if defined(USEOPENGL) && !BLOCKGL
-#if ISLEGACY
+#if ISLEGACYGL
 	curtex = 0;
 	QGLFormat frmt;
 	frmt.setDoubleBuffer(false);
@@ -226,6 +226,7 @@ MainWin::MainWin() {
 	// ...
 #endif
 #endif
+
 	qDebug() << "end:constructor";
 }
 
@@ -381,10 +382,10 @@ void MainWin::timerEvent(QTimerEvent* ev) {
 		// TODO: do
 	} else if (ev->timerId() == timid) {
 // updater
-		if (conf.prof.changed) {
-			comp = conf.prof.cur->zx;
-			conf.prof.changed = 0;
-		}
+//		if (conf.prof.changed) {
+//			comp = conf.prof.cur->zx;
+//			conf.prof.changed = 0;
+//		}
 		if (block) return;
 #if HAVEZLIB
 		if (comp->rzx.start) {
@@ -600,9 +601,11 @@ void MainWin::frame_timer() {
 		queue.append(texids[curtex]);
 	}
 #endif
+	blockSignals(true);
 	setUpdatesEnabled(true);
 	repaint();
 	setUpdatesEnabled(false);
+	blockSignals(false);
 }
 
 void MainWin::d_frame() {
@@ -1094,12 +1097,7 @@ void MainWin::bookmarkSelected(QAction* act) {
 	setFocus();
 }
 
-void MainWin::setProfile(std::string nm) {
-	if (nm != "") {
-		if (!prfSetCurrent(nm)) {
-			prfSetCurrent("default");
-		}
-	}
+void MainWin::onPrfChange() {
 	comp = conf.prof.cur->zx;
 	emit s_keywin_upd(comp->keyb);
 	vid_upd_scale();
@@ -1108,14 +1106,15 @@ void MainWin::setProfile(std::string nm) {
 		compReset(comp, RES_DEFAULT);
 		comp->firstRun = 0;
 	}
-	saveConfig();
-	emit s_prf_change(conf.prof.cur);
-	conf.prof.changed = 1;
+//	saveConfig();
+//	emit s_prf_change(conf.prof.cur);
+//	conf.prof.changed = 1;
 }
 
 void MainWin::profileSelected(QAction* act) {
 	std::string str = QString(act->data().toByteArray()).toStdString();
-	setProfile(str);
+	prfSetCurrent(str);
+	onPrfChange();
 }
 
 void MainWin::reset(QAction* act) {

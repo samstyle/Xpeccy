@@ -4,7 +4,7 @@
 
 void MainWin::initializeGL() {
 	qDebug() << __FUNCTION__;
-#if !ISLEGACY
+#if !ISLEGACYGL
 	QOpenGLFunctions::initializeOpenGLFunctions();
 	QSurfaceFormat frmt;
 	frmt.setSwapBehavior(QSurfaceFormat::DoubleBuffer);	// since Qt5.5

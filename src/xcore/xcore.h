@@ -430,7 +430,7 @@ struct xConfig {
 		int pause;
 	} emu;
 	struct {
-		unsigned changed:1;
+//		unsigned changed:1;
 		QList<xProfile*> list;
 		xProfile* cur;
 	} prof;

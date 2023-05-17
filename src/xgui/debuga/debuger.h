@@ -94,7 +94,7 @@ class DebugWin : public QDialog {
 		bool fillAll();
 		bool fillNotCPU();
 		void fillTabs();
-		void onPrfChange(xProfile*);
+		void onPrfChange();
 		void chaPal();
 		void doStep();
 		void setScrAtr(int, int);
