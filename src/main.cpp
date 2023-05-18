@@ -129,11 +129,11 @@ int main(int ac,char** av) {
 	app.connect(&dbgw, SIGNAL(wannaWutch()), &wutw, SLOT(show()));
 	app.connect(&dbgw, SIGNAL(wannaOptions(xProfile*)), &optw, SLOT(start(xProfile*)));
 
-	app.connect(&mwin, SIGNAL(s_debug(Computer*)), &dbgw, SLOT(start(Computer*)));
-	app.connect(&mwin, SIGNAL(s_debug_off()), &dbgw, SLOT(close()));
+	app.connect(&mwin, SIGNAL(s_debug()), &dbgw, SLOT(start()));
+//	app.connect(&mwin, SIGNAL(s_debug_off()), &dbgw, SLOT(close()));
 //	app.connect(&mwin, SIGNAL(s_prf_change(xProfile*)), &dbgw, SLOT(onPrfChange(xProfile*)));
 	app.connect(&mwin, SIGNAL(s_step()), &dbgw, SLOT(doStep()));
-	app.connect(&mwin, SIGNAL(s_scradr(int,int)), &dbgw, SLOT(setScrAtr(int,int)));
+//	app.connect(&mwin, SIGNAL(s_scradr(int,int)), &dbgw, SLOT(setScrAtr(int,int)));
 
 	app.connect(&mwin, SIGNAL(s_options(xProfile*)), &optw, SLOT(start(xProfile*)));
 	app.connect(&mwin, SIGNAL(s_gamepad_plug()), &optw, SLOT(setPadName()));

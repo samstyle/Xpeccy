@@ -90,14 +90,14 @@ class DebugWin : public QDialog {
 		void wannaOptions(xProfile*);
 		void needStep();
 	public slots:
-		void start(Computer*);
+		void start();
 		bool fillAll();
 		bool fillNotCPU();
 		void fillTabs();
 		void onPrfChange();
 		void chaPal();
 		void doStep();
-		void setScrAtr(int, int);
+		// void setScrAtr(int, int);
 	private:
 		unsigned block:1;
 		int tabMode;
@@ -111,7 +111,7 @@ class DebugWin : public QDialog {
 
 		QMap<int, QList<tabDSC> > tablist;
 
-		Computer* comp;
+//		Computer* comp;
 		long tCount;
 
 		QList<xLabel*> dbgRegLabs;

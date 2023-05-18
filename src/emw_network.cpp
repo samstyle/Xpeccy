@@ -53,6 +53,7 @@ void MainWin::socketRead() {
 	com = com.remove("\n");
 	com = com.remove("\r");
 	QStringList prm = com.split(" ",X_SkipEmptyParts);
+	if (prm.size() == 0) return;
 	com = prm[0];
 	xMnem mnm;
 	bool f;
@@ -61,7 +62,7 @@ void MainWin::socketRead() {
 	if ((com == "debug") || (com == "dbg")) {
 		doDebug();
 	} else if (com == "closedbg") {
-		emit s_debug_off();
+		// emit s_debug_off();
 	} else if (com == "quit") {
 		close();
 	} else if (com == "exit") {

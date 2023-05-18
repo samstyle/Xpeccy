@@ -85,12 +85,14 @@ void DebugWin::chaPal() {
 }
 
 void DebugWin::save_mem_map() {
+	Computer* comp = conf.prof.cur->zx;
 	for (int i = 0; i < 256; i++) {
 		mem_map[i] = comp->mem->map[i];
 	}
 }
 
 void DebugWin::rest_mem_map() {
+	Computer* comp = conf.prof.cur->zx;
 	for (int i = 0; i < 256; i++) {
 		 comp->mem->map[i] = mem_map[i];
 	}
@@ -99,6 +101,7 @@ void DebugWin::rest_mem_map() {
 
 void DebugWin::remapMem() {
 	if (block) return;
+	Computer* comp = conf.prof.cur->zx;
 	memSetBank(comp->mem, 0x00, getRFIData(ui.cbBank0), ui.numBank0->getValue(), MEM_16K, NULL, NULL, NULL);
 	memSetBank(comp->mem, 0x40, getRFIData(ui.cbBank1), ui.numBank1->getValue(), MEM_16K, NULL, NULL, NULL);
 	memSetBank(comp->mem, 0x80, getRFIData(ui.cbBank2), ui.numBank2->getValue(), MEM_16K, NULL, NULL, NULL);
@@ -106,14 +109,14 @@ void DebugWin::remapMem() {
 	fillAll();
 }
 
-void DebugWin::start(Computer* c) {
+void DebugWin::start() {
 	if (isVisible()) {
 		activateWindow();
 		return;
 	}
 	blockStart = -1;
 	blockEnd = -1;
-	comp = c;
+	Computer* comp = conf.prof.cur->zx;
 	if (comp->hw->grp != tabMode) {
 		onPrfChange();		// update tabs
 	}
@@ -148,6 +151,7 @@ void DebugWin::start(Computer* c) {
 }
 
 void DebugWin::stop() {
+	Computer* comp = conf.prof.cur->zx;
 	if (!ui.cbAccT->isChecked())
 		tCount = comp->tickCount;	// before compExec to add current opcode T
 	compExec(comp);			// to prevent double breakpoint catch
@@ -165,6 +169,7 @@ void DebugWin::stop() {
 }
 
 void DebugWin::resetTCount() {
+	Computer* comp = conf.prof.cur->zx;
 	if (ui.cbAccT->isChecked()) {
 		tCount = comp->tickCount;
 		ui.labTcount->setText(QString("%0 / %1").arg(comp->tickCount - tCount).arg(comp->frmtCount));
@@ -172,9 +177,10 @@ void DebugWin::resetTCount() {
 }
 
 void DebugWin::onPrfChange() {
+	qDebug() << __FUNCTION__;
 	xProfile* prf = conf.prof.cur;
 	if (!prf) return;
-	comp = prf->zx;
+	Computer* comp = prf->zx;
 	save_mem_map();
 	ui.tabsPanel->clear();
 	QList<tabDSC> lst = tablist[prf->zx->hw->grp];
@@ -187,10 +193,10 @@ void DebugWin::onPrfChange() {
 		lst.removeFirst();
 	}
 	ui.tabsPanel->setPalette(QPalette());
-	tabMode = prf->zx->hw->grp;
+	tabMode = comp->hw->grp;
 	// set input line base
 	foreach(xHexSpin* xhs, dbgRegEdit) {
-		xhs->setBase(conf.prof.cur->zx->hw->base);
+		xhs->setBase(comp->hw->base);
 	}
 	unsigned int lim = (comp->hw->id == HW_IBM_PC) ? MEM_4M : MEM_64K;
 	ui.dumpTable->setLimit(lim);
@@ -203,7 +209,7 @@ void DebugWin::onPrfChange() {
 
 	ui.tabDiskDump->setDrive(ui.cbDrive->currentIndex());
 
-	ui.tabVidMem->setVMem(conf.prof.cur->zx->vid->ram);
+	ui.tabVidMem->setVMem(comp->vid->ram);
 	switch(comp->hw->base) {
 		case 8:
 			ui.dumpTable->setItemDelegateForColumn(1, xid_octw);
@@ -234,6 +240,7 @@ void DebugWin::onPrfChange() {
 		ui.cbDumpView->setEnabled(true);
 	}
 	fillAll();
+	qDebug() << __FUNCTION__ << ":end";
 }
 
 void DebugWin::reject() {stop();}
@@ -545,7 +552,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	connect(ui.tbBrkSave, SIGNAL(clicked()), this, SLOT(saveBrk()));
 	connect(ui.bpList, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(goToBrk(QModelIndex)));
 // gb tab
-	connect(ui.gbModeGroup, SIGNAL(buttonClicked(int)), this, SLOT(fillGBoy()));
+	connect(ui.gbModeGroup, SIGNAL(buttonClicked(QAbstractButton*)), this, SLOT(fillGBoy()));
 	connect(ui.sbTileset, SIGNAL(valueChanged(int)), this, SLOT(fillGBoy()));
 	connect(ui.sbTilemap, SIGNAL(valueChanged(int)), this, SLOT(fillGBoy()));
 
@@ -700,6 +707,7 @@ void DebugWin::setDumpCP() {
 
 void DebugWin::chDumpView() {
 	int mode,page,pbase,psize;
+	Computer* comp = conf.prof.cur->zx;
 	mode = getRFIData(ui.cbDumpView);
 	page = ui.sbDumpPage->value();
 	pbase = ui.leDumpPageBase->getValue();
@@ -717,13 +725,14 @@ void DebugWin::chDumpView() {
 static QFile logfile;
 
 void DebugWin::doStep() {
-		if (!ui.cbAccT->isChecked())
-			tCount = comp->tickCount;
-		compExec(comp);
-		if (!fillAll()) {
-			ui.dasmTable->setAdr(comp->cpu->pc + comp->cpu->cs.base);
-			//fillDisasm();
-		}
+	Computer* comp = conf.prof.cur->zx;
+	if (!ui.cbAccT->isChecked())
+		tCount = comp->tickCount;
+	compExec(comp);
+	if (!fillAll()) {
+		ui.dasmTable->setAdr(comp->cpu->pc + comp->cpu->cs.base);
+		//fillDisasm();
+	}
 }
 
 void DebugWin::doTraceHere() {
@@ -755,6 +764,7 @@ void DebugWin::stopTrace() {
 }
 
 void DebugWin::reload() {
+	Computer* comp = conf.prof.cur->zx;
 	if (comp->mem->snapath) {
 		load_file(comp, comp->mem->snapath, FG_SNAPSHOT, 0);
 		ui.dasmTable->setAdr(comp->cpu->pc + comp->cpu->cs.base);
@@ -777,6 +787,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 	int len;
 	dasmData drow;
 	QModelIndex idx;
+	Computer* comp = conf.prof.cur->zx;
 	switch (key) {
 		case XCUT_OPTIONS:
 			emit wannaOptions(conf.prof.cur);
@@ -867,6 +878,7 @@ static dasmData tracemnm;
 extern int dasmrd(int, void*);
 
 void DebugWin::customEvent(QEvent* ev) {
+	Computer* comp = conf.prof.cur->zx;
 	switch(ev->type()) {
 		case DBG_EVENT_STEP:
 			if ((traceType == DBG_TRACE_LOG) && logfile.isOpen()) {
@@ -949,6 +961,7 @@ void drawBar(QLabel* lab, int lev, int max) {
 
 void DebugWin::fillAY() {
 	if (ui.tabsPanel->currentWidget() != ui.ayTab) return;
+	Computer* comp = conf.prof.cur->zx;
 	aymChip* chp = comp->ts->chipA;
 	ui.leToneA->setText(gethexword(((chp->reg[1] << 8) | chp->reg[0]) & 0x0fff));
 	ui.leToneB->setText(gethexword(((chp->reg[3] << 8) | chp->reg[2]) & 0x0fff));
@@ -975,6 +988,7 @@ void DebugWin::fillAY() {
 
 void DebugWin::fillTape() {
 	if (ui.tabsPanel->currentWidget() != ui.tapeTab) return;
+	Computer* comp = conf.prof.cur->zx;
 	Tape* tape = comp->tape;
 	drawBar(ui.labTapein, tape->volPlay, 256);
 	drawBar(ui.labTapeout, tape->levRec, 1);
@@ -1070,6 +1084,7 @@ void DebugWin::fillTabs() {
 	drawNes();
 	fillAY();
 	fillTape();
+	Computer* comp = conf.prof.cur->zx;
 	// cia
 	if (ui.tabsPanel->currentWidget() == ui.ciaTab)	{
 		ui.cia1timera->setText(QString("%0 / %1").arg(gethexword(comp->c64.cia1->timerA.value)).arg(gethexword(comp->c64.cia1->timerA.inival)));
@@ -1152,6 +1167,7 @@ void DebugWin::fillTabs() {
 }
 
 bool DebugWin::fillNotCPU() {
+	Computer* comp = conf.prof.cur->zx;
 	ui.labTcount->setText(QString("%0 / %1").arg(comp->tickCount - tCount).arg(comp->frmtCount));
 	fillTabs();
 	ui.tabDiskDump->update();
@@ -1170,10 +1186,12 @@ bool DebugWin::fillAll() {
 	return fillNotCPU();
 }
 
+/*
 void DebugWin::setScrAtr(int adr, int atr) {
 	ui.leScr->setValue(adr);
 	ui.leAtr->setValue(atr);
 }
+*/
 
 // gameboy
 
@@ -1258,6 +1276,7 @@ QImage getGBPal(Video* gbv) {
 
 void DebugWin::fillGBoy() {
 	if (ui.tabsPanel->currentWidget() != ui.gbTab) return;
+	Computer* comp = conf.prof.cur->zx;
 	QImage img;
 	int tset = ui.sbTileset->value();
 	int tmap = ui.sbTilemap->value();
@@ -1354,6 +1373,7 @@ QImage dbgNesTilesImg(Video* vid, unsigned short tadr) {
 
 void DebugWin::drawNes() {
 	if (ui.tabsPanel->currentWidget() != ui.nesTab) return;
+	Computer* comp = conf.prof.cur->zx;
 	unsigned short adr = 0;
 	unsigned short tadr = 0;
 	QPixmap pic;
@@ -1430,21 +1450,8 @@ void DebugWin::drawNes() {
 
 // ...
 
-/*
-void DebugWin::setFlagNames(const char name[8]) {
-	ui.labF7->setText(QString(name[0]));
-	ui.labF6->setText(QString(name[1]));
-	ui.labF5->setText(QString(name[2]));
-	ui.labF4->setText(QString(name[3]));
-	ui.labF3->setText(QString(name[4]));
-	ui.labF2->setText(QString(name[5]));
-	ui.labF1->setText(QString(name[6]));
-	ui.labF0->setText(QString(name[7]));
-}
-*/
-
 void DebugWin::chLayout() {
-	switch (comp->cpu->type) {
+	switch (conf.prof.cur->zx->cpu->type) {
 		case CPU_Z80:
 			ui.boxIM->setEnabled(true);
 			break;
@@ -1481,6 +1488,7 @@ void DebugWin::regClick(QMouseEvent* ev) {
 	xLabel* lab = qobject_cast<xLabel*>(sender());
 	int id = lab->id;
 	if (id < 0) return;
+	Computer* comp = conf.prof.cur->zx;
 	xRegBunch bunch = cpuGetRegs(comp->cpu);
 	int adr = dbg_get_reg_adr(comp->cpu, bunch.regs[id]);
 	switch (ev->button()) {
@@ -1499,6 +1507,7 @@ void DebugWin::regClick(QMouseEvent* ev) {
 
 void DebugWin::fillFDC() {
 	if (ui.tabsPanel->currentWidget() != ui.fdcTab) return;
+	Computer* comp = conf.prof.cur->zx;
 	ui.fdcBusyL->setText(comp->dif->fdc->idle ? "0" : "1");
 	ui.fdcComL->setText(comp->dif->fdc->idle ? "--" : gethexbyte(comp->dif->fdc->com));
 	ui.fdcIrqL->setText(comp->dif->fdc->irq ? "1" : "0");
@@ -1529,7 +1538,7 @@ void DebugWin::fillFDC() {
 
 void DebugWin::fillFlags(const char* fnam) {
 	if (fnam == NULL)
-		fnam = cpuGetRegs(comp->cpu).flags;
+		fnam = cpuGetRegs(conf.prof.cur->zx->cpu).flags;
 	int flgcnt = strlen(fnam);
 	QString allflags = QString(fnam).rightJustified(16, '-');
 	for (int i = 0; i < 16; i++) {
@@ -1537,7 +1546,7 @@ void DebugWin::fillFlags(const char* fnam) {
 			dbgFlagBox[i]->setVisible(true);
 			dbgFlagLabs[i]->setVisible(true);
 			dbgFlagLabs[i]->setText(allflags.at(15 - i));
-			dbgFlagBox[i]->setChecked(comp->cpu->f & (1 << i));
+			dbgFlagBox[i]->setChecked(conf.prof.cur->zx->cpu->f & (1 << i));
 		} else {
 			dbgFlagBox[i]->setVisible(false);
 			dbgFlagLabs[i]->setVisible(false);
@@ -1547,7 +1556,8 @@ void DebugWin::fillFlags(const char* fnam) {
 
 void DebugWin::fillCPU() {
 	block = 1;
-	CPU* cpu = comp->cpu;
+//	Computer* comp = conf.prof.cur->zx;
+	CPU* cpu = conf.prof.cur->zx->cpu;
 	xRegBunch bunch = cpuGetRegs(cpu);
 	int i;
 	for (i = 0; i < dbgRegLabs.size(); i++) {
@@ -1589,12 +1599,13 @@ void DebugWin::setFlags() {
 		if (dbgFlagBox[i]->isVisible() && dbgFlagBox[i]->isChecked())
 			f |= (1 << i);
 	}
-	comp->cpu->f = f;
+	conf.prof.cur->zx->cpu->f = f;
 	fillCPU();
 }
 
 void DebugWin::setCPU() {
 	if (block) return;
+	Computer* comp = conf.prof.cur->zx;
 	CPU* cpu = comp->cpu;
 	int i = 0;
 	xRegBunch bunch;
@@ -1632,6 +1643,7 @@ QString getPageName(MemPage& pg) {
 }
 
 void DebugWin::fillMem() {
+	Computer* comp = conf.prof.cur->zx;
 	ui.labPG0->setText(getPageName(comp->mem->map[0x00]));
 	ui.labPG1->setText(getPageName(comp->mem->map[0x40]));
 	ui.labPG2->setText(getPageName(comp->mem->map[0x80]));
@@ -1703,6 +1715,7 @@ void DebugWin::saveDasm() {
 	QFile file(path);
 	dasmData drow;
 	QList<dasmData> list;
+	Computer* comp = conf.prof.cur->zx;
 	if (file.open(QFile::WriteOnly)) {
 		QTextStream strm(&file);
 		int adr = (blockStart < 0) ? 0 : (blockStart & comp->mem->busmask);
@@ -1765,6 +1778,7 @@ void DebugWin::dumpChadr(int adr) {
 
 void DebugWin::mapClear() {
 	if (!areSure("Clear memory mapping?")) return;
+	Computer* comp = conf.prof.cur->zx;
 	int adr;
 	for (adr = 0; adr < 0x400000; adr++) {
 		comp->brkRamMap[adr] &= 0x0f;
@@ -1782,6 +1796,7 @@ void DebugWin::mapAuto() {
 // stack
 
 void DebugWin::fillStack() {
+	Computer* comp = conf.prof.cur->zx;
 	int adr = comp->cpu->sp;
 	if (comp->cpu->type == CPU_I80286) {
 		adr += comp->cpu->ss.base;
@@ -1804,6 +1819,7 @@ int DebugWin::getAdr() {
 	int adr;
 	int col;
 	QModelIndex idx;
+	Computer* comp = conf.prof.cur->zx;
 	if (ui.dumpTable->hasFocus()) {
 		idx = ui.dumpTable->currentIndex();
 		col = idx.column();
@@ -1829,7 +1845,7 @@ void DebugWin::putBreakPoint() {
 
 void DebugWin::doBreakPoint(unsigned short adr) {
 	bpAdr = adr;
-	unsigned char flag = getBrk(comp, adr);
+	unsigned char flag = getBrk(conf.prof.cur->zx, adr);
 	ui.actFetch->setChecked(flag & MEM_BRK_FETCH);
 	ui.actRead->setChecked(flag & MEM_BRK_RD);
 	ui.actWrite->setChecked(flag & MEM_BRK_WR);
@@ -1859,6 +1875,7 @@ void DebugWin::chaCellProperty(QAction* act) {
 	bt = 0;
 	xAdr xadr;
 	xAdr xend;
+	Computer* comp = conf.prof.cur->zx;
 	if (ui.actFetch->isChecked()) bt |= MEM_BRK_FETCH;
 	if (ui.actRead->isChecked()) bt |= MEM_BRK_RD;
 	if (ui.actWrite->isChecked()) bt |= MEM_BRK_WR;
@@ -1955,7 +1972,7 @@ QByteArray DebugWin::getDumpData() {
 	QByteArray res;
 	while (len > 0) {
 		//if (adr < 0xc000) {
-		res.append(rdbyte(adr, comp));
+		res.append(rdbyte(adr, conf.prof.cur->zx));
 		//} else {
 		//	res.append(comp->mem->ramData[(bank << 14) | (adr & 0x3fff)]);
 		//}
@@ -2011,7 +2028,7 @@ void DebugWin::saveDumpToDisk(int idx) {
 	int len = dui.leLen->getValue();
 	QString name = dui.leStart->text();
 	// name.append(".").append(dui.leBank->text());
-	Floppy* flp = comp->dif->fdc->flop[idx & 3];
+	Floppy* flp = conf.prof.cur->zx->dif->fdc->flop[idx & 3];
 	if (!flp->insert) {
 		flp_insert(flp, NULL);
 		trd_format(flp);
@@ -2029,7 +2046,7 @@ void DebugWin::saveVRam() {
 	if (path.isEmpty()) return;
 	QFile file(path);
 	if (file.open(QFile::WriteOnly)) {
-		file.write((char*)comp->vid->ram, MEM_256K);
+		file.write((char*)conf.prof.cur->zx->vid->ram, MEM_256K);
 		file.close();
 	}
 }
@@ -2037,6 +2054,7 @@ void DebugWin::saveVRam() {
 // memfinder
 
 void DebugWin::doFind() {
+	Computer* comp = conf.prof.cur->zx;
 	memFinder->mem = comp->mem;
 	if (memFinder->adr < 0)
 		memFinder->adr = (ui.dasmTable->getAdr() + 1) & comp->mem->busmask;
@@ -2051,12 +2069,14 @@ void DebugWin::onFound(int adr) {
 // memfiller
 
 void DebugWin::doFill() {
+	Computer* comp = conf.prof.cur->zx;
 	memFiller->start(comp->mem, blockStart, blockEnd);
 }
 
 // spr scanner
 
 void DebugWin::doMemView() {
+	Computer* comp = conf.prof.cur->zx;
 	memViewer->mem = comp->mem;
 	memViewer->ui.sbPage->setValue(comp->mem->map[0xc0].num >> 6);
 	memViewer->fillImage();
@@ -2130,7 +2150,7 @@ void DebugWin::dmpStartOpen() {
 
 void DebugWin::loadDump() {
 	if (dumpPath.isEmpty()) return;
-	int res = loadDUMP(comp, dumpPath.toLocal8Bit().data(),oui.leStart->text().toInt(NULL,16));
+	int res = loadDUMP(conf.prof.cur->zx, dumpPath.toLocal8Bit().data(),oui.leStart->text().toInt(NULL,16));
 	fillAll();
 	if (res == ERR_OK) {
 		openDumpDialog->hide();
@@ -2143,6 +2163,7 @@ void DebugWin::loadDump() {
 
 void DebugWin::updateScreen() {
 	if (ui.tabsPanel->currentWidget() != ui.scrTab) return;
+	Computer* comp = conf.prof.cur->zx;
 	int flag = ui.cbScrAtr->isChecked() ? 1 : 0;
 	flag |= ui.cbScrPix->isChecked() ? 2 : 0;
 	flag |= ui.cbScrGrid->isChecked() ? 4 : 0;
@@ -2217,7 +2238,7 @@ void DebugWin::goToBrk(QModelIndex idx) {
 				case BRK_MEMROM: mtype = MEM_ROM; break;
 				case BRK_MEMSLT: mtype = MEM_SLOT; break;
 			}
-			adr = memFindAdr(comp->mem, mtype, brk.adr);
+			adr = memFindAdr(conf.prof.cur->zx->mem, mtype, brk.adr);
 			break;
 	}
 	if (adr < 0) return;

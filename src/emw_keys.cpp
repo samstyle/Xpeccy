@@ -231,7 +231,7 @@ void MainWin::xkey_press(int xkey) {
 				conf.emu.fast = 0;
 				pause(true, PR_DEBUG);
 				// setUpdatesEnabled(true);
-				emit s_debug(comp);
+				emit s_debug();
 				break;
 			case XCUT_MENU:
 				fillUserMenu();
@@ -390,7 +390,7 @@ void MainWin::calcCoords(QMouseEvent* ev) {
 		int adr = ((y & 0xc0) << 5) | ((y & 0x38) << 2) | ((y & 7) << 8) | ((x & 0xf8) >> 3) | 0x4000;
 		int atr = ((y & 0xf8) << 2) | ((x & 0xf8) >> 3) | 0x5800;
 		setMessage(QString(" %0:%1 | %2 ").arg(gethexword(adr)).arg(x & 7).arg(gethexword(atr)));
-		emit s_scradr(adr, atr);
+		// emit s_scradr(adr, atr);		// why?
 	}
 #endif
 }

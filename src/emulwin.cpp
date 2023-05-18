@@ -503,7 +503,7 @@ void MainWin::focusOutEvent(QFocusEvent*) {
 
 void MainWin::focusInEvent(QFocusEvent*) {
 	if (conf.emu.pause & PR_DEBUG)
-		emit s_debug(comp);
+		emit s_debug();
 }
 
 void MainWin::moveEvent(QMoveEvent* ev) {
@@ -603,7 +603,7 @@ void MainWin::frame_timer() {
 #endif
 	blockSignals(true);
 	setUpdatesEnabled(true);
-	repaint();
+	repaint();			// signal: abouttocompose->random slot
 	setUpdatesEnabled(false);
 	blockSignals(false);
 }
@@ -1085,7 +1085,7 @@ void MainWin::optApply() {
 void MainWin::doDebug() {
 	conf.emu.fast = 0;
 	pause(true, PR_DEBUG);
-	emit s_debug(comp);
+	emit s_debug();
 }
 
 void MainWin::dbgReturn() {
