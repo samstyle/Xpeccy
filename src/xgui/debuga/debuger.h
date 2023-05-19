@@ -97,7 +97,7 @@ class DebugWin : public QDialog {
 		void onPrfChange();
 		void chaPal();
 		void doStep();
-		// void setScrAtr(int, int);
+		void setScrAtr(int, int);
 	private:
 		unsigned block:1;
 		int tabMode;

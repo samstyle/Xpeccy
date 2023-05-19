@@ -177,7 +177,7 @@ void DebugWin::resetTCount() {
 }
 
 void DebugWin::onPrfChange() {
-	qDebug() << __FUNCTION__;
+	// qDebug() << __FUNCTION__;
 	xProfile* prf = conf.prof.cur;
 	if (!prf) return;
 	Computer* comp = prf->zx;
@@ -240,7 +240,6 @@ void DebugWin::onPrfChange() {
 		ui.cbDumpView->setEnabled(true);
 	}
 	fillAll();
-	qDebug() << __FUNCTION__ << ":end";
 }
 
 void DebugWin::reject() {stop();}
@@ -1186,12 +1185,10 @@ bool DebugWin::fillAll() {
 	return fillNotCPU();
 }
 
-/*
 void DebugWin::setScrAtr(int adr, int atr) {
 	ui.leScr->setValue(adr);
 	ui.leAtr->setValue(atr);
 }
-*/
 
 // gameboy
 

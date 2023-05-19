@@ -32,7 +32,7 @@ typedef struct {
 // QOpenGLWidget since Qt5.4
 
 #define BLOCKGL 0
-#define USELEGACYGL 0
+#define USELEGACYGL 1
 #define ISLEGACYGL ((QT_VERSION < QT_VERSION_CHECK(5,4,0)) || (USELEGACYGL && (QT_VERSION < QT_VERSION_CHECK(6,0,0))))
 
 #ifdef USEOPENGL
@@ -61,7 +61,7 @@ typedef struct {
 		void s_debug_off();
 		// void s_prf_change(xProfile*);
 		void s_gamepad_plug();
-		// void s_scradr(int, int);
+		void s_scradr(int, int);
 
 		void s_tape_show();
 		void s_tape_progress(Tape*);
