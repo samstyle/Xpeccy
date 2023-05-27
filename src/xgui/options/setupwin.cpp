@@ -404,9 +404,9 @@ void SetupWin::setPadName() {
 #endif
 }
 
-void SetupWin::start(xProfile* p) {
-	prof = p;
-	comp = p->zx;
+void SetupWin::start() {
+	xProfile* prof = conf.prof.cur;
+	Computer* comp = prof->zx;
 // machine
 	int idx;
 	fill_romset_list(ui.rsetbox);
@@ -596,6 +596,8 @@ void SetupWin::start(xProfile* p) {
 }
 
 void SetupWin::apply() {
+	xProfile* prof = conf.prof.cur;
+	Computer* comp = prof->zx;
 // machine
 	HardWare *oldmac = comp->hw;
 	std::string new_hwname = std::string(getRFSData(ui.machbox).toUtf8().data());
@@ -1119,7 +1121,7 @@ void SetupWin::buildrsetlist() {
 }
 
 void SetupWin::buildtapelist() {
-	ui.tapelist->fill(comp->tape);
+	ui.tapelist->fill(conf.prof.cur->zx->tape);
 }
 
 // TODO : make bookmarks & profiles list as view-model
@@ -1155,6 +1157,7 @@ void SetupWin::copyToTape() {
 	int dsk = ui.disktabs->currentIndex();
 	QModelIndexList idx = ui.disklist->selectionModel()->selectedRows();
 	if (idx.size() == 0) return;
+	Computer* comp = conf.prof.cur->zx;
 	TRFile cat[128];
 	diskGetTRCatalog(comp->dif->fdc->flop[dsk],cat);
 	int row;
@@ -1192,6 +1195,7 @@ void SetupWin::diskToHobeta() {
 	if (idx.size() == 0) return;
 	QString dir = QFileDialog::getExistingDirectory(this,"Save file(s) to...","",QFileDialog::DontUseNativeDialog | QFileDialog::ShowDirsOnly);
 	if (dir == "") return;
+	Computer* comp = conf.prof.cur->zx;
 	std::string sdir = std::string(dir.toLocal8Bit().data()) + SLASH;
 	Floppy* flp = comp->dif->fdc->flop[ui.disktabs->currentIndex()];		// selected floppy
 	int savedFiles = 0;
@@ -1207,6 +1211,7 @@ void SetupWin::diskToRaw() {
 	if (idx.size() == 0) return;
 	QString dir = QFileDialog::getExistingDirectory(this,"Save file(s) to...","",QFileDialog::DontUseNativeDialog | QFileDialog::ShowDirsOnly);
 	if (dir == "") return;
+	Computer* comp = conf.prof.cur->zx;
 	std::string sdir = std::string(dir.toLocal8Bit().data()) + SLASH;
 	Floppy* flp = comp->dif->fdc->flop[ui.disktabs->currentIndex()];
 	int savedFiles = 0;
@@ -1260,6 +1265,7 @@ void SetupWin::copyToDisk() {
 	if (dsk > 3) dsk = 3;
 	int headBlock = -1;
 	int dataBlock = -1;
+	Computer* comp = conf.prof.cur->zx;
 	if (!comp->tape->blkData[blk].hasBytes) {
 		shitHappens("This is not standard block");
 		return;
@@ -1350,6 +1356,7 @@ void SetupWin::copyToDisk() {
 
 void SetupWin::fillDiskCat() {
 	int dsk = ui.disktabs->currentIndex();
+	Computer* comp = conf.prof.cur->zx;
 	Floppy* flp = comp->dif->fdc->flop[dsk];
 	TRFile ct[128];
 	QList<TRFile> cat;
@@ -1389,6 +1396,7 @@ void SetupWin::updvolumes() {
 // disk
 
 void SetupWin::newdisk(int idx, int ask) {
+	Computer* comp = conf.prof.cur->zx;
 	Floppy *flp = comp->dif->fdc->flop[idx];
 	if (saveChangedDisk(comp,idx & 3) != ERR_OK) return;
 	flp_insert(flp, NULL);
@@ -1405,22 +1413,23 @@ void SetupWin::newb() {newdisk(1,1);}
 void SetupWin::newc() {newdisk(2,1);}
 void SetupWin::newd() {newdisk(3,1);}
 
-void SetupWin::loada() {load_file(comp, NULL, FH_DRIVE_A, 0); updatedisknams();}
-void SetupWin::loadb() {load_file(comp, NULL, FH_DRIVE_B, 1); updatedisknams();}
-void SetupWin::loadc() {load_file(comp, NULL, FH_DRIVE_C, 2); updatedisknams();}
-void SetupWin::loadd() {load_file(comp, NULL, FH_DRIVE_D, 3); updatedisknams();}
+void SetupWin::loada() {load_file(conf.prof.cur->zx, NULL, FH_DRIVE_A, 0); updatedisknams();}
+void SetupWin::loadb() {load_file(conf.prof.cur->zx, NULL, FH_DRIVE_B, 1); updatedisknams();}
+void SetupWin::loadc() {load_file(conf.prof.cur->zx, NULL, FH_DRIVE_C, 2); updatedisknams();}
+void SetupWin::loadd() {load_file(conf.prof.cur->zx, NULL, FH_DRIVE_D, 3); updatedisknams();}
 
-void SetupWin::savea() {Floppy* flp = comp->dif->fdc->flop[0]; if (flp->insert) save_file(comp, flp->path, FG_DISK_A, 0); updatedisknams();}
-void SetupWin::saveb() {Floppy* flp = comp->dif->fdc->flop[1]; if (flp->insert) save_file(comp, flp->path, FG_DISK_B, 1); updatedisknams();}
-void SetupWin::savec() {Floppy* flp = comp->dif->fdc->flop[2]; if (flp->insert) save_file(comp, flp->path, FG_DISK_C, 2); updatedisknams();}
-void SetupWin::saved() {Floppy* flp = comp->dif->fdc->flop[3]; if (flp->insert) save_file(comp, flp->path, FG_DISK_D, 3); updatedisknams();}
+void SetupWin::savea() {Computer* comp = conf.prof.cur->zx; Floppy* flp = comp->dif->fdc->flop[0]; if (flp->insert) save_file(comp, flp->path, FG_DISK_A, 0); updatedisknams();}
+void SetupWin::saveb() {Computer* comp = conf.prof.cur->zx; Floppy* flp = comp->dif->fdc->flop[1]; if (flp->insert) save_file(comp, flp->path, FG_DISK_B, 1); updatedisknams();}
+void SetupWin::savec() {Computer* comp = conf.prof.cur->zx; Floppy* flp = comp->dif->fdc->flop[2]; if (flp->insert) save_file(comp, flp->path, FG_DISK_C, 2); updatedisknams();}
+void SetupWin::saved() {Computer* comp = conf.prof.cur->zx; Floppy* flp = comp->dif->fdc->flop[3]; if (flp->insert) save_file(comp, flp->path, FG_DISK_D, 3); updatedisknams();}
 
-void SetupWin::ejcta() {saveChangedDisk(comp,0); flp_eject(comp->dif->fdc->flop[0]); updatedisknams();}
-void SetupWin::ejctb() {saveChangedDisk(comp,1); flp_eject(comp->dif->fdc->flop[1]); updatedisknams();}
-void SetupWin::ejctc() {saveChangedDisk(comp,2); flp_eject(comp->dif->fdc->flop[2]); updatedisknams();}
-void SetupWin::ejctd() {saveChangedDisk(comp,3); flp_eject(comp->dif->fdc->flop[3]); updatedisknams();}
+void SetupWin::ejcta() {Computer* comp = conf.prof.cur->zx; saveChangedDisk(comp,0); flp_eject(comp->dif->fdc->flop[0]); updatedisknams();}
+void SetupWin::ejctb() {Computer* comp = conf.prof.cur->zx; saveChangedDisk(comp,1); flp_eject(comp->dif->fdc->flop[1]); updatedisknams();}
+void SetupWin::ejctc() {Computer* comp = conf.prof.cur->zx; saveChangedDisk(comp,2); flp_eject(comp->dif->fdc->flop[2]); updatedisknams();}
+void SetupWin::ejctd() {Computer* comp = conf.prof.cur->zx; saveChangedDisk(comp,3); flp_eject(comp->dif->fdc->flop[3]); updatedisknams();}
 
 void SetupWin::updatedisknams() {
+	Computer* comp = conf.prof.cur->zx;
 	ui.apathle->setText(QString::fromLocal8Bit(comp->dif->fdc->flop[0]->path));
 	ui.bpathle->setText(QString::fromLocal8Bit(comp->dif->fdc->flop[1]->path));
 	ui.cpathle->setText(QString::fromLocal8Bit(comp->dif->fdc->flop[2]->path));
@@ -1431,26 +1440,28 @@ void SetupWin::updatedisknams() {
 // tape
 
 void SetupWin::loatape() {
-//	loadFile(comp,"",FT_TAPE,1);
+	Computer* comp = conf.prof.cur->zx;
 	load_file(comp, NULL, FG_TAPE, -1);
 	ui.tpathle->setText(QString::fromLocal8Bit(comp->tape->path));
 	buildtapelist();
 }
 
 void SetupWin::savtape() {
+	Computer* comp = conf.prof.cur->zx;
 	if (comp->tape->blkCount != 0) {
-		//saveFile(comp,comp->tape->path,FT_TAP,-1);
 		save_file(comp, comp->tape->path, FG_TAPE, -1);
 	}
 }
 
 void SetupWin::ejctape() {
+	Computer* comp = conf.prof.cur->zx;
 	tapEject(comp->tape);
 	ui.tpathle->setText(QString::fromLocal8Bit(comp->tape->path));
 	buildtapelist();
 }
 
 void SetupWin::tblkup() {
+	Computer* comp = conf.prof.cur->zx;
 	int ps = ui.tapelist->currentIndex().row();
 	if (ps > 0) {
 		tapSwapBlocks(comp->tape,ps,ps-1);
@@ -1460,6 +1471,7 @@ void SetupWin::tblkup() {
 }
 
 void SetupWin::tblkdn() {
+	Computer* comp = conf.prof.cur->zx;
 	int ps = ui.tapelist->currentIndex().row();
 	if ((ps != -1) && (ps < comp->tape->blkCount - 1)) {
 		tapSwapBlocks(comp->tape,ps,ps+1);
@@ -1469,6 +1481,7 @@ void SetupWin::tblkdn() {
 }
 
 void SetupWin::tblkrm() {
+	Computer* comp = conf.prof.cur->zx;
 	int ps = ui.tapelist->currentIndex().row();
 	if (ps != -1) {
 		tapDelBlock(comp->tape,ps);
@@ -1478,6 +1491,7 @@ void SetupWin::tblkrm() {
 }
 
 void SetupWin::chablock(QModelIndex idx) {
+	Computer* comp = conf.prof.cur->zx;
 	int row = idx.row();
 	tapRewind(comp->tape,row);
 	buildtapelist();
@@ -1487,6 +1501,7 @@ void SetupWin::chablock(QModelIndex idx) {
 void SetupWin::tlistclick(QModelIndex idx) {
 	int row = idx.row();
 	int col = idx.column();
+	Computer* comp = conf.prof.cur->zx;
 	if ((row < 0) || (row >= comp->tape->blkCount)) return;
 	if (col != 1) return;
 	comp->tape->blkData[row].breakPoint ^= 1;
@@ -1497,6 +1512,7 @@ void SetupWin::tlistclick(QModelIndex idx) {
 // hdd
 
 void SetupWin::hddMasterImg() {
+	Computer* comp = conf.prof.cur->zx;
 	QString path = QFileDialog::getOpenFileName(this,"Image for master HDD","","All files (*)",NULL,QFileDialog::DontUseNativeDialog | QFileDialog::DontConfirmOverwrite);
 	if (path != "") {
 		ui.hm_path->setText(path);
@@ -1510,6 +1526,7 @@ void SetupWin::hddMasterImg() {
 }
 
 void SetupWin::hddSlaveImg() {
+	Computer* comp = conf.prof.cur->zx;
 	QString path = QFileDialog::getOpenFileName(this,"Image for slave HDD","","All files (*)",NULL,QFileDialog::DontUseNativeDialog | QFileDialog::DontConfirmOverwrite);
 	if (path != "") {
 		ui.hs_path->setText(path);
@@ -1542,6 +1559,7 @@ void SetupWin::selSDCimg() {
 }
 
 void SetupWin::openSlot() {
+	Computer* comp = conf.prof.cur->zx;
 //	QString fnam = QFileDialog::getOpenFileName(this,"Cartridge slot","","MSX cartridge (*.rom)");
 //	if (fnam.isEmpty()) return;
 //	ui.cSlotName->setText(fnam);
@@ -1554,6 +1572,7 @@ void SetupWin::openSlot() {
 int testSlotOn(Computer*);
 
 void SetupWin::ejectSlot() {
+	Computer* comp = conf.prof.cur->zx;
 	sltEject(comp->slot);
 	ui.cSlotName->clear();
 	if (testSlotOn(comp))
@@ -1727,7 +1746,7 @@ void SetupWin::chProfile(int row, int col) {
 	if (row > conf.prof.list.size()) return;
 	std::string nm = conf.prof.list[row]->name;
 	prfSetCurrent(nm);
-	start(conf.prof.cur);
+	start();
 	emit s_prf_changed();
 }
 
@@ -1741,7 +1760,7 @@ void SetupWin::rmProfile() {
 		switch(idx) {
 			case DELP_OK_CURR:
 //				conf.prof.changed = 1;
-				start(conf.prof.cur);
+				start();
 				emit s_prf_changed();
 				break;
 			case DELP_ERR:

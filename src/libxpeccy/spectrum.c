@@ -138,7 +138,6 @@ void zxSetUlaPalete(Computer* comp) {
 
 int iord(int port, void* ptr) {
 	Computer* comp = (Computer*)ptr;
-	unsigned char res = 0xff;
 // TODO: zx only
 	if (comp->hw->grp == HWG_ZX) {
 		if (comp->contIO && 0) {
@@ -151,6 +150,7 @@ int iord(int port, void* ptr) {
 	}
 // play rzx
 #ifdef HAVEZLIB
+	int res = 0xff;
 	if (comp->rzx.play) {
 		if (comp->rzx.frm.pos < comp->rzx.frm.size) {
 			res = comp->rzx.frm.data[comp->rzx.frm.pos];

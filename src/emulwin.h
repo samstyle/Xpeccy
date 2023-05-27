@@ -32,7 +32,7 @@ typedef struct {
 // QOpenGLWidget since Qt5.4
 
 #define BLOCKGL 0
-#define USELEGACYGL 1
+#define USELEGACYGL 0
 #define ISLEGACYGL ((QT_VERSION < QT_VERSION_CHECK(5,4,0)) || (USELEGACYGL && (QT_VERSION < QT_VERSION_CHECK(6,0,0))))
 
 #ifdef USEOPENGL
@@ -51,12 +51,12 @@ typedef struct {
 	public:
 		MainWin();
 		~MainWin();
-		Computer* comp;
+//		Computer* comp;
 		void checkState();
 		void loadLabels(const char*);
 		void fillUserMenu();
 	signals:
-		void s_options(xProfile*);
+		void s_options();
 		void s_debug();
 		void s_debug_off();
 		// void s_prf_change(xProfile*);
@@ -196,6 +196,7 @@ typedef struct {
 		QList<GLuint> queue;
 		void initializeGL();
 		void resizeGL(int,int);
+		void paintGL();
 #if ISLEGACYGL
 		QGLContext* cont;
 		QGLShaderProgram prg;

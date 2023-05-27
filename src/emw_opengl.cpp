@@ -5,10 +5,12 @@
 void MainWin::initializeGL() {
 	qDebug() << __FUNCTION__;
 #if !ISLEGACYGL
-	QOpenGLFunctions::initializeOpenGLFunctions();
+	initializeOpenGLFunctions();
 	QSurfaceFormat frmt;
-	frmt.setSwapBehavior(QSurfaceFormat::DoubleBuffer);	// since Qt5.5
-	frmt.setSwapInterval(0);
+#if (QT_VERSION >= QT_VERSION_CHECK(5,5,0))
+	frmt.setSwapBehavior(QSurfaceFormat::SingleBuffer);	// since Qt5.5
+#endif
+	frmt.setSwapInterval(0);				// 0 - off. N>0 - each N vsyncs
 	context()->setFormat(frmt);
 	shd_support = QOpenGLShader::hasOpenGLShaders(QOpenGLShader::Vertex) && QOpenGLShader::hasOpenGLShaders(QOpenGLShader::Fragment);
 	curtex = 0;
@@ -16,6 +18,19 @@ void MainWin::initializeGL() {
 	vtx_shd = new QOpenGLShader(QOpenGLShader::Vertex);
 	qDebug() << "frg_shd";
 	frg_shd = new QOpenGLShader(QOpenGLShader::Fragment);
+#else
+	QGLFormat frmt;
+	frmt.setDoubleBuffer(false);
+	cont = new QGLContext(frmt);
+	setContext(cont);
+	setAutoBufferSwap(true);
+	makeCurrent();
+	curtex = 0;
+	shd_support = QGLShader::hasOpenGLShaders(QGLShader::Vertex) && QGLShader::hasOpenGLShaders(QGLShader::Fragment);
+	qDebug() << "vtx_shd";
+	vtx_shd = new QGLShader(QGLShader::Vertex, cont);		// ERROR: create QOpenGLFunctions with non-current context
+	qDebug() << "frg_shd";
+	frg_shd = new QGLShader(QGLShader::Fragment, cont);
 #endif
 	glGenTextures(4, texids);	// create texture
 	glEnable(GL_TEXTURE_2D);
@@ -38,6 +53,10 @@ void MainWin::resizeGL(int w, int h) {
 	glLoadIdentity();
 	glOrtho(0.0, 1.0, 1.0, 0.0, 1, 0);
 	glMatrixMode(GL_MODELVIEW);
+}
+
+void MainWin::paintGL() {
+
 }
 
 #endif

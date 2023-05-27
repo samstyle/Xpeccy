@@ -62,6 +62,7 @@ int ev_to_keyid(QKeyEvent* ev, bool kgrab) {
 void MainWin::keyPressEvent(QKeyEvent* ev) {
 	int keyid;
 	keyEntry kent;
+	Computer* comp = conf.prof.cur->zx;
 	if (comp->debug) {
 		ev->ignore();
 	} else if (pckAct->isChecked()) {
@@ -113,6 +114,7 @@ void MainWin::xkey_press(int xkey) {
 	int err;
 	QSize wsz;
 	QString path;
+	Computer* comp = conf.prof.cur->zx;
 	if (pckAct->isChecked()) {
 		xt_press(comp->keyb, kent);
 		if (comp->hw->keyp)
@@ -240,7 +242,7 @@ void MainWin::xkey_press(int xkey) {
 				break;
 			case XCUT_OPTIONS:
 				pause(true, PR_OPTS);
-				emit s_options(conf.prof.cur);
+				emit s_options();
 				break;
 			case XCUT_SAVE:
 				pause(true,PR_FILE);
@@ -285,7 +287,9 @@ void MainWin::xkey_press(int xkey) {
 				pause(false,PR_FILE);
 				break;
 			case XCUT_NMI:
+#if HAVEZLIB
 				if (comp->rzx.play) break;
+#endif
 				if (comp->cpu->type != CPU_Z80) break;
 				comp->nmiRequest = 1;
 				break;
@@ -329,6 +333,7 @@ void MainWin::xkey_press(int xkey) {
 
 void MainWin::keyReleaseEvent(QKeyEvent *ev) {
 	if (ev->isAutoRepeat()) return;
+	Computer* comp = conf.prof.cur->zx;
 //	if (relskip) {
 //		relskip = 0;
 //	} else {
@@ -371,6 +376,7 @@ void MainWin::keyReleaseEvent(QKeyEvent *ev) {
 }
 
 void MainWin::xkey_release(int keyid) {
+	Computer* comp = conf.prof.cur->zx;
 	keyEntry kent = getKeyEntry(keyid);
 	xt_release(comp->keyb, kent);
 	if (comp->hw->keyr)
@@ -381,6 +387,7 @@ void MainWin::xkey_release(int keyid) {
 }
 
 void MainWin::calcCoords(QMouseEvent* ev) {
+	Computer* comp = conf.prof.cur->zx;
 	int x = ((ev->xEventX - pixSkip) * 256 / xstep) + comp->vid->lcut.x - comp->vid->bord.x;
 	int y = (ev->xEventY * 256 / ystep - topSkip) + comp->vid->lcut.y - comp->vid->bord.y;
 #if 0

@@ -28,11 +28,11 @@ class SetupWin : public QDialog {
 		SetupWin(QWidget*);
 
 	public slots:
-		void start(xProfile*);
+		void start();
 		void setPadName();
 	private:
-		xProfile* prof;
-		Computer* comp;
+//		xProfile* prof;
+//		Computer* comp;
 
 		Ui::SetupWin ui;
 		Ui::UmaDial uia;

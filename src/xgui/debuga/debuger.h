@@ -87,7 +87,7 @@ class DebugWin : public QDialog {
 		void closed();
 		void wannaKeys();
 		void wannaWutch();
-		void wannaOptions(xProfile*);
+		void wannaOptions();
 		void needStep();
 	public slots:
 		void start();

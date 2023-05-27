@@ -64,19 +64,27 @@ extern int res4;
 void zx_irq(Computer* comp, int t) {
 	switch(t) {
 		case IRQ_VID_INT:			// frame int start
+#if HAVEZLIB
 			if (!comp->rzx.play) {		// ignore when playing rzx
 				comp->vid->intFRAME = comp->vid->intsize;
 				comp->intVector = 0xff;
 				comp->cpu->intrq |= Z80_INT;
 			}
+#else
+			comp->vid->intFRAME = comp->vid->intsize;
+			comp->intVector = 0xff;
+			comp->cpu->intrq |= Z80_INT;
+#endif
 			break;
 		case IRQ_RZX_INT:
 			comp->intVector = 0xff;
 			comp->cpu->intrq |= Z80_INT;
 			comp->vid->intFRAME = comp->vid->intsize;
+#if HAVEZLIB
 			comp->rzx.fCurrent++;
 			comp->rzx.fCount--;
 			rzxGetFrame(comp);
+#endif
 			break;
 		case IRQ_VID_INT_E:			// frame int end
 			if (comp->vid->intLINE) {

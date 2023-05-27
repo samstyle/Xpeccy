@@ -51,14 +51,28 @@ void help() {
 	printf("--confdir DIR\t\tChange config directory\n");
 }
 
+void xApp::d_frame() {
+	QEvent ev(QEvent::User);
+	sendEvent(this, &ev);
+}
+
 // for f*cking apple users
 bool xApp::event(QEvent* ev) {
-	if (ev->type() == QEvent::FileOpen) {
-		QFileOpenEvent* fev = static_cast<QFileOpenEvent*>(ev);
-		QString path = fev->url().path();
-		if (conf.prof.cur) {
-			load_file(conf.prof.cur->zx, path.toLocal8Bit().data(), FG_ALL, 0);
-		}
+	QFileOpenEvent* fev;
+	QString path;
+	switch(ev->type()) {
+		case QEvent::FileOpen:
+			fev = static_cast<QFileOpenEvent*>(ev);
+			path = fev->url().path();
+			if (conf.prof.cur) {
+				load_file(conf.prof.cur->zx, path.toLocal8Bit().data(), FG_ALL, 0);
+			}
+			break;
+		case QEvent::User:
+			emit s_frame();
+			break;
+		default:
+			break;
 	}
 	return QApplication::event(ev);
 }
@@ -119,23 +133,26 @@ int main(int ac,char** av) {
 	if ((conf.xpos >= 0) && (conf.ypos >= 0))
 		mwin.move(conf.xpos, conf.ypos);
 
-	app.connect(&ethread, SIGNAL(s_frame()), &mwin, SLOT(d_frame()));
-	app.connect(&ethread, SIGNAL(dbgRequest()), &mwin, SLOT(doDebug()));
+//	app.connect(&ethread, SIGNAL(s_frame()), &mwin, SLOT(d_frame()));	// don't use connection between threads
+	app.connect(&ethread, SIGNAL(s_frame()), &app, SLOT(d_frame()));	// double connection xThread->xApp->MainWin to be thread-safe
+	app.connect(&app, SIGNAL(s_frame()), &mwin, SLOT(d_frame()));
+
+	app.connect(&ethread, SIGNAL(dbgRequest()), &mwin, SLOT(doDebug()));	// same shit?
 	app.connect(&ethread, SIGNAL(tapeSignal(int,int)), &mwin,SLOT(tapStateChanged(int,int)));
 	app.connect(&mwin, SIGNAL(s_emulwin_close()), &ethread, SLOT(stop()));
 
 	app.connect(&dbgw, SIGNAL(closed()), &mwin, SLOT(dbgReturn()));
 	app.connect(&dbgw, SIGNAL(wannaKeys()), &keyw, SLOT(show()));
 	app.connect(&dbgw, SIGNAL(wannaWutch()), &wutw, SLOT(show()));
-	app.connect(&dbgw, SIGNAL(wannaOptions(xProfile*)), &optw, SLOT(start(xProfile*)));
+	app.connect(&dbgw, SIGNAL(wannaOptions()), &optw, SLOT(start()));
 
 	app.connect(&mwin, SIGNAL(s_debug()), &dbgw, SLOT(start()));
-//	app.connect(&mwin, SIGNAL(s_debug_off()), &dbgw, SLOT(close()));
+	app.connect(&mwin, SIGNAL(s_debug_off()), &dbgw, SLOT(close()));
 //	app.connect(&mwin, SIGNAL(s_prf_change(xProfile*)), &dbgw, SLOT(onPrfChange(xProfile*)));
 	app.connect(&mwin, SIGNAL(s_step()), &dbgw, SLOT(doStep()));
 	app.connect(&mwin, SIGNAL(s_scradr(int,int)), &dbgw, SLOT(setScrAtr(int,int)));
 
-	app.connect(&mwin, SIGNAL(s_options(xProfile*)), &optw, SLOT(start(xProfile*)));
+	app.connect(&mwin, SIGNAL(s_options()), &optw, SLOT(start()));
 	app.connect(&mwin, SIGNAL(s_gamepad_plug()), &optw, SLOT(setPadName()));
 	app.connect(&optw, SIGNAL(closed()), &mwin, SLOT(optApply()));
 	app.connect(&optw, SIGNAL(s_apply()), &dbgw, SLOT(chaPal()));
@@ -206,19 +223,19 @@ int main(int ac,char** av) {
 				//mwin.setProfile(std::string(av[i]));
 				i++;
 			} else if (!strcmp(parg,"--pc")) {
-				mwin.comp->cpu->pc = strtol(av[i],NULL,0) & 0xffff;
+				conf.prof.cur->zx->cpu->pc = strtol(av[i],NULL,0) & 0xffff;
 				i++;
 			} else if (!strcmp(parg,"--sp")) {
-				mwin.comp->cpu->sp = strtol(av[i],NULL,0) & 0xffff;
+				conf.prof.cur->zx->cpu->sp = strtol(av[i],NULL,0) & 0xffff;
 				i++;
 			} else if (!strcmp(parg,"-b") || !strcmp(parg,"--bank")) {
-				memSetBank(mwin.comp->mem, 0xc0, MEM_RAM, strtol(av[i],NULL,0), MEM_16K, NULL, NULL, NULL);
+				memSetBank(conf.prof.cur->zx->mem, 0xc0, MEM_RAM, strtol(av[i],NULL,0), MEM_16K, NULL, NULL, NULL);
 				i++;
 			} else if (!strcmp(parg,"-a") || !strcmp(parg,"--adr")) {
 				adr = strtol(av[i],NULL,0) & 0xffff;
 				i++;
 			} else if (!strcmp(parg,"-f") || !strcmp(parg,"--file")) {
-				loadDUMP(mwin.comp, av[i], adr);
+				loadDUMP(conf.prof.cur->zx, av[i], adr);
 				i++;
 			} else if (!strcmp(parg,"--bp")) {
 				if (conf.prof.cur->labels.contains(av[i])) {
@@ -268,10 +285,10 @@ int main(int ac,char** av) {
 				i++;
 				loadConfig();
 			} else if (strlen(parg) > 0) {
-				load_file(mwin.comp, parg, FG_ALL, drv);
+				load_file(conf.prof.cur->zx, parg, FG_ALL, drv);
 			}
 		} else if (strlen(parg) > 0) {
-			load_file(mwin.comp, parg, FG_ALL, drv);
+			load_file(conf.prof.cur->zx, parg, FG_ALL, drv);
 		}
 	}
 	dbgw.move(conf.dbg.pos);

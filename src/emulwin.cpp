@@ -70,6 +70,7 @@ void MainWin::updateWindow() {
 	int szw;
 	int szh;
 	QSize wsz;
+	Computer* comp = conf.prof.cur->zx;
 	if (conf.vid.fullScreen) {
 		wsz = SCREENSIZE;
 		szw = wsz.width();
@@ -206,25 +207,6 @@ MainWin::MainWin() {
 #ifdef USENETWORK
 	openServer();
 	connect(&srv, SIGNAL(newConnection()),this, SLOT(connected()));
-#endif
-
-#if defined(USEOPENGL) && !BLOCKGL
-#if ISLEGACYGL
-	curtex = 0;
-	QGLFormat frmt;
-	frmt.setDoubleBuffer(false);
-	cont = new QGLContext(frmt);
-	setContext(cont);
-	setAutoBufferSwap(true);
-	makeCurrent();
-	shd_support = QGLShader::hasOpenGLShaders(QGLShader::Vertex) && QGLShader::hasOpenGLShaders(QGLShader::Fragment);
-	qDebug() << "vtx_shd";
-	vtx_shd = new QGLShader(QGLShader::Vertex, cont);		// ERROR: create QOpenGLFunctions with non-current context
-	qDebug() << "frg_shd";
-	frg_shd = new QGLShader(QGLShader::Fragment, cont);
-#else
-	// ...
-#endif
 #endif
 
 	qDebug() << "end:constructor";
@@ -364,6 +346,7 @@ static struct {
 #endif
 
 void MainWin::timerEvent(QTimerEvent* ev) {
+	Computer* comp = conf.prof.cur->zx;
 	if (ev->timerId() == secid) {		// 0.2 sec timer, fps counter
 		// printf("0.2 sec timer event\n");
 		if (!conf.emu.pause) {
@@ -492,6 +475,7 @@ void MainWin::timerEvent(QTimerEvent* ev) {
 
 // if window is not active release keys & buttons, release mouse
 void MainWin::focusOutEvent(QFocusEvent*) {
+	Computer* comp = conf.prof.cur->zx;
 	mouseReleaseAll(comp->mouse);
 	unsetCursor();
 	if (grabMice) {
@@ -512,6 +496,7 @@ void MainWin::moveEvent(QMoveEvent* ev) {
 }
 
 void MainWin::menuShow() {
+	Computer* comp = conf.prof.cur->zx;
 	layoutMenu->setDisabled(comp->hw->lay != NULL);
 	pause(true,PR_MENU);
 }
@@ -525,6 +510,7 @@ void MainWin::menuHide() {
 // connection between tape window & tape state
 
 void MainWin::tapStateChanged(int wut, int val) {
+	Computer* comp = conf.prof.cur->zx;
 	switch(wut) {
 		case TW_STATE:
 			switch(val) {
@@ -562,6 +548,7 @@ void MainWin::tapStateChanged(int wut, int val) {
 // connection between rzx player and emulation state
 void MainWin::rzxStateChanged(int state) {
 #ifdef HAVEZLIB
+	Computer* comp = conf.prof.cur->zx;
 	switch(state) {
 		case RWS_PLAY:
 			comp->rzx.start = 0;
@@ -588,6 +575,7 @@ void MainWin::rzxStateChanged(int state) {
 }
 
 void MainWin::frame_timer() {
+	Computer* comp = conf.prof.cur->zx;
 	if (comp) {
 		frm_ns += comp->vid->nsPerFrame;
 		frm_tmr.setInterval(frm_ns / 1000000);		// 1e6 ns = 1 ms. next frame shot
@@ -603,7 +591,7 @@ void MainWin::frame_timer() {
 #endif
 	blockSignals(true);
 	setUpdatesEnabled(true);
-	repaint();			// signal: abouttocompose->random slot
+	repaint();			// (?) recursive repaint detected
 	setUpdatesEnabled(false);
 	blockSignals(false);
 }
@@ -611,6 +599,7 @@ void MainWin::frame_timer() {
 void MainWin::d_frame() {
 	if (conf.emu.fast) return;
 #if defined(USEOPENGL) && !BLOCKGL
+	Computer* comp = conf.prof.cur->zx;
 	queue.append(texids[curtex]);
 	if (queue.size() > 3)
 		queue.takeFirst();
@@ -631,6 +620,8 @@ void drawText(QPainter* pnt, int x, int y, const char* buf) {
 }
 
 // bug? QOpenGLWidget crash during show->event (ResizeEvent): calling random slot-signal connection
+// repaint/update causes recursion on QOpenGLWidget (whyyyyy?) even if there no paintEvent/paingGL
+// if paintEvent exists, paintGL do not called
 
 void MainWin::paintEvent(QPaintEvent*) {
 #if defined(USEOPENGL)
@@ -668,6 +659,7 @@ void MainWin::paintEvent(QPaintEvent*) {
 	pnt.end();
 #endif
 #else
+	Computer* comp = conf.prof.cur->zx;
 	QPainter pnt(this);
 	pnt.drawImage(0,0, QImage(comp->debug ? scrimg : bufimg, width(), height(), QImage::Format_RGBA8888));
 	drawIcons(pnt);
@@ -676,6 +668,7 @@ void MainWin::paintEvent(QPaintEvent*) {
 }
 
 void MainWin::drawIcons(QPainter& pnt) {
+	Computer* comp = conf.prof.cur->zx;
 // screenshot
 	if (scrCounter > 0) {
 		if (scrInterval > 0) {
@@ -769,13 +762,14 @@ void MainWin::dropEvent(QDropEvent* ev) {
 #if defined(__WIN32)
 		fpath.remove(0,1);	// by some reason path will start with /
 #endif
-		load_file(comp, fpath.toLocal8Bit().data(), FG_ALL, 0);
+		load_file(conf.prof.cur->zx, fpath.toLocal8Bit().data(), FG_ALL, 0);
 	}
 }
 
 
 void MainWin::closeEvent(QCloseEvent* ev) {
 	pause(true,PR_EXIT);
+	Computer* comp = conf.prof.cur->zx;
 	if (conf.confexit) {
 		if (!areSure("Quit?")) {
 			ev->ignore();
@@ -812,6 +806,7 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 
 void MainWin::checkState() {
 #ifdef HAVEZLIB
+	Computer* comp = conf.prof.cur->zx;
 	if (comp->rzx.start) {
 		emit s_rzx_start();
 	} else if (comp->rzx.stop) {
@@ -829,6 +824,7 @@ void MainWin::checkState() {
 uchar hobHead[] = {'s','c','r','e','e','n',' ',' ','C',0,0,0,0x1b,0,0x1b,0xe7,0x81};	// last 2 bytes is crc
 
 void MainWin::screenShot() {
+	Computer* comp = conf.prof.cur->zx;
 	int frm = shotFormat[conf.scrShot.format];
 	std::string fext;
 	switch (frm) {
@@ -924,6 +920,7 @@ void MainWin::setMessage(QString str, double dur) {
 
 void MainWin::updateSatellites() {
 	if (block) return;
+	Computer* comp = conf.prof.cur->zx;
 // update rzx window
 #ifdef HAVEZLIB
 	emit s_rzx_upd(comp);
@@ -1060,12 +1057,13 @@ void MainWin::fillUserMenu() {
 
 void MainWin::doOptions() {
 	pause(true, PR_OPTS);
-	emit s_options(conf.prof.cur);
+	emit s_options();
 }
 
 void MainWin::optApply() {
 //	relskip = 1;
-	comp = conf.prof.cur->zx;
+//	comp = conf.prof.cur->zx;
+	Computer* comp = conf.prof.cur->zx;
 	fillUserMenu();
 	updateWindow();
 #ifdef USENETWORK
@@ -1093,11 +1091,13 @@ void MainWin::dbgReturn() {
 }
 
 void MainWin::bookmarkSelected(QAction* act) {
+	Computer* comp = conf.prof.cur->zx;
 	load_file(comp, act->data().toString().toLocal8Bit().data(), FG_ALL, 0);
 	setFocus();
 }
 
 void MainWin::onPrfChange() {
+	Computer* comp = conf.prof.cur->zx;
 	comp = conf.prof.cur->zx;
 	emit s_keywin_upd(comp->keyb);
 	vid_upd_scale();
@@ -1118,6 +1118,7 @@ void MainWin::profileSelected(QAction* act) {
 }
 
 void MainWin::reset(QAction* act) {
+	Computer* comp = conf.prof.cur->zx;
 	emit s_rzx_stop();
 	compReset(comp,act->data().toInt());
 }
@@ -1131,6 +1132,7 @@ void MainWin::chLayout(QAction* act) {
 
 void MainWin::umOpen(QAction* act) {
 	pause(true, PR_FILE);
+	Computer* comp = conf.prof.cur->zx;
 	load_file(comp, NULL, act->data().toInt(), -1);
 	pause(false, PR_FILE);
 }
@@ -1152,6 +1154,7 @@ void MainWin::saveVRAM() {
 	if (path.isEmpty()) return;
 	QFile file(path);
 	xColor xcol;
+	Computer* comp = conf.prof.cur->zx;
 	if (file.open(QFile::WriteOnly)) {
 		file.write((char*)comp->vid->ram, 0x20000);
 		file.write((char*)comp->vid->reg, 64);
@@ -1170,6 +1173,7 @@ void MainWin::saveGBVRAM() {
 	QString path = QFileDialog::getSaveFileName(this,"Save GB VRAM");
 	if (path.isEmpty()) return;
 	QFile file(path);
+	Computer* comp = conf.prof.cur->zx;
 	if (file.open(QFile::WriteOnly)) {
 		file.write((char*)comp->vid->ram, 0x2000);
 		file.write((char*)comp->gb.iomap, 0x80);
@@ -1181,6 +1185,7 @@ void MainWin::saveNESPPU() {
 	QString path = QFileDialog::getSaveFileName(this,"Save GB VRAM");
 	if (path.isEmpty()) return;
 	QFile file(path);
+	Computer* comp = conf.prof.cur->zx;
 	if (file.open(QFile::WriteOnly)) {
 		file.write((char*)comp->vid->ram, 0x4000);
 		file.write((char*)comp->vid->oam, 0x100);

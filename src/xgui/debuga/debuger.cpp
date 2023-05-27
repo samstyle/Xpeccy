@@ -789,7 +789,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 	Computer* comp = conf.prof.cur->zx;
 	switch (key) {
 		case XCUT_OPTIONS:
-			emit wannaOptions(conf.prof.cur);
+			emit wannaOptions();
 			break;
 		case XCUT_LOAD:
 			load_file(comp, NULL, FG_ALL, -1);

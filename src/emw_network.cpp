@@ -58,11 +58,12 @@ void MainWin::socketRead() {
 	xMnem mnm;
 	bool f;
 	int adr, cnt, val;
+	Computer* comp = conf.prof.cur->zx;
 	// and do something with this
 	if ((com == "debug") || (com == "dbg")) {
 		doDebug();
 	} else if (com == "closedbg") {
-		// emit s_debug_off();
+		emit s_debug_off();
 	} else if (com == "quit") {
 		close();
 	} else if (com == "exit") {
