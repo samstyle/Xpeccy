@@ -52,8 +52,7 @@ void help() {
 }
 
 void xApp::d_frame() {
-	QEvent ev(QEvent::User);
-	sendEvent(this, &ev);
+	postEvent(this, new QEvent(QEvent::User));
 }
 
 // for f*cking apple users
@@ -106,6 +105,7 @@ int main(int ac,char** av) {
 	sndInit();
 	conf_init(av[0], NULL);
 	shortcut_init();
+	loadConfig();
 
 	MainWin mwin;
 	xThread ethread;
@@ -121,13 +121,10 @@ int main(int ac,char** av) {
 //		dbgw.setFont(QFont(QFontDatabase::applicationFontFamilies(id).first(), 10));
 //	}
 
-	loadConfig();
 	mwin.onPrfChange();
 	dbgw.onPrfChange();
-
 	dbgw.setFont(conf.dbg.font);
-
-	mwin.loadShader();
+//	mwin.loadShader();
 	mwin.fillUserMenu();
 
 	if ((conf.xpos >= 0) && (conf.ypos >= 0))

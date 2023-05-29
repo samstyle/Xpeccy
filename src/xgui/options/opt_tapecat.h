@@ -13,6 +13,7 @@ class xTapeCatModel : public QAbstractTableModel {
 		int rowCount(const QModelIndex& = QModelIndex()) const;
 		int columnCount(const QModelIndex& = QModelIndex()) const;
 		void update();
+		void updateRow(int);
 	private:
 		int rcnt;
 		int rcur;

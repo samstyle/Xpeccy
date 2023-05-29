@@ -104,7 +104,7 @@ void TapeWin::doLoad() {
 void TapeWin::doDClick(QModelIndex idx) {
 	int row = idx.row();
 	int col = idx.column();
-	if (col == 1) return;
+	if (col == 0) return;
 	tapRewind(conf.prof.cur->zx->tape, row);
 	updList(conf.prof.cur->zx->tape);
 	//ui.tapeList->fill(conf.prof.cur->zx->tape);
@@ -113,7 +113,7 @@ void TapeWin::doDClick(QModelIndex idx) {
 void TapeWin::doClick(QModelIndex idx) {
 	int row = idx.row();
 	int col = idx.column();
-	if (col != 1) return;
+	if (col != 0) return;
 	conf.prof.cur->zx->tape->blkData[row].breakPoint ^= 1;
 	updList(conf.prof.cur->zx->tape);
 	// ui.tapeList->fill(conf.prof.cur->zx->tape);

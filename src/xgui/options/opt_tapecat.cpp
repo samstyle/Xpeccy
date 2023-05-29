@@ -58,7 +58,11 @@ void xTapeCatModel::fill(Tape* tap) {
 }
 
 void xTapeCatModel::update() {
-	emit dataChanged(index(0,0), index(columnCount() - 1, rowCount() - 1));
+	emit dataChanged(index(0,0), index(rowCount() - 1, columnCount() - 1));
+}
+
+void xTapeCatModel::updateRow(int r) {
+	emit dataChanged(index(r, 0), index(r, columnCount() - 1));
 }
 
 static QVariant tcmName[5] = {"Brk","Dur","Time","Bytes","Name"};
@@ -88,16 +92,13 @@ QVariant xTapeCatModel::data(const QModelIndex& idx, int role) const {
 	switch (role) {
 		case Qt::CheckStateRole:
 			switch(col) {
-				//case 0:	if (row == rcur)
-				//		res = Qt::Checked;
-				//	break;
 				case 0: if (inf[row].breakPoint)
 						res = Qt::Checked;
 					break;
 			}
 			break;
 		case Qt::FontRole:
-			if (row == rcur) fnt.setBold(true);
+			fnt.setBold(row == rcur);
 			res = fnt;
 			break;
 		case Qt::DisplayRole:

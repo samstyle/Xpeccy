@@ -11,7 +11,12 @@ void MainWin::initializeGL() {
 	frmt.setSwapBehavior(QSurfaceFormat::SingleBuffer);	// since Qt5.5
 #endif
 	frmt.setSwapInterval(0);				// 0 - off. N>0 - each N vsyncs
-	context()->setFormat(frmt);
+	frmt.setDepthBufferSize(24);
+	frmt.setStencilBufferSize(8);
+	frmt.setVersion(3,0);
+	frmt.setProfile(QSurfaceFormat::CoreProfile);
+	QSurfaceFormat::setDefaultFormat(frmt);
+	// setFormat(frmt);
 	shd_support = QOpenGLShader::hasOpenGLShaders(QOpenGLShader::Vertex) && QOpenGLShader::hasOpenGLShaders(QOpenGLShader::Fragment);
 	curtex = 0;
 	qDebug() << "vtx_shd";
@@ -44,6 +49,7 @@ void MainWin::initializeGL() {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	}
+	loadShader();
 	qDebug() << "end:" << __FUNCTION__;
 }
 
@@ -56,7 +62,6 @@ void MainWin::resizeGL(int w, int h) {
 }
 
 void MainWin::paintGL() {
-
 }
 
 #endif

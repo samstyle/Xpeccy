@@ -110,6 +110,7 @@ void DebugWin::remapMem() {
 }
 
 void DebugWin::start() {
+//	assert(0);
 	if (isVisible()) {
 		activateWindow();
 		return;

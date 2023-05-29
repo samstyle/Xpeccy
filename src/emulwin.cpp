@@ -66,7 +66,7 @@ void MainWin::updateHead() {
 
 void MainWin::updateWindow() {
 	block = 1;
-	// vidSetBorder(comp->vid, conf.brdsize);		// to call vidUpdateLayout???
+//	vidSetBorder(comp->vid, conf.brdsize);		// to call vidUpdateLayout???
 	int szw;
 	int szh;
 	QSize wsz;
@@ -75,14 +75,15 @@ void MainWin::updateWindow() {
 		wsz = SCREENSIZE;
 		szw = wsz.width();
 		szh = wsz.height();
+		setFixedSize(szw, szh);
 		setWindowState(windowState() | Qt::WindowFullScreen);
 	} else {
 		szw = comp->vid->vsze.x * conf.vid.scale;
 		szh = comp->vid->vsze.y * conf.vid.scale;
 		szw *= conf.prof.cur->zx->hw->xscale;
 		setWindowState(windowState() & ~Qt::WindowFullScreen);
+		setFixedSize(szw, szh);
 	}
-	setFixedSize(szw, szh);
 	vid_set_zoom(conf.vid.scale);
 	lineBytes = szw * 4;
 	frameBytes = szh * lineBytes;
@@ -156,7 +157,7 @@ MainWin::MainWin() {
 	icon = QIcon(":/images/xpeccy.png");
 	setWindowIcon(icon);
 	setAcceptDrops(true);
-	setAutoFillBackground(false);
+	// setAutoFillBackground(false);
 	setUpdatesEnabled(false);
 	conf.emu.pause = 0;
 	scrCounter = 0;
@@ -591,7 +592,7 @@ void MainWin::frame_timer() {
 #endif
 	blockSignals(true);
 	setUpdatesEnabled(true);
-	repaint();			// (?) recursive repaint detected
+	repaint();				// (?) recursive repaint if signals is on
 	setUpdatesEnabled(false);
 	blockSignals(false);
 }
