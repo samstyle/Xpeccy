@@ -88,7 +88,7 @@ QVariant xTapeCatModel::data(const QModelIndex& idx, int role) const {
 	if ((row < 0) || (row >= rowCount())) return res;
 	if ((col < 0) || (col >= columnCount())) return res;
 	if (inf == NULL) return res;
-	QFont fnt;
+	//QFont fnt;
 	switch (role) {
 		case Qt::CheckStateRole:
 			switch(col) {
@@ -97,10 +97,16 @@ QVariant xTapeCatModel::data(const QModelIndex& idx, int role) const {
 					break;
 			}
 			break;
-		case Qt::FontRole:
-			fnt.setBold(row == rcur);
-			res = fnt;
+		case X_BackgroundRole:
+			if (row == rcur) res = QColor(Qt::darkGray);
 			break;
+		case Qt::ForegroundRole:
+			if (row == rcur) res = QColor(Qt::white);
+			break;
+		//case Qt::FontRole:
+			//fnt.setBold(row == rcur);
+			//res = fnt;
+			//break;
 		case Qt::DisplayRole:
 			switch(col) {
 				case 1: res = QString(getTimeString(inf[row].time / 1e6).c_str());
@@ -128,8 +134,9 @@ xTapeCatTable::xTapeCatTable(QWidget* p):QTableView(p) {
 
 // tape player window will reset scroll on update
 void xTapeCatTable::fill(Tape* tape) {
-//	int row = currentIndex().row();
+	//QModelIndex idx = currentIndex();
 	model->fill(tape);
-//	selectRow(row);
+	//setCurrentIndex(idx);
+	scrollTo(model->index(tape->block, 0), QAbstractItemView::PositionAtCenter);
 	setEnabled(tape->blkCount > 0);
 }
