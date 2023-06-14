@@ -1,7 +1,7 @@
 #include "dbg_pit.h"
 #include "../../xcore/xcore.h"
 
-xPitModel::xPitModel(QObject* p):QAbstractTableModel(p) {}
+xPitModel::xPitModel(QObject* p):xTableModel(p) {}
 
 int xPitModel::columnCount(const QModelIndex&) const {
 	return 3;
@@ -62,6 +62,7 @@ QVariant xPitModel::data(const QModelIndex& idx, int role) const {
 	return res;
 }
 
+/*
 QModelIndex xPitModel::index(int row, int col, const QModelIndex&) const {
 	return createIndex(row, col, nullptr);
 }
@@ -70,3 +71,4 @@ void xPitModel::update() {
 	printf("update\n");
 	emit dataChanged(index(0,0), index(rowCount()-1, columnCount()-1));
 }
+*/

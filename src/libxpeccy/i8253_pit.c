@@ -118,7 +118,7 @@ void pit_ch_wr(pitChan* ch, int val) {
 // wait div = write low or hi byte (am=1,2). if am=3, writing low byte will stop counter, and it's continues on writing high byte
 
 // actions on divider loading
-void pch_wr_m0(pitChan* ch) {ch->cnt = ch->div;}
+void pch_wr_m0(pitChan* ch) {ch->cnt = ch->div; ch->out = 0;}
 void pch_wr_m4(pitChan* ch) {ch->cnt = ch->div;}
 
 // actions on counter==0
@@ -247,9 +247,9 @@ void pit_wr(PIT* pit, int adr, int val) {
 			}
 			if (ch != NULL) {
 				ch->state = val & 0x3f;
-				if (val & 0x30) {
+				if (val & 0x30) {	// 01,10,11:write mode
 					ch->acmod = (val & 0x30) >> 4;
-				} else {		// latch counter
+				} else {		// 00:latch counter
 					pch_fix(ch, 0x10);
 				}
 				pch_set_mod(ch, (val >> 1) & 7);

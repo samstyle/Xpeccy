@@ -7,6 +7,7 @@
 
 #include "libxpeccy/spectrum.h"
 #include "xcore/xcore.h"
+#include "../classes.h"
 
 // memory cell type (bits 4..7)
 
@@ -28,7 +29,7 @@ typedef struct {
 	QString icon;			// icon path if any
 } dasmData;
 
-class xDisasmModel : public QAbstractTableModel {
+class xDisasmModel : public xTableModel {
 	Q_OBJECT
 	public:
 		xDisasmModel(QObject* = NULL);
@@ -38,14 +39,14 @@ class xDisasmModel : public QAbstractTableModel {
 		Qt::ItemFlags flags(const QModelIndex&) const;
 		QVariant data(const QModelIndex&, int) const;
 		bool setData(const QModelIndex&, const QVariant&, int);
-		void update_data();
+		// void update();
 		QList<dasmData> dasm;
 		int asmadr;			// full memory address
 	signals:
 		void rqRefill();
 		void s_adrch(int, int);
 	public slots:
-		int update();
+		int update_lst();
 	private:
 		int row_count;
 		int fill();

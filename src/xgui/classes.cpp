@@ -284,3 +284,27 @@ QString xTreeBox::currentFile() {
 	QFileInfo inf = mod->fileInfo(idx);
 	return mod->rootDirectory().relativeFilePath(inf.filePath());
 }
+
+// base table model
+
+xTableModel::xTableModel(QObject* p):QAbstractTableModel(p) {}
+
+QModelIndex xTableModel::index(int row, int col, const QModelIndex& p) const {
+	return createIndex(row, col);
+}
+
+void xTableModel::update() {
+	emit dataChanged(index(0,0),index(rowCount() - 1, columnCount() - 1));
+}
+
+void xTableModel::updateRow(int row) {
+	emit dataChanged(index(row, 0), index(row, columnCount() - 1));
+}
+
+void xTableModel::updateColumn(int col) {
+	emit dataChanged(index(0, col), index(rowCount() - 1, col));
+}
+
+void xTableModel::updateCell(int row, int col) {
+	emit dataChanged(index(row, col), index(row, col));
+}

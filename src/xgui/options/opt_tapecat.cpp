@@ -5,7 +5,7 @@
 
 // model
 
-xTapeCatModel::xTapeCatModel(QObject* p):QAbstractTableModel(p) {
+xTapeCatModel::xTapeCatModel(QObject* p):xTableModel(p) {
 	rcnt = 0;
 	inf = NULL;
 }
@@ -54,15 +54,6 @@ void xTapeCatModel::fill(Tape* tap) {
 		}
 	}
 	update();
-//	emit endResetModel();
-}
-
-void xTapeCatModel::update() {
-	emit dataChanged(index(0,0), index(rowCount() - 1, columnCount() - 1));
-}
-
-void xTapeCatModel::updateRow(int r) {
-	emit dataChanged(index(r, 0), index(r, columnCount() - 1));
 }
 
 static QVariant tcmName[5] = {"Brk","Dur","Time","Bytes","Name"};
@@ -74,10 +65,6 @@ QVariant xTapeCatModel::headerData(int sec, Qt::Orientation ori, int role) const
 	if ((sec < 0) || (sec >= columnCount())) return res;
 	res = tcmName[sec];
 	return res;
-}
-
-QModelIndex xTapeCatModel::index(int row, int col, const QModelIndex&) const {
-	return createIndex(row, col, (void*)this);
 }
 
 QVariant xTapeCatModel::data(const QModelIndex& idx, int role) const {
@@ -134,9 +121,7 @@ xTapeCatTable::xTapeCatTable(QWidget* p):QTableView(p) {
 
 // tape player window will reset scroll on update
 void xTapeCatTable::fill(Tape* tape) {
-	//QModelIndex idx = currentIndex();
 	model->fill(tape);
-	//setCurrentIndex(idx);
 	scrollTo(model->index(tape->block, 0), QAbstractItemView::PositionAtCenter);
 	setEnabled(tape->blkCount > 0);
 }

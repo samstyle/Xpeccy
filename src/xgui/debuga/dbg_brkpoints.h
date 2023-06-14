@@ -12,12 +12,12 @@
 #include "ui_brkmanager.h"
 #include "xcore/xcore.h"
 
-class xBreakListModel : public QAbstractTableModel {
+class xBreakListModel : public xTableModel {
 	Q_OBJECT
 	public:
 		xBreakListModel(QObject* = NULL);
-		void update();
-		void updateCell(int, int);
+		//void update();
+		//void updateCell(int, int);
 	private:
 		int rowCount(const QModelIndex& = QModelIndex()) const;
 		int columnCount(const QModelIndex& = QModelIndex()) const;

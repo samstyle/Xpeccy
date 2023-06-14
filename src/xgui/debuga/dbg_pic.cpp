@@ -1,7 +1,7 @@
 #include "dbg_pic.h"
 #include "../../xcore/xcore.h"
 
-xPicModel::xPicModel(QObject* p):QAbstractTableModel(p) {
+xPicModel::xPicModel(QObject* p):xTableModel(p) {
 }
 
 int xPicModel::columnCount(const QModelIndex &) const {
@@ -31,9 +31,11 @@ QVariant xPicModel::headerData(int sec, Qt::Orientation ori, int role) const {
 	return res;
 }
 
+/*
 QModelIndex xPicModel::index(int r, int c, const QModelIndex &) const {
 	return createIndex(r, c, nullptr);
 }
+*/
 
 QVariant xPicModel::data(const QModelIndex& idx, int role) const {
 	QVariant res;

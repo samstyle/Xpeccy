@@ -1,6 +1,5 @@
 #pragma once
 
-#include <QAbstractTableModel>
 #include <QDialog>
 
 #include "../xgui.h"
@@ -8,10 +7,10 @@
 
 #include "ui_rsedit.h"
 
-class xRomsetModel : public QAbstractTableModel {
+class xRomsetModel : public xTableModel {
 	public:
 		xRomsetModel(QObject* = NULL);
-		void update(xRomset*);
+		void fill(xRomset*);
 	private:
 		xRomset* rset;
 		int rowCount(const QModelIndex& = QModelIndex()) const;

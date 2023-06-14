@@ -166,6 +166,7 @@ set(MOCFILES
 	./src/xgui/options/opt_hotkeytab.h
 	./src/vkeyboard.h
 	./src/xgui/xgui.h
+	./src/xgui/classes.h
 	./src/xgui/labelist.h
 )
 

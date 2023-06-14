@@ -5,7 +5,7 @@
 
 // model
 
-xHotkeyModel::xHotkeyModel(QObject* p):QAbstractTableModel(p) {
+xHotkeyModel::xHotkeyModel(QObject* p):xTableModel(p) {
 	rows = 0;
 	xShortcut* tab = shortcut_tab();
 	while (tab[rows].text != NULL) {
@@ -40,9 +40,11 @@ QVariant xHotkeyModel::data(const QModelIndex& idx, int role) const {
 	return var;
 }
 
+/*
 void xHotkeyModel::updateCell(int row, int col) {
 	emit dataChanged(index(row, col), index(row, col));
 }
+*/
 
 // table
 

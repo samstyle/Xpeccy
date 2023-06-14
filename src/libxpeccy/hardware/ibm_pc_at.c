@@ -151,7 +151,6 @@ int ibm_inKbd(Computer* comp, int adr) {
 			res = ps2c_rd(comp->ps2c, PS2_RSTATUS);
 			break;
 	}
-	//printf("%.4X:%.4X kbd in %.3X = %.2X\n",comp->cpu->cs.idx,comp->cpu->pc,adr,res);
 	return res;
 }
 
@@ -169,11 +168,6 @@ void ibm_outKbd(Computer* comp, int adr, int val) {
 			break;
 		case 4:
 			ps2c_wr(comp->ps2c, PS2_RCMD, val);
-//			if (comp->ps2c->reset) {
-//				comp->ps2c->reset = 0;
-//				comp->cpu->reset(comp->cpu);		// don't reset all comp
-				// compReset(comp, RES_DEFAULT);
-//			}
 			break;
 	}
 	//printf("%.4X:%.4X kbd out %.3X, %.2X\n",comp->cpu->cs.idx,comp->cpu->pc,adr,val);
@@ -576,7 +570,11 @@ void ibm_irq(Computer* comp, int t) {
 			pic_int(comp->mpic, 0);
 			break;
 		case IRQ_PIT_CH1: comp->reg[0x61] ^= 0x10; break;
-		case IRQ_PIT_CH2: comp->beep->lev = (comp->reg[0x61] & 2) ? comp->pit->ch2.out : 1; break;
+		case IRQ_PIT_CH2:
+			if (comp->reg[0x61] & 2) {
+				comp->beep->lev = comp->pit->ch2.out;
+			}
+			break;
 		case IRQ_RESET: comp->cpu->reset(comp->cpu);
 			break;
 	}
@@ -623,7 +621,7 @@ void ibm_keyr(Computer* comp, keyEntry kent) {
 
 sndPair ibm_vol(Computer* comp, sndVolume* vol) {
 	sndPair res;
-	res.left = comp->beep->val * vol->beep / 4;
+	res.left = ((comp->reg[0x61] & 2) ? comp->beep->val : 0xff) * vol->beep / 4;
 	res.right = res.left;
 	return res;
 }

@@ -36,7 +36,7 @@ int loadWAV(Computer* comp, const char* name, int drv) {
 			} else {
 				lev = amp;
 				blkAddPulse(&blk, dur, (amp >> (hd.bitsPerSample - 8)));
-				if (dur > 5e5) {				// 0.5 sec pause is block-breaking signal
+				if (dur > 2e5) {				// pause is block-breaking signal
 					tap_add_block(tap, blk);
 					blkClear(&blk);
 				}

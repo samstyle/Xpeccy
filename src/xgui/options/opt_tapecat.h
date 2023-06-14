@@ -4,17 +4,15 @@
 #include <QTableView>
 
 #include "libxpeccy/tape.h"
+#include "../classes.h"
 
-class xTapeCatModel : public QAbstractTableModel {
+class xTapeCatModel : public xTableModel {
 	Q_OBJECT
 	public:
 		xTapeCatModel(QObject* p = NULL);
 		void fill(Tape*);
 		int rowCount(const QModelIndex& = QModelIndex()) const;
 		int columnCount(const QModelIndex& = QModelIndex()) const;
-		void update();
-		void updateRow(int);
-		QModelIndex index(int row, int col, const QModelIndex &parent = QModelIndex()) const;
 	private:
 		int rcnt;
 		int rcur;

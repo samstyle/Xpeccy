@@ -22,7 +22,7 @@ void xDiskDump::update() {
 
 // model
 
-xDiskDumpModel::xDiskDumpModel(QObject* p):QAbstractTableModel(p) {
+xDiskDumpModel::xDiskDumpModel(QObject* p):xTableModel(p) {
 	rcnt = 0;
 	drv = 0;
 	trk = 0;
@@ -57,6 +57,7 @@ int xDiskDumpModel::columnCount(const QModelIndex&) const {
 	return 10;
 }
 
+/*
 void xDiskDumpModel::update() {
 	emit dataChanged(index(0,0), index(rowCount() - 1, columnCount() - 1));
 }
@@ -64,6 +65,7 @@ void xDiskDumpModel::update() {
 QModelIndex xDiskDumpModel::index(int row, int col, const QModelIndex& par) const {
 	return createIndex(row, col, nullptr);
 }
+*/
 
 QVariant xDiskDumpModel::data(const QModelIndex& idx, int role) const {
 	QVariant res;

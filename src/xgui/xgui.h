@@ -9,6 +9,8 @@
 #include <QTreeView>
 #include <QWheelEvent>
 
+#include "classes.h"
+
 #if QT_VERSION < QT_VERSION_CHECK(6,0,0)
 	#include <QRegExpValidator>
 #else

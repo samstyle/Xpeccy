@@ -1,8 +1,9 @@
 #pragma once
 
 #include <QTableView>
+#include "../classes.h"
 
-class xVMemDumpModel : public QAbstractTableModel {
+class xVMemDumpModel : public xTableModel {
 	Q_OBJECT
 	public:
 		xVMemDumpModel(unsigned char* ptr, QObject* p = nullptr);
@@ -11,12 +12,12 @@ class xVMemDumpModel : public QAbstractTableModel {
 		QVariant data(const QModelIndex&, int) const;
 		bool setData(const QModelIndex&, const QVariant&, int);
 		Qt::ItemFlags flags(const QModelIndex&) const;
-		void update();
+		// void update();
 		void setVMem(unsigned char*);
 	signals:
 		void adr_ch(QModelIndex);
 	private:
-		QModelIndex index(int row, int col, const QModelIndex& = QModelIndex()) const;
+		// QModelIndex index(int row, int col, const QModelIndex& = QModelIndex()) const;
 		unsigned char* vmem;
 };
 

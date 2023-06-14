@@ -1,7 +1,7 @@
 #include "dbg_vic_regs.h"
 #include "../../xcore/xcore.h"
 
-xVicRegsModel::xVicRegsModel(QObject* p):QAbstractTableModel(p) {
+xVicRegsModel::xVicRegsModel(QObject* p):xTableModel(p) {
 }
 
 int xVicRegsModel::rowCount(const QModelIndex&) const {return 0x31;}

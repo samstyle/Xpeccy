@@ -5,7 +5,6 @@
 #include <QShortcut>
 #include <QModelIndex>
 #include <QKeySequence>
-#include <QAbstractTableModel>
 
 #include "../../xcore/xcore.h"
 #include "padbinder.h"

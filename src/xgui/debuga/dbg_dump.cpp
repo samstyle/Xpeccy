@@ -113,7 +113,7 @@ void xDumpModel::mwr(int adr, unsigned char bt) {
 	}
 }
 
-xDumpModel::xDumpModel(QObject* par):QAbstractTableModel(par) {
+xDumpModel::xDumpModel(QObject* par):xTableModel(par) {
 	codePage = XCP_1251;
 	mode = XVIEW_CPU;
 	page = 0;
@@ -164,6 +164,7 @@ int xDumpModel::columnCount(const QModelIndex&) const {
 	return 10;
 }
 
+/*
 void xDumpModel::update() {
 	emit dataChanged(index(0, 0), index(rowCount() - 1, columnCount() - 1));
 }
@@ -179,6 +180,7 @@ void xDumpModel::updateRow(int row) {
 void xDumpModel::updateColumn(int col) {
 	emit dataChanged(index(0, col), index(rowCount() - 1, col));
 }
+*/
 
 int check_seg(int adr, xSegPtr seg) {
 	if (adr < seg.base) return 0;

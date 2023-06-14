@@ -2,7 +2,7 @@
 #include "../../xcore/xcore.h"
 #include "../../libxpeccy/video/vga.h"
 
-xVgaRegModel::xVgaRegModel(QObject* p):QAbstractTableModel(p) {}
+xVgaRegModel::xVgaRegModel(QObject* p):xTableModel(p) {}
 
 int xVgaRegModel::rowCount(const QModelIndex&) const {
 	return 0x19;

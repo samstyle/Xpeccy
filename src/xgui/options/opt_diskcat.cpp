@@ -2,7 +2,7 @@
 
 // model
 
-xDiskCatModel::xDiskCatModel(QObject* p):QAbstractTableModel(p) {
+xDiskCatModel::xDiskCatModel(QObject* p):xTableModel(p) {
 	cat.clear();
 }
 
@@ -46,9 +46,11 @@ QVariant xDiskCatModel::data(const QModelIndex& idx, int role) const {
 	return res;
 }
 
+/*
 void xDiskCatModel::update() {
 	emit dataChanged(index(0,0), index(columnCount() - 1, rowCount() - 1));
 }
+*/
 
 void xDiskCatModel::setCatalog(QList<TRFile> c) {
 	cat = c;

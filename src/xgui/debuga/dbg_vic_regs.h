@@ -1,8 +1,8 @@
 #pragma once
 
-#include <QAbstractTableModel>
+#include "../classes.h"
 
-class xVicRegsModel : public QAbstractTableModel {
+class xVicRegsModel : public xTableModel {
 	public:
 		xVicRegsModel(QObject* = nullptr);
 	private:

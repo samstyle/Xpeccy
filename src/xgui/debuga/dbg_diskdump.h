@@ -1,8 +1,9 @@
 #pragma once
 
 #include <QTableView>
+#include "../classes.h"
 
-class xDiskDumpModel : public QAbstractTableModel {
+class xDiskDumpModel : public xTableModel {
 	public:
 		xDiskDumpModel(QObject* = NULL);
 		int rowCount(const QModelIndex& = QModelIndex()) const;
@@ -10,12 +11,12 @@ class xDiskDumpModel : public QAbstractTableModel {
 		QVariant data(const QModelIndex&, int) const;
 		void setDrive(int);
 		void setTrack(int);
-		void update();
+		// void update();
 	private:
 		int drv;
 		int trk;
 		int rcnt;
-		QModelIndex index(int row, int col, const QModelIndex& = QModelIndex()) const;
+		// QModelIndex index(int row, int col, const QModelIndex& = QModelIndex()) const;
 };
 
 class xDiskDump : public QTableView {

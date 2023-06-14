@@ -1,9 +1,8 @@
 #pragma once
 
-#include <QAbstractTableModel>
-#include <QModelIndex>
+#include "../classes.h"
 
-class xVgaRegModel : public QAbstractTableModel {
+class xVgaRegModel : public xTableModel {
 	public:
 		xVgaRegModel(QObject* = nullptr);
 	private:

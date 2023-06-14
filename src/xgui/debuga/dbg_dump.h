@@ -8,6 +8,7 @@
 #include <QHeaderView>
 
 #include "../../xcore/xcore.h"
+#include "../classes.h"
 
 enum {
 	XCP_1251 = 1,
@@ -28,7 +29,7 @@ enum {
 	XVIEW_OCTWRD
 };
 
-class xDumpModel : public QAbstractTableModel {
+class xDumpModel : public xTableModel {
 	Q_OBJECT
 	public:
 		xDumpModel(QObject* = NULL);
@@ -43,14 +44,14 @@ class xDumpModel : public QAbstractTableModel {
 		QVariant data(const QModelIndex&, int) const;
 		bool setData(const QModelIndex&, const QVariant&, int);
 		void setView(int);
-		void updateCell(int, int);
-		void updateRow(int);
-		void updateColumn(int);
+		//void updateCell(int, int);
+		//void updateRow(int);
+		//void updateColumn(int);
 	signals:
 		void s_adrch(int);
 		void rqRefill();
-	public slots:
-		void update();
+	//public slots:
+		// void update();
 	private:
 		int mode;
 		int view;

@@ -47,7 +47,7 @@ void xRomsetEditor::store() {
 
 static xRomset initrs;
 
-xRomsetModel::xRomsetModel(QObject* p):QAbstractTableModel(p) {
+xRomsetModel::xRomsetModel(QObject* p):xTableModel(p) {
 	initrs.fntFile.clear();
 	initrs.gsFile.clear();
 	initrs.name.clear();
@@ -139,7 +139,7 @@ QVariant xRomsetModel::data(const QModelIndex& idx, int role) const {
 	return res;
 }
 
-void xRomsetModel::update(xRomset* rs) {
+void xRomsetModel::fill(xRomset* rs) {
 	xRomFile trf;
 	int i;
 	int mx = rs->roms.size();

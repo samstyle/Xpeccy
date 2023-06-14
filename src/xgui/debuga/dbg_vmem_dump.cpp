@@ -3,7 +3,7 @@
 
 // model
 
-xVMemDumpModel::xVMemDumpModel(unsigned char* ptr, QObject *p):QAbstractTableModel(p) {
+xVMemDumpModel::xVMemDumpModel(unsigned char* ptr, QObject *p):xTableModel(p) {
 	vmem = ptr;
 }
 
@@ -96,6 +96,7 @@ Qt::ItemFlags xVMemDumpModel::flags(const QModelIndex& idx) const {
 	return res;
 }
 
+/*
 QModelIndex xVMemDumpModel::index(int row, int col, const QModelIndex&) const {
 	return createIndex(row, col, nullptr);
 }
@@ -103,6 +104,7 @@ QModelIndex xVMemDumpModel::index(int row, int col, const QModelIndex&) const {
 void xVMemDumpModel::update() {
 	emit dataChanged(index(0,0), index(rowCount() - 1, columnCount() - 1));
 }
+*/
 
 void xVMemDumpModel::setVMem(unsigned char* ptr) {
 	vmem = ptr;

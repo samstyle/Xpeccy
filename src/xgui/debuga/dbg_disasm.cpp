@@ -19,7 +19,7 @@ extern int adr_of_reg(CPU* cpu, bool* flag, QString nam);
 
 // MODEL
 
-xDisasmModel::xDisasmModel(QObject* p):QAbstractTableModel(p) {
+xDisasmModel::xDisasmModel(QObject* p):xTableModel(p) {
 //	cptr = NULL;
 	asmadr = 0;
 	row_count = 25;
@@ -500,11 +500,13 @@ int xDisasmModel::fill() {
 	return res;
 }
 
-void xDisasmModel::update_data() {
+/*
+void xDisasmModel::update() {
 	emit dataChanged(index(0, 0), index(rowCount() - 1, columnCount() - 1));
 }
+*/
 
-int xDisasmModel::update() {
+int xDisasmModel::update_lst() {
 	int res = fill();
 	int i;
 	Computer* comp = conf.prof.cur->zx;
@@ -516,14 +518,16 @@ int xDisasmModel::update() {
 			}
 		}
 	}
-	update_data();
+	update();
 	return res;
 }
 
 Qt::ItemFlags xDisasmModel::flags(const QModelIndex& idx) const {
 	Qt::ItemFlags res = QAbstractItemModel::flags(idx);
-	if ((idx.column() < 3) && !((idx.column() == 2) && dasm[idx.row()].isequ)) {
-		res |= Qt::ItemIsEditable;
+	if (idx.isValid() && (idx.row() < dasm.size())) {
+		if ((idx.column() < 3) && !((idx.column() == 2) && dasm[idx.row()].isequ)) {
+			res |= Qt::ItemIsEditable;
+		}
 	}
 	return res;
 }
@@ -768,7 +772,7 @@ bool xDisasmModel::setData(const QModelIndex& cidx, const QVariant& val, int rol
 			emit rqRefill();
 			break;
 	}
-	update();
+	update_lst();
 	return true;
 }
 
@@ -835,7 +839,7 @@ void xDisasmTable::setAdr(int adr, int hist) {
 }
 
 int xDisasmTable::updContent() {
-	int res = model->update();
+	int res = model->update_lst();
 	clearSpans();
 	for (int i = 0; i < model->dasm.size(); i++) {
 		if (model->dasm[i].isequ) {
@@ -861,7 +865,7 @@ int xDisasmTable::updContent() {
 }
 
 void xDisasmTable::update() {
-	model->update_data();
+	model->update();
 }
 
 void xDisasmTable::t_update(int oadr, int nadr) {

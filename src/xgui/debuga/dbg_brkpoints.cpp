@@ -3,7 +3,7 @@
 
 // Model
 
-xBreakListModel::xBreakListModel(QObject* par):QAbstractTableModel(par) {
+xBreakListModel::xBreakListModel(QObject* par):xTableModel(par) {
 
 }
 
@@ -125,6 +125,7 @@ void xBreakListModel::sort(int col, Qt::SortOrder ord) {
 	emit dataChanged(index(0,0), index(rowCount() - 1, columnCount() - 1));
 }
 
+/*
 void xBreakListModel::updateCell(int row, int col) {
 	emit dataChanged(index(row, col), index(row, col));
 }
@@ -132,6 +133,7 @@ void xBreakListModel::updateCell(int row, int col) {
 void xBreakListModel::update() {
 	emit endResetModel();
 }
+*/
 
 // Widget
 

@@ -1,14 +1,14 @@
 #pragma once
 
-#include <QAbstractTableModel>
 #include <QTableView>
 #include "../../libxpeccy/filetypes/filetypes.h"
+#include "../xgui.h"
 
-class xDiskCatModel : public QAbstractTableModel {
+class xDiskCatModel : public xTableModel {
 	Q_OBJECT
 	public:
 		xDiskCatModel(QObject* p = NULL);
-		void update();
+		// void update();
 		void setCatalog(QList<TRFile>);
 	private:
 		QList<TRFile> cat;

@@ -1,7 +1,7 @@
 #include "dbg_cmos_dump.h"
 #include "../../xcore/xcore.h"
 
-xCmosDumpModel::xCmosDumpModel(QObject *p):QAbstractTableModel(p) {
+xCmosDumpModel::xCmosDumpModel(QObject *p):xTableModel(p) {
 }
 
 int xCmosDumpModel::rowCount(const QModelIndex &) const {
@@ -56,6 +56,8 @@ QVariant xCmosDumpModel::headerData(int sect, Qt::Orientation ori, int role) con
 	return QString::number(sect << 3, 16).toUpper().rightJustified(3,'0');
 }
 
+/*
 QModelIndex xCmosDumpModel::index(int row, int col, const QModelIndex &) const {
 	return createIndex(row, col, nullptr);
 }
+*/

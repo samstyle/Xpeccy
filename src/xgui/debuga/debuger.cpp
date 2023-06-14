@@ -1072,9 +1072,11 @@ void DebugWin::fillTape() {
 	ui.labTapeDiag->setPixmap(pxm);
 }
 
+// NOTE: model must be xTableModel child
 void update_table(QTableView* tab) {
-	QAbstractItemModel* mod = tab->model();
-	emit mod->dataChanged(mod->index(0,0), mod->index(mod->rowCount(), mod->columnCount()));
+	xTableModel* mod = (xTableModel*)(tab->model());
+	mod->update();
+	// emit mod->dataChanged(mod->index(0,0), mod->index(99, 99));
 }
 
 void DebugWin::fillTabs() {

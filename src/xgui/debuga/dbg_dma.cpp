@@ -1,7 +1,7 @@
 #include "dbg_dma.h"
 #include "../../xcore/xcore.h"
 
-xDmaTableModel::xDmaTableModel(QObject* p):QAbstractTableModel(p) {}
+xDmaTableModel::xDmaTableModel(QObject* p):xTableModel(p) {}
 
 int xDmaTableModel::columnCount(const QModelIndex &) const {
 	return 8;
@@ -11,6 +11,7 @@ int xDmaTableModel::rowCount(const QModelIndex &) const {
 	return 7;
 }
 
+/*
 QModelIndex xDmaTableModel::index(int row, int col, const QModelIndex &) const {
 	return createIndex(row, col);
 }
@@ -18,6 +19,7 @@ QModelIndex xDmaTableModel::index(int row, int col, const QModelIndex &) const {
 void xDmaTableModel::update() {
 	emit dataChanged(index(0,0), index(rowCount() - 1, columnCount() - 1));
 }
+*/
 
 static const char* dmaColName[8] = {"CH0","CH1","CH2","CH3","CH4","CH5","CH6","CH7"};
 static const char* dmaRowName[7] = {"Masked","Mode","BAR","CAR","PAR","BWR","CWR"};

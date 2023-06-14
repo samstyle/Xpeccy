@@ -952,7 +952,7 @@ void SetupWin::romPreset() {
 		dx++;
 	}
 	conf.rsList[idx] = rs;
-	rsmodel->update(&conf.rsList[idx]);
+	rsmodel->fill(&conf.rsList[idx]);
 }
 
 void SetupWin::rmRomset() {
@@ -1006,7 +1006,7 @@ void SetupWin::delRom() {
 	} else {
 		conf.rsList[idx].vBiosFile.clear();
 	}
-	rsmodel->update(&conf.rsList[idx]);
+	rsmodel->fill(&conf.rsList[idx]);
 }
 
 void SetupWin::editRom() {
@@ -1047,7 +1047,7 @@ void SetupWin::setRom(xRomFile f) {
 	} else {
 		conf.rsList[idx].vBiosFile = f.name;
 	}
-	rsmodel->update(&conf.rsList[idx]);
+	rsmodel->fill(&conf.rsList[idx]);
 }
 
 // lists
@@ -1116,7 +1116,7 @@ void SetupWin::buildrsetlist() {
 	} else {
 		ui.tvRomset->setEnabled(true);
 		xRomset* rset = &conf.rsList[ui.rsetbox->currentIndex()];
-		rsmodel->update(rset);
+		rsmodel->fill(rset);
 	}
 }
 

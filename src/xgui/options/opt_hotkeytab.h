@@ -6,7 +6,8 @@
 #include <QPushButton>
 #include <QKeySequence>
 #include <QKeyEvent>
-#include <QAbstractTableModel>
+
+#include "../xgui.h"
 
 class xKeyEditor : public QDialog {
 	Q_OBJECT
@@ -29,14 +30,14 @@ class xKeyEditor : public QDialog {
 		void reject();
 };
 
-class xHotkeyModel : public QAbstractTableModel {
+class xHotkeyModel : public xTableModel {
 	Q_OBJECT
 	public:
 		xHotkeyModel(QObject* p = nullptr);
 		int rowCount(const QModelIndex& idx = QModelIndex()) const;
 		int columnCount(const QModelIndex& idx = QModelIndex()) const;
 		QVariant data(const QModelIndex& idx, int role) const;
-		void updateCell(int, int);
+		// void updateCell(int, int);
 	private:
 		int rows;
 };
