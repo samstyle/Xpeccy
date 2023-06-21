@@ -122,6 +122,6 @@ xTapeCatTable::xTapeCatTable(QWidget* p):QTableView(p) {
 // tape player window will reset scroll on update
 void xTapeCatTable::fill(Tape* tape) {
 	model->fill(tape);
-	scrollTo(model->index(tape->block, 0), QAbstractItemView::PositionAtCenter);
+	scrollTo(model->index(tape->block, 0), QAbstractItemView::EnsureVisible);
 	setEnabled(tape->blkCount > 0);
 }

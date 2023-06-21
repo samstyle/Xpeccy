@@ -144,7 +144,7 @@ int ibm_inKbd(Computer* comp, int adr) {
 			break;
 		case 1:
 			// comp->reg[0x61] ^= 0x10;		// Toggles with each refresh request (?)
-			res = comp->reg[0x61] & 0x1f;		// b0..3 is copied
+			res = comp->reg[0x61] & 0x1f;		// b0..3 is copied, b4 is 'mem refresh'
 			if (comp->pit->ch2.out && (res & 8)) res |= 0x20;	// b6: timer2 output
 			break;
 		case 4:
@@ -161,6 +161,7 @@ void ibm_outKbd(Computer* comp, int adr, int val) {
 			break;
 		case 1:
 			comp->reg[0x61] = val & 0xff;
+			pit_gate(comp->pit, 2, val & 1);			// b0: pit ch2 gate
 			if (val & 0x80) {
 				comp->keyb->outbuf = 0;
 				comp->pit->ch0.out = 0;
@@ -570,11 +571,7 @@ void ibm_irq(Computer* comp, int t) {
 			pic_int(comp->mpic, 0);
 			break;
 		case IRQ_PIT_CH1: comp->reg[0x61] ^= 0x10; break;
-		case IRQ_PIT_CH2:
-			if (comp->reg[0x61] & 2) {
-				comp->beep->lev = comp->pit->ch2.out;
-			}
-			break;
+		case IRQ_PIT_CH2: if (comp->reg[0x61] & 2) comp->beep->lev = comp->pit->ch2.out; break;		// reg61.bit2: enable pit.ch2.out->speaker
 		case IRQ_RESET: comp->cpu->reset(comp->cpu);
 			break;
 	}
@@ -621,7 +618,7 @@ void ibm_keyr(Computer* comp, keyEntry kent) {
 
 sndPair ibm_vol(Computer* comp, sndVolume* vol) {
 	sndPair res;
-	res.left = ((comp->reg[0x61] & 2) ? comp->beep->val : 0xff) * vol->beep / 4;
+	res.left = comp->beep->val * vol->beep / 4;
 	res.right = res.left;
 	return res;
 }

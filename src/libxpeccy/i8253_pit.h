@@ -29,6 +29,7 @@ struct pitChan {
 	unsigned short div;	// divider (ticks)
 	unsigned short cnt;	// current counter
 	int clat;		// latched state/counter
+	int wav;
 	pchCore* cb;
 	int resp;
 	int resp_cnt;
@@ -49,4 +50,5 @@ void pit_destroy(PIT*);
 void pit_reset(PIT*);
 int pit_rd(PIT*, int);
 void pit_wr(PIT*, int, int);
+void pit_gate(PIT*, int, int);
 void pit_sync(PIT*, int);

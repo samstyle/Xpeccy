@@ -23,18 +23,14 @@ void pit_destroy(PIT* pit) {
 	free(pit);
 }
 
-void pit_ch_reset(pitChan* ch) {
-	ch->wdiv = 1;
-	ch->wgat = 1;
-	ch->gate = 1;
-	ch->out = 0;
-	ch->lout = 0;
-}
-
-void pit_reset(PIT* pit) {
-	pit_ch_reset(&pit->ch0);
-	pit_ch_reset(&pit->ch1);
-	pit_ch_reset(&pit->ch2);
+pitChan* pit_get_ch(PIT* pit, int n) {
+	pitChan* ch = NULL;
+	switch(n) {
+		case 0: ch = &pit->ch0; break;
+		case 1: ch = &pit->ch1; break;
+		case 2: ch = &pit->ch2; break;
+	}
+	return ch;
 }
 
 int pit_ch_rd(pitChan* ch) {
@@ -119,14 +115,16 @@ void pit_ch_wr(pitChan* ch, int val) {
 
 // actions on divider loading
 void pch_wr_m0(pitChan* ch) {ch->cnt = ch->div; ch->out = 0;}
+void pch_wr_m1(pitChan* ch) {ch->wgat = 1;}
 void pch_wr_m4(pitChan* ch) {ch->cnt = ch->div;}
+void pch_wr_m5(pitChan* ch) {ch->wgat = 1;}
 
 // actions on counter==0
-void pch_tm_m0(pitChan* ch) {ch->lout = ch->out; ch->out = 1;}
-void pch_tm_m1(pitChan* ch) {ch->lout = ch->out; ch->out = 1;}
-void pch_tm_m2(pitChan* ch) {ch->lout = 0; ch->out = 1; ch->cnt = ch->div;}
-void pch_tm_m3(pitChan* ch) {ch->lout = ch->out; ch->out ^= 1; ch->cnt = ch->div;}
-void pch_tm_m4(pitChan* ch) {ch->lout = 0; ch->out = 1;}
+void pch_tm_m0(pitChan* ch) {ch->out = 1;}
+void pch_tm_m1(pitChan* ch) {ch->out = 1;}
+void pch_tm_m2(pitChan* ch) {ch->wav = 2; ch->cnt = ch->div;}	// bin10: one hit
+void pch_tm_m3(pitChan* ch) {ch->out ^= 1; ch->cnt = ch->div;}
+void pch_tm_m4(pitChan* ch) {ch->wav = 2;}			// bin10: one hit
 void pch_tm_m5(pitChan* ch) {ch->out = 0;}
 
 // actions on gate input
@@ -135,7 +133,6 @@ void pch_gt_m0(pitChan* ch, int gt) {ch->gate = gt;}		// doesn't affect in mode0
 void pch_gt_m1(pitChan* ch, int gt) {
 	if (!ch->wdiv) {
 		if (!ch->gate && gt) {		// 0->1
-			ch->lout = ch->out;
 			ch->out = 0;
 			ch->cnt = ch->div;
 		}
@@ -144,9 +141,8 @@ void pch_gt_m1(pitChan* ch, int gt) {
 }
 
 void pch_gt_m2(pitChan* ch, int gt) {
-	if (!gt) {			// 0
+	if (!gt) {			// x->0
 		ch->wgat = 1;
-		ch->lout = ch->out;
 		ch->out = 1;
 	} else if (!ch->gate) {		// 0->1
 		ch->cnt = ch->div;
@@ -158,6 +154,7 @@ void pch_gt_m2(pitChan* ch, int gt) {
 void pch_gt_m3(pitChan* ch, int gt) {
 	if (!gt) {			// x->0
 		ch->wgat = 1;
+		ch->out = 1;
 	} else if (!ch->gate) {		// 0->1
 		ch->cnt = ch->div;
 		ch->wgat = 0;
@@ -166,7 +163,10 @@ void pch_gt_m3(pitChan* ch, int gt) {
 }
 
 void pch_gt_m4(pitChan* ch, int gt) {
-	if (!gt) ch->wdiv = 1;
+	if (!gt) {
+		ch->wdiv = 1;
+		ch->out = 1;
+	}
 	ch->gate = gt;
 }
 
@@ -189,11 +189,11 @@ void pch_gt_m5(pitChan* ch, int gt) {
 
 pchCore pit_mode_tab[8] = {
 	{pch_wr_m0, pch_tm_m0, pch_gt_m0},	// m0
-	{NULL, pch_tm_m1, pch_gt_m1},		// m1
+	{pch_wr_m1, pch_tm_m1, pch_gt_m1},		// m1
 	{NULL, pch_tm_m2, pch_gt_m2},		// m2
 	{NULL, pch_tm_m3, pch_gt_m3},		// m3
 	{pch_wr_m4, pch_tm_m4, pch_gt_m4},	// m4
-	{NULL, pch_tm_m5, pch_gt_m5},		// m5
+	{pch_wr_m5, pch_tm_m5, pch_gt_m5},		// m5
 	{NULL, pch_tm_m2, pch_gt_m2},		// m6 = m2
 	{NULL, pch_tm_m3, pch_gt_m3},		// m7 = m3
 };
@@ -201,6 +201,22 @@ pchCore pit_mode_tab[8] = {
 void pch_set_mod(pitChan* ch, int mod) {
 	ch->opmod = mod & 7;
 	ch->cb = &pit_mode_tab[ch->opmod];
+}
+
+void pit_ch_reset(pitChan* ch) {
+	ch->wdiv = 1;
+	ch->wgat = 1;
+	ch->gate = 1;
+	ch->out = 0;
+	ch->lout = 0;
+	ch->wav = 0;
+	pch_set_mod(ch, 0);
+}
+
+void pit_reset(PIT* pit) {
+	pit_ch_reset(&pit->ch0);
+	pit_ch_reset(&pit->ch1);
+	pit_ch_reset(&pit->ch2);
 }
 
 void pch_fix(pitChan* ch, int flag) {
@@ -262,10 +278,16 @@ void pit_wr(PIT* pit, int adr, int val) {
 	}
 }
 
+void pit_gate(PIT* pit, int n, int v) {
+	pitChan* ch = pit_get_ch(pit, n);
+	if (ch) ch->cb->gt(ch, !!v);
+}
+
 // mod0: if out=0, send signal and set out=1; if out=1 do nothing. out=0 on command/mode wr or divider reloading. counter will continue
 // mod1: =mod0
 int pit_ch_tick(pitChan* ch) {
 	int res = 0;
+	ch->lout = ch->out;
 	if (ch->wdiv || ch->wgat) return res;	// wait divider or wait gate = stop counter
 	ch->cnt--;
 	if ((ch->opmod == 3) && ch->cnt) ch->cnt--;		// 2 times in mode 3
@@ -279,8 +301,15 @@ int pit_ch_tick(pitChan* ch) {
 	if (ch->cnt == 0) {
 		if (ch->cb->tm) {
 			ch->cb->tm(ch);
-			res = 1;
 		}
+	}
+	if (ch->wav) {
+		ch->out = ch->wav & 1;
+		ch->wav >>= 1;
+	}
+	if (ch->lout ^ ch->out) {		// out changed
+		res |= 4;			// b2:out changed
+		res |= ch->out ? 2 : 1;		// b0: 1->0; b1: 0->1
 	}
 	return res;
 }
@@ -289,16 +318,13 @@ void pit_sync(PIT* pit, int ns) {
 	pit->ns -= ns;
 	while (pit->ns < 0) {
 		pit->ns += 838;		// 838ns, ~1.1933MHz
-		if (pit_ch_tick(&pit->ch0)) {
-			if (!pit->ch0.lout && pit->ch0.out)		// ch0 0->1
-				pit->xirq(IRQ_PIT_CH0, pit->xptr);
+		if (pit_ch_tick(&pit->ch0) & 2) {			// ch0 0->1
+			pit->xirq(IRQ_PIT_CH0, pit->xptr);
 		}
-		if (pit_ch_tick(&pit->ch1)) {
-			if (!pit->ch1.lout && pit->ch1.out)		// ch1 0->1
-				pit->xirq(IRQ_PIT_CH1, pit->xptr);
+		if (pit_ch_tick(&pit->ch1) & 2) {			// ch1 0->1
+			pit->xirq(IRQ_PIT_CH1, pit->xptr);
 		}
-		if (pit_ch_tick(&pit->ch2)) {
-			if (pit->ch2.lout ^ pit->ch2.out)		// ch2 change
+		if (pit_ch_tick(&pit->ch2) & 4) {			// ch2 changed
 			pit->xirq(IRQ_PIT_CH2, pit->xptr);
 		}
 	}
