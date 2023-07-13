@@ -285,6 +285,7 @@ Computer* compCreate() {
 	memset(comp, 0x00, sizeof(Computer));
 	comp->resbank = RES_48;
 	comp->firstRun = 1;
+	comp->debug = 0;
 
 	comp->cpu = cpuCreate(CPU_Z80,memrd,memwr,iord,iowr,intrq,comp_irq,comp);
 	comp->mem = memCreate();

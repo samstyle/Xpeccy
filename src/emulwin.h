@@ -131,8 +131,6 @@ typedef struct {
 
 		int scrCounter;
 		int scrInterval;
-		int lineBytes;
-		int frameBytes;
 
 		#ifdef USENETWORK
 		QTcpServer srv;

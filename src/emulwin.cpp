@@ -75,25 +75,23 @@ void MainWin::updateWindow() {
 		wsz = SCREENSIZE;
 		szw = wsz.width();
 		szh = wsz.height();
+		szw &= ~3;
 		setFixedSize(szw, szh);
 		setWindowState(windowState() | Qt::WindowFullScreen);
 	} else {
 		szw = comp->vid->vsze.x * conf.vid.scale;
 		szh = comp->vid->vsze.y * conf.vid.scale;
 		szw *= conf.prof.cur->zx->hw->xscale;
+		szw &= ~3;
 		setWindowState(windowState() & ~Qt::WindowFullScreen);
 		setFixedSize(szw, szh);
 	}
 	vid_set_zoom(conf.vid.scale);
-	lineBytes = szw * 4;
-	frameBytes = szh * lineBytes;
 #ifdef USEOPENGL
-	bytesPerLine = (lefSkip + comp->vid->vsze.x * 8 + rigSkip) & ~3;		// texture width must be 4-dots aligned
+	bytesPerLine = (lefSkip + comp->vid->vsze.x * 8 + rigSkip);
 	bufSize = bytesPerLine * comp->vid->vsze.y;
 #else
-	bytesPerLine = lineBytes;
-	if (bytesPerLine & 3)		// 4 bytes align for QImage data
-		bytesPerLine = (bytesPerLine & ~3) + 4;
+	bytesPerLine = szw << 2;
 	bufSize = bytesPerLine * ((comp->vid->vsze.y * ystep) >> 8);
 #endif
 	updateHead();

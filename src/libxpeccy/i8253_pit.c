@@ -220,6 +220,7 @@ void pit_reset(PIT* pit) {
 }
 
 void pch_fix(pitChan* ch, int flag) {
+	if (ch->latch > 0) return;	// previous latched value have to be readed
 	ch->clat = 0;
 	ch->latch = 0;
 	if (!(flag & 0x20)) {		// fix counter
@@ -236,7 +237,7 @@ void pch_fix(pitChan* ch, int flag) {
 	if (!(flag & 0x10)) {		// state
 		ch->clat <<= 8;
 		ch->latch++;
-		ch->clat = ch->state & 0x3f;
+		ch->clat |= ch->state & 0x3f;
 		if (ch->out) ch->clat |= 0x80;
 		if (ch->wdiv) ch->clat |= 0x40;
 	}
