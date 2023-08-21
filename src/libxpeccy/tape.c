@@ -236,6 +236,7 @@ void tapStoreBlock(Tape* tap) {
 	int same;
 	int diff;
 	int siglens[11];
+	for (i = 0; i < 11; i++) siglens[i]=0;
 	int cnt = 0;
 	TapeBlock* tblk = &tap->tmpBlock;
 	if (tblk->sigCount < 1) return;
@@ -244,9 +245,9 @@ void tapStoreBlock(Tape* tap) {
 		same = 0;
 		for (j = 0; j < cnt; j++) {
 			if (siglens[j] > 0) {
-				printf("%i %i %p %i\n",i,j,tblk->data,tblk->data->size);
+//				printf("%i %i %p %i\n",i,j,tblk->data,tblk->data->size);
 				diff = (tblk->data[i].size - siglens[j]) * 100 / siglens[j];
-				printf("%i\n",diff);
+//				printf("%i\n",diff);
 				if ((diff > -5) && (diff < 5)) {
 					same = 1;
 				}
