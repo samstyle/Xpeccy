@@ -81,9 +81,9 @@ void DebugWin::chaPal() {
 		xhs->updatePal();
 	}
 	ui_asm.dasmTable->update();
-	wid_dump.draw();
+	wid_dump->draw();
 	//ui.dumpTable->update();
-	wid_disk_dump.draw();
+	wid_disk_dump->draw();
 }
 
 void DebugWin::save_mem_map() {
@@ -150,7 +150,7 @@ void DebugWin::start() {
 		ui_asm.dasmTable->setAdr(comp->cpu->pc + comp->cpu->cs.base);
 		// fillDisasm();
 	}
-	wid_zxscr.draw();
+	wid_zxscr->draw();
 //	updateScreen();
 
 	if (memViewer->vis) {
@@ -158,7 +158,7 @@ void DebugWin::start() {
 		memViewer->show();
 		memViewer->fillImage();
 	}
-	wid_dump.draw();
+	wid_dump->draw();
 //	chDumpView();
 	activateWindow();
 }
@@ -228,7 +228,7 @@ void DebugWin::onPrfChange() {
 		xhs->setBase(comp->hw->base);
 	}
 	unsigned int lim = (comp->hw->id == HW_IBM_PC) ? MEM_4M : MEM_64K;
-	wid_dump.setLimit(lim);
+	wid_dump->setLimit(lim);
 	ui_asm.dasmScroll->setMaximum(lim - 1);
 
 	dui.leStart->setMax(lim - 1);
@@ -236,10 +236,10 @@ void DebugWin::onPrfChange() {
 	dui.leLen->setMax(lim);
 
 	// ui.tabDiskDump->setDrive(ui.cbDrive->currentIndex());
-	wid_disk_dump.draw();
-	wid_vmem_dump.setVMem(conf.prof.cur->zx->vid->ram);
+	wid_disk_dump->draw();
+	wid_vmem_dump->setVMem(conf.prof.cur->zx->vid->ram);
 
-	wid_dump.setBase(comp->hw->base, comp->hw->id);
+	wid_dump->setBase(comp->hw->base, comp->hw->id);
 	// TODO: move imm/iff1/iff2 in registers
 	bool z80like = (comp->cpu->type == CPU_Z80);
 	z80like |= (comp->cpu->type == CPU_LR35902);
@@ -269,30 +269,49 @@ DebugWin::DebugWin(QWidget* par):QMainWindow(par) {
 //	ui.setupUi(cw);
 	setCentralWidget(cw);
 
-	dockWidgets << &wid_dump << &wid_disk_dump << &wid_vmem_dump << &wid_cmos_dump;
-	dockWidgets << &wid_brk << &wid_zxscr << &wid_ay << &wid_tape;
-	dockWidgets << &wid_fdd << &wid_mmap << &wid_gb << &wid_ppu;
-	dockWidgets << &wid_cia << &wid_dma << &wid_pic << &wid_pit << &wid_vga;
+	wid_dump = new xDumpWidget("","000000");
+	wid_disk_dump = new xDiskDumpWidget(":/images/disk.png","FDD");
+	wid_cmos_dump = new xCmosDumpWidget("","CMOS");
+	wid_vmem_dump = new xVMemDumpWidget("","VMEM");
+	wid_zxscr = new xZXScrWidget(":/images/rulers.png","SCR");
+	wid_dma = new xDmaWidget("","DMA");
+	wid_pit = new xPitWidget("","PIT");
+	wid_pic = new xPicWidget("","PIC");
+	wid_vga = new xVgaWidget("","VGA");
+	wid_ay = new xAYWidget(":/images/note.png","AY");
+	wid_tape = new xTapeWidget(":/images/tape.png","TAPE");
+	wid_fdd = new xFDDWidget(":/images/disk.png","FDC");
+	wid_brk = new xBreakWidget(":/images/stop.png","BRK");
+	wid_gb = new xGameboyWidget(":/images/gameboy.png","GB");
+	wid_ppu = new xPPUWidget("","PPU");
+	wid_cia = new xCiaWidget("","CIA");
+	wid_vic = new xVicWidget("","VIC");
+	wid_mmap = new xMMapWidget(":/images/memory.png","MMAP");
 
-	addDockWidget(Qt::RightDockWidgetArea, &wid_dump);
-	tabifyDockWidget(&wid_dump, &wid_disk_dump);
-	tabifyDockWidget(&wid_dump, &wid_vmem_dump);
-	tabifyDockWidget(&wid_dump, &wid_cmos_dump);
-	addDockWidget(Qt::RightDockWidgetArea, &wid_brk);
-	tabifyDockWidget(&wid_brk, &wid_zxscr);
-	tabifyDockWidget(&wid_brk, &wid_ay);
-	tabifyDockWidget(&wid_brk, &wid_tape);
-	tabifyDockWidget(&wid_brk, &wid_fdd);
-	tabifyDockWidget(&wid_brk, &wid_mmap);
-	tabifyDockWidget(&wid_brk, &wid_gb);
-	tabifyDockWidget(&wid_brk, &wid_ppu);
-	tabifyDockWidget(&wid_brk, &wid_cia);
-	tabifyDockWidget(&wid_brk, &wid_dma);
-	tabifyDockWidget(&wid_brk, &wid_pic);
-	tabifyDockWidget(&wid_brk, &wid_pit);
-	tabifyDockWidget(&wid_brk, &wid_vga);
-	wid_dump.raise();
-	wid_brk.raise();
+	dockWidgets << wid_dump << wid_disk_dump << wid_vmem_dump << wid_cmos_dump;
+	dockWidgets << wid_brk << wid_zxscr << wid_ay << wid_tape;
+	dockWidgets << wid_fdd << wid_mmap << wid_gb << wid_ppu;
+	dockWidgets << wid_cia << wid_dma << wid_pic << wid_pit << wid_vga;
+
+	addDockWidget(Qt::RightDockWidgetArea, wid_dump);
+	tabifyDockWidget(wid_dump, wid_disk_dump);
+	tabifyDockWidget(wid_dump, wid_vmem_dump);
+	tabifyDockWidget(wid_dump, wid_cmos_dump);
+	addDockWidget(Qt::RightDockWidgetArea, wid_brk);
+	tabifyDockWidget(wid_brk, wid_zxscr);
+	tabifyDockWidget(wid_brk, wid_ay);
+	tabifyDockWidget(wid_brk, wid_tape);
+	tabifyDockWidget(wid_brk, wid_fdd);
+	tabifyDockWidget(wid_brk, wid_mmap);
+	tabifyDockWidget(wid_brk, wid_gb);
+	tabifyDockWidget(wid_brk, wid_ppu);
+	tabifyDockWidget(wid_brk, wid_cia);
+	tabifyDockWidget(wid_brk, wid_dma);
+	tabifyDockWidget(wid_brk, wid_pic);
+	tabifyDockWidget(wid_brk, wid_pit);
+	tabifyDockWidget(wid_brk, wid_vga);
+	wid_dump->raise();
+	wid_brk->raise();
 
 	QToolBar* rtbar = new QToolBar;
 	QWidget* rtbw = new QWidget;
@@ -308,6 +327,7 @@ DebugWin::DebugWin(QWidget* par):QMainWindow(par) {
 	dumpwin = new QDialog(this);
 	labswin = new xLabeList(this);
 
+/*
 	tabMode = HW_NULL;
 
 	QList<tabDSC> lst;
@@ -352,6 +372,7 @@ DebugWin::DebugWin(QWidget* par):QMainWindow(par) {
 	p.icon = QIcon(); p.name = "DMA"; p.wid = &wid_dma; lst.append(p);
 	p.icon = QIcon(":/images/floppy.png"); p.name = ""; p.wid = &wid_fdd; lst.append(p);
 	tablist[HWG_PC] = lst;
+*/
 // create registers group
 	xLabel* lab;
 	xHexSpin* xhs;
@@ -466,20 +487,20 @@ DebugWin::DebugWin(QWidget* par):QMainWindow(par) {
 	connect(ui_asm.actMapingClear, &QAction::triggered, this, &DebugWin::mapClear);
 	connect(ui_asm.dasmTable, &xDisasmTable::customContextMenuRequested, this, &DebugWin::putBreakPoint);
 	connect(ui_asm.dasmTable, &xDisasmTable::rqRefill, this, &DebugWin::fillDisasm);
-	connect(ui_asm.dasmTable, &xDisasmTable::rqRefill, &wid_dump, &xDumpWidget::draw);
-	connect(ui_asm.dasmTable, &xDisasmTable::rqRefill, &wid_zxscr, &xZXScrWidget::draw);
-	connect(ui_asm.dasmTable, &xDisasmTable::rqRefill, &wid_brk, &xBreakWidget::draw);
+	connect(ui_asm.dasmTable, &xDisasmTable::rqRefill, wid_dump, &xDumpWidget::draw);
+	connect(ui_asm.dasmTable, &xDisasmTable::rqRefill, wid_zxscr, &xZXScrWidget::draw);
+	connect(ui_asm.dasmTable, &xDisasmTable::rqRefill, wid_brk, &xBreakWidget::draw);
 	connect(ui_asm.dasmTable, &xDisasmTable::rqRefillAll, this, &DebugWin::fillAll);
 	connect(ui_asm.dasmTable, &xDisasmTable::s_adrch, ui_asm.dasmScroll, &QScrollBar::setValue);
 	connect(ui_asm.dasmScroll, &QScrollBar::valueChanged, ui_asm.dasmTable, &xDisasmTable::setAdrX);
 
-	connect(&wid_dump, &xDumpWidget::s_blockch, this, &DebugWin::fillDisasm);
-	connect(&wid_dump, &xDumpWidget::s_datach, this, &DebugWin::fillAll);
-	connect(&wid_dump, &xDumpWidget::s_brkrq, this, &DebugWin::brkRequest);
+	connect(wid_dump, &xDumpWidget::s_blockch, this, &DebugWin::fillDisasm);
+	connect(wid_dump, &xDumpWidget::s_datach, this, &DebugWin::fillAll);
+	connect(wid_dump, &xDumpWidget::s_brkrq, this, &DebugWin::brkRequest);
 
-	connect(&wid_brk, &xBreakWidget::rqDisasm, ui_asm.dasmTable, &xDisasmTable::setAdrX);
-	connect(&wid_brk, &xBreakWidget::updated, this, &DebugWin::fillDisasm);
-	connect(&wid_brk, &xBreakWidget::updated, &wid_dump, &xDumpWidget::draw);
+	connect(wid_brk, &xBreakWidget::rqDisasm, ui_asm.dasmTable, &xDisasmTable::setAdrX);
+	connect(wid_brk, &xBreakWidget::updated, this, &DebugWin::fillDisasm);
+	connect(wid_brk, &xBreakWidget::updated, wid_dump, &xDumpWidget::draw);
 
 	connect(ui_asm.actSearch, &QAction::triggered, this, &DebugWin::doFind);
 	connect(ui_asm.actFill, &QAction::triggered, this, &DebugWin::doFill);
@@ -508,8 +529,8 @@ DebugWin::DebugWin(QWidget* par):QMainWindow(par) {
 	connect(ui_asm.actDisasm, SIGNAL(triggered(bool)),this,SLOT(saveDasm()));
 	connect(ui_asm.tbRefresh, SIGNAL(released()), this, SLOT(reload()));
 
-	connect(&wid_mmap, &xMMapWidget::s_remap, this, &DebugWin::d_remap);
-	connect(&wid_mmap, &xMMapWidget::s_restore, this, &DebugWin::rest_mem_map);
+	connect(wid_mmap, &xMMapWidget::s_remap, this, &DebugWin::d_remap);
+	connect(wid_mmap, &xMMapWidget::s_restore, this, &DebugWin::rest_mem_map);
 
 //	connect (ui.tbSaveVRam, SIGNAL(released()), this, SLOT(saveVRam()));
 // dump table
@@ -736,7 +757,7 @@ void DebugWin::setShowLabels(bool f) {
 void DebugWin::setShowSegment(bool f) {
 	conf.dbg.segment = !!f;
 	fillDisasm();
-	wid_dump.draw();
+	wid_dump->draw();
 	//fillDump();
 }
 
@@ -1280,7 +1301,7 @@ bool DebugWin::fillAll() {
 
 
 void DebugWin::setScrAtr(int adr, int atr) {
-	wid_zxscr.setAddress(adr, atr);
+	wid_zxscr->setAddress(adr, atr);
 //	ui.leScr->setValue(adr);
 //	ui.leAtr->setValue(atr);
 }
@@ -1589,7 +1610,7 @@ void DebugWin::regClick(QMouseEvent* ev) {
 	switch (ev->button()) {
 		case Qt::RightButton:
 			//ui.dumpTable->setAdr(adr);
-			wid_dump.setAdr(adr);
+			wid_dump->setAdr(adr);
 			break;
 		case Qt::LeftButton:
 			ui_asm.dasmTable->setAdr(adr, 1);
@@ -1952,8 +1973,8 @@ void DebugWin::brkRequest(int t, int m, int a) {
 	}
 	brkSet(t, m, bgn, end);
 	fillDisasm();
-	wid_dump.draw();
-	wid_brk.draw();
+	wid_dump->draw();
+	wid_brk->draw();
 }
 
 void DebugWin::putBreakPoint() {
@@ -2049,10 +2070,10 @@ void DebugWin::chaCellProperty(QAction* act) {
 			adr++;
 		}
 	}
-	wid_brk.draw();
+	wid_brk->draw();
 	//ui.bpList->update();
 	fillDisasm();
-	wid_dump.draw();
+	wid_dump->draw();
 	//fillDump();
 //	fillBrkTable();
 }
@@ -2186,7 +2207,7 @@ void DebugWin::doFind() {
 
 void DebugWin::onFound(int adr) {
 	ui_asm.dasmTable->setAdr(adr);
-	wid_dump.setAdr(adr);
+	wid_dump->setAdr(adr);
 	// ui.dumpTable->setAdr(adr);
 }
 
