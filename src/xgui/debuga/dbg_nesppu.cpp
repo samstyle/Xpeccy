@@ -45,9 +45,9 @@ xPPUWidget::xPPUWidget(QString i, QString t, QWidget* p):xDockWidget(i,t,p) {
 	ui.nesSPTileset->addItem("Sprites #0000", NES_TILE_0000);
 	ui.nesSPTileset->addItem("Sprites #1000", NES_TILE_1000);
 
-	connect(ui.nesScrType, &QComboBox::currentIndexChanged, this, &xPPUWidget::draw);
-	connect(ui.nesBGTileset, &QComboBox::currentIndexChanged, this, &xPPUWidget::draw);
-	connect(ui.nesSPTileset, &QComboBox::currentIndexChanged, this, &xPPUWidget::draw);
+	connect(ui.nesScrType, SIGNAL(currentIndexChanged(int)), this, SLOT(draw()));
+	connect(ui.nesBGTileset, SIGNAL(currentIndexChanged(int)), this, SLOT(draw()));
+	connect(ui.nesSPTileset, SIGNAL(currentIndexChanged(int)), this, SLOT(draw()));
 }
 
 extern xColor nesPal[64];

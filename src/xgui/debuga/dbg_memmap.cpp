@@ -20,10 +20,10 @@ xMMapWidget::xMMapWidget(QString i, QString t, QWidget* p):xDockWidget(i,t,p) {
 	ui.numBank1->setMax(255);
 	ui.numBank2->setMax(255);
 	ui.numBank3->setMax(255);
-	connect(ui.cbBank0, &QComboBox::currentIndexChanged, this, &xMMapWidget::remap_b0);
-	connect(ui.cbBank1, &QComboBox::currentIndexChanged, this, &xMMapWidget::remap_b1);
-	connect(ui.cbBank2, &QComboBox::currentIndexChanged, this, &xMMapWidget::remap_b2);
-	connect(ui.cbBank3, &QComboBox::currentIndexChanged, this, &xMMapWidget::remap_b3);
+	connect(ui.cbBank0, SIGNAL(currentIndexChanged(int)), this, SLOT(remap_b0()));
+	connect(ui.cbBank1, SIGNAL(currentIndexChanged(int)), this, SLOT(remap_b1()));
+	connect(ui.cbBank2, SIGNAL(currentIndexChanged(int)), this, SLOT(remap_b2()));
+	connect(ui.cbBank3, SIGNAL(currentIndexChanged(int)), this, SLOT(remap_b3()));
 	connect(ui.numBank0, &xHexSpin::valueChanged, this, &xMMapWidget::remap_b0);
 	connect(ui.numBank1, &xHexSpin::valueChanged, this, &xMMapWidget::remap_b1);
 	connect(ui.numBank2, &xHexSpin::valueChanged, this, &xMMapWidget::remap_b2);

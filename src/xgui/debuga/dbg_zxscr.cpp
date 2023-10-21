@@ -9,7 +9,7 @@ xZXScrWidget::xZXScrWidget(QString i, QString t, QWidget* p):xDockWidget(i,t,p) 
 	setObjectName("ZXSCRWIDGET");
 
 	scrImg = QImage(256, 192, QImage::Format_RGB888);
-	connect(ui.sbScrBank, &QSpinBox::valueChanged, this, &xZXScrWidget::draw);
+	connect(ui.sbScrBank, SIGNAL(valueChanged(int)), this, SLOT(draw()));
 	connect(ui.leScrAdr, &xHexSpin::textChanged, this, &xZXScrWidget::draw);
 	connect(ui.cbScrAtr, &QCheckBox::stateChanged, this, &xZXScrWidget::draw);
 	connect(ui.cbScrPix, &QCheckBox::stateChanged, this, &xZXScrWidget::draw);

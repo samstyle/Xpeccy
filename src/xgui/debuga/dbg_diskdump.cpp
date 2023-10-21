@@ -139,8 +139,8 @@ xDiskDumpWidget::xDiskDumpWidget(QString i, QString t, QWidget* p):xDockWidget(i
 	setObjectName("FDDDUMPWIDGET");
 	ui.tabDiskDump->setColumnWidth(0, 70);
 	ui.tabDiskDump->horizontalHeader()->setStretchLastSection(true);
-	connect(ui.cbDrive, &QComboBox::currentIndexChanged, ui.tabDiskDump, &xDiskDump::setDrive);
-	connect(ui.sbTrack, &QSpinBox::valueChanged, ui.tabDiskDump, &xDiskDump::setTrack);
+	connect(ui.cbDrive, SIGNAL(currentIndexChanged(int)), ui.tabDiskDump, SLOT(setDrive));
+	connect(ui.sbTrack, SIGNAL(valueChanged(int)), ui.tabDiskDump, SLOT(setTrack(int)));
 	hwList << HWG_ZX << HWG_PC;
 }
 

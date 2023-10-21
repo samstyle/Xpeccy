@@ -356,11 +356,11 @@ xDumpTable::xDumpTable(QWidget* p):QTableView(p) {
 	model = new xDumpModel();
 	setModel(model);
 
-	connect(selectionModel(), &QItemSelectionModel::selectionChanged, this, &xDumpTable::curAdrChanged);
+	connect(selectionModel(), SIGNAL(currentChanged(QModelIndex,QModelIndex)), this, SLOT(curAdrChanged()));
 
-	connect(model, &xDumpModel::s_datach, this, &xDumpTable::s_datach);
-	connect(model, &xDumpModel::s_adrch, this, &xDumpTable::s_adrch);
-	connect(this, &xDumpTable::s_adrch, this, &xDumpTable::curAdrChanged);
+	connect(model, SIGNAL(s_datach()), this, SIGNAL(s_datach()));
+	connect(model, SIGNAL(s_adrch(int)), this, SLOT(s_adrch(int)));
+	connect(this, SIGNAL(s_adrch(int)), this, SLOT(curAdrChanged()));
 }
 
 void xDumpTable::setMode(int md, int pgn, int pgb, int pgs) {
@@ -632,11 +632,11 @@ xDumpWidget::xDumpWidget(QString i, QString t, QWidget* p):xDockWidget(i,t,p) {
 	connect(ui.dumpTable, &xDumpTable::s_adrch, this, &xDumpWidget::s_adrch);
 	connect(ui.dumpTable, &xDumpTable::s_curadrch, this, &xDumpWidget::adr_changed);
 
-	connect(ui.cbCodePage, &QComboBox::currentIndexChanged, this, &xDumpWidget::cp_changed);
-	connect(ui.cbDumpView, &QComboBox::currentIndexChanged, this, &xDumpWidget::refill);
-	connect(ui.sbDumpPage, &QSpinBox::valueChanged, this, &xDumpWidget::refill);
+	connect(ui.cbCodePage, SIGNAL(currentIndexChanged(int)), this, SLOT(cp_changed()));
+	connect(ui.cbDumpView, SIGNAL(currentIndexChanged(int)), this, SLOT(refill()));
+	connect(ui.sbDumpPage, SIGNAL(valueChanged(int)), this, SLOT(refill()));
 	connect(ui.leDumpPageBase, &xHexSpin::valueChanged, this, &xDumpWidget::refill);
-	connect(ui.cbDumpPageSize, &QComboBox::currentIndexChanged, this, &xDumpWidget::refill);
+	connect(ui.cbDumpPageSize, SIGNAL(currentIndexChanged(int)), this, SLOT(refill()));
 
 	ui.cbDumpView->setCurrentIndex(0);
 

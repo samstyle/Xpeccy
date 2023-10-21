@@ -8,9 +8,9 @@ xGameboyWidget::xGameboyWidget(QString i, QString t, QWidget* p):xDockWidget(i,t
 	ui.setupUi(wid);
 	setObjectName("GAMEBOYWIDGET");
 	hwList << HWG_GB;
-	connect(ui.gbModeGroup, &QButtonGroup::buttonClicked, this, &xGameboyWidget::draw);
-	connect(ui.sbTileset, &QSpinBox::valueChanged, this, &xGameboyWidget::draw);
-	connect(ui.sbTilemap, &QSpinBox::valueChanged, this, &xGameboyWidget::draw);
+	connect(ui.gbModeGroup, SIGNAL(buttonClicked(QAbstractButton*)), this, SLOT(draw()));
+	connect(ui.sbTileset, SIGNAL(valueChanged(int)), this, SLOT(draw()));
+	connect(ui.sbTilemap, SIGNAL(valueChanged(int)), this, SLOT(draw()));
 }
 
 extern xColor iniCol[4];

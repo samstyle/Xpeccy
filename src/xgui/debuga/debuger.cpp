@@ -408,7 +408,7 @@ DebugWin::DebugWin(QWidget* par):QMainWindow(par) {
 		ui_cpu.flagsGrid->addWidget(qlb, ((15 - i) & 0x0c) >> 1, (15 - i) & 3);
 		ui_cpu.flagsGrid->addWidget(qcb, (((15 - i) & 0x0c) >> 1) + 1, (15 - i) & 3);
 	}
-	connect(flagrp, &QButtonGroup::buttonClicked, this, &DebugWin::setFlags);
+	connect(flagrp, SIGNAL(buttonClicked(QAbstractButton*)), this, SLOT(setFlags()));
 
 	conf.dbg.labels = 1;
 	conf.dbg.segment = 0;
