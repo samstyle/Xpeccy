@@ -6,14 +6,8 @@
 #include <QTextCodec>
 #include <QColor>
 
-extern QColor colBRK;
-extern QColor colSEL;
-
-extern unsigned int blockStart;
-extern unsigned int blockEnd;
-
-QString gethexbyte(unsigned char);
-QString gethexword(int);
+extern int blockStart;
+extern int blockEnd;
 
 // MODEL
 
@@ -124,12 +118,6 @@ xDumpModel::xDumpModel(QObject* par):xTableModel(par) {
 	pgsize = MEM_64K;
 }
 
-/*
-void xDumpModel::setComp(Computer** ptr) {
-	cptr = ptr;
-}
-*/
-
 void xDumpModel::setMode(int md, int pgn, int pgb, int pgs) {
 	mode = md;
 	if (pgn >= 0) page = pgn;
@@ -164,24 +152,6 @@ int xDumpModel::columnCount(const QModelIndex&) const {
 	return 10;
 }
 
-/*
-void xDumpModel::update() {
-	emit dataChanged(index(0, 0), index(rowCount() - 1, columnCount() - 1));
-}
-
-void xDumpModel::updateCell(int row, int col) {
-	emit dataChanged(index(row, col), index(row, col));
-}
-
-void xDumpModel::updateRow(int row) {
-	emit dataChanged(index(row, 0), index(row, columnCount() - 1));
-}
-
-void xDumpModel::updateColumn(int col) {
-	emit dataChanged(index(0, col), index(rowCount() - 1, col));
-}
-*/
-
 int check_seg(int adr, xSegPtr seg) {
 	if (adr < seg.base) return 0;
 	if (adr - seg.base > seg.limit) return 0;
@@ -198,8 +168,8 @@ QVariant xDumpModel::data(const QModelIndex& idx, int role) const {
 	if (row >= rowCount()) return res;
 	if (col < 0) return res;
 	if (col >= columnCount()) return res;
-	unsigned int adr = (dmpadr + (row << 3)) % maxadr;
-	unsigned int cadr = (adr + col - 1) % maxadr;
+	int adr = (dmpadr + (row << 3)) % maxadr;
+	int cadr = (adr + col - 1) % maxadr;
 	unsigned short wrd;
 	int flg = mrd(cadr) >> 8;
 	QByteArray arr;
@@ -357,7 +327,7 @@ bool xDumpModel::setData(const QModelIndex& idx, const QVariant& val, int role) 
 			dmpadr = (fadr - (row << 3)) % maxadr;
 			update();
 			emit s_adrch(dmpadr);
-			emit rqRefill();
+			// emit rqRefill();
 		}
 	} else if (col < 9) {
 		nadr = (adr + col - 1) % maxadr;
@@ -373,7 +343,7 @@ bool xDumpModel::setData(const QModelIndex& idx, const QVariant& val, int role) 
 				break;
 		}
 		updateRow(row);
-		emit rqRefill();
+		emit s_datach();
 	}
 	return true;
 }
@@ -386,21 +356,18 @@ xDumpTable::xDumpTable(QWidget* p):QTableView(p) {
 	model = new xDumpModel();
 	setModel(model);
 
-	connect(model, SIGNAL(rqRefill()), this, SIGNAL(rqRefill()));
-	connect(model, SIGNAL(s_adrch(int)), this, SIGNAL(s_adrch(int)));
-}
+	connect(selectionModel(), &QItemSelectionModel::selectionChanged, this, &xDumpTable::curAdrChanged);
 
-/*
-void xDumpTable::setComp(Computer** ptr) {
-	cptr = ptr;
-	model->setComp(ptr);
+	connect(model, &xDumpModel::s_datach, this, &xDumpTable::s_datach);
+	connect(model, &xDumpModel::s_adrch, this, &xDumpTable::s_adrch);
+	connect(this, &xDumpTable::s_adrch, this, &xDumpTable::curAdrChanged);
 }
-*/
 
 void xDumpTable::setMode(int md, int pgn, int pgb, int pgs) {
 	mode = md;
+	pagenum = pgn;
+	pagesize = pgs;
 	model->setMode(md, pgn, pgb, pgs);
-	emit rqRefill();
 }
 
 void xDumpTable::setView(int t) {
@@ -455,8 +422,23 @@ void xDumpTable::setAdr(int adr) {
 	}
 }
 
-int xDumpTable::getAdr() {
-	return model->dmpadr;
+void xDumpTable::curAdrChanged() {
+	int adr = getCurrentAdr();
+	emit s_curadrch(adr);
+}
+
+int xDumpTable::getCurrentAdr() {
+	int adr;
+	int col;
+	QModelIndex idx;
+	idx = currentIndex();
+	col = idx.column();
+	adr = model->dmpadr + (idx.row() << 3);
+	if ((col > 0) && (col < 9)) {
+		adr += idx.column() - 1;
+	}
+	adr %= model->maxadr;
+	return adr;
 }
 
 void xDumpTable::resizeEvent(QResizeEvent* ev) {
@@ -490,15 +472,13 @@ void xDumpTable::keyPressEvent(QKeyEvent* ev) {
 		case Qt::Key_Left:
 		case Qt::Key_Right:
 			QTableView::keyPressEvent(ev);
-			emit s_adrch(model->dmpadr);
+			// emit s_adrch(model->dmpadr);
 			break;
 		case Qt::Key_PageUp:
 			setAdr(model->dmpadr - (rows() * 8));
-			// update();
 			break;
 		case Qt::Key_PageDown:
 			setAdr(model->dmpadr + (rows() * 8));
-			// update();
 			break;
 		case Qt::Key_Return:
 			if (state() == QAbstractItemView::EditingState) break;
@@ -534,22 +514,23 @@ void xDumpTable::mousePressEvent(QMouseEvent* ev) {
 			if (ev->modifiers() & Qt::ControlModifier) {
 				blockStart = adr;
 				if (blockEnd < blockStart) blockEnd = blockStart;
-				emit rqRefill();
+				emit s_blockch();
 			} else if (ev->modifiers() & Qt::ShiftModifier) {
 				blockEnd = adr;
 				if (blockStart > blockEnd) blockStart = blockEnd;
 				if (blockStart < 0) blockStart = 0;
-				emit rqRefill();
+				emit s_blockch();
 			} else {
 				markAdr = adr;
 			}
-			emit rqRefill();
+			update();
 			break;
 		case X_MidButton:
 			blockStart = -1;
 			blockEnd = -1;
 			markAdr = -1;
-			emit rqRefill();
+			emit s_blockch();
+			update();
 			break;
 		default:
 			break;
@@ -570,7 +551,7 @@ void xDumpTable::mouseMoveEvent(QMouseEvent* ev) {
 	int col = idx.column();
 	if ((row < 0) || (row >= model->rowCount())) return;
 	if ((col < 0) || (col >= model->columnCount())) return;
-	unsigned int adr;
+	int adr;
 	if ((col == 0) || (col > 8)) {
 		adr = model->dmpadr + (row << 3);
 	} else {
@@ -587,7 +568,8 @@ void xDumpTable::mouseMoveEvent(QMouseEvent* ev) {
 			blockStart = markAdr;
 			blockEnd = adr;
 		}
-		emit rqRefill();
+		emit s_blockch();
+		update();
 	}
 	ev->accept();
 }
@@ -595,9 +577,203 @@ void xDumpTable::mouseMoveEvent(QMouseEvent* ev) {
 void xDumpTable::wheelEvent(QWheelEvent* ev) {
 	if (ev->yDelta < 0) {
 		setAdr(model->dmpadr + 8);
-		emit rqRefill();
 	} else if (ev->yDelta > 0) {
 		setAdr(model->dmpadr - 8);
-		emit rqRefill();
 	}
+}
+
+// WIDGET
+
+xDumpWidget::xDumpWidget(QString i, QString t, QWidget* p):xDockWidget(i,t,p) {
+	setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
+	QWidget* wid = new QWidget;
+	setWidget(wid);
+	ui.setupUi(wid);
+	setObjectName("MEMDUMPWIDGET");
+	setWindowTitle("000000");
+
+	ui.cbCodePage->addItem("WIN1251", XCP_1251);
+	ui.cbCodePage->addItem("CP866", XCP_866);
+	ui.cbCodePage->addItem("KOI8R", XCP_KOI8R);
+
+	ui.cbDumpView->addItem("CPU", XVIEW_CPU);
+	ui.cbDumpView->addItem("RAM", XVIEW_RAM);
+	ui.cbDumpView->addItem("ROM", XVIEW_ROM);
+
+	ui.leDumpPageBase->setMin(0);
+	ui.leDumpPageBase->setMax(0xffff);
+	ui.cbDumpPageSize->addItem("256", MEM_256);
+	ui.cbDumpPageSize->addItem("512", MEM_512);
+	ui.cbDumpPageSize->addItem("1KB", MEM_1K);
+	ui.cbDumpPageSize->addItem("2KB", MEM_2K);
+	ui.cbDumpPageSize->addItem("4KB", MEM_4K);
+	ui.cbDumpPageSize->addItem("8KB", MEM_8K);
+	ui.cbDumpPageSize->addItem("16KB", MEM_16K);
+	ui.cbDumpPageSize->addItem("32KB", MEM_32K);
+	ui.cbDumpPageSize->addItem("64KB", MEM_64K);
+
+	cellMenu = new QMenu;
+	cellMenu->addAction(ui.actFetch);
+	cellMenu->addAction(ui.actRead);
+	cellMenu->addAction(ui.actWrite);
+
+	ui.dumpTable->setColumnWidth(0,70);
+	ui.dumpTable->setItemDelegate(new xItemDelegate(XTYPE_BYTE)); // xid_byte);
+	ui.dumpTable->setItemDelegateForColumn(0, new xItemDelegate(XTYPE_LABEL)); // ) xid_labl);
+	ui.dumpTable->setItemDelegateForColumn(9, new xItemDelegate(XTYPE_NONE)); // xid_none);
+	ui.cbDumpPageSize->setCurrentIndex(6);	// 16K
+
+	connect(ui.dumpTable, &xDumpTable::customContextMenuRequested, this, &xDumpWidget::customMenu);
+	connect(cellMenu, &QMenu::triggered, this, &xDumpWidget::customMenuAction);
+
+	connect(ui.dumpTable, &xDumpTable::s_adrch, ui.dumpScroll, &QScrollBar::setValue);
+	connect(ui.dumpTable, &xDumpTable::s_blockch, this, &xDumpWidget::s_blockch);
+	connect(ui.dumpTable, &xDumpTable::s_datach, this, &xDumpWidget::s_datach);
+	connect(ui.dumpTable, &xDumpTable::s_adrch, this, &xDumpWidget::s_adrch);
+	connect(ui.dumpTable, &xDumpTable::s_curadrch, this, &xDumpWidget::adr_changed);
+
+	connect(ui.cbCodePage, &QComboBox::currentIndexChanged, this, &xDumpWidget::cp_changed);
+	connect(ui.cbDumpView, &QComboBox::currentIndexChanged, this, &xDumpWidget::refill);
+	connect(ui.sbDumpPage, &QSpinBox::valueChanged, this, &xDumpWidget::refill);
+	connect(ui.leDumpPageBase, &xHexSpin::valueChanged, this, &xDumpWidget::refill);
+	connect(ui.cbDumpPageSize, &QComboBox::currentIndexChanged, this, &xDumpWidget::refill);
+
+	ui.cbDumpView->setCurrentIndex(0);
+
+	cellMenu = new QMenu;
+	cellMenu->addAction(ui.actFetch);
+	cellMenu->addAction(ui.actRead);
+	cellMenu->addAction(ui.actWrite);
+
+	connect(this, &QDockWidget::visibilityChanged, this, &xDumpWidget::draw);
+}
+
+void xDumpWidget::setAdr(int a) {
+	ui.dumpTable->setAdr(a);
+}
+
+void xDumpWidget::setLimit(int lim) {
+	ui.dumpTable->setLimit(lim);
+	ui.dumpScroll->setMaximum(lim - 1);
+}
+
+void xDumpWidget::customMenu() {
+	int adr = ui.dumpTable->getCurrentAdr();
+	unsigned char flag = getBrk(conf.prof.cur->zx, adr);
+	ui.actFetch->setChecked(flag & MEM_BRK_FETCH);
+	ui.actRead->setChecked(flag & MEM_BRK_RD);
+	ui.actWrite->setChecked(flag & MEM_BRK_WR);
+	cellMenu->move(cursor().pos());
+	cellMenu->show();
+}
+
+void xDumpWidget::customMenuAction(QAction* act) {
+	int bt = 0;
+	int adr = ui.dumpTable->getCurrentAdr();
+	if (ui.actFetch->isChecked()) bt |= MEM_BRK_FETCH;
+	if (ui.actRead->isChecked()) bt |= MEM_BRK_RD;
+	if (ui.actWrite->isChecked()) bt |= MEM_BRK_WR;
+	switch (getRFIData(ui.cbDumpView)) {
+		case XVIEW_CPU: emit s_brkrq(BRK_CPUADR, bt, adr); break;
+		case XVIEW_ROM: emit s_brkrq(BRK_MEMROM, bt, adr); break;
+		case XVIEW_RAM: emit s_brkrq(BRK_MEMRAM, bt, adr); break;
+	}
+/*
+
+	int bgn, end, fadr;
+	if ((adr < blockStart) || (adr > blockEnd)) {
+		bgn = adr;
+		end = adr;
+	} else {
+		bgn = blockStart;
+		end = blockEnd;
+	}
+	if (end < bgn) {
+		fadr = bgn;
+		bgn = end;
+		end = fadr;
+	}
+	fadr = getRFIData(ui.cbDumpView);
+	switch(fadr) {	// XVIEW_RAM/ROM/CPU
+		case XVIEW_CPU:
+			brkSet(BRK_CPUADR, bt, bgn, end);
+			break;
+		case XVIEW_ROM:
+		case XVIEW_RAM: bt |= (fadr == XVIEW_ROM) ? MEM_BRK_ROM : MEM_BRK_RAM;
+			brkSet(BRK_MEMCELL, bt, bgn, end);
+			break;
+	}
+	emit s_brkch();
+*/
+}
+
+void xDumpWidget::setBase(int b, int t) {
+	xItemDelegate* xid_octw = new xItemDelegate(XTYPE_OCTWRD);
+	xItemDelegate* xid_byte = new xItemDelegate(XTYPE_BYTE);
+	switch(b) {
+		case 8:
+			ui.dumpTable->setItemDelegateForColumn(1, xid_octw);
+			ui.dumpTable->setItemDelegateForColumn(3, xid_octw);
+			ui.dumpTable->setItemDelegateForColumn(5, xid_octw);
+			ui.dumpTable->setItemDelegateForColumn(7, xid_octw);
+			ui.dumpTable->setView(XVIEW_OCTWRD);
+			break;
+		default:
+			ui.dumpTable->setItemDelegateForColumn(1, xid_byte);
+			ui.dumpTable->setItemDelegateForColumn(3, xid_byte);
+			ui.dumpTable->setItemDelegateForColumn(5, xid_byte);
+			ui.dumpTable->setItemDelegateForColumn(7, xid_byte);
+			ui.dumpTable->setView(XVIEW_DEF);
+			break;
+	}
+	if (t == HW_IBM_PC) {
+		ui.cbDumpView->setCurrentIndex(0);		// cpu only
+		ui.cbDumpView->setEnabled(false);
+	} else {
+		ui.cbDumpView->setEnabled(true);
+	}
+
+}
+
+void xDumpWidget::draw() {
+	ui.dumpTable->update();
+	refill();
+}
+
+void xDumpWidget::adr_changed(int adr) {
+//	QModelIndex idx = ui.dumpTable->selectionModel()->currentIndex();
+//	int col = idx.column();
+//	adr += idx.row() << 3;
+//	if ((col > 0) && (col < 9)) {
+//		 adr += (col - 1);
+//	}
+//	if (ui.dumpTable->mode != XVIEW_CPU) {
+//		adr &= ui.leDumpPageBase->getValue()-1;
+//	} else {
+//		adr %= ui.dumpTable->limit();
+//	}
+	setWindowTitle(QString::number(adr, 16).right(6).toUpper().rightJustified(6,'0'));
+}
+
+void xDumpWidget::cp_changed() {
+	int cp = getRFIData(ui.cbCodePage);
+	ui.dumpTable->setCodePage(cp);
+	ui.dumpTable->update();
+}
+
+void xDumpWidget::refill() {
+	int mode = getRFIData(ui.cbDumpView);
+	int page = ui.sbDumpPage->value();
+	int pbase = ui.leDumpPageBase->getValue();
+	int psize;
+	Computer* comp = conf.prof.cur->zx;
+	if (mode == XVIEW_CPU) {
+		psize = (comp->hw->id == HW_IBM_PC) ? MEM_4M : MEM_64K;
+	} else {
+		psize = ui.cbDumpPageSize->currentData().toInt(); // getRFIData(ui.cbDumpPageSize);
+	}
+	ui.widDumpPage->setDisabled(mode == XVIEW_CPU);
+	ui.dumpTable->setMode(mode, page, pbase, psize);
+	ui.dumpScroll->setMaximum(psize-1);
+	ui.dumpTable->setLimit(psize);
 }

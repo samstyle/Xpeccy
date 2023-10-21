@@ -131,6 +131,3 @@ class SetupWin : public QDialog {
 		void selectDbgFont();
 		void triggerColor();
 };
-
-int getRFIData(QComboBox*);
-void setRFIndex(QComboBox* box, QVariant data);

@@ -1,5 +1,4 @@
-#include "dbg_pic.h"
-#include "../../xcore/xcore.h"
+#include "dbg_widgets.h"
 
 xPicModel::xPicModel(QObject* p):xTableModel(p) {
 }
@@ -31,12 +30,6 @@ QVariant xPicModel::headerData(int sec, Qt::Orientation ori, int role) const {
 	return res;
 }
 
-/*
-QModelIndex xPicModel::index(int r, int c, const QModelIndex &) const {
-	return createIndex(r, c, nullptr);
-}
-*/
-
 QVariant xPicModel::data(const QModelIndex& idx, int role) const {
 	QVariant res;
 	int row = idx.row();
@@ -58,4 +51,19 @@ QVariant xPicModel::data(const QModelIndex& idx, int role) const {
 			break;
 	}
 	return res;
+}
+
+// widget
+
+xPicWidget::xPicWidget(QString i, QString t, QWidget* p):xDockWidget(i,t,p) {
+	QWidget* wid = new QWidget;
+	setWidget(wid);
+	ui.setupUi(wid);
+	setObjectName("PICWIDGET");
+	ui.tablePIC->setModel(new xPicModel());
+	hwList << HWG_PC;
+}
+
+void xPicWidget::draw() {
+	ui.tablePIC->update();
 }

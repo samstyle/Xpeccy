@@ -126,7 +126,6 @@ int main(int ac,char** av) {
 	dbgw.setFont(conf.dbg.font);
 //	mwin.loadShader();
 	mwin.fillUserMenu();
-
 	if ((conf.xpos >= 0) && (conf.ypos >= 0))
 		mwin.move(conf.xpos, conf.ypos);
 

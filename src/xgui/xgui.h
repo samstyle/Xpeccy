@@ -3,9 +3,10 @@
 #include <QComboBox>
 #include <QDialog>
 #include <QFileSystemModel>
+#include <QItemDelegate>
+#include <QKeyEvent>
 #include <QLabel>
 #include <QLineEdit>
-#include <QKeyEvent>
 #include <QTreeView>
 #include <QWheelEvent>
 
@@ -24,6 +25,9 @@ void shitHappens(const char*);
 bool areSure(const char*);
 int askYNC(const char*);
 void showInfo(const char*);
+
+int getRFIData(QComboBox*);
+void setRFIndex(QComboBox* box, QVariant data);
 
 // subclasses
 
@@ -88,6 +92,25 @@ class xTreeBox : public QComboBox {
 		void hidePopup();
 		QTreeView* tree;
 		QFileSystemModel* mod;
+};
+
+enum {
+	XTYPE_NONE = -1,
+	XTYPE_ADR = 0,
+	XTYPE_LABEL,
+	XTYPE_DUMP,
+	XTYPE_BYTE,
+	XTYPE_OCTWRD,
+};
+
+class xItemDelegate : public QItemDelegate {
+	public:
+		xItemDelegate(int);
+		int type;
+		// QWidget* createEditor (QWidget*, const QStyleOptionViewItem&, const QModelIndex&) const;
+	private:
+		QRegExpValidator vld;
+		QWidget* createEditor(QWidget*, const QStyleOptionViewItem&, const QModelIndex&) const;
 };
 
 // tape player

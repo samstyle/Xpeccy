@@ -1,3 +1,5 @@
+#include <QFileDialog>
+
 #include "dbg_vmem_dump.h"
 #include "../../xcore/xcore.h"
 
@@ -96,16 +98,6 @@ Qt::ItemFlags xVMemDumpModel::flags(const QModelIndex& idx) const {
 	return res;
 }
 
-/*
-QModelIndex xVMemDumpModel::index(int row, int col, const QModelIndex&) const {
-	return createIndex(row, col, nullptr);
-}
-
-void xVMemDumpModel::update() {
-	emit dataChanged(index(0,0), index(rowCount() - 1, columnCount() - 1));
-}
-*/
-
 void xVMemDumpModel::setVMem(unsigned char* ptr) {
 	vmem = ptr;
 }
@@ -130,4 +122,35 @@ void xVMemDump::setVMem(unsigned char* ptr) {
 void xVMemDump::jumpToIdx(QModelIndex idx) {
 	setCurrentIndex(idx);
 	scrollTo(idx, QAbstractItemView::PositionAtCenter);
+}
+
+// widget
+
+xVMemDumpWidget::xVMemDumpWidget(QString i, QString t, QWidget* p):xDockWidget(i,t,p) {
+	setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
+	QWidget* wid = new QWidget;
+	setWidget(wid);
+	ui.setupUi(wid);
+	setObjectName("VMEMDUMPWIDGET");
+	connect (ui.tbSaveVRam, &QToolButton::released, this, &xVMemDumpWidget::save_vram);
+	connect(this, &QDockWidget::visibilityChanged, this, &xVMemDumpWidget::draw);
+	hwList << HWG_MSX << HWG_NES << HWG_GB << HWG_PC;
+}
+
+void xVMemDumpWidget::draw() {
+	ui.tabVidMem->update();
+}
+
+void xVMemDumpWidget::setVMem(unsigned char* p) {
+	ui.tabVidMem->setVMem(p);
+}
+
+void xVMemDumpWidget::save_vram() {
+	QString path = QFileDialog::getSaveFileName(this, "Save video ram", "", "All files (*)", nullptr, QFileDialog::DontUseNativeDialog);
+	if (path.isEmpty()) return;
+	QFile file(path);
+	if (file.open(QFile::WriteOnly)) {
+		file.write((char*)conf.prof.cur->zx->vid->ram, MEM_256K);
+		file.close();
+	}
 }

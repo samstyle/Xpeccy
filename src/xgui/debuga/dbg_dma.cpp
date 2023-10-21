@@ -1,5 +1,4 @@
-#include "dbg_dma.h"
-#include "../../xcore/xcore.h"
+#include "dbg_widgets.h"
 
 xDmaTableModel::xDmaTableModel(QObject* p):xTableModel(p) {}
 
@@ -10,16 +9,6 @@ int xDmaTableModel::columnCount(const QModelIndex &) const {
 int xDmaTableModel::rowCount(const QModelIndex &) const {
 	return 7;
 }
-
-/*
-QModelIndex xDmaTableModel::index(int row, int col, const QModelIndex &) const {
-	return createIndex(row, col);
-}
-
-void xDmaTableModel::update() {
-	emit dataChanged(index(0,0), index(rowCount() - 1, columnCount() - 1));
-}
-*/
 
 static const char* dmaColName[8] = {"CH0","CH1","CH2","CH3","CH4","CH5","CH6","CH7"};
 static const char* dmaRowName[7] = {"Masked","Mode","BAR","CAR","PAR","BWR","CWR"};
@@ -60,4 +49,19 @@ QVariant xDmaTableModel::data(const QModelIndex& idx, int role) const {
 		case 6: res = gethexword(cwr); break;
 	}
 	return res;
+}
+
+// widget
+
+xDmaWidget::xDmaWidget(QString i, QString t, QWidget* p):xDockWidget(i,t,p) {
+	QWidget* wid = new QWidget;
+	setWidget(wid);
+	ui.setupUi(wid);
+	setObjectName("DMAWIDGET");
+	ui.tableDMA->setModel(new xDmaTableModel());
+	hwList << HWG_PC;
+}
+
+void xDmaWidget::draw() {
+	ui.tableDMA->update();
 }

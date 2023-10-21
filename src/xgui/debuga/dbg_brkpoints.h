@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QAbstractTableModel>
+#include <QDockWidget>
 #include <QModelIndex>
 #include <QMouseEvent>
 #include <QTableView>
@@ -16,8 +17,7 @@ class xBreakListModel : public xTableModel {
 	Q_OBJECT
 	public:
 		xBreakListModel(QObject* = NULL);
-		//void update();
-		//void updateCell(int, int);
+		void update();
 	private:
 		int rowCount(const QModelIndex& = QModelIndex()) const;
 		int columnCount(const QModelIndex& = QModelIndex()) const;
@@ -63,4 +63,27 @@ class xBrkManager : public QDialog {
 		void endAbsChanged(int);
 	signals:
 		void completed(xBrkPoint, xBrkPoint);
+};
+
+#include "ui_form_brkpoints.h"
+
+class xBreakWidget : public xDockWidget {
+	Q_OBJECT
+	public:
+		xBreakWidget(QString, QString, QWidget* = nullptr);
+	signals:
+		void updated();
+		void rqDisasm(int);
+	public slots:
+		void draw();
+	private:
+		Ui::BrkWidget ui;
+		xBrkManager* brkManager;
+	private slots:
+		void addBrk();
+		void editBrk();
+		void confirmBrk(xBrkPoint, xBrkPoint);
+		void delBrk();
+		void openBrk();
+		void saveBrk();
 };

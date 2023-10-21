@@ -320,6 +320,7 @@ static char* z80Flags = "SZ5H3PNC";
 
 void z80_get_regs(CPU* cpu, xRegBunch* bunch) {
 	int idx = 0;
+	int bidx = 0;
 	PAIR(w,h,l)rx;
 	xRegister reg;
 	while(z80RegTab[idx].id != REG_NONE) {
@@ -349,7 +350,10 @@ void z80_get_regs(CPU* cpu, xRegBunch* bunch) {
 			case Z80_REG_R:reg.value = (cpu->r & 0x7f) | (cpu->r7 & 0x80); break;
 			case REG_MPTR: reg.value = cpu->mptr; break;
 		}
-		bunch->regs[idx] = reg;
+		if (reg.id != REG_EMPTY) {
+			bunch->regs[bidx] = reg;
+			bidx++;
+		}
 		idx++;
 	}
 	bunch->regs[idx].id = REG_NONE;

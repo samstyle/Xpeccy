@@ -6,6 +6,7 @@
 #include <QDebug>
 #include <QBuffer>
 #include <QPainter>
+#include <QToolBar>
 #include <QFileDialog>
 #include <QTemporaryFile>
 #include <QTextCodec>
@@ -68,20 +69,21 @@ void DebugWin::chaPal() {
 	col = conf.pal["dbg.header.bg"];
 	cot = conf.pal["dbg.header.txt"];
 	QString str = QString("background-color:%0;color:%1").arg(col.name()).arg(cot.name());
-	ui.labHeadCpu->setStyleSheet(str);
+	ui_cpu.labHeadCpu->setStyleSheet(str);
 	//ui.labHeadDump->setStyleSheet(str);
-	ui.labHeadDisasm->setStyleSheet(str);
-	ui.labHeadMem->setStyleSheet(str);
-	ui.labHeadRay->setStyleSheet(str);
-	ui.labHeadStack->setStyleSheet(str);
-	ui.labHeadSignal->setStyleSheet(str);
+	ui_asm.labHeadDisasm->setStyleSheet(str);
+	ui_misc.labHeadMem->setStyleSheet(str);
+	ui_misc.labHeadRay->setStyleSheet(str);
+	ui_misc.labHeadStack->setStyleSheet(str);
+	ui_misc.labHeadSignal->setStyleSheet(str);
 	setFont(conf.dbg.font);
 	foreach(xHexSpin* xhs, dbgRegEdit) {
 		xhs->updatePal();
 	}
-	ui.dasmTable->update();
-	ui.dumpTable->update();
-	ui.tabDiskDump->update();
+	ui_asm.dasmTable->update();
+	wid_dump.draw();
+	//ui.dumpTable->update();
+	wid_disk_dump.draw();
 }
 
 void DebugWin::save_mem_map() {
@@ -99,6 +101,7 @@ void DebugWin::rest_mem_map() {
 	fillAll();
 }
 
+/*
 void DebugWin::remapMem() {
 	if (block) return;
 	Computer* comp = conf.prof.cur->zx;
@@ -107,6 +110,13 @@ void DebugWin::remapMem() {
 	memSetBank(comp->mem, 0x80, getRFIData(ui.cbBank2), ui.numBank2->getValue(), MEM_16K, NULL, NULL, NULL);
 	memSetBank(comp->mem, 0xc0, getRFIData(ui.cbBank3), ui.numBank3->getValue(), MEM_16K, NULL, NULL, NULL);
 	fillAll();
+}
+*/
+
+void DebugWin::d_remap(int _b, int _t, int _n) {
+//	Computer* comp = conf.prof.cur->zx;
+//	memSetBank(comp->mem, _b << 12, _t, _n, MEM_16K, NULL, NULL, NULL);
+//	fillAll();
 }
 
 void DebugWin::start() {
@@ -133,36 +143,45 @@ void DebugWin::start() {
 
 	brk_clear_tmp(comp);		// clear temp breakpoints
 
-	ui.tabDiskDump->setDrive(ui.cbDrive->currentIndex());
+//	ui.tabDiskDump->setDrive(ui.cbDrive->currentIndex());
 	chaPal();		// this will call fillAll
 	show();
 	if (!fillAll()) {
-		ui.dasmTable->setAdr(comp->cpu->pc + comp->cpu->cs.base);
+		ui_asm.dasmTable->setAdr(comp->cpu->pc + comp->cpu->cs.base);
 		// fillDisasm();
 	}
-	updateScreen();
+	wid_zxscr.draw();
+//	updateScreen();
 
 	if (memViewer->vis) {
 		memViewer->move(memViewer->winPos);
 		memViewer->show();
 		memViewer->fillImage();
 	}
-	chDumpView();
+	wid_dump.draw();
+//	chDumpView();
 	activateWindow();
 }
 
 void DebugWin::stop() {
 	Computer* comp = conf.prof.cur->zx;
-	if (!ui.cbAccT->isChecked())
+	if (!ui_asm.cbAccT->isChecked())
 		tCount = comp->tickCount;	// before compExec to add current opcode T
 	compExec(comp);			// to prevent double breakpoint catch
 	comp->debug = 0;		// back to normal work, turn breakpoints on
 	comp->vid->debug = 0;
-	comp->maping = ui.actMaping->isChecked() ? 1 : 0;
+	comp->maping = ui_asm.actMaping->isChecked() ? 1 : 0;
 	stopTrace();
 
 	memViewer->vis = memViewer->isVisible() ? 1 : 0;
 	memViewer->winPos = memViewer->pos();
+
+	void* ptr;
+	xDockWidget* dw;
+	foreach(ptr, dockWidgets) {
+		dw = (xDockWidget*)ptr;
+		dw->setFloating(false);
+	}
 
 	memViewer->hide();
 	hide();
@@ -171,112 +190,121 @@ void DebugWin::stop() {
 
 void DebugWin::resetTCount() {
 	Computer* comp = conf.prof.cur->zx;
-	if (ui.cbAccT->isChecked()) {
+	if (ui_asm.cbAccT->isChecked()) {
 		tCount = comp->tickCount;
-		ui.labTcount->setText(QString("%0 / %1").arg(comp->tickCount - tCount).arg(comp->frmtCount));
+		ui_asm.labTcount->setText(QString("%0 / %1").arg(comp->tickCount - tCount).arg(comp->frmtCount));
 	}
 }
 
 void DebugWin::onPrfChange() {
-	// qDebug() << __FUNCTION__;
 	xProfile* prf = conf.prof.cur;
 	if (!prf) return;
 	Computer* comp = prf->zx;
 	save_mem_map();
+
+// TODO: show/hide widgets
+/*
 	ui.tabsPanel->clear();
 	QList<tabDSC> lst = tablist[prf->zx->hw->grp];
 	tabDSC p;
 	p.icon = QIcon(":/images/stop.png");
-	p.wid = ui.brkTab;
+	p.wid = &wid_brk;
 	lst.append(p);
 	while(lst.size() > 0) {
 		ui.tabsPanel->addTab(lst.first().wid, lst.first().icon, lst.first().name);
 		lst.removeFirst();
 	}
 	ui.tabsPanel->setPalette(QPalette());
+*/
 	tabMode = comp->hw->grp;
+	xDockWidget* ptr;
+	foreach (void* dw, dockWidgets) {
+		ptr = (xDockWidget*)dw;
+		ptr->setHidden(!(ptr->hwList.isEmpty() || ptr->hwList.contains(tabMode)));
+	}
+
 	// set input line base
 	foreach(xHexSpin* xhs, dbgRegEdit) {
 		xhs->setBase(comp->hw->base);
 	}
 	unsigned int lim = (comp->hw->id == HW_IBM_PC) ? MEM_4M : MEM_64K;
-	ui.dumpTable->setLimit(lim);
-	ui.dumpScroll->setMaximum(lim - 1);
-	ui.dasmScroll->setMaximum(lim - 1);
+	wid_dump.setLimit(lim);
+	ui_asm.dasmScroll->setMaximum(lim - 1);
 
 	dui.leStart->setMax(lim - 1);
 	//dui.leEnd->setMax(lim - 1);		// TODO:why segfault
 	dui.leLen->setMax(lim);
 
-	ui.tabDiskDump->setDrive(ui.cbDrive->currentIndex());
+	// ui.tabDiskDump->setDrive(ui.cbDrive->currentIndex());
+	wid_disk_dump.draw();
+	wid_vmem_dump.setVMem(conf.prof.cur->zx->vid->ram);
 
-	ui.tabVidMem->setVMem(comp->vid->ram);
-	switch(comp->hw->base) {
-		case 8:
-			ui.dumpTable->setItemDelegateForColumn(1, xid_octw);
-			ui.dumpTable->setItemDelegateForColumn(3, xid_octw);
-			ui.dumpTable->setItemDelegateForColumn(5, xid_octw);
-			ui.dumpTable->setItemDelegateForColumn(7, xid_octw);
-			ui.dumpTable->setView(XVIEW_OCTWRD);
-			break;
-		default:
-			ui.dumpTable->setItemDelegateForColumn(1, xid_byte);
-			ui.dumpTable->setItemDelegateForColumn(3, xid_byte);
-			ui.dumpTable->setItemDelegateForColumn(5, xid_byte);
-			ui.dumpTable->setItemDelegateForColumn(7, xid_byte);
-			ui.dumpTable->setView(XVIEW_DEF);
-			break;
-	}
+	wid_dump.setBase(comp->hw->base, comp->hw->id);
 	// TODO: move imm/iff1/iff2 in registers
 	bool z80like = (comp->cpu->type == CPU_Z80);
 	z80like |= (comp->cpu->type == CPU_LR35902);
 	z80like |= (comp->cpu->type == CPU_I8080);
-	ui.labIMM->setVisible(z80like); ui.boxIM->setVisible(z80like);
-	ui.labIFF1->setVisible(z80like); ui.flagIFF1->setVisible(z80like);
-	ui.labIFF2->setVisible(z80like); ui.flagIFF2->setVisible(z80like);
-	if (comp->hw->id == HW_IBM_PC) {
-		ui.cbDumpView->setCurrentIndex(0);		// cpu only
-		ui.cbDumpView->setEnabled(false);
-	} else {
-		ui.cbDumpView->setEnabled(true);
-	}
+	ui_cpu.labIMM->setVisible(z80like); ui_cpu.boxIM->setVisible(z80like);
+	ui_cpu.labIFF1->setVisible(z80like); ui_cpu.flagIFF1->setVisible(z80like);
+	ui_cpu.labIFF2->setVisible(z80like); ui_cpu.flagIFF2->setVisible(z80like);
 	fillAll();
 }
 
 void DebugWin::reject() {stop();}
+void DebugWin::closeEvent(QCloseEvent*) {stop();}
 
-xItemDelegate::xItemDelegate(int t) {
-	type = t;
-}
-
-QWidget* xItemDelegate::createEditor(QWidget* par, const QStyleOptionViewItem&, const QModelIndex&) const {
-	QLineEdit* edt = new QLineEdit(par);
-	QString pat("[0-9A-Fa-f\\s]");
-	int rpt = 0;
-	switch (type) {
-		case XTYPE_NONE: delete(edt); edt = NULL; break;
-		case XTYPE_ADR: rpt = 4; break;
-		case XTYPE_LABEL: break;
-		case XTYPE_DUMP: rpt = 12; break;		// 6 bytes max
-		case XTYPE_BYTE: rpt = 2; break;
-		case XTYPE_OCTWRD: pat = "[0-7\\s]"; rpt = 6; break;
-	}
-	if (edt && (rpt > 0)) {
-		edt->setInputMask(QString(rpt,'h'));
-		edt->setMaxLength(rpt);
-#if QT_VERSION < QT_VERSION_CHECK(6,0,0)
-		edt->setValidator(new QRegExpValidator(QRegExp(QString("%0+").arg(pat))));
-#else
-		edt->setValidator(new QRegularExpressionValidator(QRegularExpression(QString("%0+").arg(pat))));
-#endif
-	}
-	return edt;
-}
-
-DebugWin::DebugWin(QWidget* par):QDialog(par) {
+DebugWin::DebugWin(QWidget* par):QMainWindow(par) {
 	int i;
 
-	ui.setupUi(this);
+	cw = new QWidget;
+	QWidget* wid_cpu = new QWidget;
+	QWidget* wid_dasm = new QWidget;
+	ui_cpu.setupUi(wid_cpu);
+	ui_asm.setupUi(wid_dasm);
+	QHBoxLayout* lay = new QHBoxLayout;
+	lay->addWidget(wid_cpu);
+	lay->addWidget(wid_dasm);
+	lay->setStretchFactor(wid_dasm, 10);
+	cw->setLayout(lay);
+//	ui.setupUi(cw);
+	setCentralWidget(cw);
+
+	dockWidgets << &wid_dump << &wid_disk_dump << &wid_vmem_dump << &wid_cmos_dump;
+	dockWidgets << &wid_brk << &wid_zxscr << &wid_ay << &wid_tape;
+	dockWidgets << &wid_fdd << &wid_mmap << &wid_gb << &wid_ppu;
+	dockWidgets << &wid_cia << &wid_dma << &wid_pic << &wid_pit << &wid_vga;
+
+	addDockWidget(Qt::RightDockWidgetArea, &wid_dump);
+	tabifyDockWidget(&wid_dump, &wid_disk_dump);
+	tabifyDockWidget(&wid_dump, &wid_vmem_dump);
+	tabifyDockWidget(&wid_dump, &wid_cmos_dump);
+	addDockWidget(Qt::RightDockWidgetArea, &wid_brk);
+	tabifyDockWidget(&wid_brk, &wid_zxscr);
+	tabifyDockWidget(&wid_brk, &wid_ay);
+	tabifyDockWidget(&wid_brk, &wid_tape);
+	tabifyDockWidget(&wid_brk, &wid_fdd);
+	tabifyDockWidget(&wid_brk, &wid_mmap);
+	tabifyDockWidget(&wid_brk, &wid_gb);
+	tabifyDockWidget(&wid_brk, &wid_ppu);
+	tabifyDockWidget(&wid_brk, &wid_cia);
+	tabifyDockWidget(&wid_brk, &wid_dma);
+	tabifyDockWidget(&wid_brk, &wid_pic);
+	tabifyDockWidget(&wid_brk, &wid_pit);
+	tabifyDockWidget(&wid_brk, &wid_vga);
+	wid_dump.raise();
+	wid_brk.raise();
+
+	QToolBar* rtbar = new QToolBar;
+	QWidget* rtbw = new QWidget;
+	rtbar->setObjectName("MISCTOOLBAR");
+	ui_misc.setupUi(rtbw);
+	rtbar->addWidget(rtbw);
+	rtbar->setFloatable(false);
+	rtbar->setAllowedAreas(Qt::LeftToolBarArea | Qt::RightToolBarArea);
+	addToolBar(Qt::RightToolBarArea, rtbar);
+
+
+
 	dumpwin = new QDialog(this);
 	labswin = new xLabeList(this);
 
@@ -286,43 +314,43 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	tabDSC p;
 	tablist.clear();
 
-	p.icon = QIcon(":/images/display.png"); p.wid = ui.scrTab; lst.append(p);
-	p.icon = QIcon(":/images/speaker2.png"); p.wid = ui.ayTab; lst.append(p);
-	p.icon = QIcon(":/images/tape.png"); p.wid = ui.tapeTab; lst.append(p);
-	p.icon = QIcon(":/images/floppy.png"); p.wid = ui.fdcTab; lst.append(p);
-	p.icon = QIcon(":/images/memory.png"); p.wid = ui.memTab; lst.append(p);
+	p.icon = QIcon(":/images/display.png"); p.wid = &wid_zxscr; lst.append(p);
+	p.icon = QIcon(":/images/speaker2.png"); p.wid = &wid_ay; lst.append(p);
+	p.icon = QIcon(":/images/tape.png"); p.wid = &wid_tape; lst.append(p);
+	p.icon = QIcon(":/images/floppy.png"); p.wid = &wid_fdd; lst.append(p);
+	p.icon = QIcon(":/images/memory.png"); p.wid = &wid_mmap; lst.append(p);
 	tablist[HWG_ZX] = lst;
 	lst.clear();
-	p.icon = QIcon(":/images/nespad.png"); p.wid = ui.nesTab; lst.append(p);
+	p.icon = QIcon(":/images/nespad.png"); p.wid = &wid_ppu; lst.append(p);
 #if ISDEBUG
-	p.icon = QIcon(":/images/speaker2.png"); p.wid = ui.nesApuTab; lst.append(p);
+//	p.icon = QIcon(":/images/speaker2.png"); p.wid = &wid_apu; lst.append(p);
 #endif
 	tablist[HWG_NES] = lst;
 	lst.clear();
-	p.icon = QIcon(":/images/gameboy.png"); p.wid = ui.gbTab; lst.append(p);
+	p.icon = QIcon(":/images/gameboy.png"); p.wid = &wid_gb; lst.append(p);
 	tablist[HWG_GB] = lst;
 	lst.clear();
-	p.icon = QIcon(":/images/tape.png"); p.wid = ui.tapeTab; lst.append(p);
-	p.icon = QIcon(":/images/floppy.png"); p.wid = ui.fdcTab; lst.append(p);
+	p.icon = QIcon(":/images/tape.png"); p.wid = &wid_tape; lst.append(p);
+	p.icon = QIcon(":/images/floppy.png"); p.wid = &wid_fdd; lst.append(p);
 	tablist[HWG_BK] = lst;
 	lst.clear();
-	p.icon = QIcon(":/images/commodore.png"); p.wid = ui.ciaTab; lst.append(p);
-	p.icon = QIcon(":/images/tape.png"); p.wid = ui.tapeTab; lst.append(p);
-	p.icon = QIcon(); p.name = "VIC"; p.wid = ui.vicTab; lst.append(p);
+	p.icon = QIcon(":/images/commodore.png"); p.wid = &wid_cia; lst.append(p);
+	p.icon = QIcon(":/images/tape.png"); p.wid = &wid_tape; lst.append(p);
+	p.icon = QIcon(); p.name = "VIC"; p.wid = &wid_vic; lst.append(p);
 	tablist[HWG_COMMODORE] = lst;
 	lst.clear();
-	p.icon = QIcon(":/images/speaker2.png"); p.wid = ui.ayTab; lst.append(p);
-	p.icon = QIcon(":/images/tape.png"); p.wid = ui.tapeTab; lst.append(p);
+	p.icon = QIcon(":/images/speaker2.png"); p.wid = &wid_ay; lst.append(p);
+	p.icon = QIcon(":/images/tape.png"); p.wid = &wid_tape; lst.append(p);
 	tablist[HWG_MSX] = lst;
 	lst.clear();
-	p.icon = QIcon(":/images/tape.png"); p.wid = ui.tapeTab; lst.append(p);
+	p.icon = QIcon(":/images/tape.png"); p.wid = &wid_tape; lst.append(p);
 	tablist[HWG_SPCLST] = lst;
 	lst.clear();
-	p.icon = QIcon(); p.name = "PIT"; p.wid = ui.tabPit; lst.append(p);
-	p.icon = QIcon(); p.name = "PIC"; p.wid = ui.tabPIC; lst.append(p);
-	p.icon = QIcon(); p.name = "VGA"; p.wid = ui.vgaregTab; lst.append(p);
-	p.icon = QIcon(); p.name = "DMA"; p.wid = ui.tabDMA; lst.append(p);
-	p.icon = QIcon(":/images/floppy.png"); p.name = ""; p.wid = ui.fdcTab; lst.append(p);
+	p.icon = QIcon(); p.name = "PIT"; p.wid = &wid_pit; lst.append(p);
+	p.icon = QIcon(); p.name = "PIC"; p.wid = &wid_pic; lst.append(p);
+	p.icon = QIcon(); p.name = "VGA"; p.wid = &wid_vga; lst.append(p);
+	p.icon = QIcon(); p.name = "DMA"; p.wid = &wid_dma; lst.append(p);
+	p.icon = QIcon(":/images/floppy.png"); p.name = ""; p.wid = &wid_fdd; lst.append(p);
 	tablist[HWG_PC] = lst;
 // create registers group
 	xLabel* lab;
@@ -341,9 +369,9 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 		xhs->setAlignment(Qt::AlignCenter);
 		dbgRegLabs.append(lab);
 		dbgRegEdit.append(xhs);
-		ui.formRegs->insertRow(i, lab, xhs);
-		connect(lab, SIGNAL(clicked(QMouseEvent*)), this, SLOT(regClick(QMouseEvent*)));
-		connect(xhs, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
+		ui_cpu.formRegs->insertRow(i, lab, xhs);
+		connect(lab, &xLabel::clicked, this, &DebugWin::regClick);
+		connect(xhs, &xHexSpin::textChanged, this, &DebugWin::setCPU);
 	}
 // create flags group (for cpu->f, 16 bit max)
 	flagrp = new QButtonGroup;
@@ -356,15 +384,15 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 		dbgFlagLabs.append(qlb);
 		dbgFlagBox.append(qcb);
 		flagrp->addButton(qcb);
-		ui.flagsGrid->addWidget(qlb, ((15 - i) & 0x0c) >> 1, (15 - i) & 3);
-		ui.flagsGrid->addWidget(qcb, (((15 - i) & 0x0c) >> 1) + 1, (15 - i) & 3);
+		ui_cpu.flagsGrid->addWidget(qlb, ((15 - i) & 0x0c) >> 1, (15 - i) & 3);
+		ui_cpu.flagsGrid->addWidget(qcb, (((15 - i) & 0x0c) >> 1) + 1, (15 - i) & 3);
 	}
-	connect(flagrp, SIGNAL(buttonClicked(QAbstractButton*)),this,SLOT(setFlags()));
+	connect(flagrp, &QButtonGroup::buttonClicked, this, &DebugWin::setFlags);
 
 	conf.dbg.labels = 1;
 	conf.dbg.segment = 0;
-	ui.actShowLabels->setChecked(conf.dbg.labels);
-	ui.actShowSeg->setChecked(conf.dbg.segment);
+	ui_asm.actShowLabels->setChecked(conf.dbg.labels);
+	ui_asm.actShowSeg->setChecked(conf.dbg.segment);
 
 	xid_none = new xItemDelegate(XTYPE_NONE);
 	xid_byte = new xItemDelegate(XTYPE_BYTE);
@@ -373,125 +401,119 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	xid_dump = new xItemDelegate(XTYPE_DUMP);
 
 // actions data
-	ui.actFetch->setData(MEM_BRK_FETCH);
-	ui.actRead->setData(MEM_BRK_RD);
-	ui.actWrite->setData(MEM_BRK_WR);
+	ui_asm.actFetch->setData(MEM_BRK_FETCH);
+	ui_asm.actRead->setData(MEM_BRK_RD);
+	ui_asm.actWrite->setData(MEM_BRK_WR);
 
-	ui.actViewOpcode->setData(DBG_VIEW_EXEC);
-	ui.actViewByte->setData(DBG_VIEW_BYTE);
-	ui.actViewWord->setData(DBG_VIEW_WORD);
-	ui.actViewAddr->setData(DBG_VIEW_ADDR);
-	ui.actViewText->setData(DBG_VIEW_TEXT);
+	ui_asm.actViewOpcode->setData(DBG_VIEW_EXEC);
+	ui_asm.actViewByte->setData(DBG_VIEW_BYTE);
+	ui_asm.actViewWord->setData(DBG_VIEW_WORD);
+	ui_asm.actViewAddr->setData(DBG_VIEW_ADDR);
+	ui_asm.actViewText->setData(DBG_VIEW_TEXT);
 
-	ui.actTrace->setData(DBG_TRACE_ALL);
-	ui.actTraceHere->setData(DBG_TRACE_HERE);
-	ui.actTraceINT->setData(DBG_TRACE_INT);
-	ui.actTraceLog->setData(DBG_TRACE_LOG);
+	ui_asm.actTrace->setData(DBG_TRACE_ALL);
+	ui_asm.actTraceHere->setData(DBG_TRACE_HERE);
+	ui_asm.actTraceINT->setData(DBG_TRACE_INT);
+	ui_asm.actTraceLog->setData(DBG_TRACE_LOG);
 
-	ui.dasmTable->setFocus();
+	ui_asm.dasmTable->setFocus();
 
 // disasm table
-	ui.dasmTable->setItemDelegateForColumn(0, xid_labl);
-	ui.dasmTable->setItemDelegateForColumn(1, xid_dump);
+	ui_asm.dasmTable->setItemDelegateForColumn(0, xid_labl);
+	ui_asm.dasmTable->setItemDelegateForColumn(1, xid_dump);
 
 // actions
-	ui.tbBreak->addAction(ui.actFetch);
-	ui.tbBreak->addAction(ui.actRead);
-	ui.tbBreak->addAction(ui.actWrite);
+	ui_asm.tbBreak->addAction(ui_asm.actFetch);
+	ui_asm.tbBreak->addAction(ui_asm.actRead);
+	ui_asm.tbBreak->addAction(ui_asm.actWrite);
 
-	ui.tbView->addAction(ui.actViewOpcode);
-	ui.tbView->addAction(ui.actViewByte);
-	ui.tbView->addAction(ui.actViewText);
-	ui.tbView->addAction(ui.actViewWord);
-	ui.tbView->addAction(ui.actViewAddr);
+	ui_asm.tbView->addAction(ui_asm.actViewOpcode);
+	ui_asm.tbView->addAction(ui_asm.actViewByte);
+	ui_asm.tbView->addAction(ui_asm.actViewText);
+	ui_asm.tbView->addAction(ui_asm.actViewWord);
+	ui_asm.tbView->addAction(ui_asm.actViewAddr);
 
-	ui.tbSaveDasm->addAction(ui.actDisasm);
-	ui.tbSaveDasm->addAction(ui.actLoadDump);
-	ui.tbSaveDasm->addAction(ui.actSaveDump);
-	ui.tbSaveDasm->addAction(ui.actLoadLabels);
-	ui.tbSaveDasm->addAction(ui.actSaveLabels);
-	ui.tbSaveDasm->addAction(ui.actLoadMap);
-	ui.tbSaveDasm->addAction(ui.actSaveMap);
+	ui_asm.tbSaveDasm->addAction(ui_asm.actDisasm);
+	ui_asm.tbSaveDasm->addAction(ui_asm.actLoadDump);
+	ui_asm.tbSaveDasm->addAction(ui_asm.actSaveDump);
+	ui_asm.tbSaveDasm->addAction(ui_asm.actLoadLabels);
+	ui_asm.tbSaveDasm->addAction(ui_asm.actSaveLabels);
+	ui_asm.tbSaveDasm->addAction(ui_asm.actLoadMap);
+	ui_asm.tbSaveDasm->addAction(ui_asm.actSaveMap);
 
-	ui.tbTrace->addAction(ui.actTrace);
-	ui.tbTrace->addAction(ui.actTraceHere);
-	ui.tbTrace->addAction(ui.actTraceINT);
-//#ifdef ISDEBUG
-	ui.tbTrace->addAction(ui.actTraceLog);
-//#endif
+	ui_asm.tbTrace->addAction(ui_asm.actTrace);
+	ui_asm.tbTrace->addAction(ui_asm.actTraceHere);
+	ui_asm.tbTrace->addAction(ui_asm.actTraceINT);
+	ui_asm.tbTrace->addAction(ui_asm.actTraceLog);
 
-	ui.tbTool->addAction(ui.actSearch);
-	ui.tbTool->addAction(ui.actFill);
-	ui.tbTool->addAction(ui.actSprScan);
-	ui.tbTool->addAction(ui.actShowKeys);
-	ui.tbTool->addAction(ui.actWutcha);
-	ui.tbTool->addAction(ui.actLabelsList);
+	ui_asm.tbTool->addAction(ui_asm.actSearch);
+	ui_asm.tbTool->addAction(ui_asm.actFill);
+	ui_asm.tbTool->addAction(ui_asm.actSprScan);
+	ui_asm.tbTool->addAction(ui_asm.actShowKeys);
+	ui_asm.tbTool->addAction(ui_asm.actWutcha);
+	ui_asm.tbTool->addAction(ui_asm.actLabelsList);
 
-	ui.tbDbgOpt->addAction(ui.actShowLabels);
-	ui.tbDbgOpt->addAction(ui.actHideAddr);
-	ui.tbDbgOpt->addAction(ui.actShowSeg);
-	ui.tbDbgOpt->addAction(ui.actRomWr);
-	ui.tbDbgOpt->addAction(ui.actMaping);
-	ui.tbDbgOpt->addAction(ui.actMapingClear);
+	ui_asm.tbDbgOpt->addAction(ui_asm.actShowLabels);
+	ui_asm.tbDbgOpt->addAction(ui_asm.actHideAddr);
+	ui_asm.tbDbgOpt->addAction(ui_asm.actShowSeg);
+	ui_asm.tbDbgOpt->addAction(ui_asm.actRomWr);
+	ui_asm.tbDbgOpt->addAction(ui_asm.actMaping);
+	ui_asm.tbDbgOpt->addAction(ui_asm.actMapingClear);
 
 // connections
-	connect(this,SIGNAL(needStep()),this,SLOT(doStep()));
-	connect(ui.cbAccT, SIGNAL(toggled(bool)), this, SLOT(resetTCount()));
+	connect(this, &DebugWin::needStep, this, &DebugWin::doStep);
+	connect(ui_asm.cbAccT, &QCheckBox::toggled, this, &DebugWin::resetTCount);
+	connect(ui_asm.actMapingClear, &QAction::triggered, this, &DebugWin::mapClear);
+	connect(ui_asm.dasmTable, &xDisasmTable::customContextMenuRequested, this, &DebugWin::putBreakPoint);
+	connect(ui_asm.dasmTable, &xDisasmTable::rqRefill, this, &DebugWin::fillDisasm);
+	connect(ui_asm.dasmTable, &xDisasmTable::rqRefill, &wid_dump, &xDumpWidget::draw);
+	connect(ui_asm.dasmTable, &xDisasmTable::rqRefill, &wid_zxscr, &xZXScrWidget::draw);
+	connect(ui_asm.dasmTable, &xDisasmTable::rqRefill, &wid_brk, &xBreakWidget::draw);
+	connect(ui_asm.dasmTable, &xDisasmTable::rqRefillAll, this, &DebugWin::fillAll);
+	connect(ui_asm.dasmTable, &xDisasmTable::s_adrch, ui_asm.dasmScroll, &QScrollBar::setValue);
+	connect(ui_asm.dasmScroll, &QScrollBar::valueChanged, ui_asm.dasmTable, &xDisasmTable::setAdrX);
 
-	connect(ui.actMapingClear,SIGNAL(triggered()),this,SLOT(mapClear()));
+	connect(&wid_dump, &xDumpWidget::s_blockch, this, &DebugWin::fillDisasm);
+	connect(&wid_dump, &xDumpWidget::s_datach, this, &DebugWin::fillAll);
+	connect(&wid_dump, &xDumpWidget::s_brkrq, this, &DebugWin::brkRequest);
 
-	connect(ui.dasmTable,SIGNAL(customContextMenuRequested(QPoint)),this,SLOT(putBreakPoint()));
-	connect(ui.dasmTable,SIGNAL(rqRefill()),this,SLOT(fillDisasm()));
-	connect(ui.dasmTable,SIGNAL(rqRefill()),this,SLOT(fillDump()));
-	connect(ui.dasmTable,SIGNAL(rqRefill()),this,SLOT(updateScreen()));
-	connect(ui.dasmTable,SIGNAL(rqRefill()),ui.bpList,SLOT(update()));
-	connect(ui.dasmTable,SIGNAL(rqRefillAll()),this,SLOT(fillAll()));
+	connect(&wid_brk, &xBreakWidget::rqDisasm, ui_asm.dasmTable, &xDisasmTable::setAdrX);
+	connect(&wid_brk, &xBreakWidget::updated, this, &DebugWin::fillDisasm);
+	connect(&wid_brk, &xBreakWidget::updated, &wid_dump, &xDumpWidget::draw);
 
-	connect(ui.dasmTable,SIGNAL(s_adrch(int)),ui.dasmScroll,SLOT(setValue(int)));
-	connect(ui.dasmScroll,SIGNAL(valueChanged(int)),ui.dasmTable,SLOT(setAdr(int)));
+	connect(ui_asm.actSearch, &QAction::triggered, this, &DebugWin::doFind);
+	connect(ui_asm.actFill, &QAction::triggered, this, &DebugWin::doFill);
+	connect(ui_asm.actSprScan, &QAction::triggered, this, &DebugWin::doMemView);
+	connect(ui_asm.actShowKeys, &QAction::triggered, this, &DebugWin::wannaKeys);
+	connect(ui_asm.actWutcha, &QAction::triggered, this, &DebugWin::wannaWutch);
 
-	connect(ui.dumpTable,SIGNAL(rqRefill()),this,SLOT(fillDump()));
-	connect(ui.dumpTable,SIGNAL(rqRefill()),this,SLOT(fillDisasm()));
-	connect(ui.dumpTable,SIGNAL(rqRefill()),ui.bpList,SLOT(update()));
-	connect(ui.dumpTable,SIGNAL(rqRefill()),this,SLOT(updateScreen()));
+	connect(ui_asm.actLabelsList, &QAction::triggered, labswin, &xLabeList::show);
+	connect(labswin, &xLabeList::labSelected, this, &DebugWin::jumpToLabel);
 
-	connect(ui.dumpTable, SIGNAL(s_adrch(int)), this, SLOT(dumpChadr(int)));
-	connect(ui.dumpScroll, SIGNAL(valueChanged(int)), ui.dumpTable, SLOT(setAdr(int)));
+	connect(ui_asm.actShowLabels, &QAction::toggled, this, &DebugWin::setShowLabels);
+	connect(ui_asm.actHideAddr, &QAction::toggled, this, &DebugWin::fillDisasm);
+	connect(ui_asm.actShowSeg, &QAction::toggled, this, &DebugWin::setShowSegment);
+	connect(ui_asm.actRomWr, &QAction::toggled, this, &DebugWin::setRomWriteable);
 
-	connect(ui.bpList,SIGNAL(rqDisasm(int)),ui.dasmTable,SLOT(setAdr(int)));
-	connect(ui.bpList,SIGNAL(rqDasmDump()),this,SLOT(fillDisasm()));
-	connect(ui.bpList,SIGNAL(rqDasmDump()),this,SLOT(fillDump()));
+	connect(ui_asm.tbView, &QToolButton::triggered, this, &DebugWin::chaCellProperty);
+	connect(ui_asm.tbBreak, SIGNAL(triggered(QAction*)),this,SLOT(chaCellProperty(QAction*)));
+	connect(ui_asm.tbTrace, SIGNAL(triggered(QAction*)),this,SLOT(doTrace(QAction*)));
 
-	connect(ui.actSearch,SIGNAL(triggered(bool)),this,SLOT(doFind()));
-	connect(ui.actFill,SIGNAL(triggered(bool)),this,SLOT(doFill()));
-	connect(ui.actSprScan,SIGNAL(triggered(bool)),this,SLOT(doMemView()));
-	connect(ui.actShowKeys,SIGNAL(triggered(bool)),this,SIGNAL(wannaKeys()));
-	connect(ui.actWutcha,SIGNAL(triggered(bool)),this,SIGNAL(wannaWutch()));
+	connect(ui_asm.actLoadDump, SIGNAL(triggered(bool)),this,SLOT(doOpenDump()));
+	connect(ui_asm.actSaveDump, SIGNAL(triggered(bool)),dumpwin,SLOT(show()));
+	connect(ui_asm.actLoadLabels, SIGNAL(triggered(bool)),this,SLOT(dbgLLab()));
+	connect(ui_asm.actSaveLabels, SIGNAL(triggered(bool)),this,SLOT(dbgSLab()));
+	connect(ui_asm.actLoadMap, SIGNAL(triggered(bool)),this,SLOT(loadMap()));
+	connect(ui_asm.actSaveMap, SIGNAL(triggered(bool)),this,SLOT(saveMap()));
+	connect(ui_asm.actDisasm, SIGNAL(triggered(bool)),this,SLOT(saveDasm()));
+	connect(ui_asm.tbRefresh, SIGNAL(released()), this, SLOT(reload()));
 
-	connect(ui.actLabelsList, SIGNAL(triggered(bool)), labswin, SLOT(show()));
-	connect(labswin, SIGNAL(labSelected(QString)), this, SLOT(jumpToLabel(QString)));
+	connect(&wid_mmap, &xMMapWidget::s_remap, this, &DebugWin::d_remap);
+	connect(&wid_mmap, &xMMapWidget::s_restore, this, &DebugWin::rest_mem_map);
 
-	connect(ui.actShowLabels,SIGNAL(toggled(bool)),this,SLOT(setShowLabels(bool)));
-	connect(ui.actHideAddr,SIGNAL(toggled(bool)),this,SLOT(fillDisasm()));
-	connect(ui.actShowSeg,SIGNAL(toggled(bool)),this,SLOT(setShowSegment(bool)));
-	connect(ui.actRomWr, SIGNAL(toggled(bool)),this,SLOT(setRomWriteable(bool)));
-
-	connect(ui.tbView, SIGNAL(triggered(QAction*)),this,SLOT(chaCellProperty(QAction*)));
-	connect(ui.tbBreak, SIGNAL(triggered(QAction*)),this,SLOT(chaCellProperty(QAction*)));
-	connect(ui.tbTrace, SIGNAL(triggered(QAction*)),this,SLOT(doTrace(QAction*)));
-
-	connect(ui.actLoadDump, SIGNAL(triggered(bool)),this,SLOT(doOpenDump()));
-	connect(ui.actSaveDump, SIGNAL(triggered(bool)),dumpwin,SLOT(show()));
-	connect(ui.actLoadLabels, SIGNAL(triggered(bool)),this,SLOT(dbgLLab()));
-	connect(ui.actSaveLabels, SIGNAL(triggered(bool)),this,SLOT(dbgSLab()));
-	connect(ui.actLoadMap, SIGNAL(triggered(bool)),this,SLOT(loadMap()));
-	connect(ui.actSaveMap, SIGNAL(triggered(bool)),this,SLOT(saveMap()));
-	connect(ui.actDisasm, SIGNAL(triggered(bool)),this,SLOT(saveDasm()));
-	connect(ui.tbRefresh, SIGNAL(released()), this, SLOT(reload()));
-
-	connect (ui.tbSaveVRam, SIGNAL(released()), this, SLOT(saveVRam()));
+//	connect (ui.tbSaveVRam, SIGNAL(released()), this, SLOT(saveVRam()));
 // dump table
-
+/*
 	ui.cbCodePage->addItem("WIN1251", XCP_1251);
 	ui.cbCodePage->addItem("CP866", XCP_866);
 	ui.cbCodePage->addItem("KOI8R", XCP_KOI8R);
@@ -526,42 +548,43 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	connect(ui.cbDumpPageSize, SIGNAL(currentIndexChanged(int)), this, SLOT(chDumpView()));
 
 	ui.cbDumpView->setCurrentIndex(0);
-
+// disk dump
 	ui.tabDiskDump->setColumnWidth(0, 70);
 	ui.tabDiskDump->horizontalHeader()->setStretchLastSection(true);
 	connect(ui.cbDrive, SIGNAL(currentIndexChanged(int)), ui.tabDiskDump, SLOT(setDrive(int)));
 	connect(ui.sbTrack, SIGNAL(valueChanged(int)), ui.tabDiskDump, SLOT(setTrack(int)));
-
+*/
 // registers
-	connect(ui.boxIM,SIGNAL(valueChanged(int)),this,SLOT(setCPU()));
-	connect(ui.flagIFF1,SIGNAL(stateChanged(int)),this,SLOT(setCPU()));
-	connect(ui.flagIFF2,SIGNAL(stateChanged(int)),this,SLOT(setCPU()));
+	connect(ui_cpu.boxIM,SIGNAL(valueChanged(int)),this,SLOT(setCPU()));
+	connect(ui_cpu.flagIFF1,SIGNAL(stateChanged(int)),this,SLOT(setCPU()));
+	connect(ui_cpu.flagIFF2,SIGNAL(stateChanged(int)),this,SLOT(setCPU()));
 //	connect(ui.flagGroup,SIGNAL(buttonClicked(int)),this,SLOT(setFlags()));
-// infoslots
-	scrImg = QImage(256, 192, QImage::Format_RGB888);
-	connect(ui.sbScrBank,SIGNAL(valueChanged(int)),this,SLOT(updateScreen()));
-	connect(ui.leScrAdr,SIGNAL(textChanged(QString)),this,SLOT(updateScreen()));
-	connect(ui.cbScrAtr,SIGNAL(stateChanged(int)),this,SLOT(updateScreen()));
-	connect(ui.cbScrPix,SIGNAL(stateChanged(int)),this,SLOT(updateScreen()));
-	connect(ui.cbScrGrid,SIGNAL(stateChanged(int)),this,SLOT(updateScreen()));
-
-	connect(ui.tbAddBrk, SIGNAL(clicked()), this, SLOT(addBrk()));
-	connect(ui.tbEditBrk, SIGNAL(clicked()), this, SLOT(editBrk()));
-	connect(ui.tbDelBrk, SIGNAL(clicked()), this, SLOT(delBrk()));
-	connect(ui.tbBrkOpen, SIGNAL(clicked()), this, SLOT(openBrk()));
-	connect(ui.tbBrkSave, SIGNAL(clicked()), this, SLOT(saveBrk()));
-	connect(ui.bpList, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(goToBrk(QModelIndex)));
+// zx screen
+//	scrImg = QImage(256, 192, QImage::Format_RGB888);
+//	connect(ui.sbScrBank,SIGNAL(valueChanged(int)),this,SLOT(updateScreen()));
+//	connect(ui.leScrAdr,SIGNAL(textChanged(QString)),this,SLOT(updateScreen()));
+//	connect(ui.cbScrAtr,SIGNAL(stateChanged(int)),this,SLOT(updateScreen()));
+//	connect(ui.cbScrPix,SIGNAL(stateChanged(int)),this,SLOT(updateScreen()));
+//	connect(ui.cbScrGrid,SIGNAL(stateChanged(int)),this,SLOT(updateScreen()));
+// breakpoints
+//	connect(ui.tbAddBrk, SIGNAL(clicked()), this, SLOT(addBrk()));
+//	connect(ui.tbEditBrk, SIGNAL(clicked()), this, SLOT(editBrk()));
+//	connect(ui.tbDelBrk, SIGNAL(clicked()), this, SLOT(delBrk()));
+//	connect(ui.tbBrkOpen, SIGNAL(clicked()), this, SLOT(openBrk()));
+//	connect(ui.tbBrkSave, SIGNAL(clicked()), this, SLOT(saveBrk()));
+//	connect(ui.bpList, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(goToBrk(QModelIndex)));
 // gb tab
-	connect(ui.gbModeGroup, SIGNAL(buttonClicked(QAbstractButton*)), this, SLOT(fillGBoy()));
-	connect(ui.sbTileset, SIGNAL(valueChanged(int)), this, SLOT(fillGBoy()));
-	connect(ui.sbTilemap, SIGNAL(valueChanged(int)), this, SLOT(fillGBoy()));
+//	connect(ui.gbModeGroup, SIGNAL(buttonClicked(QAbstractButton*)), this, SLOT(fillGBoy()));
+//	connect(ui.sbTileset, SIGNAL(valueChanged(int)), this, SLOT(fillGBoy()));
+//	connect(ui.sbTilemap, SIGNAL(valueChanged(int)), this, SLOT(fillGBoy()));
 
-	connect(ui.tabsPanel, SIGNAL(currentChanged(int)), this, SLOT(fillTabs()));
+//	connect(ui.tabsPanel, SIGNAL(currentChanged(int)), this, SLOT(fillTabs()));
 
 	block = 0;
 	tCount = 0;
 	trace = 0;
 // nes tab
+/*
 	ui.nesScrType->addItem("BG off", NES_SCR_OFF);
 	ui.nesScrType->addItem("BG scr 0", NES_SCR_0);
 	ui.nesScrType->addItem("BG scr 1", NES_SCR_1);
@@ -579,7 +602,9 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	connect(ui.nesScrType,SIGNAL(currentIndexChanged(int)), this, SLOT(drawNes()));
 	connect(ui.nesBGTileset,SIGNAL(currentIndexChanged(int)), this, SLOT(drawNes()));
 	connect(ui.nesSPTileset,SIGNAL(currentIndexChanged(int)), this, SLOT(drawNes()));
+*/
 // mem tab
+/*
 	ui.cbBank0->addItem("ROM", MEM_ROM);
 	ui.cbBank0->addItem("RAM", MEM_RAM);
 	ui.cbBank1->addItem("ROM", MEM_ROM);
@@ -601,14 +626,15 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	connect(ui.numBank2, SIGNAL(valueChanged(int)), this, SLOT(remapMem()));
 	connect(ui.numBank3, SIGNAL(valueChanged(int)), this, SLOT(remapMem()));
 	connect(ui.pbRestMemMap, SIGNAL(clicked()), this, SLOT(rest_mem_map()));
+*/
 // ibm tab
-	ui.tabPit->setModel(new xPitModel());
-	ui.tabVgaReg->setModel(new xVgaRegModel());
-	ui.tableDMA->setModel(new xDmaTableModel());
-	ui.tabCmos->setModel(new xCmosDumpModel());
-	ui.tablePIC->setModel(new xPicModel());
+//	ui.tabPit->setModel(new xPitModel());
+//	ui.tabVgaReg->setModel(new xVgaRegModel());
+//	ui.tableDMA->setModel(new xDmaTableModel());
+//	ui.tabCmos->setModel(new xCmosDumpModel());
+//	ui.tablePIC->setModel(new xPicModel());
 // c64 tabs
-	ui.tabVicRegs->setModel(new xVicRegsModel());
+//	ui.tabVicRegs->setModel(new xVicRegsModel());
 // subwindows
 	dui.setupUi(dumpwin);
 	dui.tbSave->addAction(dui.aSaveBin);
@@ -647,58 +673,78 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 
 	memFiller = new xMemFiller(this);
 	connect(memFiller, SIGNAL(rqRefill()),this,SLOT(fillNotCPU()));
+	connect(memFiller, &xMemFiller::rqRefill, this, &DebugWin::fillDisasm);
 
-	brkManager = new xBrkManager(this);
-	connect(brkManager, SIGNAL(completed(xBrkPoint, xBrkPoint)), this, SLOT(confirmBrk(xBrkPoint, xBrkPoint)));
+//	brkManager = new xBrkManager(this);
+//	connect(brkManager, SIGNAL(completed(xBrkPoint, xBrkPoint)), this, SLOT(confirmBrk(xBrkPoint, xBrkPoint)));
 
 // context menu
 	cellMenu = new QMenu(this);
 	QMenu* bpMenu = new QMenu("Breakpoints");
 	bpMenu->setIcon(QIcon(":/images/stop.png"));
 	cellMenu->addMenu(bpMenu);
-	bpMenu->addAction(ui.actFetch);
-	bpMenu->addAction(ui.actRead);
-	bpMenu->addAction(ui.actWrite);
+	bpMenu->addAction(ui_asm.actFetch);
+	bpMenu->addAction(ui_asm.actRead);
+	bpMenu->addAction(ui_asm.actWrite);
 	QMenu* viewMenu = new QMenu("View");
 	viewMenu->setIcon(QIcon(":/images/bars.png"));
 	cellMenu->addMenu(viewMenu);
-	viewMenu->addAction(ui.actViewOpcode);
-	viewMenu->addAction(ui.actViewByte);
-	viewMenu->addAction(ui.actViewText);
-	viewMenu->addAction(ui.actViewWord);
-	viewMenu->addAction(ui.actViewAddr);
+	viewMenu->addAction(ui_asm.actViewOpcode);
+	viewMenu->addAction(ui_asm.actViewByte);
+	viewMenu->addAction(ui_asm.actViewText);
+	viewMenu->addAction(ui_asm.actViewWord);
+	viewMenu->addAction(ui_asm.actViewAddr);
 	cellMenu->addSeparator();
-	cellMenu->addAction(ui.actLabelsList);
-	cellMenu->addAction(ui.actTraceHere);
-	cellMenu->addAction(ui.actShowLabels);
+	cellMenu->addAction(ui_asm.actLabelsList);
+	cellMenu->addAction(ui_asm.actTraceHere);
+	cellMenu->addAction(ui_asm.actShowLabels);
 	// NOTE: actions already connected to slots by main menu. no need to double it here
 
 	resize(minimumSize());
+
+	QString path = conf.path.confDir.c_str();
+	path.append("/debuga.layout");
+	QFile file(path);
+	if (file.open(QFile::ReadOnly)) {
+		QByteArray state = file.readAll();
+		file.close();
+		restoreState(state);
+	}
 }
 
 DebugWin::~DebugWin() {
-	delete(dumpwin);
-	delete(openDumpDialog);
-	delete(memViewer);
-	delete(memFiller);
-	delete(memFinder);
+	QByteArray state = saveState();
+	QString path = conf.path.confDir.c_str();
+	path.append("/debuga.layout");
+	QFile file(path);
+	if (file.open(QFile::WriteOnly)) {
+		file.write(state);
+		file.close();
+	}
+	dumpwin->deleteLater();
+	openDumpDialog->deleteLater();
+	memViewer->deleteLater();
+	memFiller->deleteLater();
+	memFinder->deleteLater();
 }
 
 void DebugWin::setShowLabels(bool f) {
-	conf.dbg.labels = f ? 1 : 0;
+	conf.dbg.labels = !!f;
 	fillDisasm();
 }
 
 void DebugWin::setShowSegment(bool f) {
-	conf.dbg.segment = f ? 1 : 0;
+	conf.dbg.segment = !!f;
 	fillDisasm();
-	fillDump();
+	wid_dump.draw();
+	//fillDump();
 }
 
 void DebugWin::setRomWriteable(bool f) {
-	conf.dbg.romwr = f ? 1 : 0;
+	conf.dbg.romwr = !!f;
 }
 
+/*
 void DebugWin::setDumpCP() {
 	int cp = getRFIData(ui.cbCodePage);
 	ui.dumpTable->setCodePage(cp);
@@ -721,22 +767,23 @@ void DebugWin::chDumpView() {
 	ui.dumpScroll->setMaximum(psize-1);
 	ui.dumpTable->setLimit(psize);
 }
+*/
 
 static QFile logfile;
 
 void DebugWin::doStep() {
 	Computer* comp = conf.prof.cur->zx;
-	if (!ui.cbAccT->isChecked())
+	if (!ui_asm.cbAccT->isChecked())
 		tCount = comp->tickCount;
 	compExec(comp);
 	if (!fillAll()) {
-		ui.dasmTable->setAdr(comp->cpu->pc + comp->cpu->cs.base);
+		ui_asm.dasmTable->setAdr(comp->cpu->pc + comp->cpu->cs.base);
 		//fillDisasm();
 	}
 }
 
 void DebugWin::doTraceHere() {
-	doTrace(ui.actTraceHere);
+	doTrace(ui_asm.actTraceHere);
 }
 
 void DebugWin::doTrace(QAction* act) {
@@ -753,13 +800,13 @@ void DebugWin::doTrace(QAction* act) {
 
 	trace = 1;
 	traceAdr = getAdr();
-	ui.tbTrace->setEnabled(false);
+	ui_asm.tbTrace->setEnabled(false);
 	QApplication::postEvent(this, new QEvent((QEvent::Type)DBG_EVENT_STEP));
 }
 
 void DebugWin::stopTrace() {
 	trace = 0;
-	ui.tbTrace->setEnabled(true);
+	ui_asm.tbTrace->setEnabled(true);
 	if (logfile.isOpen()) logfile.close();
 }
 
@@ -767,7 +814,7 @@ void DebugWin::reload() {
 	Computer* comp = conf.prof.cur->zx;
 	if (comp->mem->snapath) {
 		load_file(comp, comp->mem->snapath, FG_SNAPSHOT, 0);
-		ui.dasmTable->setAdr(comp->cpu->pc + comp->cpu->cs.base);
+		ui_asm.dasmTable->setAdr(comp->cpu->pc + comp->cpu->cs.base);
 		fillAll();
 	}
 	if (!conf.labpath.isEmpty())
@@ -794,7 +841,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 			break;
 		case XCUT_LOAD:
 			load_file(comp, NULL, FG_ALL, -1);
-			ui.dasmTable->setAdr(comp->cpu->pc + comp->cpu->cs.base);
+			ui_asm.dasmTable->setAdr(comp->cpu->pc + comp->cpu->cs.base);
 			//fillAll();
 			activateWindow();
 			break;
@@ -806,7 +853,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 			if (!ev->isAutoRepeat()) {
 				doStep();
 			} else if (!trace) {
-				doTrace(ui.actTrace);
+				doTrace(ui_asm.actTrace);
 			}
 			break;
 		case XCUT_STEPOVER:
@@ -824,9 +871,9 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 				doStep();
 			break;
 		case XCUT_TMPBRK:
-			if (!ui.dasmTable->hasFocus()) break;
-			idx = ui.dasmTable->currentIndex();
-			i = ui.dasmTable->getData(idx.row(), 0, Qt::UserRole).toInt();
+			if (!ui_asm.dasmTable->hasFocus()) break;
+			idx = ui_asm.dasmTable->currentIndex();
+			i = ui_asm.dasmTable->getData(idx.row(), 0, Qt::UserRole).toInt();
 			ptr = getBrkPtr(comp, i);
 			stop();
 			*ptr |= MEM_BRK_TFETCH;
@@ -835,15 +882,15 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 			rzxStop(comp);
 			compReset(comp, RES_DEFAULT);
 			if (!fillAll()) {
-				ui.dasmTable->setAdr(comp->cpu->pc + comp->cpu->cs.base);
+				ui_asm.dasmTable->setAdr(comp->cpu->pc + comp->cpu->cs.base);
 				//fillDisasm();
 			}
 			break;
 		case XCUT_TRACE:
-			doTrace(ui.actTrace);
+			doTrace(ui_asm.actTrace);
 			break;
 		case XCUT_LABELS:
-			ui.actShowLabels->setChecked(!conf.dbg.labels);
+			ui_asm.actShowLabels->setChecked(!conf.dbg.labels);
 			break;
 		case XCUT_KEYBOARD:
 			emit wannaKeys();
@@ -889,12 +936,15 @@ void DebugWin::customEvent(QEvent* ev) {
 				int i = 0;
 				while (traceregs.regs[i].id != REG_NONE) {
 					if (i!=0) tracestr.append(" ");
-					tracestr.append(traceregs.regs[i].name).append(":");
-					switch(traceregs.regs[i].type & REG_TMASK) {
-						case REG_BIT: tracestr.append(traceregs.regs[i].value ? "1" : "0"); break;
-						case REG_BYTE: tracestr.append(gethexbyte(traceregs.regs[i].value)); break;
-						case REG_WORD: tracestr.append(gethexword(traceregs.regs[i].value)); break;
-						case REG_24: tracestr.append(gethex6(traceregs.regs[i].value)); break;
+					if (traceregs.regs[i].id != REG_EMPTY) {			// mustn't be visible
+						tracestr.append(traceregs.regs[i].name).append(":");
+						switch(traceregs.regs[i].type & REG_TMASK) {
+							case REG_BIT: tracestr.append(traceregs.regs[i].value ? "1" : "0"); break;
+							case REG_BYTE: tracestr.append(gethexbyte(traceregs.regs[i].value)); break;
+							case REG_WORD: tracestr.append(gethexword(traceregs.regs[i].value)); break;
+							case REG_24: tracestr.append(gethex6(traceregs.regs[i].value)); break;
+							case REG_32: tracestr.append(gethexint(traceregs.regs[i].value)); break;
+						}
 					}
 					i++;
 				}
@@ -938,13 +988,17 @@ void setSignal(QLabel* lab, int on) {
 	lab->setFont(fnt);
 }
 
+//QString getAYmix(aymChan*);
+/*
 QString getAYmix(aymChan* ch) {
 	QString res = ch->tdis ? "-" : "T";
 	res += ch->ndis ? "-" : "N";
 	res += ch->een ? "E" : "-";
 	return res;
 }
-
+*/
+//void drawBar(QLabel*, int, int);
+/*
 void drawBar(QLabel* lab, int lev, int max) {
 	if (lev > max) lev = max;
 	if (lev < 0) lev = 0;
@@ -958,7 +1012,9 @@ void drawBar(QLabel* lab, int lev, int max) {
 	pnt.end();
 	lab->setPixmap(pxm);
 }
+*/
 
+/*
 void DebugWin::fillAY() {
 	if (ui.tabsPanel->currentWidget() != ui.ayTab) return;
 	Computer* comp = conf.prof.cur->zx;
@@ -983,7 +1039,9 @@ void DebugWin::fillAY() {
 
 	drawBar(ui.labBeep, comp->beep->val, 256);
 }
+*/
 
+/*
 #define TDSTEP 20	// mks/dot
 
 void DebugWin::fillTape() {
@@ -1071,23 +1129,29 @@ void DebugWin::fillTape() {
 	pnt.end();
 	ui.labTapeDiag->setPixmap(pxm);
 }
+*/
 
 // NOTE: model must be xTableModel child
+/*
 void update_table(QTableView* tab) {
 	xTableModel* mod = (xTableModel*)(tab->model());
 	mod->update();
 	// emit mod->dataChanged(mod->index(0,0), mod->index(99, 99));
 }
+*/
 
 void DebugWin::fillTabs() {
 	fillMem();
-	fillFDC();
-	fillGBoy();
-	drawNes();
-	fillAY();
-	fillTape();
-	Computer* comp = conf.prof.cur->zx;
+
+//	wid_fdd.draw();//fillFDC();
+//	wid_gb.draw();//fillGBoy();
+//	wid_ppu.draw();//drawNes();
+//	wid_ay.draw();//fillAY();
+//	wid_tape.draw();//fillTape();
+//	Computer* comp = conf.prof.cur->zx;
 	// cia
+//	wid_cia.draw();
+	/*
 	if (ui.tabsPanel->currentWidget() == ui.ciaTab)	{
 		ui.cia1timera->setText(QString("%0 / %1").arg(gethexword(comp->c64.cia1->timerA.value)).arg(gethexword(comp->c64.cia1->timerA.inival)));
 		ui.cia1timerb->setText(QString("%0 / %1").arg(gethexword(comp->c64.cia1->timerB.value)).arg(gethexword(comp->c64.cia1->timerB.inival)));
@@ -1102,23 +1166,31 @@ void DebugWin::fillTabs() {
 		ui.cia2cra->setText(getbinbyte(comp->c64.cia2->timerA.flags));
 		ui.cia2crb->setText(getbinbyte(comp->c64.cia2->timerB.flags));
 	}
+	*/
 	// vic
+//	wid_vic.draw();
+	/*
 	if (ui.tabsPanel->currentWidget() == ui.vicTab) {
 		ui.tabVicRegs->update();
 	}
-
-	updateScreen();
+	*/
+//	wid_zxscr.draw();//updateScreen();
+//	wid_brk.draw();
+	/*
 	if (ui.tabsPanel->currentWidget() == ui.brkTab)	{
 		ui.brkTab->update();
 	}
+	*/
 
-	ui.labRX->setNum(comp->vid->ray.x);
-	setSignal(ui.labRX, comp->vid->hblank);
+//	ui_misc.labRX->setNum(comp->vid->ray.x);
+//	setSignal(ui_misc.labRX, comp->vid->hblank);
 
-	ui.labRY->setNum(comp->vid->ray.y);
-	setSignal(ui.labRY, comp->vid->vblank);
+//	ui_misc.labRY->setNum(comp->vid->ray.y);
+//	setSignal(ui_misc.labRY, comp->vid->vblank);
 
 	// memory
+//	wid_mmap.draw();
+	/*
 	if (ui.tabsPanel->currentWidget() == ui.memTab) {
 		ui.widBank->setVisible(comp->hw->grp == HWG_ZX);
 		QPixmap img(256, 192);
@@ -1160,41 +1232,62 @@ void DebugWin::fillTabs() {
 		}
 		block = 0;
 	}
+	*/
 	// update tables
-	update_table(ui.tabPit);
-	update_table(ui.tabVgaReg);
-	update_table(ui.tableDMA);
-	update_table(ui.tabCmos);
-	update_table(ui.tablePIC);
+//	wid_pit.draw();//update_table(ui.tabPit);
+//	wid_vga.draw();//update_table(ui.tabVgaReg);
+//	wid_dma.draw();//update_table(ui.tableDMA);
+//	wid_cmos_dump.draw();// update_table(ui.tabCmos);
+//	wid_pic.draw();//update_table(ui.tablePIC);
 }
 
-bool DebugWin::fillNotCPU() {
+void DebugWin::fillNotCPU() {
 	Computer* comp = conf.prof.cur->zx;
-	ui.labTcount->setText(QString("%0 / %1").arg(comp->tickCount - tCount).arg(comp->frmtCount));
-	fillTabs();
-	ui.tabDiskDump->update();
-	setSignal(ui.labDOS, comp->dos);
-	setSignal(ui.labROM, comp->rom);
-	setSignal(ui.labCPM, comp->cpm);
-	setSignal(ui.labINT, comp->cpu->intrq & comp->cpu->inten);
+	ui_asm.labTcount->setText(QString("%0 / %1").arg(comp->tickCount - tCount).arg(comp->frmtCount));
+
+	fillMem();
+	xDockWidget* dw;
+	foreach(void* ptr, dockWidgets) {
+		dw = (xDockWidget*)ptr;
+		if (!dw->isHidden())
+			dw->draw();
+	}
+
+//	fillTabs();
+//	wid_disk_dump.draw();//ui.tabDiskDump->update();
+
+	setSignal(ui_misc.labDOS, comp->dos);
+	setSignal(ui_misc.labROM, comp->rom);
+	setSignal(ui_misc.labCPM, comp->cpm);
+	setSignal(ui_misc.labINT, comp->cpu->intrq & comp->cpu->inten);
+
+	ui_misc.labRX->setNum(comp->vid->ray.x);
+	setSignal(ui_misc.labRX, comp->vid->hblank);
+	ui_misc.labRY->setNum(comp->vid->ray.y);
+	setSignal(ui_misc.labRY, comp->vid->vblank);
+
 	if (memViewer->isVisible())
 		memViewer->fillImage();
-	fillDump();
-	return fillDisasm();
+//	wid_dump.draw();
+	fillStack();
 }
 
 bool DebugWin::fillAll() {
 	fillCPU();
-	return fillNotCPU();
+	fillNotCPU();
+	return fillDisasm();
 }
 
+
 void DebugWin::setScrAtr(int adr, int atr) {
-	ui.leScr->setValue(adr);
-	ui.leAtr->setValue(atr);
+	wid_zxscr.setAddress(adr, atr);
+//	ui.leScr->setValue(adr);
+//	ui.leAtr->setValue(atr);
 }
 
 // gameboy
 
+/*
 extern xColor iniCol[4];
 void drawGBTile(QImage& img, Video* vid, int x, int y, int adr) {
 	int row, bit;
@@ -1289,9 +1382,10 @@ void DebugWin::fillGBoy() {
 	}
 	ui.gbImage->setPixmap(QPixmap::fromImage(img));
 }
+*/
 
 // nes
-
+/*
 extern xColor nesPal[64];
 
 void dbgNesConvertColors(Video* vid, unsigned char* buf, QImage& img, int trn) {
@@ -1447,19 +1541,20 @@ void DebugWin::drawNes() {
 	ui.labVAdr->setText(gethexword(comp->vid->vadr & 0x7fff));
 	ui.labTAdr->setText(gethexword(comp->vid->tadr & 0x7fff));
 }
+*/
 
 // ...
 
 void DebugWin::chLayout() {
 	switch (conf.prof.cur->zx->cpu->type) {
 		case CPU_Z80:
-			ui.boxIM->setEnabled(true);
+			ui_cpu.boxIM->setEnabled(true);
 			break;
 		case CPU_LR35902:
-			ui.boxIM->setEnabled(false);
+			ui_cpu.boxIM->setEnabled(false);
 			break;
 		case CPU_6502:
-			ui.boxIM->setEnabled(false);
+			ui_cpu.boxIM->setEnabled(false);
 			break;
 		default:
 			break;
@@ -1493,10 +1588,11 @@ void DebugWin::regClick(QMouseEvent* ev) {
 	int adr = dbg_get_reg_adr(comp->cpu, bunch.regs[id]);
 	switch (ev->button()) {
 		case Qt::RightButton:
-			ui.dumpTable->setAdr(adr);
+			//ui.dumpTable->setAdr(adr);
+			wid_dump.setAdr(adr);
 			break;
 		case Qt::LeftButton:
-			ui.dasmTable->setAdr(adr, 1);
+			ui_asm.dasmTable->setAdr(adr, 1);
 			break;
 		default:
 			break;
@@ -1505,6 +1601,7 @@ void DebugWin::regClick(QMouseEvent* ev) {
 
 // fdc
 
+/*
 void DebugWin::fillFDC() {
 	if (ui.tabsPanel->currentWidget() != ui.fdcTab) return;
 	Computer* comp = conf.prof.cur->zx;
@@ -1533,7 +1630,7 @@ void DebugWin::fillFDC() {
 	ui.flpDataL->setText(comp->dif->fdc->flp->insert ? gethexbyte(flpRd(comp->dif->fdc->flp, comp->dif->fdc->side)): "--"); comp->dif->fdc->flp->rd = 0;
 	ui.flpMotL->setText(comp->dif->fdc->flp->motor ? "1" : "0");
 }
-
+*/
 // CPU
 
 void DebugWin::fillFlags(const char* fnam) {
@@ -1584,9 +1681,9 @@ void DebugWin::fillCPU() {
 		}
 	}
 	fillFlags(bunch.flags);
-	ui.boxIM->setValue(cpu->imode);
-	ui.flagIFF1->setChecked(cpu->iff1);
-	ui.flagIFF2->setChecked(cpu->iff2);
+	ui_cpu.boxIM->setValue(cpu->imode);
+	ui_cpu.flagIFF1->setChecked(cpu->iff1);
+	ui_cpu.flagIFF2->setChecked(cpu->iff2);
 	fillStack();
 	block = 0;
 }
@@ -1619,9 +1716,9 @@ void DebugWin::setCPU() {
 		}
 	}
 	cpuSetRegs(cpu, bunch);
-	cpu->imode = ui.boxIM->value() & 0xff;
-	cpu->iff1 = ui.flagIFF1->isChecked() ? 1 : 0;
-	cpu->iff2 = ui.flagIFF2->isChecked() ? 1 : 0;
+	cpu->imode = ui_cpu.boxIM->value() & 0xff;
+	cpu->iff1 = ui_cpu.flagIFF1->isChecked() ? 1 : 0;
+	cpu->iff2 = ui_cpu.flagIFF2->isChecked() ? 1 : 0;
 	fillFlags(NULL);
 	fillStack();
 	fillDisasm();
@@ -1644,10 +1741,10 @@ QString getPageName(MemPage& pg) {
 
 void DebugWin::fillMem() {
 	Computer* comp = conf.prof.cur->zx;
-	ui.labPG0->setText(getPageName(comp->mem->map[0x00]));
-	ui.labPG1->setText(getPageName(comp->mem->map[0x40]));
-	ui.labPG2->setText(getPageName(comp->mem->map[0x80]));
-	ui.labPG3->setText(getPageName(comp->mem->map[0xc0]));
+	ui_misc.labPG0->setText(getPageName(comp->mem->map[0x00]));
+	ui_misc.labPG1->setText(getPageName(comp->mem->map[0x40]));
+	ui_misc.labPG2->setText(getPageName(comp->mem->map[0x80]));
+	ui_misc.labPG3->setText(getPageName(comp->mem->map[0xc0]));
 }
 
 void DebugWin::loadMap() {
@@ -1679,7 +1776,7 @@ void DebugWin::dbgSLab() {saveLabels(NULL);}
 
 void DebugWin::jumpToLabel(QString lab) {
 	if (conf.prof.cur->labels.contains(lab))
-		ui.dasmTable->setAdr(conf.prof.cur->labels[lab].adr, 1);
+		ui_asm.dasmTable->setAdr(conf.prof.cur->labels[lab].adr, 1);
 }
 
 // disasm table
@@ -1705,8 +1802,8 @@ int rdbyte(int adr, void* ptr) {
 }
 
 int DebugWin::fillDisasm() {
-	conf.dbg.hideadr = ui.actHideAddr->isChecked() ? 1 : 0;
-	return ui.dasmTable->updContent();
+	conf.dbg.hideadr = ui_asm.actHideAddr->isChecked() ? 1 : 0;
+	return ui_asm.dasmTable->updContent();
 }
 
 void DebugWin::saveDasm() {
@@ -1750,6 +1847,7 @@ void DebugWin::saveDasm() {
 
 // memory dump
 
+/*
 void DebugWin::fillDump() {
 	block = 1;
 	ui.dumpTable->update();
@@ -1773,6 +1871,7 @@ void DebugWin::dumpChadr(int adr) {
 	}
 	ui.tabsDump->setTabText(0, QString::number(adr, 16).right(6).toUpper().rightJustified(6,'0'));
 }
+*/
 
 // maping
 
@@ -1807,32 +1906,54 @@ void DebugWin::fillStack() {
 		str.append(gethexbyte(rdbyte(adr, comp)));
 		adr += 2;
 	}
-	ui.labSP->setText(str.left(4));
-	ui.labSP2->setText(str.mid(4,4));
-	ui.labSP4->setText(str.mid(8,4));
-	ui.labSP6->setText(str.mid(12,4));
+	ui_misc.labSP->setText(str.left(4));
+	ui_misc.labSP2->setText(str.mid(4,4));
+	ui_misc.labSP4->setText(str.mid(8,4));
+	ui_misc.labSP6->setText(str.mid(12,4));
 }
 
 // breakpoint
 
 int DebugWin::getAdr() {
 	int adr;
-	int col;
+//	int col;
 	QModelIndex idx;
 	Computer* comp = conf.prof.cur->zx;
-	if (ui.dumpTable->hasFocus()) {
-		idx = ui.dumpTable->currentIndex();
-		col = idx.column();
-		adr = (ui.dumpTable->getAdr() + (idx.row() << 3));
-		if ((col > 0) && (col < 9)) {
-			adr += idx.column() - 1;
-		}
-		adr &= comp->mem->busmask;
-	} else {
-		idx = ui.dasmTable->currentIndex();
-		adr = ui.dasmTable->getData(idx.row(), 0, Qt::UserRole).toInt();		// already +cs.base
-	}
+
+//	if (ui.dumpTable->hasFocus()) {
+//		idx = ui.dumpTable->currentIndex();
+//		col = idx.column();
+//		adr = (ui.dumpTable->getAdr() + (idx.row() << 3));
+//		if ((col > 0) && (col < 9)) {
+//			adr += idx.column() - 1;
+//		}
+//	} else {
+		idx = ui_asm.dasmTable->currentIndex();
+		adr = ui_asm.dasmTable->getData(idx.row(), 0, Qt::UserRole).toInt();		// already +cs.base
+//	}
+
+	adr &= comp->mem->busmask;
 	return adr;
+}
+
+void DebugWin::brkRequest(int t, int m, int a) {
+	int bgn, end, fadr;
+	if ((a < blockStart) || (a > blockEnd)) {	// pointer outside block : process 1 cell
+		bgn = a;
+		end = a;
+	} else {								// pointer inside block : process all block
+		bgn = blockStart;
+		end = blockEnd;
+	}
+	if (end < bgn) {
+		fadr = bgn;
+		bgn = end;
+		end = fadr;
+	}
+	brkSet(t, m, bgn, end);
+	fillDisasm();
+	wid_dump.draw();
+	wid_brk.draw();
 }
 
 void DebugWin::putBreakPoint() {
@@ -1844,11 +1965,11 @@ void DebugWin::putBreakPoint() {
 }
 
 void DebugWin::doBreakPoint(unsigned short adr) {
-	bpAdr = adr;
+//	bpAdr = adr;
 	unsigned char flag = getBrk(conf.prof.cur->zx, adr);
-	ui.actFetch->setChecked(flag & MEM_BRK_FETCH);
-	ui.actRead->setChecked(flag & MEM_BRK_RD);
-	ui.actWrite->setChecked(flag & MEM_BRK_WR);
+	ui_asm.actFetch->setChecked(flag & MEM_BRK_FETCH);
+	ui_asm.actRead->setChecked(flag & MEM_BRK_RD);
+	ui_asm.actWrite->setChecked(flag & MEM_BRK_WR);
 }
 
 // TODO: breakpoints on block
@@ -1876,12 +1997,12 @@ void DebugWin::chaCellProperty(QAction* act) {
 	xAdr xadr;
 	xAdr xend;
 	Computer* comp = conf.prof.cur->zx;
-	if (ui.actFetch->isChecked()) bt |= MEM_BRK_FETCH;
-	if (ui.actRead->isChecked()) bt |= MEM_BRK_RD;
-	if (ui.actWrite->isChecked()) bt |= MEM_BRK_WR;
+	if (ui_asm.actFetch->isChecked()) bt |= MEM_BRK_FETCH;
+	if (ui_asm.actRead->isChecked()) bt |= MEM_BRK_RD;
+	if (ui_asm.actWrite->isChecked()) bt |= MEM_BRK_WR;
 	adr = bgn;
 	if (data & MEM_BRK_ANY) {				// if set breakpoint
-		if (ui.dasmTable->hasFocus()) {			// from disasm table
+		if (ui_asm.dasmTable->hasFocus()) {			// from disasm table
 			xadr = mem_get_xadr(comp->mem, bgn);
 			xend = mem_get_xadr(comp->mem, end);
 			if (xadr.type == MEM_ROM) {
@@ -1892,24 +2013,24 @@ void DebugWin::chaCellProperty(QAction* act) {
 				bt |= MEM_BRK_SLT;
 			}
 			brkSet(BRK_MEMCELL, bt, xadr.abs, xend.abs);
-		} else if (ui.dumpTable->hasFocus()) {		// from dump table
-			int fadr = getRFIData(ui.cbDumpView);
-			switch(fadr) {	// XVIEW_RAM/ROM/CPU
-				case XVIEW_CPU:
-					xadr = mem_get_xadr(comp->mem, bgn);
-					xend = mem_get_xadr(comp->mem, end);
-					switch (xadr.type) {
-						case MEM_ROM: bt |= MEM_BRK_ROM; break;
-						case MEM_RAM: bt |= MEM_BRK_RAM; break;
-						default: bt |= MEM_BRK_SLT; break;
-					}
-					brkSet(BRK_MEMCELL, bt, xadr.abs, xend.abs);
-					break;
-				case XVIEW_ROM:
-				case XVIEW_RAM: bt |= (fadr == XVIEW_ROM) ? MEM_BRK_ROM : MEM_BRK_RAM;
-					brkSet(BRK_MEMCELL, bt, bgn, end);
-					break;
-			}
+//		} else if (ui.dumpTable->hasFocus()) {		// from dump table
+//			int fadr = getRFIData(ui.cbDumpView);
+//			switch(fadr) {	// XVIEW_RAM/ROM/CPU
+//				case XVIEW_CPU:
+//					xadr = mem_get_xadr(comp->mem, bgn);
+//					xend = mem_get_xadr(comp->mem, end);
+//					switch (xadr.type) {
+//						case MEM_ROM: bt |= MEM_BRK_ROM; break;
+//						case MEM_RAM: bt |= MEM_BRK_RAM; break;
+//						default: bt |= MEM_BRK_SLT; break;
+//					}
+//					brkSet(BRK_MEMCELL, bt, xadr.abs, xend.abs);
+//					break;
+//				case XVIEW_ROM:
+//				case XVIEW_RAM: bt |= (fadr == XVIEW_ROM) ? MEM_BRK_ROM : MEM_BRK_RAM;
+//					brkSet(BRK_MEMCELL, bt, bgn, end);
+//					break;
+//			}
 		}
 	} else {						// change cell type
 		while (adr <= end) {
@@ -1928,9 +2049,11 @@ void DebugWin::chaCellProperty(QAction* act) {
 			adr++;
 		}
 	}
-	ui.bpList->update();
+	wid_brk.draw();
+	//ui.bpList->update();
 	fillDisasm();
-	fillDump();
+	wid_dump.draw();
+	//fillDump();
 //	fillBrkTable();
 }
 
@@ -2057,13 +2180,14 @@ void DebugWin::doFind() {
 	Computer* comp = conf.prof.cur->zx;
 	memFinder->mem = comp->mem;
 	if (memFinder->adr < 0)
-		memFinder->adr = (ui.dasmTable->getAdr() + 1) & comp->mem->busmask;
+		memFinder->adr = (ui_asm.dasmTable->getAdr() + 1) & comp->mem->busmask;
 	memFinder->show();
 }
 
 void DebugWin::onFound(int adr) {
-	ui.dasmTable->setAdr(adr);
-	ui.dumpTable->setAdr(adr);
+	ui_asm.dasmTable->setAdr(adr);
+	wid_dump.setAdr(adr);
+	// ui.dumpTable->setAdr(adr);
 }
 
 // memfiller
@@ -2161,6 +2285,7 @@ void DebugWin::loadDump() {
 
 // screen
 
+/*
 void DebugWin::updateScreen() {
 	if (ui.tabsPanel->currentWidget() != ui.scrTab) return;
 	Computer* comp = conf.prof.cur->zx;
@@ -2181,9 +2306,11 @@ void DebugWin::updateScreen() {
 	ui.scrLabel->setPixmap(xpxm);
 	ui.labCurScr->setText(QString::number(comp->vid->curscr, 16).rightJustified(2, '0'));
 }
+*/
 
 // breakpoints
 
+/*
 void DebugWin::addBrk() {
 	brkManager->edit(NULL);
 }
@@ -2196,7 +2323,7 @@ void DebugWin::editBrk() {
 	brkManager->edit(brk);
 }
 
-bool qmidx_greater(const QModelIndex idx1, const QModelIndex idx2) {
+static bool qmidx_greater(const QModelIndex idx1, const QModelIndex idx2) {
 	return (idx1.row() > idx2.row());
 }
 
@@ -2388,3 +2515,4 @@ void DebugWin::openBrk() {
 		shitHappens("Can't open file for reading");
 	}
 }
+*/

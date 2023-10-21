@@ -838,6 +838,10 @@ void xDisasmTable::setAdr(int adr, int hist) {
 		emit s_adrch(model->asmadr);
 }
 
+void xDisasmTable::setAdrX(int adr) {
+	setAdr(adr, 0);
+}
+
 int xDisasmTable::updContent() {
 	int res = model->update_lst();
 	clearSpans();

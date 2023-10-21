@@ -1,6 +1,8 @@
 #pragma once
 
 #include <QTableView>
+#include <QDockWidget>
+
 #include "../classes.h"
 
 class xVMemDumpModel : public xTableModel {
@@ -17,7 +19,6 @@ class xVMemDumpModel : public xTableModel {
 	signals:
 		void adr_ch(QModelIndex);
 	private:
-		// QModelIndex index(int row, int col, const QModelIndex& = QModelIndex()) const;
 		unsigned char* vmem;
 };
 
@@ -31,4 +32,20 @@ class xVMemDump : public QTableView {
 		xVMemDumpModel* mod;
 	private slots:
 		void jumpToIdx(QModelIndex);
+};
+
+#include "ui_form_vmemdump.h"
+
+class xVMemDumpWidget : public xDockWidget {
+	Q_OBJECT
+	public:
+		xVMemDumpWidget(QString, QString, QWidget* = nullptr);
+		void setVMem(unsigned char*);
+	public slots:
+		void draw();
+	private:
+		Ui::VMemDump ui;
+	private slots:
+		void save_vram();
+
 };

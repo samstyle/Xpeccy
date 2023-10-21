@@ -18,6 +18,35 @@
 
 // NOTE: x86 parity counts on LSB
 
+int i286_check_segment_limit(CPU* cpu, xSegPtr* seg, unsigned short adr) {
+	if (!(cpu->msw & I286_FPE)) return 1;
+	if (seg->limit < adr) return 0;
+	return 1;
+}
+
+int i286_check_segment_exec(CPU* cpu, xSegPtr* seg) {
+	if (!(cpu->msw & I286_FPE)) return 1;
+	if (!(seg->flag & 0x10)) return 0;	// system segment
+	if (!(seg->flag & 0x08)) return 0;	// data segment
+	return 1;				// code segment
+}
+
+int i286_check_segment_rd(CPU* cpu, xSegPtr* seg) {
+	if (!(cpu->msw & I286_FPE)) return 1;
+	if (!(seg->flag & 0x10)) return 0;	// system segment
+	if (!(seg->flag & 0x08)) return 1;	// data segment
+	if (seg->flag & 2) return 1;		// readable code segment
+	return 0;
+}
+
+int i286_check_segment_wr(CPU* cpu, xSegPtr* seg) {
+	if (!(cpu->msw & I286_FPE)) return 1;
+	if (!(seg->flag & 0x10)) return 0;	// system segment
+	if (seg->flag & 0x08) return 0;		// code segment
+	if (seg->flag & 0x02) return 1;		// writeable data segment
+	return 0;
+}
+
 // TODO: check segment limit && permissions for protected mode
 unsigned char i286_mrd(CPU* cpu, xSegPtr seg, int rpl, unsigned short adr) {
 	if (rpl && (cpu->seg.idx >= 0)) seg = cpu->seg;

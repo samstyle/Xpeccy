@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QDialog>
+#include <QMainWindow>
 #include <QLineEdit>
 #include <QGridLayout>
 #include <QGroupBox>
@@ -16,38 +17,17 @@
 #include <QRegExpValidator>
 #endif
 
-#include "../xgui.h"
 #include "../labelist.h"
-
-#include "dbg_dump.h"
-#include "dbg_disasm.h"
-
 #include "libxpeccy/spectrum.h"
-#include "dbg_sprscan.h"
-#include "dbg_memfill.h"
-#include "dbg_finder.h"
-#include "dbg_brkpoints.h"
-#include "dbg_diskdump.h"
-#include "dbg_vmem_dump.h"
-#include "dbg_cmos_dump.h"
-#include "dbg_pit.h"
-#include "dbg_pic.h"
-#include "dbg_vga_regs.h"
-#include "dbg_vic_regs.h"
-#include "dbg_dma.h"
+#include "dbg_widgets.h"
 
 #include "ui_dumpdial.h"
 #include "ui_openDump.h"
 #include "ui_debuger.h"
 
-enum {
-	XTYPE_NONE = -1,
-	XTYPE_ADR = 0,
-	XTYPE_LABEL,
-	XTYPE_DUMP,
-	XTYPE_BYTE,
-	XTYPE_OCTWRD,
-};
+#include "ui_form_cpu.h"
+#include "ui_form_disasm.h"
+#include "ui_form_misc.h"
 
 enum {
 	DMP_MEM = 1,
@@ -64,17 +44,7 @@ typedef struct {
 	QWidget* wid;
 } tabDSC;
 
-class xItemDelegate : public QItemDelegate {
-	public:
-		xItemDelegate(int);
-		int type;
-		// QWidget* createEditor (QWidget*, const QStyleOptionViewItem&, const QModelIndex&) const;
-	private:
-		QRegExpValidator vld;
-		QWidget* createEditor(QWidget*, const QStyleOptionViewItem&, const QModelIndex&) const;
-};
-
-class DebugWin : public QDialog {
+class DebugWin : public QMainWindow {
 	Q_OBJECT
 	public:
 		DebugWin(QWidget* = NULL);
@@ -91,13 +61,9 @@ class DebugWin : public QDialog {
 		void needStep();
 	public slots:
 		void start();
-		bool fillAll();
-		bool fillNotCPU();
-		void fillTabs();
 		void onPrfChange();
-		void chaPal();
-		void doStep();
 		void setScrAtr(int, int);
+		void chaPal();
 	private:
 		unsigned block:1;
 		int tabMode;
@@ -105,17 +71,41 @@ class DebugWin : public QDialog {
 		unsigned trace:1;
 		int traceType;
 		int traceAdr;
+		long tCount;
 
-		Ui::Debuger ui;
 		QImage scrImg;
-
 		QMap<int, QList<tabDSC> > tablist;
 
-//		Computer* comp;
-		long tCount;
+		// Ui::Debuger ui;
+		QWidget* cw;
+		// widgets
+		Ui::CPUWidget ui_cpu;
+		Ui::DisasmWidget ui_asm;
+		Ui::FormDbgMisc ui_misc;
+		xDumpWidget wid_dump = xDumpWidget("","000000");
+		xDiskDumpWidget wid_disk_dump = xDiskDumpWidget(":/images/disk.png","FDD");
+		xCmosDumpWidget wid_cmos_dump = xCmosDumpWidget("","CMOS");
+		xVMemDumpWidget wid_vmem_dump = xVMemDumpWidget("","VMEM");
+		xZXScrWidget wid_zxscr = xZXScrWidget(":/images/rulers.png","SCR");
+		xDmaWidget wid_dma = xDmaWidget("","DMA");
+		xPitWidget wid_pit = xPitWidget("","PIT");
+		xPicWidget wid_pic = xPicWidget("","PIC");
+		xVgaWidget wid_vga = xVgaWidget("","VGA");
+		xAYWidget wid_ay = xAYWidget(":/images/note.png","AY");
+		xTapeWidget wid_tape = xTapeWidget(":/images/tape.png","TAPE");
+		xFDDWidget wid_fdd = xFDDWidget(":/images/disk.png","FDC");
+		xBreakWidget wid_brk = xBreakWidget(":/images/stop.png","BRK");
+		xGameboyWidget wid_gb = xGameboyWidget(":/images/gameboy.png","GB");
+		xPPUWidget wid_ppu = xPPUWidget("","PPU");
+		// apu (future)
+		xCiaWidget wid_cia = xCiaWidget("","CIA");
+		xVicWidget wid_vic = xVicWidget("","VIC");
+		xMMapWidget wid_mmap = xMMapWidget(":/images/memory.png","MMAP");
+		QList<void*> dockWidgets;
 
 		QList<xLabel*> dbgRegLabs;
 		QList<xHexSpin*> dbgRegEdit;
+		QList<QCheckBox*> dbgRegBits;
 
 		QList<QLabel*> dbgFlagLabs;
 		QList<QCheckBox*> dbgFlagBox;
@@ -138,7 +128,7 @@ class DebugWin : public QDialog {
 		xLabeList* labswin;
 
 		QMenu* cellMenu;
-		unsigned short bpAdr;
+//		unsigned short bpAdr;
 		void doBreakPoint(unsigned short);
 		int getAdr();
 
@@ -152,9 +142,9 @@ class DebugWin : public QDialog {
 		void fillFlags(const char*);
 		void fillMem();
 		void fillStack();
-		void fillFDC();
-		void fillAY();
-		void fillTape();
+//		void fillFDC();
+//		void fillAY();
+//		void fillTape();
 
 		void setFlagNames(const char*);
 		void chLayout();
@@ -163,12 +153,18 @@ class DebugWin : public QDialog {
 		void setShowLabels(bool);
 		void setShowSegment(bool);
 		void setRomWriteable(bool);
-		void chDumpView();
-		void setDumpCP();
+//		void chDumpView();
+//		void setDumpCP();
 		void resetTCount();
 
+		bool fillAll();
+		void fillNotCPU();
+		void fillTabs();
+		void doStep();
+
 		void saveDasm();
-		void remapMem();
+//		void remapMem();
+		void d_remap(int, int, int);
 		void save_mem_map();
 		void rest_mem_map();
 
@@ -182,25 +178,26 @@ class DebugWin : public QDialog {
 		void mapAuto();
 
 		int fillDisasm();
-		void fillDump();
-		void fillGBoy();
-		void drawNes();
+//		void fillDump();
+//		void fillGBoy();
+//		void drawNes();
 		void regClick(QMouseEvent*);
 		void reload();
 
 		void setCPU();
 		void setFlags();
-		void updateScreen();
-		void dumpChadr(int);
+//		void updateScreen();
+//		void dumpChadr(int);
 
-		void addBrk();
-		void editBrk();
-		void delBrk();
-		void confirmBrk(xBrkPoint, xBrkPoint);
-		void goToBrk(QModelIndex);
-		void openBrk();
-		void saveBrk(QString = QString());
+//		void addBrk();
+//		void editBrk();
+//		void delBrk();
+//		void confirmBrk(xBrkPoint, xBrkPoint);
+//		void goToBrk(QModelIndex);
+//		void openBrk();
+//		void saveBrk(QString = QString());
 
+		void brkRequest(int, int, int);
 		void putBreakPoint();
 		void chaCellProperty(QAction*);
 
@@ -234,6 +231,7 @@ class DebugWin : public QDialog {
 		void keyReleaseEvent(QKeyEvent*);
 		void resizeEvent(QResizeEvent*);
 		void moveEvent(QMoveEvent*);
+		void closeEvent(QCloseEvent*);
 		void customEvent(QEvent*);
 };
 

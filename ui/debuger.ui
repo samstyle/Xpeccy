@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
  <class>Debuger</class>
- <widget class="QDialog" name="Debuger">
+ <widget class="QWidget" name="Debuger">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -986,7 +986,7 @@
         <bool>true</bool>
        </property>
        <property name="currentIndex">
-        <number>13</number>
+        <number>9</number>
        </property>
        <property name="documentMode">
         <bool>true</bool>

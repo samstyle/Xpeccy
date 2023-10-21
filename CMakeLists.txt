@@ -137,7 +137,9 @@ file(GLOB_RECURSE HEADERS
 )
 
 # Qt user interface
-file(GLOB UIFILES ./ui/*.ui)
+file(GLOB_RECURSE UIFILES
+	./ui/*.ui
+)
 
 # Qt resources
 set(QRCFILES ./xpeccy.qrc)
@@ -156,7 +158,7 @@ set(MOCFILES
 	./src/xgui/debuga/dbg_brkpoints.h
 	./src/xgui/debuga/dbg_diskdump.h
 	./src/xgui/debuga/dbg_vmem_dump.h
-	./src/xgui/debuga/dbg_cmos_dump.h
+	./src/xgui/debuga/dbg_widgets.h
 	./src/watcher.h
 	./src/xgui/options/setupwin.h
 	./src/xgui/options/padbinder.h

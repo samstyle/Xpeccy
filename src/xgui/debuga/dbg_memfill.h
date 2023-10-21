@@ -3,8 +3,8 @@
 #include <QDialog>
 
 #include "../../xgui/xgui.h"
+#include "../../libxpeccy/memory.h"
 #include "ui_filler.h"
-#include "libxpeccy/memory.h"
 
 class xMemFiller : public QDialog {
 	Q_OBJECT

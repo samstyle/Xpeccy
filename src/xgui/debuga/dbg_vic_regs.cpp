@@ -1,5 +1,4 @@
-#include "dbg_vic_regs.h"
-#include "../../xcore/xcore.h"
+#include "dbg_widgets.h"
 
 xVicRegsModel::xVicRegsModel(QObject* p):xTableModel(p) {
 }
@@ -35,4 +34,19 @@ QVariant xVicRegsModel::data(const QModelIndex& idx, int role) const {
 			break;
 	}
 	return res;
+}
+
+// widget
+
+xVicWidget::xVicWidget(QString i, QString t, QWidget* p):xDockWidget(i,t,p) {
+	QWidget* wid = new QWidget;
+	setWidget(wid);
+	ui.setupUi(wid);
+	setObjectName("VICWIDGET");
+	ui.tabVicRegs->setModel(new xVicRegsModel());
+	hwList << HWG_COMMODORE;
+}
+
+void xVicWidget::draw() {
+	ui.tabVicRegs->update();
 }

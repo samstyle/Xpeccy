@@ -1,6 +1,8 @@
 #pragma once
 
 #include <QTableView>
+#include <QDockWidget>
+
 #include "../classes.h"
 
 class xDiskDumpModel : public xTableModel {
@@ -11,12 +13,10 @@ class xDiskDumpModel : public xTableModel {
 		QVariant data(const QModelIndex&, int) const;
 		void setDrive(int);
 		void setTrack(int);
-		// void update();
 	private:
 		int drv;
 		int trk;
 		int rcnt;
-		// QModelIndex index(int row, int col, const QModelIndex& = QModelIndex()) const;
 };
 
 class xDiskDump : public QTableView {
@@ -28,5 +28,18 @@ class xDiskDump : public QTableView {
 		void setTrack(int);
 		void setDrive(int);
 	private:
+		int drv;
 		xDiskDumpModel* mod;
+};
+
+#include "ui_form_fdddump.h"
+
+class xDiskDumpWidget : public xDockWidget {
+	Q_OBJECT
+	public:
+		xDiskDumpWidget(QString, QString, QWidget* = nullptr);
+	public slots:
+		void draw();
+	private:
+		Ui::FDDDump ui;
 };

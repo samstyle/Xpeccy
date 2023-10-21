@@ -1,9 +1,9 @@
 #pragma once
 
 #include <QDialog>
-#include "../xgui.h"
-#include "ui_dbgfinder.h"
+#include "../../xgui/xgui.h"
 #include "../../libxpeccy/memory.h"
+#include "ui_dbgfinder.h"
 
 class xMemFinder : public QDialog {
 	Q_OBJECT

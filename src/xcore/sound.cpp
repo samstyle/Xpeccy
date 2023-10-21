@@ -166,7 +166,9 @@ Uint32 sdl_timer_callback(Uint32 iv, void* ptr) {
 	qwc.wakeAll();
 #else
 	sleepy = 0;
-	conf.snd.need += conf.snd.rate / 50;
+	if (!conf.emu.pause) {
+		conf.snd.need += conf.snd.rate / 50;
+	}
 #endif
 	return iv;
 }
@@ -199,8 +201,11 @@ void null_close() {
 
 void sdlPlayAudio(void*, Uint8* stream, int len) {
 //	printf("len = %i\n",len);
-	if (!conf.emu.fast && !conf.emu.pause)
+	if (!conf.emu.fast && !conf.emu.pause) {
 		conf.snd.need += len/4;
+	} else {
+		conf.snd.need = 0;
+	}
 	int dist = posf - posp;
 	while (dist < 0) dist += 0x4000;
 	while (dist > 0x3fff) dist -= 0x4000;

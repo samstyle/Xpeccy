@@ -1,5 +1,4 @@
-#include "dbg_cmos_dump.h"
-#include "../../xcore/xcore.h"
+#include "dbg_widgets.h"
 
 xCmosDumpModel::xCmosDumpModel(QObject *p):xTableModel(p) {
 }
@@ -56,8 +55,17 @@ QVariant xCmosDumpModel::headerData(int sect, Qt::Orientation ori, int role) con
 	return QString::number(sect << 3, 16).toUpper().rightJustified(3,'0');
 }
 
-/*
-QModelIndex xCmosDumpModel::index(int row, int col, const QModelIndex &) const {
-	return createIndex(row, col, nullptr);
+// widget
+
+xCmosDumpWidget::xCmosDumpWidget(QString i, QString t, QWidget* p):xDockWidget(i,t,p) {
+	QWidget* wid = new QWidget;
+	setWidget(wid);
+	ui.setupUi(wid);
+	setObjectName("CMOSDUMPWIDGET");
+	ui.tabCmos->setModel(new xCmosDumpModel());
+	hwList << HWG_ZX << HWG_PC;
 }
-*/
+
+void xCmosDumpWidget::draw() {
+	ui.tabCmos->update();
+}

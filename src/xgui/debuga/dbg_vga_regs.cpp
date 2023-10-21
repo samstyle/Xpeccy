@@ -1,5 +1,4 @@
-#include "dbg_vga_regs.h"
-#include "../../xcore/xcore.h"
+#include "dbg_widgets.h"
 #include "../../libxpeccy/video/vga.h"
 
 xVgaRegModel::xVgaRegModel(QObject* p):xTableModel(p) {}
@@ -66,4 +65,21 @@ QVariant xVgaRegModel::data(const QModelIndex& idx, int role) const {
 			break;
 	}
 	return res;
+}
+
+// widget
+
+xVgaWidget::xVgaWidget(QString i, QString t, QWidget* p):xDockWidget(i,t,p) {
+	setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
+	QWidget* wid = new QWidget;
+	setWidget(wid);
+	ui.setupUi(wid);
+	setObjectName("VGAWIDGET");
+	ui.tabVgaReg->setModel(new xVgaRegModel());
+	connect(this, &QDockWidget::visibilityChanged, this, &xVgaWidget::draw);
+	hwList << HWG_PC;
+}
+
+void xVgaWidget::draw() {
+	ui.tabVgaReg->update();
 }

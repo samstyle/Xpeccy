@@ -5,8 +5,8 @@
 #include <QKeyEvent>
 #include <QMouseEvent>
 
-#include "libxpeccy/spectrum.h"
-#include "xcore/xcore.h"
+#include "../../libxpeccy/spectrum.h"
+#include "../../xcore/xcore.h"
 #include "../classes.h"
 
 // memory cell type (bits 4..7)
@@ -70,6 +70,7 @@ class xDisasmTable : public QTableView {
 		void update();
 		void t_update(int, int);
 		void setAdr(int, int = 0);
+		void setAdrX(int);
 	private:
 		int markAdr;
 		xDisasmModel* model;

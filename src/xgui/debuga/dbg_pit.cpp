@@ -1,5 +1,4 @@
-#include "dbg_pit.h"
-#include "../../xcore/xcore.h"
+#include "dbg_widgets.h"
 
 xPitModel::xPitModel(QObject* p):xTableModel(p) {}
 
@@ -62,13 +61,17 @@ QVariant xPitModel::data(const QModelIndex& idx, int role) const {
 	return res;
 }
 
-/*
-QModelIndex xPitModel::index(int row, int col, const QModelIndex&) const {
-	return createIndex(row, col, nullptr);
+// widget
+
+xPitWidget::xPitWidget(QString i, QString t, QWidget* p):xDockWidget(i,t,p) {
+	QWidget* wid = new QWidget;
+	setWidget(wid);
+	ui.setupUi(wid);
+	setObjectName("PITWIDGET");
+	ui.tabPit->setModel(new xPitModel());
+	hwList << HWG_PC;
 }
 
-void xPitModel::update() {
-	printf("update\n");
-	emit dataChanged(index(0,0), index(rowCount()-1, columnCount()-1));
+void xPitWidget::draw() {
+	ui.tabPit->update();
 }
-*/

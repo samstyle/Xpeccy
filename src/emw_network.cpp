@@ -70,7 +70,7 @@ void MainWin::socketRead() {
 		sock->close();
 	} else if (com == "pause") {
 		pause(true, PR_PAUSE);
-	} else if (com == "cont") {
+	} else if ((com == "cont") || (com == "unpause")) {
 		pause(false, PR_PAUSE);
 	} else if (com == "step") {
 		emit s_step();

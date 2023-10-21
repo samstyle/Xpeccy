@@ -1,3 +1,5 @@
+#include <QFileDialog>
+
 #include "xcore/xcore.h"
 #include "dbg_brkpoints.h"
 
@@ -125,15 +127,9 @@ void xBreakListModel::sort(int col, Qt::SortOrder ord) {
 	emit dataChanged(index(0,0), index(rowCount() - 1, columnCount() - 1));
 }
 
-/*
-void xBreakListModel::updateCell(int row, int col) {
-	emit dataChanged(index(row, col), index(row, col));
-}
-
 void xBreakListModel::update() {
 	emit endResetModel();
 }
-*/
 
 // Widget
 
@@ -380,8 +376,6 @@ void xBrkManager::confirm() {
 			brk.eadr = brk.adr;
 			break;
 		default:
-			//brk.adr = (ui.brkBank->value() << 14) | (ui.brkAdrHex->getValue() & 0x3fff);
-			//brk.eadr = brk.adr;
 			brk.adr = ui.brkAdrHex->getValue();
 			brk.eadr = ui.brkAdrEnd->getValue();
 			break;
@@ -391,3 +385,200 @@ void xBrkManager::confirm() {
 	hide();
 }
 
+// widget
+
+xBreakWidget::xBreakWidget(QString i, QString t, QWidget* p):xDockWidget(i,t,p) {
+	QWidget* wid = new QWidget;
+	setWidget(wid);
+	ui.setupUi(wid);
+	setObjectName("BRKWIDGET");
+
+	brkManager = new xBrkManager(this);
+	connect(brkManager, &xBrkManager::completed, this, &xBreakWidget::confirmBrk);
+
+	connect(ui.tbAddBrk, &QToolButton::clicked, this, &xBreakWidget::addBrk);
+	connect(ui.tbEditBrk, &QToolButton::clicked, this, &xBreakWidget::editBrk);
+	connect(ui.tbDelBrk, &QToolButton::clicked, this, &xBreakWidget::delBrk);
+	connect(ui.tbBrkOpen, &QToolButton::clicked, this, &xBreakWidget::openBrk);
+	connect(ui.tbBrkSave, &QToolButton::clicked, this, &xBreakWidget::saveBrk);
+	connect(ui.bpList, &xBreakTable::rqDisasm, this, &xBreakWidget::rqDisasm);
+}
+
+void xBreakWidget::draw() {
+	ui.bpList->update();
+}
+
+void xBreakWidget::addBrk() {
+	brkManager->edit(NULL);
+}
+
+void xBreakWidget::editBrk() {
+	QModelIndexList idxl = ui.bpList->selectionModel()->selectedRows();
+	if (idxl.size() < 1) return;
+	int row = idxl.first().row();
+	xBrkPoint* brk = &conf.prof.cur->brkList[row];
+	brkManager->edit(brk);
+}
+
+void xBreakWidget::confirmBrk(xBrkPoint obrk, xBrkPoint brk) {
+	brkDelete(obrk);
+	brkAdd(brk);
+	emit updated();
+	ui.bpList->update();
+}
+
+static bool qmidx_greater(const QModelIndex idx1, const QModelIndex idx2) {
+	return (idx1.row() > idx2.row());
+}
+
+void xBreakWidget::delBrk() {
+	QModelIndexList idxl = ui.bpList->selectionModel()->selectedRows();
+	std::sort(idxl.begin(), idxl.end(), qmidx_greater);
+	QModelIndex idx;
+	xBrkPoint brk;
+	foreach(idx, idxl) {
+		brk = conf.prof.cur->brkList[idx.row()];
+		brkDelete(brk);
+	}
+	ui.bpList->update();
+	emit updated();		// fill disasm/dump
+}
+
+void xBreakWidget::openBrk() {
+	QString path = QFileDialog::getOpenFileName(this, "Open breakpoints list", "", "deBUGa breakpoints (*.xbrk)",nullptr,QFileDialog::DontUseNativeDialog);
+	if (path.isEmpty()) return;
+	QFile file(path);
+	QString line;
+	QStringList splt;
+	QStringList list;
+	xBrkPoint brk;
+	bool b0,b1;
+	if (file.open(QFile::ReadOnly)) {
+		conf.prof.cur->brkList.clear();
+		while(!file.atEnd()) {
+			line = tr(file.readLine());
+			if (!line.startsWith(";")) {
+				b0 = true;
+				b1 = true;
+				list = line.split(":", X_KeepEmptyParts);
+				while(list.size() < 4)
+					list.append(QString());
+				brk.fetch = list.at(3).contains("F") ? 1 : 0;
+				brk.read = list.at(3).contains("R") ? 1 : 0;
+				brk.write = list.at(3).contains("W") ? 1 : 0;
+				brk.off = list.at(3).contains("0") ? 1 : 0;
+				if (list.at(0) == "IO") {
+					brk.type = BRK_IOPORT;
+					brk.adr = list.at(1).toInt(&b0, 16) & 0xffff;
+					brk.mask = list.at(2).toInt(&b1, 16) & 0xffff;
+				} else if (list.at(0) == "CPU") {
+					brk.type = BRK_CPUADR;
+					if (list.at(1).contains("-")) {		// 1234-ABCD
+						splt = list.at(1).split(QLatin1Char('-'), X_SkipEmptyParts);
+						list[1] = splt.first();
+						list[2] = splt.last();
+					}
+					brk.adr = list.at(1).toInt(&b0, 16) & 0xffff;
+					if (list.at(2).isEmpty()) {
+						brk.eadr = brk.adr;
+					} else {
+						brk.eadr = list.at(2).toInt(&b1, 16) & 0xffff;
+						if (brk.eadr < brk.adr)
+							brk.eadr = brk.adr;
+					}
+				} else if (list.at(0) == "ROM") {
+					brk.type = BRK_MEMROM;
+					brk.adr = (list.at(1).toInt(&b0, 16) & 0xff) << 14;
+					brk.adr |= (list.at(2).toInt(&b1, 16) & 0x3fff);
+				} else if (list.at(0) == "RAM") {
+					brk.type = BRK_MEMRAM;
+					brk.adr = (list.at(1).toInt(&b0, 16) & 0xff) << 14;
+					brk.adr |= (list.at(2).toInt(&b1, 16) & 0x3fff);
+				} else if (list.at(0) == "SLT") {
+					brk.type = BRK_MEMSLT;
+					brk.adr = (list.at(1).toInt(&b0, 16) & 0xff) << 14;
+					brk.adr |= (list.at(2).toInt(&b1, 16) & 0x3fff);
+				} else if (list.at(0) == "IRQ") {
+					brk.type = BRK_IRQ;
+				} else {
+					b0 = false;
+				}
+				if (b0 && b1) {
+					conf.prof.cur->brkList.push_back(brk);
+				}
+			}
+		}
+		file.close();
+		brkInstallAll();
+		ui.bpList->update();
+		emit updated();
+	} else {
+		shitHappens("Can't open file for reading");
+	}
+}
+
+void xBreakWidget::saveBrk() {
+	QString path = QFileDialog::getSaveFileName(this, "Save breakpoints", "", "deBUGa breakpoints (*.xbrk)",nullptr,QFileDialog::DontUseNativeDialog);
+	if (path.isEmpty())
+		return;
+	if (!path.endsWith(".xbrk", Qt::CaseInsensitive))
+		path.append(".xbrk");
+	xBrkPoint brk;
+	QFile file(path);
+	QString nm,ar1,ar2,flag;
+	if (file.open(QFile::WriteOnly)) {
+		file.write("; Xpeccy deBUGa breakpoints list\n");
+		foreach(brk, conf.prof.cur->brkList) {
+			switch(brk.type) {
+				case BRK_IOPORT:
+					nm = "IO";
+					ar1 = gethexword(brk.adr & 0xffff);
+					ar2 = gethexword(brk.mask & 0xffff);
+					break;
+				case BRK_CPUADR:
+					nm = "CPU";
+					ar1 = gethexword(brk.adr & 0xffff);
+					ar2.clear();
+					if (brk.eadr > brk.adr) {
+						ar1.append("-");
+						ar1.append(gethexword(brk.eadr & 0xffff));
+					}
+					break;
+				case BRK_MEMRAM:
+					nm = "RAM";
+					ar1 = gethexbyte((brk.adr >> 14) & 0xff);	// 16K page
+					ar2 = gethexword(brk.adr & 0x3fff);		// adr in page
+					break;
+				case BRK_MEMROM:
+					nm = "ROM";
+					ar1 = gethexbyte((brk.adr >> 14) & 0xff);
+					ar2 = gethexword(brk.adr & 0x3fff);
+					break;
+				case BRK_MEMSLT:
+					nm = "SLT";
+					ar1 = gethexbyte((brk.adr >> 14) & 0xff);
+					ar2 = gethexword(brk.adr & 0x3fff);
+					break;
+				case BRK_IRQ:
+					nm = "IRQ";
+					ar1.clear();
+					ar2.clear();
+					break;
+				default:
+					nm.clear();
+					break;
+			}
+			if (!nm.isEmpty()) {
+				flag.clear();
+				if (brk.fetch) flag.append("F");
+				if (brk.read) flag.append("R");
+				if (brk.write) flag.append("W");
+				if (brk.off) flag.append("0");
+				file.write(QString("%0:%1:%2:%3\n").arg(nm).arg(ar1).arg(ar2).arg(flag).toUtf8());
+			}
+		}
+		file.close();
+	} else {
+		shitHappens("Can't open file for writing");
+	}
+}

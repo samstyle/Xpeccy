@@ -4,9 +4,11 @@
 xDiskDump::xDiskDump(QWidget*) {
 	mod = new xDiskDumpModel();
 	setModel(mod);
+	setDrive(0);
 }
 
-void xDiskDump::setDrive(int drv) {
+void xDiskDump::setDrive(int d) {
+	drv = d;
 	mod->setDrive(drv);
 }
 
@@ -16,8 +18,7 @@ void xDiskDump::setTrack(int tr) {
 }
 
 void xDiskDump::update() {
-	mod->update();
-	QTableView::update();
+	setDrive(drv);
 }
 
 // model
@@ -56,16 +57,6 @@ int xDiskDumpModel::rowCount(const QModelIndex&) const {
 int xDiskDumpModel::columnCount(const QModelIndex&) const {
 	return 10;
 }
-
-/*
-void xDiskDumpModel::update() {
-	emit dataChanged(index(0,0), index(rowCount() - 1, columnCount() - 1));
-}
-
-QModelIndex xDiskDumpModel::index(int row, int col, const QModelIndex& par) const {
-	return createIndex(row, col, nullptr);
-}
-*/
 
 QVariant xDiskDumpModel::data(const QModelIndex& idx, int role) const {
 	QVariant res;
@@ -137,4 +128,22 @@ QVariant xDiskDumpModel::data(const QModelIndex& idx, int role) const {
 			break;
 	}
 	return res;
+}
+
+// widget
+
+xDiskDumpWidget::xDiskDumpWidget(QString i, QString t, QWidget* p):xDockWidget(i,t,p) {
+	QWidget* wid = new QWidget;
+	setWidget(wid);
+	ui.setupUi(wid);
+	setObjectName("FDDDUMPWIDGET");
+	ui.tabDiskDump->setColumnWidth(0, 70);
+	ui.tabDiskDump->horizontalHeader()->setStretchLastSection(true);
+	connect(ui.cbDrive, &QComboBox::currentIndexChanged, ui.tabDiskDump, &xDiskDump::setDrive);
+	connect(ui.sbTrack, &QSpinBox::valueChanged, ui.tabDiskDump, &xDiskDump::setTrack);
+	hwList << HWG_ZX << HWG_PC;
+}
+
+void xDiskDumpWidget::draw() {
+	ui.tabDiskDump->update();
 }

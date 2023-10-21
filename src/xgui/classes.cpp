@@ -2,6 +2,7 @@
 #include "../xcore/xcore.h"
 
 #include <QPalette>
+#include <QPainter>
 
 QString gethexword(int);
 QString gethexbyte(uchar);
@@ -307,4 +308,43 @@ void xTableModel::updateColumn(int col) {
 
 void xTableModel::updateCell(int row, int col) {
 	emit dataChanged(index(row, col), index(row, col));
+}
+
+// item delegate
+
+xItemDelegate::xItemDelegate(int t) {
+	type = t;
+}
+
+QWidget* xItemDelegate::createEditor(QWidget* par, const QStyleOptionViewItem&, const QModelIndex&) const {
+	QLineEdit* edt = new QLineEdit(par);
+	QString pat("[0-9A-Fa-f\\s]");
+	int rpt = 0;
+	switch (type) {
+		case XTYPE_NONE: delete(edt); edt = NULL; break;
+		case XTYPE_ADR: rpt = 4; break;
+		case XTYPE_LABEL: break;
+		case XTYPE_DUMP: rpt = 12; break;		// 6 bytes max
+		case XTYPE_BYTE: rpt = 2; break;
+		case XTYPE_OCTWRD: pat = "[0-7\\s]"; rpt = 6; break;
+	}
+	if (edt && (rpt > 0)) {
+		edt->setInputMask(QString(rpt,'h'));
+		edt->setMaxLength(rpt);
+#if QT_VERSION < QT_VERSION_CHECK(6,0,0)
+		edt->setValidator(new QRegExpValidator(QRegExp(QString("%0+").arg(pat))));
+#else
+		edt->setValidator(new QRegularExpressionValidator(QRegularExpression(QString("%0+").arg(pat))));
+#endif
+	}
+	return edt;
+}
+
+// dock widget
+
+xDockWidget::xDockWidget(QString icopath, QString txt, QWidget* p):QDockWidget(p) {
+	setFeatures(QDockWidget::DockWidgetMovable/* | QDockWidget::DockWidgetFloatable*/);
+	connect(this, &xDockWidget::visibilityChanged, this, &xDockWidget::draw);
+	// TODO: how to set icon for tab when widget is tabified
+	setWindowTitle(txt);
 }

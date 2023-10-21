@@ -6,9 +6,11 @@
 #include <QWheelEvent>
 #include <QMouseEvent>
 #include <QHeaderView>
+#include <QDockWidget>
+#include <QMenu>
 
 #include "../../xcore/xcore.h"
-#include "../classes.h"
+#include "../../xgui/xgui.h"
 
 enum {
 	XCP_1251 = 1,
@@ -44,14 +46,9 @@ class xDumpModel : public xTableModel {
 		QVariant data(const QModelIndex&, int) const;
 		bool setData(const QModelIndex&, const QVariant&, int);
 		void setView(int);
-		//void updateCell(int, int);
-		//void updateRow(int);
-		//void updateColumn(int);
 	signals:
 		void s_adrch(int);
-		void rqRefill();
-	//public slots:
-		// void update();
+		void s_datach();
 	private:
 		int mode;
 		int view;
@@ -72,19 +69,26 @@ class xDumpTable:public QTableView {
 		void setMode(int, int, int, int);
 		void setView(int);
 		void update();
-		int getAdr();
+//		int getAdr();
 		unsigned int limit();
 		int mode;
-		int view;
 	public slots:
 		void setAdr(int);
+		int getCurrentAdr();
 		void setLimit(unsigned int);
+	private slots:
+		void curAdrChanged();
 	signals:
+		void s_datach();
+		void s_blockch();
 		void s_adrch(int);
-		void rqRefill();
+		void s_curadrch(int);
 	private:
+		int view;
+		int pagesize;
+		int pagenum;
 		xDumpModel* model;
-		unsigned int markAdr;
+		int markAdr;
 		int row_count;
 		void keyPressEvent(QKeyEvent*);
 		void mousePressEvent(QMouseEvent*);
@@ -92,4 +96,32 @@ class xDumpTable:public QTableView {
 		void mouseReleaseEvent(QMouseEvent*);
 		void wheelEvent(QWheelEvent*);
 		void resizeEvent(QResizeEvent*);
+};
+
+#include "ui_form_dump.h"
+
+class xDumpWidget : public xDockWidget {
+	Q_OBJECT
+	public:
+		xDumpWidget(QString, QString, QWidget* = nullptr);
+		void setLimit(int);
+	signals:
+		void s_adrch(int);
+		void s_curadrch(int);
+		void s_datach();
+		void s_blockch();
+		void s_brkrq(int, int, int);
+	public slots:
+		void draw();
+		void setAdr(int);
+		void setBase(int, int);
+	private:
+		Ui::MemDump ui;
+		QMenu* cellMenu;
+	private slots:
+		void adr_changed(int);
+		void cp_changed();
+		void refill();
+		void customMenu();
+		void customMenuAction(QAction*);
 };
