@@ -359,7 +359,7 @@ xDumpTable::xDumpTable(QWidget* p):QTableView(p) {
 	connect(selectionModel(), SIGNAL(currentChanged(QModelIndex,QModelIndex)), this, SLOT(curAdrChanged()));
 
 	connect(model, SIGNAL(s_datach()), this, SIGNAL(s_datach()));
-	connect(model, SIGNAL(s_adrch(int)), this, SLOT(s_adrch(int)));
+	connect(model, SIGNAL(s_adrch(int)), this, SIGNAL(s_adrch(int)));
 	connect(this, SIGNAL(s_adrch(int)), this, SLOT(curAdrChanged()));
 }
 
