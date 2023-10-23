@@ -118,8 +118,11 @@ class xDumpWidget : public xDockWidget {
 	private:
 		Ui::MemDump ui;
 		QMenu* cellMenu;
+		int ramBase;
+		int romBase;
 	private slots:
 		void adr_changed(int);
+		void modeChanged();
 		void cp_changed();
 		void refill();
 		void customMenu();

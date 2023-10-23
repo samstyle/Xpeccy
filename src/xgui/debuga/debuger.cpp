@@ -256,6 +256,10 @@ void DebugWin::closeEvent(QCloseEvent*) {stop();}
 DebugWin::DebugWin(QWidget* par):QMainWindow(par) {
 	int i;
 
+	setTabPosition(Qt::AllDockWidgetAreas, QTabWidget::North);
+	setWindowTitle("Xpeccy deBUGa");
+	setWindowIcon(QIcon(":/images/bug.png"));
+
 	cw = new QWidget;
 	QWidget* wid_cpu = new QWidget;
 	QWidget* wid_dasm = new QWidget;
@@ -266,24 +270,23 @@ DebugWin::DebugWin(QWidget* par):QMainWindow(par) {
 	lay->addWidget(wid_dasm);
 	lay->setStretchFactor(wid_dasm, 10);
 	cw->setLayout(lay);
-//	ui.setupUi(cw);
 	setCentralWidget(cw);
 
 	wid_dump = new xDumpWidget("","000000");
-	wid_disk_dump = new xDiskDumpWidget(":/images/disk.png","FDD");
+	wid_disk_dump = new xDiskDumpWidget(":/images/floppy.png","FDD");
 	wid_cmos_dump = new xCmosDumpWidget("","CMOS");
 	wid_vmem_dump = new xVMemDumpWidget("","VMEM");
 	wid_zxscr = new xZXScrWidget(":/images/rulers.png","SCR");
 	wid_dma = new xDmaWidget("","DMA");
 	wid_pit = new xPitWidget("","PIT");
 	wid_pic = new xPicWidget("","PIC");
-	wid_vga = new xVgaWidget("","VGA");
+	wid_vga = new xVgaWidget(":/images/display.png","VGA");
 	wid_ay = new xAYWidget(":/images/note.png","AY");
 	wid_tape = new xTapeWidget(":/images/tape.png","TAPE");
-	wid_fdd = new xFDDWidget(":/images/disk.png","FDC");
+	wid_fdd = new xFDDWidget(":/images/floppy.png","FDC");
 	wid_brk = new xBreakWidget(":/images/stop.png","BRK");
 	wid_gb = new xGameboyWidget(":/images/gameboy.png","GB");
-	wid_ppu = new xPPUWidget("","PPU");
+	wid_ppu = new xPPUWidget(":/images/nespad.png","PPU");
 	wid_cia = new xCiaWidget("","CIA");
 	wid_vic = new xVicWidget("","VIC");
 	wid_mmap = new xMMapWidget(":/images/memory.png","MMAP");

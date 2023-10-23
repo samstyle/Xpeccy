@@ -3,6 +3,7 @@
 
 #include <QPalette>
 #include <QPainter>
+#include <QDebug>
 
 QString gethexword(int);
 QString gethexbyte(uchar);
@@ -343,8 +344,29 @@ QWidget* xItemDelegate::createEditor(QWidget* par, const QStyleOptionViewItem&, 
 // dock widget
 
 xDockWidget::xDockWidget(QString icopath, QString txt, QWidget* p):QDockWidget(p) {
+	if (icopath.isEmpty()) {
+		title = txt;
+	} else {
+		icon = QIcon(icopath);
+	}
+	setContextMenuPolicy(Qt::PreventContextMenu);
+
 	setFeatures(QDockWidget::DockWidgetMovable/* | QDockWidget::DockWidgetFloatable*/);
 	connect(this, &xDockWidget::visibilityChanged, this, &xDockWidget::draw);
-	// TODO: how to set icon for tab when widget is tabified
-	setWindowTitle(txt);
+	connect(this, &xDockWidget::dockLocationChanged, this, &xDockWidget::moved);
+}
+
+// redraw all tabs icon/title
+void xDockWidget::moved() {
+	QList<QTabBar*> tabbars = parentWidget()->findChildren<QTabBar*>();
+	QList<QTabBar*>::iterator it;
+	xDockWidget* dw;
+	int i;
+	for(it = tabbars.begin(); it != tabbars.end(); it++) {
+		for(i = 0; i < (*it)->count(); i++) {
+			dw = static_cast<xDockWidget*>((*it)->tabData(i).data_ptr().data.ptr);
+			(*it)->setTabIcon(i, dw->icon);
+			dw->setWindowTitle(dw->title);
+		}
+	}
 }
