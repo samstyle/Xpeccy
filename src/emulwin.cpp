@@ -1105,7 +1105,6 @@ void MainWin::bookmarkSelected(QAction* act) {
 
 void MainWin::onPrfChange() {
 	Computer* comp = conf.prof.cur->zx;
-	comp = conf.prof.cur->zx;
 	emit s_keywin_upd(comp->keyb);
 	vid_upd_scale();
 	updateWindow();

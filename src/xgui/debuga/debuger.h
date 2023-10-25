@@ -50,7 +50,7 @@ class DebugWin : public QMainWindow {
 		DebugWin(QWidget* = NULL);
 		~DebugWin();
 
-		void reject();
+//		void reject();
 		void stop();
 
 	signals:

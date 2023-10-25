@@ -350,6 +350,10 @@ xDockWidget::xDockWidget(QString icopath, QString txt, QWidget* p):QDockWidget(p
 		icon = QIcon(icopath);
 	}
 	setContextMenuPolicy(Qt::PreventContextMenu);
+	titleWidget = new QLabel;
+	titleWidget->setAlignment(Qt::AlignCenter);
+	titleWidget->setText(txt);
+	setTitleBarWidget(titleWidget);
 
 	setFeatures(QDockWidget::DockWidgetMovable/* | QDockWidget::DockWidgetFloatable*/);
 	connect(this, &xDockWidget::visibilityChanged, this, &xDockWidget::draw);

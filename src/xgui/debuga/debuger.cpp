@@ -70,12 +70,17 @@ void DebugWin::chaPal() {
 	cot = conf.pal["dbg.header.txt"];
 	QString str = QString("background-color:%0;color:%1").arg(col.name()).arg(cot.name());
 	ui_cpu.labHeadCpu->setStyleSheet(str);
-	//ui.labHeadDump->setStyleSheet(str);
 	ui_asm.labHeadDisasm->setStyleSheet(str);
 	ui_misc.labHeadMem->setStyleSheet(str);
 	ui_misc.labHeadRay->setStyleSheet(str);
 	ui_misc.labHeadStack->setStyleSheet(str);
 	ui_misc.labHeadSignal->setStyleSheet(str);
+	xDockWidget* dw;
+	void* ptr;
+	foreach(ptr, dockWidgets) {
+		dw = static_cast<xDockWidget*>(ptr);
+		dw->titleBarWidget()->setStyleSheet(str);
+	}
 	setFont(conf.dbg.font);
 	foreach(xHexSpin* xhs, dbgRegEdit) {
 		xhs->updatePal();
@@ -120,7 +125,6 @@ void DebugWin::d_remap(int _b, int _t, int _n) {
 }
 
 void DebugWin::start() {
-//	assert(0);
 	if (isVisible()) {
 		activateWindow();
 		return;
@@ -146,11 +150,12 @@ void DebugWin::start() {
 //	ui.tabDiskDump->setDrive(ui.cbDrive->currentIndex());
 	chaPal();		// this will call fillAll
 	show();
+// fillall redrawing all vivisble widgets
 	if (!fillAll()) {
 		ui_asm.dasmTable->setAdr(comp->cpu->pc + comp->cpu->cs.base);
 		// fillDisasm();
 	}
-	wid_zxscr->draw();
+//	wid_zxscr->draw();
 //	updateScreen();
 
 	if (memViewer->vis) {
@@ -158,7 +163,8 @@ void DebugWin::start() {
 		memViewer->show();
 		memViewer->fillImage();
 	}
-	wid_dump->draw();
+//	wid_dump->draw();
+	wid_brk->moved();		// to redraw all icons
 //	chDumpView();
 	activateWindow();
 }
@@ -202,20 +208,6 @@ void DebugWin::onPrfChange() {
 	Computer* comp = prf->zx;
 	save_mem_map();
 
-// TODO: show/hide widgets
-/*
-	ui.tabsPanel->clear();
-	QList<tabDSC> lst = tablist[prf->zx->hw->grp];
-	tabDSC p;
-	p.icon = QIcon(":/images/stop.png");
-	p.wid = &wid_brk;
-	lst.append(p);
-	while(lst.size() > 0) {
-		ui.tabsPanel->addTab(lst.first().wid, lst.first().icon, lst.first().name);
-		lst.removeFirst();
-	}
-	ui.tabsPanel->setPalette(QPalette());
-*/
 	tabMode = comp->hw->grp;
 	xDockWidget* ptr;
 	foreach (void* dw, dockWidgets) {
@@ -247,10 +239,13 @@ void DebugWin::onPrfChange() {
 	ui_cpu.labIMM->setVisible(z80like); ui_cpu.boxIM->setVisible(z80like);
 	ui_cpu.labIFF1->setVisible(z80like); ui_cpu.flagIFF1->setVisible(z80like);
 	ui_cpu.labIFF2->setVisible(z80like); ui_cpu.flagIFF2->setVisible(z80like);
+
+	wid_brk->moved();
+
 	fillAll();
 }
 
-void DebugWin::reject() {stop();}
+// void DebugWin::reject() {stop();}
 void DebugWin::closeEvent(QCloseEvent*) {stop();}
 
 DebugWin::DebugWin(QWidget* par):QMainWindow(par) {
@@ -272,7 +267,7 @@ DebugWin::DebugWin(QWidget* par):QMainWindow(par) {
 	cw->setLayout(lay);
 	setCentralWidget(cw);
 
-	wid_dump = new xDumpWidget("","000000");
+	wid_dump = new xDumpWidget("","DUMP");
 	wid_disk_dump = new xDiskDumpWidget(":/images/floppy.png","FDD");
 	wid_cmos_dump = new xCmosDumpWidget("","CMOS");
 	wid_vmem_dump = new xVMemDumpWidget("","VMEM");
@@ -1272,7 +1267,7 @@ void DebugWin::fillNotCPU() {
 	fillMem();
 	xDockWidget* dw;
 	foreach(void* ptr, dockWidgets) {
-		dw = (xDockWidget*)ptr;
+		dw = static_cast<xDockWidget*>(ptr);
 		if (!dw->isHidden())
 			dw->draw();
 	}
