@@ -589,7 +589,6 @@ xDumpWidget::xDumpWidget(QString i, QString t, QWidget* p):xDockWidget(i,t,p) {
 	setWidget(wid);
 	ui.setupUi(wid);
 	setObjectName("MEMDUMPWIDGET");
-	setWindowTitle("000000");
 
 	ramBase = 0xc000;
 	romBase = 0x0000;
@@ -718,7 +717,8 @@ void xDumpWidget::draw() {
 }
 
 void xDumpWidget::adr_changed(int adr) {
-	setWindowTitle(QString::number(adr, 16).right(6).toUpper().rightJustified(6,'0'));
+	titleWidget->setText(QString("DUMP | %0").arg(QString::number(adr, 16).right(6).toUpper().rightJustified(6,'0')));
+//	setWindowTitle(QString::number(adr, 16).right(6).toUpper().rightJustified(6,'0'));
 }
 
 void xDumpWidget::cp_changed() {

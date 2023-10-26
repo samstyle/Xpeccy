@@ -267,24 +267,24 @@ DebugWin::DebugWin(QWidget* par):QMainWindow(par) {
 	cw->setLayout(lay);
 	setCentralWidget(cw);
 
-	wid_dump = new xDumpWidget("","DUMP");
+	wid_dump = new xDumpWidget("","DUMP : 000000");
 	wid_disk_dump = new xDiskDumpWidget(":/images/floppy.png","FDD");
 	wid_cmos_dump = new xCmosDumpWidget("","CMOS");
 	wid_vmem_dump = new xVMemDumpWidget("","VMEM");
-	wid_zxscr = new xZXScrWidget(":/images/rulers.png","SCR");
+	wid_zxscr = new xZXScrWidget(":/images/rulers.png","Screen");
 	wid_dma = new xDmaWidget("","DMA");
 	wid_pit = new xPitWidget("","PIT");
 	wid_pic = new xPicWidget("","PIC");
 	wid_vga = new xVgaWidget(":/images/display.png","VGA");
 	wid_ay = new xAYWidget(":/images/note.png","AY");
-	wid_tape = new xTapeWidget(":/images/tape.png","TAPE");
+	wid_tape = new xTapeWidget(":/images/tape.png","Tape");
 	wid_fdd = new xFDDWidget(":/images/floppy.png","FDC");
-	wid_brk = new xBreakWidget(":/images/stop.png","BRK");
-	wid_gb = new xGameboyWidget(":/images/gameboy.png","GB");
-	wid_ppu = new xPPUWidget(":/images/nespad.png","PPU");
+	wid_brk = new xBreakWidget(":/images/stop.png","Breakpoints");
+	wid_gb = new xGameboyWidget(":/images/gameboy.png","GameBoy");
+	wid_ppu = new xPPUWidget(":/images/nespad.png","NES PPU");
 	wid_cia = new xCiaWidget("","CIA");
 	wid_vic = new xVicWidget("","VIC");
-	wid_mmap = new xMMapWidget(":/images/memory.png","MMAP");
+	wid_mmap = new xMMapWidget(":/images/memory.png","Memory map");
 
 	dockWidgets << wid_dump << wid_disk_dump << wid_vmem_dump << wid_cmos_dump;
 	dockWidgets << wid_brk << wid_zxscr << wid_ay << wid_tape;

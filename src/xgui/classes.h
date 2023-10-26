@@ -25,6 +25,7 @@ class xDockWidget : public QDockWidget {
 	private:
 		QIcon icon;
 		QString title;
+	protected:
 		QLabel* titleWidget;
 	public slots:
 		virtual void draw() {}

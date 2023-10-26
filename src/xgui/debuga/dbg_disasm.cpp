@@ -487,6 +487,7 @@ int xDisasmModel::fill() {
 	int res = 0;
 	dasm.clear();
 	for(row = 0; row < rowCount(); row++) {
+		adr &= conf.prof.cur->zx->mem->busmask;
 		list = getDisasm(conf.prof.cur->zx, adr);
 		foreach (drow, list) {
 			if (dasm.size() < rowCount()) {
@@ -832,7 +833,7 @@ void xDisasmTable::setAdr(int adr, int hist) {
 	if (hist)
 		history.append(model->asmadr);
 	int oadr = model->asmadr;
-	model->asmadr = adr;
+	model->asmadr = adr & conf.prof.cur->zx->mem->busmask;
 	updContent();
 	if (oadr != model->asmadr)
 		emit s_adrch(model->asmadr);
