@@ -130,6 +130,7 @@ class xMMapWidget : public xDockWidget {
 	Q_OBJECT
 	public:
 		xMMapWidget(QString, QString, QWidget* = nullptr);
+		MemPage mem_map[256];
 	signals:
 		void s_restore();
 		void s_remap(int, int, int);

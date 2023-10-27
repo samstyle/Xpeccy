@@ -56,7 +56,7 @@ typedef struct {
 
 #define SETCOLOR(_n, _r) col = conf.pal[_n]; if (col.isValid()) pal.setColor(_r, col)
 
-void DebugWin::chaPal() {
+void DebugWin::updateStyle() {
 	QColor col;
 	QColor cot;
 	QPalette pal;
@@ -94,34 +94,24 @@ void DebugWin::chaPal() {
 void DebugWin::save_mem_map() {
 	Computer* comp = conf.prof.cur->zx;
 	for (int i = 0; i < 256; i++) {
-		mem_map[i] = comp->mem->map[i];
+		wid_mmap->mem_map[i] = comp->mem->map[i];
 	}
 }
 
 void DebugWin::rest_mem_map() {
 	Computer* comp = conf.prof.cur->zx;
 	for (int i = 0; i < 256; i++) {
-		 comp->mem->map[i] = mem_map[i];
+		 comp->mem->map[i] = wid_mmap->mem_map[i];
 	}
 	fillAll();
 }
 
-/*
-void DebugWin::remapMem() {
-	if (block) return;
-	Computer* comp = conf.prof.cur->zx;
-	memSetBank(comp->mem, 0x00, getRFIData(ui.cbBank0), ui.numBank0->getValue(), MEM_16K, NULL, NULL, NULL);
-	memSetBank(comp->mem, 0x40, getRFIData(ui.cbBank1), ui.numBank1->getValue(), MEM_16K, NULL, NULL, NULL);
-	memSetBank(comp->mem, 0x80, getRFIData(ui.cbBank2), ui.numBank2->getValue(), MEM_16K, NULL, NULL, NULL);
-	memSetBank(comp->mem, 0xc0, getRFIData(ui.cbBank3), ui.numBank3->getValue(), MEM_16K, NULL, NULL, NULL);
-	fillAll();
-}
-*/
-
 void DebugWin::d_remap(int _b, int _t, int _n) {
-//	Computer* comp = conf.prof.cur->zx;
-//	memSetBank(comp->mem, _b << 12, _t, _n, MEM_16K, NULL, NULL, NULL);
-//	fillAll();
+	Computer* comp = conf.prof.cur->zx;
+	memSetBank(comp->mem, _b, _t, _n, MEM_16K, NULL, NULL, NULL);
+	wid_dump->draw();
+	ui_asm.dasmTable->updContent();
+	wid_mmap->draw();
 }
 
 void DebugWin::start() {
@@ -131,11 +121,11 @@ void DebugWin::start() {
 	}
 	blockStart = -1;
 	blockEnd = -1;
+	save_mem_map();
 	Computer* comp = conf.prof.cur->zx;
 	if (comp->hw->grp != tabMode) {
 		onPrfChange();		// update tabs
 	}
-	save_mem_map();
 	chLayout();
 	if (!comp->vid->tail)
 		vid_dark_tail(comp->vid);
@@ -148,7 +138,7 @@ void DebugWin::start() {
 	brk_clear_tmp(comp);		// clear temp breakpoints
 
 //	ui.tabDiskDump->setDrive(ui.cbDrive->currentIndex());
-	chaPal();		// this will call fillAll
+	updateStyle();		// this will call fillAll
 	show();
 // fillall redrawing all vivisble widgets
 	if (!fillAll()) {
@@ -267,7 +257,7 @@ DebugWin::DebugWin(QWidget* par):QMainWindow(par) {
 	cw->setLayout(lay);
 	setCentralWidget(cw);
 
-	wid_dump = new xDumpWidget("","DUMP : 000000");
+	wid_dump = new xDumpWidget("","DUMP");
 	wid_disk_dump = new xDiskDumpWidget(":/images/floppy.png","FDD");
 	wid_cmos_dump = new xCmosDumpWidget("","CMOS");
 	wid_vmem_dump = new xVMemDumpWidget("","VMEM");
@@ -319,58 +309,10 @@ DebugWin::DebugWin(QWidget* par):QMainWindow(par) {
 	rtbar->setFloatable(false);
 	rtbar->setAllowedAreas(Qt::LeftToolBarArea | Qt::RightToolBarArea);
 	addToolBar(Qt::RightToolBarArea, rtbar);
-
-
+	rtbar->setContextMenuPolicy(Qt::PreventContextMenu);
 
 	dumpwin = new QDialog(this);
 	labswin = new xLabeList(this);
-
-/*
-	tabMode = HW_NULL;
-
-	QList<tabDSC> lst;
-	tabDSC p;
-	tablist.clear();
-
-	p.icon = QIcon(":/images/display.png"); p.wid = &wid_zxscr; lst.append(p);
-	p.icon = QIcon(":/images/speaker2.png"); p.wid = &wid_ay; lst.append(p);
-	p.icon = QIcon(":/images/tape.png"); p.wid = &wid_tape; lst.append(p);
-	p.icon = QIcon(":/images/floppy.png"); p.wid = &wid_fdd; lst.append(p);
-	p.icon = QIcon(":/images/memory.png"); p.wid = &wid_mmap; lst.append(p);
-	tablist[HWG_ZX] = lst;
-	lst.clear();
-	p.icon = QIcon(":/images/nespad.png"); p.wid = &wid_ppu; lst.append(p);
-#if ISDEBUG
-//	p.icon = QIcon(":/images/speaker2.png"); p.wid = &wid_apu; lst.append(p);
-#endif
-	tablist[HWG_NES] = lst;
-	lst.clear();
-	p.icon = QIcon(":/images/gameboy.png"); p.wid = &wid_gb; lst.append(p);
-	tablist[HWG_GB] = lst;
-	lst.clear();
-	p.icon = QIcon(":/images/tape.png"); p.wid = &wid_tape; lst.append(p);
-	p.icon = QIcon(":/images/floppy.png"); p.wid = &wid_fdd; lst.append(p);
-	tablist[HWG_BK] = lst;
-	lst.clear();
-	p.icon = QIcon(":/images/commodore.png"); p.wid = &wid_cia; lst.append(p);
-	p.icon = QIcon(":/images/tape.png"); p.wid = &wid_tape; lst.append(p);
-	p.icon = QIcon(); p.name = "VIC"; p.wid = &wid_vic; lst.append(p);
-	tablist[HWG_COMMODORE] = lst;
-	lst.clear();
-	p.icon = QIcon(":/images/speaker2.png"); p.wid = &wid_ay; lst.append(p);
-	p.icon = QIcon(":/images/tape.png"); p.wid = &wid_tape; lst.append(p);
-	tablist[HWG_MSX] = lst;
-	lst.clear();
-	p.icon = QIcon(":/images/tape.png"); p.wid = &wid_tape; lst.append(p);
-	tablist[HWG_SPCLST] = lst;
-	lst.clear();
-	p.icon = QIcon(); p.name = "PIT"; p.wid = &wid_pit; lst.append(p);
-	p.icon = QIcon(); p.name = "PIC"; p.wid = &wid_pic; lst.append(p);
-	p.icon = QIcon(); p.name = "VGA"; p.wid = &wid_vga; lst.append(p);
-	p.icon = QIcon(); p.name = "DMA"; p.wid = &wid_dma; lst.append(p);
-	p.icon = QIcon(":/images/floppy.png"); p.name = ""; p.wid = &wid_fdd; lst.append(p);
-	tablist[HWG_PC] = lst;
-*/
 // create registers group
 	xLabel* lab;
 	xHexSpin* xhs;
@@ -527,133 +469,19 @@ DebugWin::DebugWin(QWidget* par):QMainWindow(par) {
 	connect(ui_asm.actDisasm, SIGNAL(triggered(bool)),this,SLOT(saveDasm()));
 	connect(ui_asm.tbRefresh, SIGNAL(released()), this, SLOT(reload()));
 
-	connect(wid_mmap, &xMMapWidget::s_remap, this, &DebugWin::d_remap);
+	connect(wid_mmap, SIGNAL(s_remap(int, int, int)), this, SLOT(d_remap(int,int,int)));
 	connect(wid_mmap, &xMMapWidget::s_restore, this, &DebugWin::rest_mem_map);
 
 //	connect (ui.tbSaveVRam, SIGNAL(released()), this, SLOT(saveVRam()));
-// dump table
-/*
-	ui.cbCodePage->addItem("WIN1251", XCP_1251);
-	ui.cbCodePage->addItem("CP866", XCP_866);
-	ui.cbCodePage->addItem("KOI8R", XCP_KOI8R);
-
-	ui.cbDumpView->addItem("CPU", XVIEW_CPU);
-	ui.cbDumpView->addItem("RAM", XVIEW_RAM);
-	ui.cbDumpView->addItem("ROM", XVIEW_ROM);
-
-	ui.leDumpPageBase->setMin(0);
-	ui.leDumpPageBase->setMax(0xffff);
-	ui.cbDumpPageSize->addItem("256", MEM_256);
-	ui.cbDumpPageSize->addItem("512", MEM_512);
-	ui.cbDumpPageSize->addItem("1KB", MEM_1K);
-	ui.cbDumpPageSize->addItem("2KB", MEM_2K);
-	ui.cbDumpPageSize->addItem("4KB", MEM_4K);
-	ui.cbDumpPageSize->addItem("8KB", MEM_8K);
-	ui.cbDumpPageSize->addItem("16KB", MEM_16K);
-	ui.cbDumpPageSize->addItem("32KB", MEM_32K);
-	ui.cbDumpPageSize->addItem("64KB", MEM_64K);
-
-	ui.dumpTable->setColumnWidth(0,70);
-	ui.dumpTable->setItemDelegate(xid_byte);
-	ui.dumpTable->setItemDelegateForColumn(0, xid_labl);
-	ui.dumpTable->setItemDelegateForColumn(9, xid_none);
-	ui.cbDumpPageSize->setCurrentIndex(6);	// 16K
-
-	connect(ui.dumpTable,SIGNAL(customContextMenuRequested(QPoint)),this,SLOT(putBreakPoint()));
-	connect(ui.cbCodePage, SIGNAL(currentIndexChanged(int)), this, SLOT(setDumpCP()));
-	connect(ui.cbDumpView, SIGNAL(currentIndexChanged(int)), this, SLOT(chDumpView()));
-	connect(ui.sbDumpPage, SIGNAL(valueChanged(int)), this, SLOT(chDumpView()));
-	connect(ui.leDumpPageBase, SIGNAL(valueChanged(int)), this, SLOT(chDumpView()));
-	connect(ui.cbDumpPageSize, SIGNAL(currentIndexChanged(int)), this, SLOT(chDumpView()));
-
-	ui.cbDumpView->setCurrentIndex(0);
-// disk dump
-	ui.tabDiskDump->setColumnWidth(0, 70);
-	ui.tabDiskDump->horizontalHeader()->setStretchLastSection(true);
-	connect(ui.cbDrive, SIGNAL(currentIndexChanged(int)), ui.tabDiskDump, SLOT(setDrive(int)));
-	connect(ui.sbTrack, SIGNAL(valueChanged(int)), ui.tabDiskDump, SLOT(setTrack(int)));
-*/
 // registers
 	connect(ui_cpu.boxIM,SIGNAL(valueChanged(int)),this,SLOT(setCPU()));
 	connect(ui_cpu.flagIFF1,SIGNAL(stateChanged(int)),this,SLOT(setCPU()));
 	connect(ui_cpu.flagIFF2,SIGNAL(stateChanged(int)),this,SLOT(setCPU()));
 //	connect(ui.flagGroup,SIGNAL(buttonClicked(int)),this,SLOT(setFlags()));
-// zx screen
-//	scrImg = QImage(256, 192, QImage::Format_RGB888);
-//	connect(ui.sbScrBank,SIGNAL(valueChanged(int)),this,SLOT(updateScreen()));
-//	connect(ui.leScrAdr,SIGNAL(textChanged(QString)),this,SLOT(updateScreen()));
-//	connect(ui.cbScrAtr,SIGNAL(stateChanged(int)),this,SLOT(updateScreen()));
-//	connect(ui.cbScrPix,SIGNAL(stateChanged(int)),this,SLOT(updateScreen()));
-//	connect(ui.cbScrGrid,SIGNAL(stateChanged(int)),this,SLOT(updateScreen()));
-// breakpoints
-//	connect(ui.tbAddBrk, SIGNAL(clicked()), this, SLOT(addBrk()));
-//	connect(ui.tbEditBrk, SIGNAL(clicked()), this, SLOT(editBrk()));
-//	connect(ui.tbDelBrk, SIGNAL(clicked()), this, SLOT(delBrk()));
-//	connect(ui.tbBrkOpen, SIGNAL(clicked()), this, SLOT(openBrk()));
-//	connect(ui.tbBrkSave, SIGNAL(clicked()), this, SLOT(saveBrk()));
-//	connect(ui.bpList, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(goToBrk(QModelIndex)));
-// gb tab
-//	connect(ui.gbModeGroup, SIGNAL(buttonClicked(QAbstractButton*)), this, SLOT(fillGBoy()));
-//	connect(ui.sbTileset, SIGNAL(valueChanged(int)), this, SLOT(fillGBoy()));
-//	connect(ui.sbTilemap, SIGNAL(valueChanged(int)), this, SLOT(fillGBoy()));
-
-//	connect(ui.tabsPanel, SIGNAL(currentChanged(int)), this, SLOT(fillTabs()));
 
 	block = 0;
 	tCount = 0;
 	trace = 0;
-// nes tab
-/*
-	ui.nesScrType->addItem("BG off", NES_SCR_OFF);
-	ui.nesScrType->addItem("BG scr 0", NES_SCR_0);
-	ui.nesScrType->addItem("BG scr 1", NES_SCR_1);
-	ui.nesScrType->addItem("BG scr 2", NES_SCR_2);
-	ui.nesScrType->addItem("BG scr 3", NES_SCR_3);
-	ui.nesScrType->addItem("All in 1", NES_SCR_ALL);
-	ui.nesScrType->addItem("Tiles", NES_SCR_TILES);
-
-	ui.nesBGTileset->addItem("Tiles #0000", NES_TILE_0000);
-	ui.nesBGTileset->addItem("Tiles #1000", NES_TILE_1000);
-	ui.nesSPTileset->addItem("No sprites", -1);
-	ui.nesSPTileset->addItem("Sprites #0000", NES_TILE_0000);
-	ui.nesSPTileset->addItem("Sprites #1000", NES_TILE_1000);
-
-	connect(ui.nesScrType,SIGNAL(currentIndexChanged(int)), this, SLOT(drawNes()));
-	connect(ui.nesBGTileset,SIGNAL(currentIndexChanged(int)), this, SLOT(drawNes()));
-	connect(ui.nesSPTileset,SIGNAL(currentIndexChanged(int)), this, SLOT(drawNes()));
-*/
-// mem tab
-/*
-	ui.cbBank0->addItem("ROM", MEM_ROM);
-	ui.cbBank0->addItem("RAM", MEM_RAM);
-	ui.cbBank1->addItem("ROM", MEM_ROM);
-	ui.cbBank1->addItem("RAM", MEM_RAM);
-	ui.cbBank2->addItem("ROM", MEM_ROM);
-	ui.cbBank2->addItem("RAM", MEM_RAM);
-	ui.cbBank3->addItem("ROM", MEM_ROM);
-	ui.cbBank3->addItem("RAM", MEM_RAM);
-	ui.numBank0->setMax(255);
-	ui.numBank1->setMax(255);
-	ui.numBank2->setMax(255);
-	ui.numBank3->setMax(255);
-	connect(ui.cbBank0, SIGNAL(currentIndexChanged(int)), this, SLOT(remapMem()));
-	connect(ui.cbBank1, SIGNAL(currentIndexChanged(int)), this, SLOT(remapMem()));
-	connect(ui.cbBank2, SIGNAL(currentIndexChanged(int)), this, SLOT(remapMem()));
-	connect(ui.cbBank3, SIGNAL(currentIndexChanged(int)), this, SLOT(remapMem()));
-	connect(ui.numBank0, SIGNAL(valueChanged(int)), this, SLOT(remapMem()));
-	connect(ui.numBank1, SIGNAL(valueChanged(int)), this, SLOT(remapMem()));
-	connect(ui.numBank2, SIGNAL(valueChanged(int)), this, SLOT(remapMem()));
-	connect(ui.numBank3, SIGNAL(valueChanged(int)), this, SLOT(remapMem()));
-	connect(ui.pbRestMemMap, SIGNAL(clicked()), this, SLOT(rest_mem_map()));
-*/
-// ibm tab
-//	ui.tabPit->setModel(new xPitModel());
-//	ui.tabVgaReg->setModel(new xVgaRegModel());
-//	ui.tableDMA->setModel(new xDmaTableModel());
-//	ui.tabCmos->setModel(new xCmosDumpModel());
-//	ui.tablePIC->setModel(new xPicModel());
-// c64 tabs
-//	ui.tabVicRegs->setModel(new xVicRegsModel());
 // subwindows
 	dui.setupUi(dumpwin);
 	dui.tbSave->addAction(dui.aSaveBin);
@@ -693,9 +521,6 @@ DebugWin::DebugWin(QWidget* par):QMainWindow(par) {
 	memFiller = new xMemFiller(this);
 	connect(memFiller, SIGNAL(rqRefill()),this,SLOT(fillNotCPU()));
 	connect(memFiller, &xMemFiller::rqRefill, this, &DebugWin::fillDisasm);
-
-//	brkManager = new xBrkManager(this);
-//	connect(brkManager, SIGNAL(completed(xBrkPoint, xBrkPoint)), this, SLOT(confirmBrk(xBrkPoint, xBrkPoint)));
 
 // context menu
 	cellMenu = new QMenu(this);
@@ -1160,7 +985,7 @@ void update_table(QTableView* tab) {
 */
 
 void DebugWin::fillTabs() {
-	fillMem();
+//	fillMem();
 
 //	wid_fdd.draw();//fillFDC();
 //	wid_gb.draw();//fillGBoy();

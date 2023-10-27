@@ -31,10 +31,10 @@ xMMapWidget::xMMapWidget(QString i, QString t, QWidget* p):xDockWidget(i,t,p) {
 	connect(ui.pbRestMemMap, &QPushButton::clicked, this, &xMMapWidget::s_restore);
 }
 
-void xMMapWidget::remap_b0() {emit s_remap(0, getRFIData(ui.cbBank0), ui.numBank0->getValue());}
-void xMMapWidget::remap_b1() {emit s_remap(1, getRFIData(ui.cbBank1), ui.numBank1->getValue());}
-void xMMapWidget::remap_b2() {emit s_remap(2, getRFIData(ui.cbBank2), ui.numBank2->getValue());}
-void xMMapWidget::remap_b3() {emit s_remap(3, getRFIData(ui.cbBank3), ui.numBank3->getValue());}
+void xMMapWidget::remap_b0() {emit s_remap(0x00, getRFIData(ui.cbBank0), ui.numBank0->getValue());}
+void xMMapWidget::remap_b1() {emit s_remap(0x40, getRFIData(ui.cbBank1), ui.numBank1->getValue());}
+void xMMapWidget::remap_b2() {emit s_remap(0x80, getRFIData(ui.cbBank2), ui.numBank2->getValue());}
+void xMMapWidget::remap_b3() {emit s_remap(0xc0, getRFIData(ui.cbBank3), ui.numBank3->getValue());}
 
 void xMMapWidget::draw() {
 	Computer* comp = conf.prof.cur->zx;

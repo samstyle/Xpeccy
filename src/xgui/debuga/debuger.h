@@ -63,7 +63,7 @@ class DebugWin : public QMainWindow {
 		void start();
 		void onPrfChange();
 		void setScrAtr(int, int);
-		void chaPal();
+		void updateStyle();
 	private:
 		unsigned block:1;
 		int tabMode;
@@ -110,8 +110,6 @@ class DebugWin : public QMainWindow {
 		QList<QLabel*> dbgFlagLabs;
 		QList<QCheckBox*> dbgFlagBox;
 		QButtonGroup* flagrp;
-
-		MemPage mem_map[256];
 
 		QDialog* dumpwin;
 		Ui::DumpDial dui;
