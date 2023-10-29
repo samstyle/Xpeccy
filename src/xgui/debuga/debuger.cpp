@@ -1671,6 +1671,7 @@ void DebugWin::saveDasm() {
 					work = 0;		// address overfill (FFFF+)
 				if (drow.isequ) {
 					strm << drow.aname << ":";
+					strm << drow.command;
 				} else if (drow.islab) {
 					if (drow.iscom) {
 						strm << drow.aname;
@@ -1740,20 +1741,18 @@ void DebugWin::mapAuto() {
 
 void DebugWin::fillStack() {
 	Computer* comp = conf.prof.cur->zx;
-	int adr = comp->cpu->sp;
-	if (comp->cpu->type == CPU_I80286) {
-		adr += comp->cpu->ss.base;
-	}
+	int adr = comp->cpu->sp + comp->cpu->ss.base;
 	QString str;
-	for (int i = 0; i < 4; i++) {
-		str.append(gethexbyte(rdbyte(adr+1, comp)));
-		str.append(gethexbyte(rdbyte(adr, comp)));
-		adr += 2;
+	for (int i = -2; i < 10; i+=2) {
+		str.append(gethexbyte(rdbyte(adr+i+1, comp)));
+		str.append(gethexbyte(rdbyte(adr+i, comp)));
 	}
-	ui_misc.labSP->setText(str.left(4));
-	ui_misc.labSP2->setText(str.mid(4,4));
-	ui_misc.labSP4->setText(str.mid(8,4));
-	ui_misc.labSP6->setText(str.mid(12,4));
+	ui_misc.labSPm2->setText(str.left(4));
+	ui_misc.labSP->setText(str.mid(4,4));
+	ui_misc.labSP2->setText(str.mid(8,4));
+	ui_misc.labSP4->setText(str.mid(12,4));
+	ui_misc.labSP6->setText(str.mid(16,4));
+	ui_misc.labSP8->setText(str.mid(20,4));
 }
 
 // breakpoint

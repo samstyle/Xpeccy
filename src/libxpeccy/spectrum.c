@@ -408,6 +408,7 @@ void compReset(Computer* comp,int res) {
 		comp->hw->reset(comp);
 	comp->hw->mapMem(comp);
 	comp->cpu->cs.base = 0;		// for all except i80286
+	comp->cpu->ss.base = 0;
 	comp->cpu->cs.limit = 0xffff;
 	comp->cpu->reset(comp->cpu);
 }

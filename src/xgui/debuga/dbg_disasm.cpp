@@ -906,6 +906,7 @@ void xDisasmTable::copyToCbrd() {
 				work = 0;		// address overfill (FFFF+)
 			if (drow.isequ) {
 				str += drow.aname + ":";
+				str += drow.command;
 			} else if (drow.islab) {
 				if (drow.iscom) {
 					str += drow.aname;
