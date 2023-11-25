@@ -368,7 +368,7 @@ void xDockWidget::moved() {
 	int i;
 	for(it = tabbars.begin(); it != tabbars.end(); it++) {
 		for(i = 0; i < (*it)->count(); i++) {
-			dw = static_cast<xDockWidget*>((*it)->tabData(i).data_ptr().data.ptr);
+			dw = reinterpret_cast<xDockWidget*>(qvariant_cast<quintptr>((*it)->tabData(i)));
 			(*it)->setTabIcon(i, dw->icon);
 			dw->setWindowTitle(dw->title);
 		}

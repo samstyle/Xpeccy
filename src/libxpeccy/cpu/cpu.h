@@ -247,7 +247,6 @@ struct CPU {
 	unsigned char mod;	// 80286: mod byte (EA/reg)
 	struct {xSegPtr seg; PAIR(adr,adrh,adrl); unsigned reg:1;} ea;
 	int rep;		// 80286: repeat condition id
-
 // pdp registers
 	unsigned mcir:3;
 	unsigned vsel:4;

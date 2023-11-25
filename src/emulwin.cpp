@@ -1105,13 +1105,13 @@ void MainWin::bookmarkSelected(QAction* act) {
 
 void MainWin::onPrfChange() {
 	Computer* comp = conf.prof.cur->zx;
-	emit s_keywin_upd(comp->keyb);
-	vid_upd_scale();
-	updateWindow();
 	if (comp->firstRun) {
 		compReset(comp, RES_DEFAULT);
 		comp->firstRun = 0;
 	}
+	emit s_keywin_upd(comp->keyb);
+	vid_upd_scale();
+	updateWindow();
 //	saveConfig();
 //	emit s_prf_change(conf.prof.cur);
 //	conf.prof.changed = 1;

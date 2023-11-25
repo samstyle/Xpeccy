@@ -60,6 +60,74 @@ void i286_mwr(CPU* cpu, xSegPtr seg, int rpl, unsigned short adr, int val) {
 	cpu->mwr(seg.base + adr, val, cpu->xptr);
 }
 
+// real mode
+
+unsigned char i286_fetch_real(CPU* cpu) {
+	return cpu->mrd(cpu->cs.base + cpu->pc, 0, cpu->xptr) & 0xff;
+}
+
+unsigned char i286_mrd_real(CPU* cpu, xSegPtr seg, int rpl, unsigned short adr) {
+	if (rpl && (cpu->seg.idx >= 0)) seg = cpu->seg;
+	cpu->t++;
+	return cpu->mrd(seg.base + adr, 0, cpu->xptr) & 0xff;
+}
+
+void i286_mwr_real(CPU* cpu, xSegPtr seg, int rpl, unsigned short adr, int val) {
+	if (rpl && (cpu->seg.idx >= 0)) seg = cpu->seg;
+	cpu->t++;
+	cpu->mwr(seg.base + adr, val, cpu->xptr);
+}
+
+// protected mode
+
+unsigned char i286_fetch_prt(CPU* cpu) {
+	unsigned char res = 0xff;
+	if (i286_check_segment_exec(cpu, &cpu->cs)) {
+		if (i286_check_segment_limit(cpu, &cpu->cs, cpu->pc)) {
+			res = cpu->mrd(cpu->cs.base + cpu->pc, 0, cpu->xptr) & 0xff;
+		} else {
+			cpu->pc = cpu->oldpc;
+			i286_interrupt(cpu, I286_INT_SL);
+		}
+	} else {
+		// not code segment
+		// TODO: check trap/gate
+	}
+	return res;
+}
+
+unsigned char i286_mrd_prt(CPU* cpu, xSegPtr seg, int rpl, unsigned short adr) {
+	unsigned char res = 0xff;
+	if (rpl && (cpu->seg.idx >= 0)) seg = cpu->seg;
+	if (i286_check_segment_rd(cpu, &seg)) {
+		if (i286_check_segment_limit(cpu, &seg, adr)) {
+			res = cpu->mrd(seg.base + adr, 0, cpu->xptr) & 0xff;
+		} else {
+			cpu->pc = cpu->oldpc;
+			i286_interrupt(cpu, I286_INT_SL);
+		}
+	} else {
+		cpu->pc = cpu->oldpc;
+		i286_interrupt(cpu, I286_INT_GP);
+	}
+	return res;
+}
+
+void i286_mwr_prt(CPU* cpu, xSegPtr seg, int rpl, unsigned short adr, int val) {
+	if (rpl && (cpu->seg.idx >= 0)) seg = cpu->seg;
+	if (i286_check_segment_wr(cpu, &seg)) {
+		if (i286_check_segment_limit(cpu, &seg, adr)) {
+			cpu->mwr(seg.base + adr, val, cpu->xptr);
+		} else {
+			cpu->pc = cpu->oldpc;
+			i286_interrupt(cpu, I286_INT_SL);
+		}
+	} else {
+		cpu->pc = cpu->oldpc;
+		i286_interrupt(cpu, I286_INT_GP);
+	}
+}
+
 // iord/wr
 
 unsigned short i286_ird(CPU* cpu, int adr) {
