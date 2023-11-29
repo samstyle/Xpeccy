@@ -71,6 +71,7 @@ void MainWin::updateWindow() {
 	int szh;
 	QSize wsz;
 	Computer* comp = conf.prof.cur->zx;
+	blockSignals(true);
 	if (conf.vid.fullScreen) {
 		wsz = SCREENSIZE;
 		szw = wsz.width();
@@ -86,6 +87,7 @@ void MainWin::updateWindow() {
 		setWindowState(windowState() & ~Qt::WindowFullScreen);
 		setFixedSize(szw, szh);
 	}
+	blockSignals(false);
 	vid_set_zoom(conf.vid.scale);
 #ifdef USEOPENGL
 	bytesPerLine = (lefSkip + comp->vid->vsze.x * 8 + rigSkip);
@@ -189,6 +191,7 @@ MainWin::MainWin() {
 	initUserMenu();
 	setFocus();
 
+	frm_ns = 0;
 	timid = startTimer(20);		// 1/50 sec
 	secid = startTimer(200);	// 1/5 sec
 	cmsid = startTimer(1000);	// 1 sec

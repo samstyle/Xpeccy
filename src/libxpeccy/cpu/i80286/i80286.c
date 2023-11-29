@@ -9,6 +9,7 @@ extern opCode i286_0f_tab[256];
 extern xSegPtr i286_cash_seg(CPU*, unsigned short);
 
 void i286_reset(CPU* cpu) {
+	x86_set_mode(cpu, X86_REAL);
 	cpu->f = 0x0002;
 	cpu->msw = 0xfff0;
 	cpu->pc = 0xfff0;	// ip
@@ -59,8 +60,8 @@ void i286_int_real(CPU* cpu, int vec) {
 
 void i286_int_prt(CPU* cpu, int vec) {
 	if (cpu->idtr.limit < (vec & 0xfff8)) {		// check idtr limit
-		i286_int_prt(cpu, 13);
-		cpu->t = 1;
+		//i286_int_prt(cpu, 13);
+		THROW(I286_INT_GP);
 	} else if (cpu->f & I286_FI) {
 		PAIR(w,h,l)seg;
 		PAIR(w,h,l)off;
@@ -72,7 +73,8 @@ void i286_int_prt(CPU* cpu, int vec) {
 		unsigned char fl = cpu->mrd(adr+5, 0, cpu->xptr);	// flags
 		cpu->tmpdr = i286_cash_seg(cpu, seg.w);
 		if ((cpu->tmpdr.flag & 0x60) < (fl & 0x60)) {	// check priv
-			i286_int_prt(cpu, 13);
+			//i286_int_prt(cpu, 13);
+			THROW(I286_INT_GP);
 		} else {					// do interrupt
 			if (cpu->halt) {
 				cpu->halt = 0;
@@ -86,8 +88,8 @@ void i286_int_prt(CPU* cpu, int vec) {
 			cpu->cs = i286_cash_seg(cpu, seg.w);
 			cpu->pc = off.w;
 		}
-		cpu->t = 1;
 	}
+	cpu->t = 1;
 }
 
 void i286_interrupt(CPU* cpu, int vec) {
@@ -106,7 +108,7 @@ void i286_ext_int(CPU* cpu) {
 	} else if ((cpu->intrq & I286_NMI) && !(cpu->inten & I286_BLK_NMI)) {
 		cpu->inten |= I286_BLK_NMI;				// NMI is blocking until RETI, but next NMI will be remembered until then
 		cpu->intrq &= ~I286_NMI;
-		i286_interrupt(cpu, 2);
+		i286_interrupt(cpu, I286_INT_NMI);
 	}
 }
 
@@ -117,17 +119,27 @@ int i286_exec(CPU* cpu) {
 	cpu->lock = 0;
 	cpu->rep = I286_REP_NONE;
 	cpu->oldpc = cpu->pc;
-	if (cpu->intrq)
-		i286_ext_int(cpu);
-	if (cpu->t == 0) {
-		cpu->t++;
-		do {
+
+	int val = setjmp(cpu->jbuf);	// set THROW return point (val = err.code)
+	if (!val) {
+		if (cpu->intrq)
+			i286_ext_int(cpu);
+		if (cpu->t == 0) {
+			// TODO: check trap/gate CS
 			cpu->t++;
-			cpu->com = i286_mrd(cpu, cpu->cs, 0, cpu->pc);
-			cpu->pc++;
-			cpu->op = &cpu->opTab[cpu->com & 0xff];
-			cpu->op->exec(cpu);
-		} while (cpu->op->flag & OF_PREFIX);
+			// TODO: do something like try-catch to catch errors in protected mode
+			do {
+				cpu->t++;
+				cpu->com = i286_mrd(cpu, cpu->cs, 0, cpu->pc);
+				cpu->pc++;
+				cpu->op = &cpu->opTab[cpu->com & 0xff];
+				cpu->op->exec(cpu);
+			} while (cpu->op->flag & OF_PREFIX);
+		}
+	} else {
+		if (val < 0) val = I286_INT_DE;		// cuz INT_DE has code 0 (success for setjmp)
+		// cpu->pc = cpu->oldpc;
+		i286_interrupt(cpu, val);
 	}
 	return cpu->t;
 }

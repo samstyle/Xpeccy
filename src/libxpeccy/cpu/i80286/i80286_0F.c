@@ -11,7 +11,7 @@ extern xSegPtr i286_cash_seg(CPU*, unsigned short);
 
 // unrecognized opcode
 void i286_0Fxx(CPU* cpu) {
-	i286_interrupt(cpu, 6);
+	THROW(I286_INT_UD);
 }
 
 // 0f 00 /0: sldt ew (prt.mode only)	[ew] = ldtr.idx
@@ -54,7 +54,7 @@ xSegPtr i286_get_dsc(CPU* cpu, int sel) {
 void i286_0F002(CPU* cpu) {
 	cpu->tmpdr = i286_get_dsc(cpu, cpu->tmpw & ~4);	// GDT table only
 	if (cpu->tmpdr.idx < 0) {
-		i286_interrupt(cpu, 11);
+		THROW(I286_INT_NP);
 	} else {
 		cpu->ldtr = cpu->tmpdr;
 	}
@@ -64,7 +64,7 @@ void i286_0F002(CPU* cpu) {
 void i286_0F003(CPU* cpu) {
 	cpu->tmpdr = i286_get_dsc(cpu, cpu->tmpw);
 	if (cpu->tmpdr.idx < 0) {
-		i286_interrupt(cpu, 11);
+		THROW(I286_INT_NP);
 	} else {
 		cpu->tsdr = cpu->tmpdr;
 	}
@@ -102,7 +102,7 @@ cbcpu i286_0f00_tab[8] = {
 
 void i286_0F00(CPU* cpu) {
 	if (!(cpu->msw & I286_FPE)) {
-		i286_interrupt(cpu, 6);
+		THROW(I286_INT_UD);
 	} else {
 		i286_rd_ea(cpu, 1);
 		i286_0f00_tab[(cpu->mod >> 3) & 7](cpu);
@@ -113,7 +113,7 @@ void i286_0F00(CPU* cpu) {
 void i286_0F010(CPU* cpu) {
 	cpu->tmpdr = i286_get_dsc(cpu, cpu->tmpw & ~4);
 	if (cpu->tmpdr.idx < 0) {
-		i286_interrupt(cpu, 10);
+		THROW(I286_INT_TS);
 	} else {
 		i286_mwr(cpu, cpu->ea.seg, 1, cpu->ea.adr++, cpu->tmpdr.limit & 0xff);
 		i286_mwr(cpu, cpu->ea.seg, 1, cpu->ea.adr++, (cpu->tmpdr.limit >> 8) & 0xff);
@@ -127,7 +127,7 @@ void i286_0F010(CPU* cpu) {
 void i286_0F011(CPU* cpu) {
 	cpu->tmpdr = i286_get_dsc(cpu, cpu->tmpw | 0xff0000);
 	if (cpu->tmpdr.idx < 0) {
-		i286_interrupt(cpu, 10);
+		THROW(I286_INT_TS);
 	} else {
 		i286_mwr(cpu, cpu->ea.seg, 1, cpu->ea.adr++, cpu->tmpdr.limit & 0xff);
 		i286_mwr(cpu, cpu->ea.seg, 1, cpu->ea.adr++, (cpu->tmpdr.limit >> 8) & 0xff);
@@ -148,7 +148,7 @@ void i286_rd_ea40(CPU* cpu) {
 // 0f 01 /2 lgdt eq	set gdtr (40 bit)
 void i286_0F012(CPU* cpu) {
 	if (cpu->ea.reg) {
-		i286_interrupt(cpu, 6);		// ea is register
+		THROW(I286_INT_UD);		// ea is register
 	} else {
 		i286_rd_ea40(cpu);
 		cpu->gdtr.limit = cpu->tmpw;
@@ -159,7 +159,7 @@ void i286_0F012(CPU* cpu) {
 // 0f 01 /3 lidt ew	set idtr (40 bit)
 void i286_0F013(CPU* cpu) {
 	if (cpu->ea.reg) {
-		i286_interrupt(cpu, 6);
+		THROW(I286_INT_UD);
 	} else {
 		i286_rd_ea40(cpu);
 		cpu->idtr.limit = cpu->tmpw;
@@ -174,7 +174,10 @@ void i286_0F014(CPU* cpu) {
 
 // 0f 01 /6 lmsw ew	msw = [ea]
 void i286_0F016(CPU* cpu) {
-	cpu->msw = cpu->tmpw;
+	cpu->msw = (cpu->msw & 1) | cpu->tmpw;		// can't set real mode by software
+	if (cpu->msw & I286_FPE) {
+		x86_set_mode(cpu, X86_PROT);
+	}
 }
 
 cbcpu i286_0f01_tab[8] = {
@@ -190,7 +193,7 @@ void i286_0F01(CPU* cpu) {
 // 0F 02 /r : lar rw,ew		rw = (seg.descriptor flags << 8)
 void i286_0F02(CPU* cpu) {
 	if (!(cpu->msw & I286_FPE)) {
-		i286_interrupt(cpu, 6);		// not present in real mode
+		THROW(I286_INT_UD);		// not present in real mode
 	} else {
 		i286_rd_ea(cpu, 1);
 		cpu->tmpi = (cpu->tmpw & 4) ? cpu->ldtr.base : cpu->gdtr.base;
@@ -210,7 +213,7 @@ void i286_0F02(CPU* cpu) {
 // 0F 03 /r : lsl rw,ew		rw = seg.descriptor limit
 void i286_0F03(CPU* cpu) {
 	if (!(cpu->msw & I286_FPE)) {
-		i286_interrupt(cpu, 6);		// not present in treal mode
+		THROW(I286_INT_UD);		// not present in treal mode
 	} else {
 		i286_rd_ea(cpu, 1);
 		cpu->tmpi = (cpu->tmpw & 4) ? cpu->ldtr.base : cpu->gdtr.base;

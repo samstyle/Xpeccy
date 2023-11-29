@@ -13,6 +13,11 @@
 #define I286_FIP 0x3000	// 2bits: IOPL
 #define I286_FN	0x4000	// nested flag
 
+enum {
+	X86_REAL = 0,
+	X86_PROT
+};
+
 #ifdef WORDS_LITTLE_ENDIAN
 typedef struct {
 	unsigned c:1;
@@ -124,3 +129,5 @@ xAsmScan i286_asm(const char*, char*);
 xMnem i286_mnem(CPU*, int, cbdmr, void*);
 void i286_get_regs(CPU*, xRegBunch*);
 void i286_set_regs(CPU*, xRegBunch);
+
+void x86_set_mode(CPU*, int);

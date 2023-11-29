@@ -7,6 +7,9 @@ extern "C" {
 #include <stddef.h>
 #include <stdbool.h>
 
+#include <setjmp.h>		// to implement try-catch
+#define THROW(__N) longjmp(cpu->jbuf, __N)
+
 #include "../defines.h"
 
 typedef unsigned char xbyte;
@@ -40,7 +43,6 @@ typedef struct {
 	int id;
 	int type;
 	const char* name;
-//	void* ptr;	// pointer to value inside CPU struct
 	int value;	// register value (selector)
 	int base;	// base address for segment register
 } xRegister;
@@ -247,6 +249,10 @@ struct CPU {
 	unsigned char mod;	// 80286: mod byte (EA/reg)
 	struct {xSegPtr seg; PAIR(adr,adrh,adrl); unsigned reg:1;} ea;
 	int rep;		// 80286: repeat condition id
+	jmp_buf jbuf;
+	unsigned char(*x86fetch)(CPU*);
+	unsigned char(*x86mrd)(CPU*,xSegPtr,int,unsigned short);
+	void(*x86mwr)(CPU*,xSegPtr,int,unsigned short,int);
 // pdp registers
 	unsigned mcir:3;
 	unsigned vsel:4;
