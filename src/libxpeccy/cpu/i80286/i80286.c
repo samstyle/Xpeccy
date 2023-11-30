@@ -60,7 +60,7 @@ void i286_int_real(CPU* cpu, int vec) {
 
 void i286_int_prt(CPU* cpu, int vec) {
 	if (cpu->idtr.limit < (vec & 0xfff8)) {		// check idtr limit
-		//i286_int_prt(cpu, 13);
+		i286_push(cpu, cpu->idtr.idx);		// error code = segment index
 		THROW(I286_INT_GP);
 	} else if (cpu->f & I286_FI) {
 		PAIR(w,h,l)seg;
@@ -73,7 +73,7 @@ void i286_int_prt(CPU* cpu, int vec) {
 		unsigned char fl = cpu->mrd(adr+5, 0, cpu->xptr);	// flags
 		cpu->tmpdr = i286_cash_seg(cpu, seg.w);
 		if ((cpu->tmpdr.flag & 0x60) < (fl & 0x60)) {	// check priv
-			//i286_int_prt(cpu, 13);
+			i286_push(cpu, 0);			// error code
 			THROW(I286_INT_GP);
 		} else {					// do interrupt
 			if (cpu->halt) {
@@ -127,7 +127,6 @@ int i286_exec(CPU* cpu) {
 		if (cpu->t == 0) {
 			// TODO: check trap/gate CS
 			cpu->t++;
-			// TODO: do something like try-catch to catch errors in protected mode
 			do {
 				cpu->t++;
 				cpu->com = i286_mrd(cpu, cpu->cs, 0, cpu->pc);
@@ -138,7 +137,9 @@ int i286_exec(CPU* cpu) {
 		}
 	} else {
 		if (val < 0) val = I286_INT_DE;		// cuz INT_DE has code 0 (success for setjmp)
-		// cpu->pc = cpu->oldpc;
+		if (val != I286_INT_NM) {
+			cpu->pc = cpu->oldpc;
+		}
 		i286_interrupt(cpu, val);
 	}
 	return cpu->t;

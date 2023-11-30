@@ -80,6 +80,22 @@ void i286_mwr_real(CPU* cpu, xSegPtr seg, int rpl, unsigned short adr, int val) 
 	cpu->mwr(seg.base + adr, val, cpu->xptr);
 }
 
+// stack
+
+void i286_push(CPU* cpu, unsigned short w) {
+	cpu->sp -= 2;
+	i286_mwr(cpu, cpu->ss, 0, cpu->sp, w & 0xff);
+	i286_mwr(cpu, cpu->ss, 0, cpu->sp + 1, (w >> 8) & 0xff);
+}
+
+unsigned short i286_pop(CPU* cpu) {
+	PAIR(w,h,l) rx;
+	rx.l = i286_mrd(cpu, cpu->ss, 0, cpu->sp);
+	rx.h = i286_mrd(cpu, cpu->ss, 0, cpu->sp + 1);
+	cpu->sp += 2;
+	return rx.w;
+}
+
 // protected mode
 
 unsigned char i286_fetch_prt(CPU* cpu) {
@@ -92,6 +108,7 @@ unsigned char i286_fetch_prt(CPU* cpu) {
 			THROW(I286_INT_SL);
 		}
 	} else {
+		i286_push(cpu, cpu->cs.idx & 0xffff);
 		THROW(I286_INT_GP);
 	}
 	return res;
@@ -107,6 +124,7 @@ unsigned char i286_mrd_prt(CPU* cpu, xSegPtr seg, int rpl, unsigned short adr) {
 			THROW(I286_INT_SL);
 		}
 	} else {
+		i286_push(cpu, seg.idx);
 		THROW(I286_INT_GP);
 	}
 	return res;
@@ -122,7 +140,7 @@ void i286_mwr_prt(CPU* cpu, xSegPtr seg, int rpl, unsigned short adr, int val) {
 			THROW(I286_INT_SL);
 		}
 	} else {
-		cpu->pc = cpu->oldpc;
+		i286_push(cpu, seg.idx);
 		THROW(I286_INT_GP);
 	}
 }
@@ -219,22 +237,6 @@ void i286_call_gate(CPU* cpu) {
 	if ((cpu->msw & I286_FPE) && !(cpu->cs.flag & 4)) {	// protected mode && segment is a gate
 
 	}
-}
-
-// stack
-
-void i286_push(CPU* cpu, unsigned short w) {
-	cpu->sp -= 2;
-	i286_mwr(cpu, cpu->ss, 0, cpu->sp, w & 0xff);
-	i286_mwr(cpu, cpu->ss, 0, cpu->sp + 1, (w >> 8) & 0xff);
-}
-
-unsigned short i286_pop(CPU* cpu) {
-	PAIR(w,h,l) rx;
-	rx.l = i286_mrd(cpu, cpu->ss, 0, cpu->sp);
-	rx.h = i286_mrd(cpu, cpu->ss, 0, cpu->sp + 1);
-	cpu->sp += 2;
-	return rx.w;
 }
 
 // protected mode checks
@@ -1344,6 +1346,7 @@ void i286_6d_cb(CPU* cpu) {
 }
 void i286_op6D(CPU* cpu) {
 	if (cpu->di == 0xffff) {
+		i286_push(cpu, 0);
 		THROW(I286_INT_GP);
 	} else {
 		i286_rep(cpu, i286_6d_cb);
@@ -1367,6 +1370,7 @@ void i286_6f_cb(CPU* cpu) {
 }
 void i286_op6F(CPU* cpu) {
 	if (cpu->si == 0xffff) {
+		i286_push(cpu, 0);
 		THROW(I286_INT_GP);
 	} else {
 		i286_rep(cpu, i286_6f_cb);
@@ -1691,6 +1695,7 @@ void i286_opA0(CPU* cpu) {
 void i286_opA1(CPU* cpu) {
 	cpu->tmpw = i286_rd_immw(cpu);
 	if (cpu->tmpw == 0xffff) {
+		i286_push(cpu, 0);
 		THROW(I286_INT_GP);
 	} else {
 		cpu->al = i286_mrd(cpu, cpu->ds, 1, cpu->tmpw);
@@ -1708,6 +1713,7 @@ void i286_opA2(CPU* cpu) {
 void i286_opA3(CPU* cpu) {
 	cpu->tmpw = i286_rd_immw(cpu);
 	if (cpu->tmpw == 0xffff) {
+		i286_push(cpu, 0);
 		THROW(I286_INT_GP);
 	} else {
 		i286_mwr(cpu, cpu->ds, 1, cpu->tmpw, cpu->al);
@@ -1745,6 +1751,7 @@ void i286_a5_cb(CPU* cpu) {
 }
 void i286_opA5(CPU* cpu) {
 	if ((cpu->si == 0xffff) || (cpu->di == 0xffff)) {
+		i286_push(cpu, 0);
 		THROW(I286_INT_GP);
 	} else {
 		i286_rep(cpu, i286_a5_cb);
@@ -1800,6 +1807,7 @@ void i286_a7_cb(CPU* cpu) {
 }
 void i286_opA7(CPU* cpu) {
 	if ((cpu->si == 0xffff) || (cpu->di == 0xffff)) {
+		i286_push(cpu, 0);
 		THROW(I286_INT_GP);
 	} else {
 		i286_rep_fz(cpu, i286_a7_cb);
@@ -1833,6 +1841,7 @@ void i286_ab_cb(CPU* cpu) {
 }
 void i286_opAB(CPU* cpu) {
 	if (cpu->di == 0xffff) {
+		i286_push(cpu, 0);
 		THROW(I286_INT_GP);
 	} else {
 		i286_rep(cpu, i286_ab_cb);
@@ -1848,6 +1857,7 @@ void i286_opAC(CPU* cpu) {
 // ad: lodsw [*ds:si]->ax, adv si
 void i286_opAD(CPU* cpu) {
 	if (cpu->si == 0xffff) {
+		i286_push(cpu, 0);
 		THROW(I286_INT_GP);
 	} else {
 		cpu->al = i286_mrd(cpu, cpu->ds, 1, cpu->si);
@@ -1875,6 +1885,7 @@ void i286_af_cb(CPU* cpu) {
 }
 void i286_opAF(CPU* cpu) {
 	if (cpu->di == 0xffff) {
+		i286_push(cpu, 0);
 		THROW(I286_INT_GP);
 	} else {
 		i286_rep_fz(cpu, i286_af_cb);
@@ -2621,7 +2632,7 @@ void i286_opFA(CPU* cpu) {
 	if (i286_check_iopl(cpu)) {
 		cpu->f &= ~I286_FI;
 	} else {
-		cpu->errcod = 0;
+		i286_push(cpu, 0);
 		THROW(I286_INT_GP);
 	}
 }
@@ -2631,7 +2642,7 @@ void i286_opFB(CPU* cpu) {
 	if (i286_check_iopl(cpu)) {
 		cpu->f |= I286_FI;
 	} else {
-		cpu->errcod = 0;
+		i286_push(cpu, 0);
 		THROW(I286_INT_GP);
 	}
 }

@@ -8,6 +8,7 @@
 // b0		accessed. set this flag if there is using of segment
 
 extern xSegPtr i286_cash_seg(CPU*, unsigned short);
+extern void i286_push(CPU*, unsigned short);
 
 // unrecognized opcode
 void i286_0Fxx(CPU* cpu) {
@@ -113,6 +114,7 @@ void i286_0F00(CPU* cpu) {
 void i286_0F010(CPU* cpu) {
 	cpu->tmpdr = i286_get_dsc(cpu, cpu->tmpw & ~4);
 	if (cpu->tmpdr.idx < 0) {
+		i286_push(cpu, cpu->tmpw >> 2);
 		THROW(I286_INT_TS);
 	} else {
 		i286_mwr(cpu, cpu->ea.seg, 1, cpu->ea.adr++, cpu->tmpdr.limit & 0xff);
@@ -127,6 +129,7 @@ void i286_0F010(CPU* cpu) {
 void i286_0F011(CPU* cpu) {
 	cpu->tmpdr = i286_get_dsc(cpu, cpu->tmpw | 0xff0000);
 	if (cpu->tmpdr.idx < 0) {
+		i286_push(cpu, cpu->tmpw >> 2);
 		THROW(I286_INT_TS);
 	} else {
 		i286_mwr(cpu, cpu->ea.seg, 1, cpu->ea.adr++, cpu->tmpdr.limit & 0xff);
