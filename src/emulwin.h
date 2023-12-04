@@ -32,7 +32,7 @@ typedef struct {
 // QOpenGLWidget since Qt5.4
 
 #define BLOCKGL 0
-#define USELEGACYGL 0
+#define USELEGACYGL 1
 #define ISLEGACYGL ((QT_VERSION < QT_VERSION_CHECK(5,4,0)) || (USELEGACYGL && (QT_VERSION < QT_VERSION_CHECK(6,0,0))))
 
 #ifdef USEOPENGL

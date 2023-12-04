@@ -748,7 +748,7 @@ void xDumpWidget::refill() {
 	if (mode == XVIEW_CPU) {
 		psize = (comp->hw->id == HW_IBM_PC) ? MEM_4M : MEM_64K;
 	} else {
-		psize = ui.cbDumpPageSize->currentData().toInt(); // getRFIData(ui.cbDumpPageSize);
+		psize = getRFIData(ui.cbDumpPageSize);
 	}
 	ui.widDumpPage->setDisabled(mode == XVIEW_CPU);
 	ui.dumpTable->setMode(mode, page, pbase, psize);

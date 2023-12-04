@@ -669,18 +669,6 @@ void MainWin::paintEvent(QPaintEvent*) {
 #endif
 }
 
-static QImage icons[] = {
-	QImage(":/images/scanled.png"),
-	QImage(":/images/joystick.png"),
-	QImage(":/images/mouse.png"),
-	QImage(":/images/tapeRed.png"),
-	QImage(":/images/tapeYellow.png"),
-	QImage(":/images/diskGreen.png"),
-	QImage(":/images/diskRed.png"),
-	QImage(":/images/wav.png")
-};
-enum {ico_keyboard, ico_joystick, ico_mouse, ico_tapred, ico_tapyellow, ico_diskgreen, ico_diskred, ico_wav};
-
 void MainWin::drawIcons(QPainter& pnt) {
 	Computer* comp = conf.prof.cur->zx;
 // screenshot
@@ -696,7 +684,7 @@ void MainWin::drawIcons(QPainter& pnt) {
 // put leds
 // keyboard
 	if (conf.led.keys && (comp->hw->grp == HWG_ZX)) {
-		pnt.drawImage(3, 10, icons[ico_keyboard]);
+		pnt.drawImage(3, 10, QImage(":/images/scanled.png"));
 		if (~comp->keyb->port & 0x01) pnt.fillRect(3 + 3, 10 + 17, 8, 2, Qt::gray);
 		if (~comp->keyb->port & 0x02) pnt.fillRect(3 + 3, 10 + 14, 8, 2, Qt::gray);
 		if (~comp->keyb->port & 0x04) pnt.fillRect(3 + 3, 10 + 11, 8, 2, Qt::gray);
@@ -709,31 +697,31 @@ void MainWin::drawIcons(QPainter& pnt) {
 	comp->keyb->port = 0xff;
 // joystick
 	if (comp->joy->used && conf.led.joy) {
-		pnt.drawImage(3, 30, icons[ico_joystick]);
+		pnt.drawImage(3, 30, QImage(":/images/joystick.png"));
 		comp->joy->used = 0;
 	}
 // mouse
 	if (comp->mouse->used && conf.led.mouse) {
-		pnt.drawImage(3, 50, icons[ico_mouse]);
+		pnt.drawImage(3, 50, QImage(":/images/mouse.png"));
 		comp->mouse->used = 0;
 	}
 // tape
 	if (comp->tape->on && conf.led.tape) {
-		pnt.drawImage(3, 70, icons[comp->tape->rec ? ico_tapred : ico_tapyellow]);
+		pnt.drawImage(3, 70, comp->tape->rec ? QImage(":/images/tapeRed.png") : QImage(":/images/tapeYellow.png"));
 	}
 // disc
 	if (conf.led.disk) {
 		if (comp->dif->fdc->flp->rd) {
 			comp->dif->fdc->flp->rd = 0;
-			pnt.drawImage(3, 90, icons[ico_diskgreen]);
+			pnt.drawImage(3, 90, QImage(":/images/diskGreen.png"));
 		} else if (comp->dif->fdc->flp->wr) {
 			comp->dif->fdc->flp->wr = 0;
-			pnt.drawImage(3, 90, icons[ico_diskred]);
+			pnt.drawImage(3, 90, QImage(":/images/diskRed.png"));
 		}
 	}
 // waveout
 	if (conf.snd.wavout) {
-		pnt.drawImage(3, 110, icons[ico_wav]);
+		pnt.drawImage(3, 110, QImage(":/images/wav.png"));
 	}
 // put fps
 	if (conf.led.fps) {

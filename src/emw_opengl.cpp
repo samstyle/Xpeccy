@@ -33,7 +33,7 @@ void MainWin::initializeGL() {
 	curtex = 0;
 	shd_support = QGLShader::hasOpenGLShaders(QGLShader::Vertex) && QGLShader::hasOpenGLShaders(QGLShader::Fragment);
 	qDebug() << "vtx_shd";
-	vtx_shd = new QGLShader(QGLShader::Vertex, cont);		// ERROR: create QOpenGLFunctions with non-current context
+	vtx_shd = new QGLShader(QGLShader::Vertex, cont);
 	qDebug() << "frg_shd";
 	frg_shd = new QGLShader(QGLShader::Fragment, cont);
 #endif

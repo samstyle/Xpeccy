@@ -98,9 +98,7 @@ int main(int ac,char** av) {
 	xApp app(ac,av,true);
 
 #ifdef _WIN32
-	QStringList paths = QCoreApplication::libraryPaths();
-	paths.append(".");
-	QCoreApplication::setLibraryPaths(paths);
+	app.addLibraryPath(".\\");
 #endif
 	sndInit();
 	conf_init(av[0], NULL);
