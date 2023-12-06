@@ -22,6 +22,18 @@
 // for windows
 #define STICKY_KEY 1
 
+enum {
+	led_kbd = 0,
+	led_joy,
+	led_mouse,
+	led_tap_red,
+	led_tap_yellow,
+	led_disk_green,
+	led_disk_red,
+	led_wav,
+	leds_count
+};
+
 typedef struct {
 	int showTime;	// in 1/50 sec
 	int x;
@@ -32,7 +44,7 @@ typedef struct {
 // QOpenGLWidget since Qt5.4
 
 #define BLOCKGL 0
-#define USELEGACYGL 1
+#define USELEGACYGL 0
 #define ISLEGACYGL ((QT_VERSION < QT_VERSION_CHECK(5,4,0)) || (USELEGACYGL && (QT_VERSION < QT_VERSION_CHECK(6,0,0))))
 
 #ifdef USEOPENGL
@@ -119,18 +131,21 @@ typedef struct {
 	private:
 		unsigned grabMice:1;
 		unsigned block:1;
-//		int relskip;
 
 		QIcon icon;
 		int timid;
 		int secid;
 		int cmsid;
+		QImage leds[leds_count];
 
 		QTimer frm_tmr;
 		int frm_ns;
 
 		int scrCounter;
 		int scrInterval;
+
+		QImage alphabet;
+		void drawText(QPainter*, int, int, const char*);
 
 		#ifdef USENETWORK
 		QTcpServer srv;

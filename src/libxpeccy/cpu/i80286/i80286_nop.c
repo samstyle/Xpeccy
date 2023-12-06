@@ -49,15 +49,17 @@ int i286_check_segment_wr(CPU* cpu, xSegPtr* seg) {
 
 // TODO: check segment limit && permissions for protected mode
 unsigned char i286_mrd(CPU* cpu, xSegPtr seg, int rpl, unsigned short adr) {
-	if (rpl && (cpu->seg.idx >= 0)) seg = cpu->seg;
-	cpu->t++;
-	return cpu->mrd(seg.base + adr, 0, cpu->xptr) & 0xff;
+//	if (rpl && (cpu->seg.idx >= 0)) seg = cpu->seg;
+//	cpu->t++;
+//	return cpu->mrd(seg.base + adr, 0, cpu->xptr) & 0xff;
+	return cpu->x86mrd(cpu, seg, rpl, adr);
 }
 
 void i286_mwr(CPU* cpu, xSegPtr seg, int rpl, unsigned short adr, int val) {
-	if (rpl && (cpu->seg.idx >= 0)) seg = cpu->seg;
-	cpu->t++;
-	cpu->mwr(seg.base + adr, val, cpu->xptr);
+//	if (rpl && (cpu->seg.idx >= 0)) seg = cpu->seg;
+//	cpu->t++;
+//	cpu->mwr(seg.base + adr, val, cpu->xptr);
+	cpu->x86mwr(cpu, seg, rpl, adr, val);
 }
 
 // real mode
@@ -80,7 +82,7 @@ void i286_mwr_real(CPU* cpu, xSegPtr seg, int rpl, unsigned short adr, int val) 
 	cpu->mwr(seg.base + adr, val, cpu->xptr);
 }
 
-// stack
+// stack (TODO: real/prt mode stack rd/wr procedures)
 
 void i286_push(CPU* cpu, unsigned short w) {
 	cpu->sp -= 2;
@@ -100,17 +102,17 @@ unsigned short i286_pop(CPU* cpu) {
 
 unsigned char i286_fetch_prt(CPU* cpu) {
 	unsigned char res = 0xff;
-	if (i286_check_segment_exec(cpu, &cpu->cs)) {
+//	if (i286_check_segment_exec(cpu, &cpu->cs)) {		// check it when CS changed
 		if (i286_check_segment_limit(cpu, &cpu->cs, cpu->pc)) {
 			res = cpu->mrd(cpu->cs.base + cpu->pc, 0, cpu->xptr) & 0xff;
 			cpu->pc++;
 		} else {
 			THROW(I286_INT_SL);
 		}
-	} else {
-		i286_push(cpu, cpu->cs.idx & 0xffff);
-		THROW(I286_INT_GP);
-	}
+//	} else {
+//		i286_push(cpu, cpu->cs.idx & 0xffff);
+//		THROW(I286_INT_GP);
+//	}
 	return res;
 }
 
@@ -176,9 +178,10 @@ void x86_set_mode(CPU* cpu, int m) {
 
 // imm: byte from ip
 unsigned char i286_rd_imm(CPU* cpu) {
-	unsigned char res = i286_mrd(cpu, cpu->cs, 0, cpu->pc);
-	cpu->pc++;
-	return res;
+//	unsigned char res = i286_mrd(cpu, cpu->cs, 0, cpu->pc);
+//	cpu->pc++;
+//	return res;
+	return cpu->x86fetch(cpu);
 }
 
 // immw:word from ip

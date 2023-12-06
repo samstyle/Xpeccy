@@ -43,10 +43,6 @@
 #include <winuser.h>
 #endif
 
-// main
-
-static QImage alphabet;
-
 // mainwin
 
 void MainWin::updateHead() {
@@ -175,6 +171,15 @@ MainWin::MainWin() {
 	shotFormat["jpg"] = SCR_JPG;
 	shotFormat["scr"] = SCR_SCR;
 	shotFormat["hobeta"] = SCR_HOB;
+
+	leds[led_kbd].load(":/images/scanled.png");
+	leds[led_joy].load(":/images/joystick.png");
+	leds[led_mouse].load(":/images/mouse.png");
+	leds[led_tap_red].load(":/images/tapeRed.png");
+	leds[led_tap_yellow].load(":/images/tapeYellow.png");
+	leds[led_disk_green].load(":/images/diskGreen.png");
+	leds[led_disk_green].load(":/images/diskRed.png");
+	leds[led_wav].load(":/images/wav.png");
 
 	if (SDL_NumJoysticks() > 0) {
 		conf.joy.joy = SDL_JoystickOpen(0);
@@ -613,7 +618,7 @@ void MainWin::d_frame() {
 
 static char numbuf[32];
 
-void drawText(QPainter* pnt, int x, int y, const char* buf) {
+void MainWin::drawText(QPainter* pnt, int x, int y, const char* buf) {
 	size_t len = strlen(buf);
 	for (size_t i = 0; i < len; i++) {
 		pnt->drawImage(x, y, alphabet, 0, (buf[i] - 32) * 12, 12, 12);
@@ -684,7 +689,7 @@ void MainWin::drawIcons(QPainter& pnt) {
 // put leds
 // keyboard
 	if (conf.led.keys && (comp->hw->grp == HWG_ZX)) {
-		pnt.drawImage(3, 10, QImage(":/images/scanled.png"));
+		pnt.drawImage(3, 10, leds[led_kbd]);
 		if (~comp->keyb->port & 0x01) pnt.fillRect(3 + 3, 10 + 17, 8, 2, Qt::gray);
 		if (~comp->keyb->port & 0x02) pnt.fillRect(3 + 3, 10 + 14, 8, 2, Qt::gray);
 		if (~comp->keyb->port & 0x04) pnt.fillRect(3 + 3, 10 + 11, 8, 2, Qt::gray);
@@ -697,31 +702,31 @@ void MainWin::drawIcons(QPainter& pnt) {
 	comp->keyb->port = 0xff;
 // joystick
 	if (comp->joy->used && conf.led.joy) {
-		pnt.drawImage(3, 30, QImage(":/images/joystick.png"));
+		pnt.drawImage(3, 30, leds[led_joy]);
 		comp->joy->used = 0;
 	}
 // mouse
 	if (comp->mouse->used && conf.led.mouse) {
-		pnt.drawImage(3, 50, QImage(":/images/mouse.png"));
+		pnt.drawImage(3, 50, leds[led_mouse]);
 		comp->mouse->used = 0;
 	}
 // tape
 	if (comp->tape->on && conf.led.tape) {
-		pnt.drawImage(3, 70, comp->tape->rec ? QImage(":/images/tapeRed.png") : QImage(":/images/tapeYellow.png"));
+		pnt.drawImage(3, 70, comp->tape->rec ? leds[led_tap_red] : leds[led_tap_yellow]);
 	}
 // disc
 	if (conf.led.disk) {
 		if (comp->dif->fdc->flp->rd) {
 			comp->dif->fdc->flp->rd = 0;
-			pnt.drawImage(3, 90, QImage(":/images/diskGreen.png"));
+			pnt.drawImage(3, 90, leds[led_disk_green]);
 		} else if (comp->dif->fdc->flp->wr) {
 			comp->dif->fdc->flp->wr = 0;
-			pnt.drawImage(3, 90, QImage(":/images/diskRed.png"));
+			pnt.drawImage(3, 90, leds[led_disk_red]);
 		}
 	}
 // waveout
 	if (conf.snd.wavout) {
-		pnt.drawImage(3, 110, QImage(":/images/wav.png"));
+		pnt.drawImage(3, 110, leds[led_wav]);
 	}
 // put fps
 	if (conf.led.fps) {
