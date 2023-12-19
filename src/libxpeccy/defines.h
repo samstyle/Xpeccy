@@ -41,6 +41,21 @@ typedef void(*cbirq)(int, void*);
 typedef int(*cbxrd)(int, void*);
 typedef void(*cbxwr)(int, int, void*);
 
+// breakpoint type
+
+enum {
+	BRK_UNKNOWN = 0,
+	BRK_IOPORT,
+	BRK_CPUADR,
+	BRK_MEMCELL,
+	BRK_MEMRAM,
+	BRK_MEMROM,
+	BRK_MEMSLT,
+	BRK_MEMEXT,
+	BRK_IRQ,
+	BRK_HBLANK
+};
+
 // 16/32-bits reg
 
 #ifdef WORDS_BIG_ENDIAN

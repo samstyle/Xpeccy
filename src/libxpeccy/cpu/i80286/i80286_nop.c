@@ -85,12 +85,18 @@ void i286_mwr_real(CPU* cpu, xSegPtr seg, int rpl, unsigned short adr, int val) 
 // stack (TODO: real/prt mode stack rd/wr procedures)
 
 void i286_push(CPU* cpu, unsigned short w) {
+	if ((cpu->msw & I286_FPE) && (cpu->sp < 2)) {
+		THROW(I286_INT_SS);
+	}
 	cpu->sp -= 2;
 	i286_mwr(cpu, cpu->ss, 0, cpu->sp, w & 0xff);
 	i286_mwr(cpu, cpu->ss, 0, cpu->sp + 1, (w >> 8) & 0xff);
 }
 
 unsigned short i286_pop(CPU* cpu) {
+	if ((cpu->msw & I286_FPE) && (cpu->sp + 2 >= cpu->ss.limit)) {
+		THROW(I286_INT_SS);
+	}
 	PAIR(w,h,l) rx;
 	rx.l = i286_mrd(cpu, cpu->ss, 0, cpu->sp);
 	rx.h = i286_mrd(cpu, cpu->ss, 0, cpu->sp + 1);
@@ -2299,6 +2305,7 @@ void i286_opD7(CPU* cpu) {
 }
 
 // 80287 template (dummy)
+// opcodes: D8-DF (11011xxx)(mod)
 
 void i286_fpu(CPU* cpu) {
 	i286_rd_ea(cpu, 1);

@@ -62,6 +62,12 @@ typedef struct {
 } memEntry;
 
 typedef struct {
+	int t;
+	int a;
+	unsigned char* ptr;
+} bpChecker;
+
+typedef struct {
 	unsigned brk:1;			// breakpoint
 	unsigned debug:1;		// dont' do breakpoints
 	unsigned maping:1;		// map memory during execution
@@ -90,6 +96,9 @@ typedef struct {
 	double cpuFrq;
 	double frqMul;
 	unsigned char intVector;
+
+	int brkt;	// breakpoint type (cpu, ram, rom...)
+	int brka;	// breakpoint addr
 
 	char* msg;			// message ptr for displaying outside
 	int resbank;			// rompart active after reset

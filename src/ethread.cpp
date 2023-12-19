@@ -180,9 +180,12 @@ void xThread::run() {
 		if (!conf.emu.pause) {
 			emuCycle(comp);
 			if (comp->brk) {
-				conf.emu.pause |= PR_DEBUG;
 				comp->brk = 0;
-				emit dbgRequest();
+				xBrkPoint* ptr = brk_find(comp->brkt, comp->brka);
+				if (ptr) {
+					conf.emu.pause |= PR_DEBUG;
+					emit dbgRequest();
+				}
 			}
 		}
 #if USEMUTEX

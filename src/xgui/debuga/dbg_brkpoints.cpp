@@ -461,7 +461,7 @@ void xBreakWidget::openBrk() {
 				b0 = true;
 				b1 = true;
 				list = line.split(":", X_KeepEmptyParts);
-				while(list.size() < 4)
+				while(list.size() < 5)
 					list.append(QString());
 				brk.fetch = list.at(3).contains("F") ? 1 : 0;
 				brk.read = list.at(3).contains("R") ? 1 : 0;
@@ -503,6 +503,11 @@ void xBreakWidget::openBrk() {
 				} else {
 					b0 = false;
 				}
+				if (list.at(4) == "SCR") {
+					brk.action = BRK_ACT_SCR;
+				} else {
+					brk.action = BRK_ACT_DBG;
+				}
 				if (b0 && b1) {
 					conf.prof.cur->brkList.push_back(brk);
 				}
@@ -525,7 +530,7 @@ void xBreakWidget::saveBrk() {
 		path.append(".xbrk");
 	xBrkPoint brk;
 	QFile file(path);
-	QString nm,ar1,ar2,flag;
+	QString nm,ar1,ar2,flag,act;
 	if (file.open(QFile::WriteOnly)) {
 		file.write("; Xpeccy deBUGa breakpoints list\n");
 		foreach(brk, conf.prof.cur->brkList) {
@@ -568,13 +573,18 @@ void xBreakWidget::saveBrk() {
 					nm.clear();
 					break;
 			}
+			switch(brk.action) {
+				case BRK_ACT_DBG: act = "DBG"; break;
+				case BRK_ACT_SCR: act = "SCR"; break;
+				default: act.clear(); break;
+			}
 			if (!nm.isEmpty()) {
 				flag.clear();
 				if (brk.fetch) flag.append("F");
 				if (brk.read) flag.append("R");
 				if (brk.write) flag.append("W");
 				if (brk.off) flag.append("0");
-				file.write(QString("%0:%1:%2:%3\n").arg(nm).arg(ar1).arg(ar2).arg(flag).toUtf8());
+				file.write(QString("%0:%1:%2:%3:%4\n").arg(nm).arg(ar1).arg(ar2).arg(flag).arg(act).toUtf8());
 			}
 		}
 		file.close();

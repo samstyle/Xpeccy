@@ -178,7 +178,7 @@ MainWin::MainWin() {
 	leds[led_tap_red].load(":/images/tapeRed.png");
 	leds[led_tap_yellow].load(":/images/tapeYellow.png");
 	leds[led_disk_green].load(":/images/diskGreen.png");
-	leds[led_disk_green].load(":/images/diskRed.png");
+	leds[led_disk_red].load(":/images/diskRed.png");
 	leds[led_wav].load(":/images/wav.png");
 
 	if (SDL_NumJoysticks() > 0) {
@@ -632,7 +632,9 @@ void MainWin::drawText(QPainter* pnt, int x, int y, const char* buf) {
 
 void MainWin::paintEvent(QPaintEvent*) {
 #if defined(USEOPENGL)
+	QPainter pnt(this);
 #if !BLOCKGL
+//	pnt.beginNativePainting();
 	makeCurrent();
 	if (prg.isLinked() && shd_support) {
 		prg.bind();
@@ -661,16 +663,17 @@ void MainWin::paintEvent(QPaintEvent*) {
 	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
 	glFlush();
-	QPainter pnt(this);
+//	pnt.endNativePainting();
+//	QPainter pnt(this);
 	drawIcons(pnt);
-	pnt.end();
+//	pnt.end();
 #endif
 #else
 	Computer* comp = conf.prof.cur->zx;
-	QPainter pnt(this);
+//	QPainter pnt(this);
 	pnt.drawImage(0,0, QImage(comp->debug ? scrimg : bufimg, width(), height(), QImage::Format_RGBA8888));
 	drawIcons(pnt);
-	pnt.end();
+//	pnt.end();
 #endif
 }
 

@@ -35,6 +35,34 @@ xbpIndex brkFind(xBrkPoint brk) {
 	return res;
 }
 
+xBrkPoint* brk_find(int t, int adr) {
+	xBrkPoint* ptr = NULL;
+	if (t == BRK_IRQ) {
+		for (auto it = conf.prof.cur->brkList.begin(); it != conf.prof.cur->brkList.end(); it++) {
+			if (!it->off && (it->type == t)) {
+				ptr = &(*it);
+			}
+		}
+	} else {
+		std::map<int, xBrkPoint*>* map = NULL;
+		switch(t) {
+			case BRK_CPUADR: map = &conf.prof.cur->brkMapCpu; break;
+			case BRK_MEMRAM: map = &conf.prof.cur->brkMapRam; break;
+			case BRK_MEMROM: map = &conf.prof.cur->brkMapRom; break;
+			case BRK_MEMSLT: map = &conf.prof.cur->brkMapSlt; break;
+			case BRK_IOPORT: map = &conf.prof.cur->brkMapIO; break;
+		}
+		if (map) {
+			std::map<int, xBrkPoint*>::iterator it;
+			it = map->find(adr);
+			if (it != map->end()) {
+				ptr = map->at(adr);
+			}
+		}
+	}
+	return ptr;
+}
+
 // create breakpoint
 // type		BRK_MEMCELL	memory cell
 //		BRK_CPUADR	cpu address
@@ -93,61 +121,79 @@ xBrkPoint brkCreate(int type, int flag, int adr, int mask) {
 	brk.write = (flag & MEM_BRK_WR) ? 1 : 0;
 	brk.temp = 0;
 	brk.mask = mask;
+	brk.action = BRK_ACT_DBG;
 	return brk;
 }
 
-void brkInstall(xBrkPoint brk, int del) {
-	unsigned char* ptr = NULL;
-	Computer* comp = conf.prof.cur->zx;
-	unsigned char msk = 0;
-	int cnt = 1;
-	if (!brk.off) {
-		if (brk.temp) msk |= MEM_BRK_TFETCH;
-		if (brk.fetch) msk |= MEM_BRK_FETCH;
-		if (brk.read) msk |= MEM_BRK_RD;
-		if (brk.write) msk |= MEM_BRK_WR;
-	}
-	switch(brk.type) {
-		case BRK_IOPORT:
-			for (int adr = 0; adr < 0x10000; adr++) {
-				if ((adr & brk.mask) == (brk.adr & brk.mask)) {
-					comp->brkIOMap[adr] = 0;
-					if (!brk.off) {
-						if (brk.read) comp->brkIOMap[adr] |= MEM_BRK_RD;
-						if (brk.write) comp->brkIOMap[adr] |= MEM_BRK_WR;
+void brkInstall(xBrkPoint* brk, int del) {
+	if (del) {
+		brkDelete(*brk);
+	} else {
+		unsigned char* ptr = NULL;
+		Computer* comp = conf.prof.cur->zx;
+		unsigned char msk = 0;
+		std::map<int, xBrkPoint*>* map = NULL;
+		int cnt = 1;
+		int adr = -1;
+		if (!brk->off) {
+			if (brk->temp) msk |= MEM_BRK_TFETCH;
+			if (brk->fetch) msk |= MEM_BRK_FETCH;
+			if (brk->read) msk |= MEM_BRK_RD;
+			if (brk->write) msk |= MEM_BRK_WR;
+		}
+		switch(brk->type) {
+			case BRK_IOPORT:
+				for (adr = 0; adr < 0x10000; adr++) {
+					if ((adr & brk->mask) == (brk->adr & brk->mask)) {
+						comp->brkIOMap[adr] = 0;
+						if (!brk->off) {
+							if (brk->read) comp->brkIOMap[adr] |= MEM_BRK_RD;
+							if (brk->write) comp->brkIOMap[adr] |= MEM_BRK_WR;
+						}
+					}
+					if (comp->brkIOMap[adr]) {
+						conf.prof.cur->brkMapIO[adr] = brk;
 					}
 				}
+				break;
+			case BRK_CPUADR:
+				map = &conf.prof.cur->brkMapCpu;
+				ptr = comp->brkAdrMap + (brk->adr & 0xffff);
+				cnt = brk->eadr - brk->adr + 1;
+				break;
+			case BRK_MEMRAM:
+				map = &conf.prof.cur->brkMapRam;
+				ptr = comp->brkRamMap + (brk->adr & 0x3fffff);
+				cnt = brk->eadr - brk->adr + 1;
+				break;
+			case BRK_MEMROM:
+				map = &conf.prof.cur->brkMapRom;
+				ptr = comp->brkRomMap + (brk->adr & 0x7ffff);
+				cnt = brk->eadr - brk->adr + 1;
+				break;
+			case BRK_MEMSLT:
+				map = &conf.prof.cur->brkMapSlt;
+				if (!comp->slot->brkMap) break;
+				ptr = comp->slot->brkMap + (brk->adr & comp->slot->memMask);
+				cnt = brk->eadr - brk->adr + 1;
+				break;
+			case BRK_IRQ:
+				comp->brkirq = !brk->off;
+				break;
+		}
+		if (ptr) {
+			adr = brk->adr;
+			while (cnt > 0) {
+				*ptr &= 0xf0;
+				*ptr |= (msk & 0x0f);
+				ptr++;
+				if (map) (*map)[adr++] = brk;
+				cnt--;
 			}
-			break;
-		case BRK_CPUADR:
-			ptr = comp->brkAdrMap + (brk.adr & 0xffff);
-			cnt = brk.eadr - brk.adr + 1;
-			break;
-		case BRK_MEMRAM:
-			ptr = comp->brkRamMap + (brk.adr & 0x3fffff);
-			cnt = brk.eadr - brk.adr + 1;
-			break;
-		case BRK_MEMROM:
-			ptr = comp->brkRomMap + (brk.adr & 0x7ffff);
-			cnt = brk.eadr - brk.adr + 1;
-			break;
-		case BRK_MEMSLT:
-			if (!comp->slot->brkMap) break;
-			ptr = comp->slot->brkMap + (brk.adr & comp->slot->memMask);
-			break;
-		case BRK_IRQ:
-			comp->brkirq = !brk.off;
-			break;
+		}
 	}
-	if (!ptr) return;
-	while (cnt > 0) {
-		*ptr &= 0xf0;
-		*ptr |= (msk & 0x0f);
-		ptr++;
-		cnt--;
-	}
-	if (!del || brk.fetch || brk.read || brk.write || brk.temp) return;
-	brkDelete(brk);
+//	if (!del || brk.fetch || brk.read || brk.write || brk.temp) return;
+//	brkDelete(brk);
 }
 
 bool brk_compare(xBrkPoint& bp1, xBrkPoint& bp2) {return (bp1.adr < bp2.adr);}
@@ -222,15 +268,24 @@ void clearMap(unsigned char* ptr, int siz) {
 }
 
 void brkInstallAll() {
-	Computer* comp = conf.prof.cur->zx;
+	xProfile* prf = conf.prof.cur;
+	Computer* comp = prf->zx;
 	memset(comp->brkAdrMap, 0x00, MEM_64K);
 	memset(comp->brkIOMap, 0x00, MEM_64K);
 	clearMap(comp->brkRamMap, MEM_4M);
 	clearMap(comp->brkRomMap, MEM_512K);
 	if (comp->slot->brkMap)
 		clearMap(comp->slot->brkMap, comp->slot->memMask + 1);
+	prf->brkMapCpu.clear();
+	prf->brkMapRam.clear();
+	prf->brkMapRom.clear();
+	prf->brkMapSlt.clear();
+	prf->brkMapIO.clear();
 	comp->brkirq = 0;
-	foreach(xBrkPoint brk, conf.prof.cur->brkList) {
-		brkInstall(brk, 0);
+	for(auto it = prf->brkList.begin(); it != prf->brkList.end(); it++) {
+		brkInstall(&(*it), 0);
 	}
+//	foreach(xBrkPoint brk, conf.prof.cur->brkList) {
+//		brkInstall(brk, 0);
+//	}
 }

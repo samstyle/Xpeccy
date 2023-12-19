@@ -13,12 +13,54 @@ int res4 = 0;		// save last T synced with video (last is res2-res4
 #define RUNTIME_IO 1
 #endif
 
+unsigned char* comp_get_memcell_flag_ptr(Computer* comp, int adr) {
+	unsigned char* res = NULL;
+	xAdr xadr = mem_get_xadr(comp->mem, adr);
+	switch (xadr.type) {
+		case MEM_RAM: res = comp->brkRamMap + (adr & (MEM_4M - 1)); break;
+		case MEM_ROM: res = comp->brkRomMap + (adr & (MEM_512K - 1)); break;
+		case MEM_SLOT: if (comp->slot->brkMap) {res = comp->slot->brkMap + (adr & comp->slot->memMask);} break;
+	}
+	return res;
+}
+
+bpChecker comp_check_bp(Computer* comp, int adr, int mask) {
+	bpChecker ch;
+	ch.t = -1;
+	ch.ptr = NULL;
+	if (comp->mem->busmask < 0x10000) {
+		ch.ptr = comp->brkAdrMap + (adr & comp->mem->busmask);
+		if (*ch.ptr & mask) {
+			ch.t = BRK_CPUADR;
+			ch.a = adr;
+		}
+	}
+	if (ch.t < 0) {
+		xAdr xadr = mem_get_xadr(comp->mem, adr);
+		switch (xadr.type) {
+			case MEM_RAM: ch.ptr = comp->brkRamMap + (adr & (MEM_4M - 1)); ch.t = BRK_MEMRAM; break;
+			case MEM_ROM: ch.ptr = comp->brkRomMap + (adr & (MEM_512K - 1)); ch.t = BRK_MEMROM; break;
+			case MEM_SLOT: if (comp->slot->brkMap) {ch.ptr = comp->slot->brkMap + (adr & comp->slot->memMask); ch.t = BRK_MEMSLT;} break;
+		}
+		if (ch.ptr) {
+			if (*ch.ptr & mask) {
+				ch.a = xadr.abs;
+			} else {
+				ch.t = -1;
+			}
+		}
+	}
+	return ch;
+}
+
 // video callbacks
 
 int vid_mrd_cb(int adr, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 	return comp->mem->ramData[adr & comp->mem->ramMask];
 }
+
+// mrw,irw
 
 int memrd(int adr, int m1, void* ptr) {
 	Computer* comp = (Computer*)ptr;
@@ -27,8 +69,8 @@ int memrd(int adr, int m1, void* ptr) {
 		comp->rzx.frm.fetches--;
 	}
 #endif
-	unsigned char* fptr;
-	fptr = getBrkPtr(comp, adr);
+	unsigned char* fptr = comp_get_memcell_flag_ptr(comp, adr);
+//	fptr = getBrkPtr(comp, adr);
 	unsigned char flag = *fptr;
 	if (comp->maping) {
 		if ((comp->cpu->pc-1+comp->cpu->cs.base) == adr) {
@@ -40,17 +82,31 @@ int memrd(int adr, int m1, void* ptr) {
 			*fptr = flag;
 		}
 	}
-	if (comp->mem->busmask < 0x10000)
-		flag |= comp->brkAdrMap[adr & 0xffff];
-	if (flag & MEM_BRK_RD)
+	bpChecker ch = comp_check_bp(comp, adr, MEM_BRK_RD);
+	if (ch.t >= 0) {
 		comp->brk = 1;
+		comp->brkt = ch.t;
+		comp->brka = ch.a;
+	}
+/*
+	if (flag & MEM_BRK_RD) {
+		comp->brk = 1;
+	} else if (comp->mem->busmask < 0x10000) {
+		flag |= comp->brkAdrMap[adr & 0xffff];
+		if (flag & MEM_BRK_RD) {
+			comp->brk = 1;
+			comp->brkt = BRK_CPUADR;
+			comp->brka = adr;
+		}
+	}
+*/
 	return comp->hw->mrd(comp,adr,m1);
 }
 
 void memwr(int adr, int val, void* ptr) {
 	Computer* comp = (Computer*)ptr;
-	unsigned char* fptr;
-	fptr = getBrkPtr(comp, adr);
+	unsigned char* fptr = comp_get_memcell_flag_ptr(comp, adr);
+	// fptr = getBrkPtr(comp, adr);
 	unsigned char flag = *fptr;
 	if (comp->maping) {
 		if (!(flag & 0xf0)) {
@@ -58,11 +114,24 @@ void memwr(int adr, int val, void* ptr) {
 			*fptr = flag;
 		}
 	}
-	if (comp->mem->busmask < 0x10000)
-		flag |= comp->brkAdrMap[adr & 0xffff];
+	bpChecker ch = comp_check_bp(comp, adr, MEM_BRK_WR);
+	if (ch.t >= 0) {
+		comp->brk = 1;
+		comp->brkt = ch.t;
+		comp->brka = ch.a;
+	}
+/*
 	if (flag & MEM_BRK_WR) {
 		comp->brk = 1;
+	} if (comp->mem->busmask < 0x10000) {
+		flag |= comp->brkAdrMap[adr & 0xffff];
+		if (flag & MEM_BRK_WR) {
+			comp->brk = 1;
+			comp->brkt = BRK_CPUADR;
+			comp->brka = adr;
+		}
 	}
+*/
 	comp->hw->mwr(comp,adr,val);
 }
 
@@ -166,8 +235,11 @@ int iord(int port, void* ptr) {
 #endif
 	comp->bdiz = (comp->dos && (comp->dif->type == DIF_BDI)) ? 1 : 0;
 // brk
-	if (comp->brkIOMap[port] & MEM_BRK_RD)
+	if (comp->brkIOMap[port] & MEM_BRK_RD) {
 		comp->brk = 1;
+		comp->brkt = BRK_IOPORT;
+		comp->brka = port;
+	}
 
 	return comp->hw->in ? comp->hw->in(comp, port) : 0xff;
 }
@@ -203,8 +275,11 @@ void iowr(int port, int val, void* ptr) {
 	comp->pval = val;
 #endif
 // brk
-	if (comp->brkIOMap[port] & MEM_BRK_WR)
+	if (comp->brkIOMap[port] & MEM_BRK_WR) {
 		comp->brk = 1;
+		comp->brkt = BRK_IOPORT;
+		comp->brka = port;
+	}
 }
 
 int intrq(void* ptr) {
@@ -213,12 +288,16 @@ int intrq(void* ptr) {
 
 void comp_irq(int t, void* ptr) {
 	Computer* comp = (Computer*)ptr;
-	if (t == IRQ_BRK) comp->brk = 1;
+	if (t == IRQ_BRK) {
+		comp->brk = 1;
+		comp->brkt = BRK_IRQ;
+	}
 	if (comp->hw->irq) comp->hw->irq(comp, t);
 }
 
 // new (for future use)
 
+/*
 int comp_rom_rd(Computer* comp, int adr) {
 	adr &= comp->mem->romMask;
 	if (comp->brkRomMap[adr] & MEM_BRK_RD)
@@ -262,6 +341,7 @@ void comp_slt_wr(Computer* comp, int adr, int val) {
 		comp->brk = 1;
 	comp->slot->data[adr] = val & 0xff;
 }
+*/
 
 // rzx
 
@@ -470,6 +550,17 @@ int compExec(Computer* comp) {
 	comp->vid->time = 0;
 // breakpoints
 	if (!comp->debug) {
+		bpChecker ch = comp_check_bp(comp, comp->cpu->pc + comp->cpu->cs.base, MEM_BRK_FETCH | MEM_BRK_TFETCH);
+		if (ch.t >= 0) {
+			comp->brk = 1;
+			comp->brkt = ch.t;
+			comp->brka = ch.a;
+			if (*ch.ptr & MEM_BRK_TFETCH) {
+				*ch.ptr &= ~MEM_BRK_TFETCH;
+			}
+			return 0;
+		}
+/*
 		unsigned char *ptr = getBrkPtr(comp, comp->cpu->pc + comp->cpu->cs.base);
 		unsigned char brk = getBrk(comp, comp->cpu->pc + comp->cpu->cs.base);
 		if (brk & (MEM_BRK_FETCH | MEM_BRK_TFETCH)) {
@@ -479,8 +570,10 @@ int compExec(Computer* comp) {
 			}
 			return 0;
 		}
+*/
 		if (comp->cpu->intrq && comp->brkirq) {
 			comp->brk = 1;
+			comp->brkt = BRK_IRQ;
 			return 0;
 		}
 	}
@@ -563,11 +656,6 @@ int compExec(Computer* comp) {
 		comp->vid->newFrame = 0;
 		comp->frmStrobe = 1;
 	}
-// breaks
-	if (comp->cpu->brk) {
-		comp->cpu->brk = 0;
-		comp->brk = 1;
-	}
 // return ns eated @ this step
 	return nsTime;
 }
@@ -623,6 +711,18 @@ unsigned char* getBrkPtr(Computer* comp, int madr) {
 	if (!ptr) {
 		dumBrk = 0;
 		ptr = &dumBrk;
+	/*
+	} else {
+		if (!comp->brk && (*ptr & 0x0f)) {
+			comp->brka = xadr.abs;
+			switch (xadr.type) {
+				case MEM_RAM: comp->brkt = BRK_MEMRAM; break;
+				case MEM_ROM: comp->brkt = BRK_MEMROM; break;
+				case MEM_SLOT: comp->brkt = BRK_MEMSLT; break;
+				default: comp->brkt = BRK_MEMEXT; break;
+			}
+		}
+	*/
 	}
 	return ptr;
 }
@@ -636,6 +736,8 @@ void setBrk(Computer* comp, int adr, unsigned char val) {
 unsigned char getBrk(Computer* comp, int adr) {
 	unsigned char* ptr = getBrkPtr(comp, adr);
 	unsigned char res = ptr ? *ptr : 0x00;
-	res |= (comp->brkAdrMap[adr & 0xffff] & 0x0f);
+	if (comp->mem->busmask < 0x10000) {
+		res |= (comp->brkAdrMap[adr & comp->mem->busmask] & 0x0f);
+	}
 	return res;
 }

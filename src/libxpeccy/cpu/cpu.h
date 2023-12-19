@@ -140,7 +140,7 @@ struct CPU {
 	unsigned halt:1;		// cpu halted, undo on interrput
 	unsigned resPV:1;		// Z80: reset PV flag on INT
 	unsigned noint:1;		// Z80: don't handle INT after EI
-	unsigned wait:1;		// Z80: WAIT signal
+	unsigned wait:1;		// ALL: WAIT signal (dummy 1T)
 	unsigned ack:1;			// Z80: acknowledge INT after execution (prevent last-1T INT)
 	unsigned blk:1;			// Z80: 1 during ldxr/cpxr
 	unsigned blkio:1;		// Z80: 1 during inxr/otxr
@@ -151,7 +151,6 @@ struct CPU {
 	unsigned dihalt:1;		// LR35902: HALT when DI: repeat next opcode
 	unsigned sta:1;			// MOS6502: don't add 1T on (ABSX,ABSY,INDY)
 	unsigned nod:2;			// MOS6502: ignore flag D in ADC/SBC; PDP11: write flags
-	unsigned brk:1;			// to debugger
 
 	int type;			// cpu type id
 

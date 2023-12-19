@@ -138,16 +138,8 @@ void clear_comments();
 #define DELBREAKS 0		// delete breakpoint on FRW=000
 
 enum {
-	BRK_UNKNOWN = 0,
-	BRK_IOPORT,
-	BRK_CPUADR,
-	BRK_MEMCELL,
-	BRK_MEMRAM,
-	BRK_MEMROM,
-	BRK_MEMSLT,
-	BRK_MEMEXT,
-	BRK_IRQ,
-	BRK_HBLANK
+	BRK_ACT_DBG = 1,
+	BRK_ACT_SCR
 };
 
 typedef struct {
@@ -160,15 +152,17 @@ typedef struct {
 	int adr;	// (start) adr (mem)
 	int eadr;	// end adr
 	int mask;	// io: if (port & mask == adr & mask)
+	int action;	// what to do
 } xBrkPoint;
 
 void brkSet(int, int, int, int);
 void brkXor(int, int, int, int, int);
 void brkAdd(xBrkPoint);
-void brkInstall(xBrkPoint, int);
+void brkInstall(xBrkPoint*, int);
 void brkDelete(xBrkPoint);
 void brkInstallAll();
 void brk_clear_tmp(Computer*);
+xBrkPoint* brk_find(int, int);
 
 // profiles
 
@@ -181,7 +175,14 @@ typedef struct {
 	std::string jmapName;
 	std::string kmapName;
 	std::string lastDir;
+
 	std::vector<xBrkPoint> brkList;
+	std::map<int, xBrkPoint*> brkMapCpu;
+	std::map<int, xBrkPoint*> brkMapRam;
+	std::map<int, xBrkPoint*> brkMapRom;
+	std::map<int, xBrkPoint*> brkMapSlt;
+	std::map<int, xBrkPoint*> brkMapIO;
+
 	Computer* zx;
 	struct {
 		QMap<int, QString> ram;
