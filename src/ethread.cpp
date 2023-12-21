@@ -1,6 +1,7 @@
 // emulation thread (non-GUI)
 
 #include <QWaitCondition>
+#include <QTime>
 
 #include "ethread.h"
 #include "xcore/xcore.h"
@@ -104,7 +105,7 @@ void xThread::emuCycle(Computer* comp) {
 		if (conf.emu.pause) {
 			sndNs += 1000;
 		} else {
-			tm = compExec(comp);
+			tm = compExec(comp);			// TODO: it exits when fetch-brk is occured, pc doesn't changed
 			sndNs += tm;
 			wavNs += tm;
 			// tape trap
@@ -153,6 +154,31 @@ void xThread::emuCycle(Computer* comp) {
 			}
 		}
 #endif
+		if (comp->brk) {
+			xBrkPoint* ptr = brk_find(comp->brkt, comp->brka);
+			if (ptr) {
+				QString fnams;
+				QFile file;
+				switch (ptr->action) {
+					case BRK_ACT_COUNT: ptr->count++; comp->brk = 0; break;
+					case BRK_ACT_SCR:
+						fnams = QString(conf.scrShot.dir.c_str()).append(SLASH);
+						fnams.append(QString("xpeccy_%0.%1").arg(QTime::currentTime().toString("HHmmss_zzz")).arg("scr"));
+						file.setFileName(fnams);
+						file.open(QFile::WriteOnly);
+						file.write((char*)(comp->mem->ramData + (5 << 14)), 0x1b00);
+						file.close();
+						comp->brk = 0;
+						break;
+					default: conf.emu.pause |= PR_DEBUG; emit dbgRequest(); break;	// BRK_ACT_DBG
+				}
+				if (!comp->brk && ptr->fetch) {		// to skip fetch-brk and don't stop again
+					comp->debug = 1;
+					compExec(comp);
+					comp->debug = 0;
+				}
+			}
+		}
 	} while (!comp->brk && conf.snd.fill && !finish && !conf.emu.pause);
 	comp->nmiRequest = 0;
 }
@@ -181,11 +207,11 @@ void xThread::run() {
 			emuCycle(comp);
 			if (comp->brk) {
 				comp->brk = 0;
-				xBrkPoint* ptr = brk_find(comp->brkt, comp->brka);
-				if (ptr) {
-					conf.emu.pause |= PR_DEBUG;
-					emit dbgRequest();
-				}
+//				xBrkPoint* ptr = brk_find(comp->brkt, comp->brka);
+//				if (ptr) {
+//					conf.emu.pause |= PR_DEBUG;
+//					emit dbgRequest();
+//				}
 			}
 		}
 #if USEMUTEX

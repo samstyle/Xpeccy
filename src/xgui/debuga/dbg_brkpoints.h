@@ -86,4 +86,5 @@ class xBreakWidget : public xDockWidget {
 		void delBrk();
 		void openBrk();
 		void saveBrk();
+		void resetBrk();
 };

@@ -121,6 +121,16 @@
     </layout>
    </item>
   </layout>
+  <action name="brkActEdit">
+   <property name="text">
+    <string>Edit</string>
+   </property>
+  </action>
+  <action name="brkActReset">
+   <property name="text">
+    <string>Reset counter</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>

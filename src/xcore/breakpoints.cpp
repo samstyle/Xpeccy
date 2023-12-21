@@ -121,6 +121,7 @@ xBrkPoint brkCreate(int type, int flag, int adr, int mask) {
 	brk.write = (flag & MEM_BRK_WR) ? 1 : 0;
 	brk.temp = 0;
 	brk.mask = mask;
+	brk.count = 0;
 	brk.action = BRK_ACT_DBG;
 	return brk;
 }

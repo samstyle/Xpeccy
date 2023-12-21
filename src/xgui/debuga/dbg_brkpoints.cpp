@@ -15,7 +15,7 @@ int xBreakListModel::rowCount(const QModelIndex&) const {
 }
 
 int xBreakListModel::columnCount(const QModelIndex&) const {
-	return 5;
+	return 6;
 }
 
 QString brkGetString(xBrkPoint brk) {
@@ -77,6 +77,7 @@ QVariant xBreakListModel::data(const QModelIndex& idx, int role) const {
 		case Qt::DisplayRole:
 			switch(col) {
 				case 4: res = brkGetString(brk); break;
+				case 5: res = brk.count; break;
 			}
 			break;
 	}
@@ -97,6 +98,7 @@ QVariant xBreakListModel::headerData(int sect, Qt::Orientation ornt, int role) c
 						case 2: res = "R"; break;
 						case 3: res = "W"; break;
 						case 4: res = "Addr"; break;
+						case 5: res = "Cnt"; break;
 					}
 					break;
 			}
@@ -111,6 +113,7 @@ bool xbsOff(const xBrkPoint bpa, const xBrkPoint bpb) {return (bpa.off && !bpb.o
 bool xbsFe(const xBrkPoint bpa, const xBrkPoint bpb) {return (bpa.fetch && !bpb.fetch);}
 bool xbsRd(const xBrkPoint bpa, const xBrkPoint bpb) {return (bpa.read && !bpb.read);}
 bool xbsWr(const xBrkPoint bpa, const xBrkPoint bpb) {return (bpa.write && !bpb.write);}
+bool xbsCnt(const xBrkPoint bpa, const xBrkPoint bpb) {return (bpa.count < bpb.count);}
 bool xbsName(const xBrkPoint bpa, const xBrkPoint bpb) {
 	return brkGetString(bpa) < brkGetString(bpb);
 }
@@ -123,6 +126,7 @@ void xBreakListModel::sort(int col, Qt::SortOrder ord) {
 		case 2: std::sort(conf.prof.cur->brkList.begin(), conf.prof.cur->brkList.end(), xbsRd); break;
 		case 3: std::sort(conf.prof.cur->brkList.begin(), conf.prof.cur->brkList.end(), xbsWr); break;
 		case 4: std::sort(conf.prof.cur->brkList.begin(), conf.prof.cur->brkList.end(), xbsName); break;
+		case 5: std::sort(conf.prof.cur->brkList.begin(), conf.prof.cur->brkList.end(), xbsCnt); break;
 	}
 	emit dataChanged(index(0,0), index(rowCount() - 1, columnCount() - 1));
 }
@@ -140,6 +144,8 @@ xBreakTable::xBreakTable(QWidget* p):QTableView(p) {
 	setColumnWidth(1, 30);
 	setColumnWidth(2, 30);
 	setColumnWidth(3, 30);
+	setColumnWidth(4, 200);
+	setColumnWidth(5, 40);
 	connect(this, SIGNAL(clicked(QModelIndex)), this, SLOT(onCellClick(QModelIndex)));
 	connect(this, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(onDoubleClick(QModelIndex)));
 }
@@ -208,6 +214,10 @@ xBrkManager::xBrkManager(QWidget* p):QDialog(p) {
 	ui.leValMask->setMin(0);
 	ui.leValMask->setMax(0xff);
 	ui.leValMask->setValue(0xff);
+
+	ui.brkAction->addItem("Debuger", BRK_ACT_DBG);
+	ui.brkAction->addItem("Counter", BRK_ACT_COUNT);
+	ui.brkAction->addItem("Screen dump (ZX only)", BRK_ACT_SCR);
 
 	connect(ui.brkBank, SIGNAL(valueChanged(int)), this, SLOT(bnkChanged(int)));
 	connect(ui.leStartOffset,SIGNAL(valueChanged(int)),this,SLOT(startOffChanged(int)));
@@ -329,7 +339,9 @@ void xBrkManager::edit(xBrkPoint* sbrk) {
 		obrk.read = 0;
 		obrk.write = 0;
 		obrk.off = 0;
+		obrk.count = 0;
 	}
+	ui.brkAction->setCurrentIndex(ui.brkAction->findData(obrk.action));
 	ui.brkType->setCurrentIndex(ui.brkType->findData(obrk.type));
 	ui.brkFetch->setChecked(obrk.fetch);
 	ui.brkRead->setChecked(obrk.read);
@@ -366,6 +378,8 @@ void xBrkManager::confirm() {
 	brk.fetch = ui.brkFetch->isChecked() ? 1 : 0;
 	brk.read = ui.brkRead->isChecked() ? 1 : 0;
 	brk.write = ui.brkWrite->isChecked() ? 1 : 0;
+	brk.action = ui.brkAction->itemData(ui.brkAction->currentIndex()).toInt();
+	brk.count = obrk.count;
 	switch (brk.type) {
 		case BRK_CPUADR:
 			brk.adr = ui.brkAdrHex->getValue();
@@ -393,6 +407,9 @@ xBreakWidget::xBreakWidget(QString i, QString t, QWidget* p):xDockWidget(i,t,p) 
 	ui.setupUi(wid);
 	setObjectName("BRKWIDGET");
 
+	ui.bpList->setContextMenuPolicy(Qt::ActionsContextMenu);
+	ui.bpList->addAction(ui.brkActReset);
+
 	brkManager = new xBrkManager(this);
 	connect(brkManager, &xBrkManager::completed, this, &xBreakWidget::confirmBrk);
 
@@ -402,6 +419,7 @@ xBreakWidget::xBreakWidget(QString i, QString t, QWidget* p):xDockWidget(i,t,p) 
 	connect(ui.tbBrkOpen, &QToolButton::clicked, this, &xBreakWidget::openBrk);
 	connect(ui.tbBrkSave, &QToolButton::clicked, this, &xBreakWidget::saveBrk);
 	connect(ui.bpList, &xBreakTable::rqDisasm, this, &xBreakWidget::rqDisasm);
+	connect(ui.brkActReset, &QAction::triggered, this, &xBreakWidget::resetBrk);
 }
 
 void xBreakWidget::draw() {
@@ -439,6 +457,16 @@ void xBreakWidget::delBrk() {
 	foreach(idx, idxl) {
 		brk = conf.prof.cur->brkList[idx.row()];
 		brkDelete(brk);
+	}
+	ui.bpList->update();
+	emit updated();		// fill disasm/dump
+}
+
+void xBreakWidget::resetBrk() {
+	QModelIndexList idxl = ui.bpList->selectionModel()->selectedRows();
+	QModelIndex idx;
+	foreach(idx, idxl) {
+		conf.prof.cur->brkList[idx.row()].count = 0;
 	}
 	ui.bpList->update();
 	emit updated();		// fill disasm/dump
@@ -505,6 +533,8 @@ void xBreakWidget::openBrk() {
 				}
 				if (list.at(4) == "SCR") {
 					brk.action = BRK_ACT_SCR;
+				} else if (list.at(4) == "CNT") {
+					brk.action = BRK_ACT_COUNT;
 				} else {
 					brk.action = BRK_ACT_DBG;
 				}
@@ -576,6 +606,7 @@ void xBreakWidget::saveBrk() {
 			switch(brk.action) {
 				case BRK_ACT_DBG: act = "DBG"; break;
 				case BRK_ACT_SCR: act = "SCR"; break;
+				case BRK_ACT_COUNT: act = "CNT"; break;
 				default: act.clear(); break;
 			}
 			if (!nm.isEmpty()) {

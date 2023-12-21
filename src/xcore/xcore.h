@@ -139,7 +139,8 @@ void clear_comments();
 
 enum {
 	BRK_ACT_DBG = 1,
-	BRK_ACT_SCR
+	BRK_ACT_SCR,
+	BRK_ACT_COUNT
 };
 
 typedef struct {
@@ -152,6 +153,7 @@ typedef struct {
 	int adr;	// (start) adr (mem)
 	int eadr;	// end adr
 	int mask;	// io: if (port & mask == adr & mask)
+	int count;
 	int action;	// what to do
 } xBrkPoint;
 

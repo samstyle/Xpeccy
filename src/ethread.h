@@ -17,6 +17,7 @@ class xThread : public QThread {
 	signals:
 		void s_frame();
 		void dbgRequest();
+		void scrRequest();
 		void tapeSignal(int,int);
 	private:
 		void run();
