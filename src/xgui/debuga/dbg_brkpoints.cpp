@@ -204,7 +204,10 @@ xBrkManager::xBrkManager(QWidget* p):QDialog(p) {
 	ui.brkType->addItem("IRQ", BRK_IRQ);
 
 	ui.brkAdrEnd->setMin(0x0000);
-	ui.brkAdrEnd->setMax(0xffff);
+	ui.brkAdrEnd->setMax(0xffffff);
+	ui.brkAdrHex->setMin(0x0000);
+	ui.brkAdrHex->setMax(0xffffff);
+
 	ui.leStartOffset->setMin(0);
 	ui.leStartOffset->setMax(0x3fff);
 	ui.leEndOffset->setMin(0);
@@ -340,14 +343,15 @@ void xBrkManager::edit(xBrkPoint* sbrk) {
 		obrk.write = 0;
 		obrk.off = 0;
 		obrk.count = 0;
+		obrk.action = BRK_ACT_DBG;
 	}
 	ui.brkAction->setCurrentIndex(ui.brkAction->findData(obrk.action));
 	ui.brkType->setCurrentIndex(ui.brkType->findData(obrk.type));
 	ui.brkFetch->setChecked(obrk.fetch);
 	ui.brkRead->setChecked(obrk.read);
 	ui.brkWrite->setChecked(obrk.write);
-	ui.brkAdrHex->setMax(conf.prof.cur->zx->mem->busmask);
-	ui.brkAdrEnd->setMax(conf.prof.cur->zx->mem->busmask);
+	//ui.brkAdrHex->setMax(conf.prof.cur->zx->mem->busmask);
+	//ui.brkAdrEnd->setMax(conf.prof.cur->zx->mem->busmask);
 	switch(obrk.type) {
 		case BRK_IOPORT:
 			ui.brkBank->setValue(0);
@@ -380,6 +384,7 @@ void xBrkManager::confirm() {
 	brk.write = ui.brkWrite->isChecked() ? 1 : 0;
 	brk.action = ui.brkAction->itemData(ui.brkAction->currentIndex()).toInt();
 	brk.count = obrk.count;
+	int bnk = ui.brkBank->value();
 	switch (brk.type) {
 		case BRK_CPUADR:
 			brk.adr = ui.brkAdrHex->getValue();
@@ -390,8 +395,8 @@ void xBrkManager::confirm() {
 			brk.eadr = brk.adr;
 			break;
 		default:
-			brk.adr = ui.brkAdrHex->getValue();
-			brk.eadr = ui.brkAdrEnd->getValue();
+			brk.adr = ui.brkAdrHex->getValue() | (bnk << 14);
+			brk.eadr = ui.brkAdrEnd->getValue() | (bnk << 14);
 			break;
 	}
 	brk.mask = ui.brkMaskHex->getValue();

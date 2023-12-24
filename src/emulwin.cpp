@@ -1089,11 +1089,13 @@ void MainWin::optApply() {
 void MainWin::doDebug() {
 	conf.emu.fast = 0;
 	pause(true, PR_DEBUG);
+	conf.prof.cur->zx->debug = 1;
 	emit s_debug();
 }
 
 void MainWin::dbgReturn() {
 	pause(false, PR_DEBUG);
+	conf.prof.cur->zx->debug = 0;
 }
 
 void MainWin::bookmarkSelected(QAction* act) {

@@ -173,13 +173,15 @@ void xThread::emuCycle(Computer* comp) {
 					default: conf.emu.pause |= PR_DEBUG; emit dbgRequest(); break;	// BRK_ACT_DBG
 				}
 				if (!comp->brk && ptr->fetch) {		// to skip fetch-brk and don't stop again
+					tm = !!comp->debug;
 					comp->debug = 1;
 					compExec(comp);
-					comp->debug = 0;
+					comp->debug = !!tm;
 				}
 			}
 		}
 	} while (!comp->brk && conf.snd.fill && !finish && !conf.emu.pause);
+	comp->brk = 0;
 	comp->nmiRequest = 0;
 }
 
@@ -205,14 +207,6 @@ void xThread::run() {
 #endif
 		if (!conf.emu.pause) {
 			emuCycle(comp);
-			if (comp->brk) {
-				comp->brk = 0;
-//				xBrkPoint* ptr = brk_find(comp->brkt, comp->brka);
-//				if (ptr) {
-//					conf.emu.pause |= PR_DEBUG;
-//					emit dbgRequest();
-//				}
-			}
 		}
 #if USEMUTEX
 		if (!conf.emu.fast && !finish) {
