@@ -631,8 +631,8 @@ void MainWin::drawText(QPainter* pnt, int x, int y, const char* buf) {
 // if paintEvent exists, paintGL do not called
 
 void MainWin::paintEvent(QPaintEvent*) {
-#if defined(USEOPENGL)
 	QPainter pnt(this);
+#if defined(USEOPENGL)
 #if !BLOCKGL
 //	pnt.beginNativePainting();
 	makeCurrent();
@@ -666,7 +666,6 @@ void MainWin::paintEvent(QPaintEvent*) {
 //	pnt.endNativePainting();
 //	QPainter pnt(this);
 	drawIcons(pnt);
-//	pnt.end();
 #endif
 #else
 	Computer* comp = conf.prof.cur->zx;
@@ -675,6 +674,7 @@ void MainWin::paintEvent(QPaintEvent*) {
 	drawIcons(pnt);
 //	pnt.end();
 #endif
+	pnt.end();
 }
 
 void MainWin::drawIcons(QPainter& pnt) {

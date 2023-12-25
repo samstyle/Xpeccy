@@ -7,7 +7,7 @@ How to compile
 
 Options are:
 
--DQT4BUILD=1 or 0(default) - use Qt4 build (Qt5 otherwise)
+-DQTVERSION=5 or 6(default) - Qt5 or Qt6 build (Qt5 by default)
 -DSDL1BUILD=1 or 0(defailt) - use SDL1.2 (SDL2 otherwise)
 -DUSEOPENGL=1(default) or 0 - use QtOpenGL widget to draw
 -DUSEQTNETWORK=1 or 0(default) - use QtNetwork. experimental.
