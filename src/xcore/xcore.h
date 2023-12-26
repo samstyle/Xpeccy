@@ -150,7 +150,7 @@ typedef struct {
 	unsigned write:1;
 	unsigned temp:1;
 	int type;
-	int adr;	// (start) adr (mem)
+	int adr;	// start adr (mem), port(io)
 	int eadr;	// end adr
 	int mask;	// io: if (port & mask == adr & mask)
 	int count;

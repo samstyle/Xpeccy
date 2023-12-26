@@ -234,45 +234,47 @@ xBrkManager::xBrkManager(QWidget* p):QDialog(p) {
 }
 
 void xBrkManager::bnkChanged(int v) {
-	ui.brkAdrHex->blockSignals(true);
-	ui.brkAdrEnd->blockSignals(true);
+//	ui.brkAdrHex->blockSignals(true);
+//	ui.brkAdrEnd->blockSignals(true);
 	ui.brkAdrHex->setValue((v << 14) | (ui.leStartOffset->getValue() & 0x3fff));
 	ui.brkAdrEnd->setMin((v << 14) | (ui.leStartOffset->getValue() & 0x3fff));
 	ui.brkAdrEnd->setValue((v << 14) | (ui.leEndOffset->getValue() & 0x3fff));
-	ui.brkAdrHex->blockSignals(false);
-	ui.brkAdrEnd->blockSignals(false);
+//	ui.brkAdrHex->blockSignals(false);
+//	ui.brkAdrEnd->blockSignals(false);
 }
 
 void xBrkManager::startOffChanged(int v) {
-	ui.brkAdrHex->blockSignals(true);
+//	ui.brkAdrHex->blockSignals(true);
+	ui.leEndOffset->setMin(v);
 	v = (ui.brkBank->value() << 14) | (v & 0x3fff);
 	ui.brkAdrHex->setValue(v);
 	ui.brkAdrEnd->setMin(v);
-	ui.brkAdrEnd->setValue(v);
-	ui.brkAdrHex->blockSignals(false);
+//	ui.brkAdrEnd->setValue(v);
+//	ui.brkAdrHex->blockSignals(false);
 }
 
 void xBrkManager::startAbsChanged(int v) {
-	ui.brkBank->blockSignals(true);
-	ui.leStartOffset->blockSignals(true);
+//	ui.brkBank->blockSignals(true);
+//	ui.leStartOffset->blockSignals(true);
 	ui.brkBank->setValue(v >> 14);
 	ui.leStartOffset->setValue(v & 0x3fff);
-	ui.brkBank->blockSignals(false);
-	ui.leStartOffset->blockSignals(false);
+//	ui.brkBank->blockSignals(false);
+//	ui.leStartOffset->blockSignals(false);
 	ui.brkAdrEnd->setMin(v);
-	ui.brkAdrEnd->setValue(v);
+	ui.leEndOffset->setMin(v & 0x3fff);
+//	ui.brkAdrEnd->setValue(v);
 }
 
 void xBrkManager::endOffChanged(int v) {
-	ui.brkAdrEnd->blockSignals(true);
+//	ui.brkAdrEnd->blockSignals(true);
 	ui.brkAdrEnd->setValue((ui.brkBank->value() << 14) | (v & 0x3fff));
-	ui.brkAdrEnd->blockSignals(false);
+//	ui.brkAdrEnd->blockSignals(false);
 }
 
 void xBrkManager::endAbsChanged(int v) {
-	ui.leEndOffset->blockSignals(true);
+//	ui.leEndOffset->blockSignals(true);
 	ui.leEndOffset->setValue(v & 0x3fff);
-	ui.leEndOffset->blockSignals(true);
+//	ui.leEndOffset->blockSignals(true);
 }
 
 #define EL_VAL 512

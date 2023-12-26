@@ -163,8 +163,12 @@ void xThread::emuCycle(Computer* comp) {
 					case BRK_ACT_COUNT: ptr->count++; comp->brk = 0; break;
 					case BRK_ACT_SCR:
 						fnams = QString(conf.scrShot.dir.c_str()).append(SLASH);
-						fnams.append(QString("xpeccy_%0.%1").arg(QTime::currentTime().toString("HHmmss_zzz")).arg("scr"));
-						file.setFileName(fnams);
+						fnams.append(QString("xpeccy_%0").arg(QTime::currentTime().toString("HHmmss_zzz")));	// TODO: counter-based name (1ms is not enough)
+						tm = 0;
+						do {
+							file.setFileName(QString("%0_%1.scr").arg(fnams).arg(tm));
+							tm++;
+						} while (file.exists());
 						file.open(QFile::WriteOnly);
 						file.write((char*)(comp->mem->ramData + (5 << 14)), 0x1b00);
 						file.close();

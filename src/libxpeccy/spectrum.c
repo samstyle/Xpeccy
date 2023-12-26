@@ -38,9 +38,9 @@ bpChecker comp_check_bp(Computer* comp, int adr, int mask) {
 	if (ch.t < 0) {
 		xAdr xadr = mem_get_xadr(comp->mem, adr);
 		switch (xadr.type) {
-			case MEM_RAM: ch.ptr = comp->brkRamMap + (adr & (MEM_4M - 1)); ch.t = BRK_MEMRAM; break;
-			case MEM_ROM: ch.ptr = comp->brkRomMap + (adr & (MEM_512K - 1)); ch.t = BRK_MEMROM; break;
-			case MEM_SLOT: if (comp->slot->brkMap) {ch.ptr = comp->slot->brkMap + (adr & comp->slot->memMask); ch.t = BRK_MEMSLT;} break;
+			case MEM_RAM: ch.ptr = comp->brkRamMap + (xadr.abs & (MEM_4M - 1)); ch.t = BRK_MEMRAM; break;
+			case MEM_ROM: ch.ptr = comp->brkRomMap + (xadr.abs & (MEM_512K - 1)); ch.t = BRK_MEMROM; break;
+			case MEM_SLOT: if (comp->slot->brkMap) {ch.ptr = comp->slot->brkMap + (xadr.abs & comp->slot->memMask); ch.t = BRK_MEMSLT;} break;
 		}
 		if (ch.ptr) {
 			if (*ch.ptr & mask) {

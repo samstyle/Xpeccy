@@ -38,46 +38,39 @@ int xHexSpin::getValue() {
 	return value;
 }
 
-void xHexSpin::setBase(int b) {
+void xHexSpin::updateMask() {
 	int mx;
-	int tmp = value;
 	QString rxp;
-	QString digxp;
-	switch(b) {
+	switch(base) {
 		case 8:
-			base = 8;
-			digxp = "[0-7]";
+			rxp = "[0-7]";
 			//setStyleSheet("border:1px solid red;");
 			break;
 		case 10:
-			base = 10;
-			digxp = "[0-9]";
+			rxp = "[0-9]";
 			//setStyleSheet("border:1px solid black;");
 			break;
 		default:
 			base = 16;
-			digxp = "[A-Fa-f0-9]";
+			rxp = "[A-Fa-f0-9]";
 			//setStyleSheet("border:1px solid green;");
 			break;
 	}
-//	if (conf.prof.cur) {
-//		if (base == conf.prof.cur->zx->hw->base) {
-//			setStyleSheet("border:1px solid white;");
-//		}
-//	}
 	len = 1;
-	rxp = digxp;
 	mx = base;
 	while (mx <= max) {
 		mx *= base;
 		len++;
 	}
 	rxp.append(QString("{%0}").arg(len));	// 'len' times this char
-
-	// setMaxLength(len);
 	setInputMask(QString(len, 'h'));	// to enter overwrite cursor mode. TODO:is there some legit method?
-	//vldtr.setRegExp(QRegExp(rxp));		// set available chars
 	setRegExp(vldtr, rxp);
+}
+
+void xHexSpin::setBase(int b) {
+	int tmp = value;
+	base = b;
+	updateMask();
 	hsflag |= XHS_UPD;			// update even if value doesn't changed
 	setValue(tmp);
 }
@@ -94,13 +87,13 @@ int minMaxCorrect(int val, int min, int max) {
 
 void xHexSpin::setMin(int v) {
 	min = v;
-	setBase(base);
+//	updateMask();		// no need if max is not updated
 	if (value < min) setValue(min);
 }
 
 void xHexSpin::setMax(int v) {
 	max = v;
-	setBase(base);
+	updateMask();
 	if (value > max) setValue(max);
 }
 
