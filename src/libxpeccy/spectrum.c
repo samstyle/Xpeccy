@@ -17,9 +17,9 @@ unsigned char* comp_get_memcell_flag_ptr(Computer* comp, int adr) {
 	unsigned char* res = NULL;
 	xAdr xadr = mem_get_xadr(comp->mem, adr);
 	switch (xadr.type) {
-		case MEM_RAM: res = comp->brkRamMap + (adr & (MEM_4M - 1)); break;
-		case MEM_ROM: res = comp->brkRomMap + (adr & (MEM_512K - 1)); break;
-		case MEM_SLOT: if (comp->slot->brkMap) {res = comp->slot->brkMap + (adr & comp->slot->memMask);} break;
+		case MEM_RAM: res = comp->brkRamMap + (xadr.abs & (MEM_4M - 1)); break;
+		case MEM_ROM: res = comp->brkRomMap + (xadr.abs & (MEM_512K - 1)); break;
+		case MEM_SLOT: if (comp->slot->brkMap) {res = comp->slot->brkMap + (xadr.abs & comp->slot->memMask);} break;
 	}
 	return res;
 }
@@ -70,16 +70,17 @@ int memrd(int adr, int m1, void* ptr) {
 	}
 #endif
 	unsigned char* fptr = comp_get_memcell_flag_ptr(comp, adr);
-//	fptr = getBrkPtr(comp, adr);
-	unsigned char flag = *fptr;
-	if (comp->maping) {
-		if ((comp->cpu->pc-1+comp->cpu->cs.base) == adr) {
-			flag &= 0x0f;
-			flag |= DBG_VIEW_EXEC;
-			*fptr = flag;
-		} else if (!(flag & 0xf0)) {
-			flag |= DBG_VIEW_BYTE;
-			*fptr = flag;
+	if (fptr) {
+		unsigned char flag = *fptr;
+		if (comp->maping) {
+			if ((comp->cpu->pc-1+comp->cpu->cs.base) == adr) {
+				flag &= 0x0f;
+				flag |= DBG_VIEW_EXEC;
+				*fptr = flag;
+			} else if (!(flag & 0xf0)) {
+				flag |= DBG_VIEW_BYTE;
+				*fptr = flag;
+			}
 		}
 	}
 	bpChecker ch = comp_check_bp(comp, adr, MEM_BRK_RD);
@@ -88,18 +89,6 @@ int memrd(int adr, int m1, void* ptr) {
 		comp->brkt = ch.t;
 		comp->brka = ch.a;
 	}
-/*
-	if (flag & MEM_BRK_RD) {
-		comp->brk = 1;
-	} else if (comp->mem->busmask < 0x10000) {
-		flag |= comp->brkAdrMap[adr & 0xffff];
-		if (flag & MEM_BRK_RD) {
-			comp->brk = 1;
-			comp->brkt = BRK_CPUADR;
-			comp->brka = adr;
-		}
-	}
-*/
 	return comp->hw->mrd(comp,adr,m1);
 }
 
