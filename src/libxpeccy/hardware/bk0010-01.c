@@ -2,8 +2,6 @@
 
 #include "hardware.h"
 
-#define ENABLE_BK0011	0
-
 // BK0010
 // dot: 25.175MHz (~40 ns/dot)
 // timer: cpu/128
@@ -34,7 +32,7 @@ void bk_fdc_wr(Computer* comp, int adr, int val) {
 	// difOut(comp->dif, (adr & 2) ? 1 : 0, 0, comp->wdata);
 }
 
-// keboard
+// keyboard
 
 int bk_kbf_rd(Computer* comp, int adr) {
 	comp->wdata = comp->keyb->flag & 0xc0;
@@ -54,17 +52,6 @@ int bk_kbd_rd(Computer* comp, int adr) {
 //	comp->wdata = comp->keyb->keycode & 0x7f;
 	comp->keyb->flag &= 0x7f;		// reset b7,flag
 	return 0;
-}
-
-void bk_kbd_wr(Computer* comp, int adr, int val) {
-#if ENABLE_BK0011
-	comp->reg[0xb2] = (val >> 8) & 0xff;
-// b9-12 = palette
-	comp->vid->paln = (val >> 9) & 0x0f;
-// b14: 0=enable 48.5Hz timer with interrupt 100
-// b15: 0=scr5,1=scr6
-	comp->vid->curscr = (val & 0x8000) ? 0 : 1;
-#endif
 }
 
 // scroller
@@ -142,11 +129,7 @@ int bk_fcc_rd(Computer* comp, int adr) {
 
 // 177776: system
 int bk_sys_rd(Computer* comp, int adr) {
-#if ENABLE_BK0011
-	comp->wdata = 0xc000;
-#else
-	comp->wdata = 0x8000;		// 8000 for 0010, c000 for 0011
-#endif
+	comp->wdata = 0x8000;		// 8000 for 0010
 	// comp->wdata |= 0x80;		// TL ready
 	if (comp->reg[0xce]) {		// b2: write to system port flag
 		comp->wdata |= 4;
@@ -168,20 +151,6 @@ int bk_sys_rd(Computer* comp, int adr) {
 // b4: TL in/out
 // b6: beeper
 void bk_sys_wr(Computer* comp, int adr, int val) {
-#if ENABLE_BK0011
-	if (val & 0x800) {			// b11 set
-		if (val & 0x1b) {			// b0,1,3,4: rom 0,1,2,3 @ #8000
-			if (val & 0x01) comp->reg[1] = 0x80;
-			if (val & 0x02) comp->reg[1] = 0x81;
-			if (val & 0x08) comp->reg[1] = 0x82;
-			if (val & 0x10) comp->reg[1] = 0x83;
-		} else {
-			comp->reg[1] = (val >> 8) & 7;		// ram b8,9,10 @ #8000 (reg[1].b7=0:ram)
-		}
-		comp->reg[2] = (val >> 12) & 7;			// ram b12,13,14 @ #4000
-		bk_mem_map(comp);
-	} else
-#endif
 	if (comp->cpu->nod & 1) {
 		// b7: tape motor control (1:stop, 0:play)
 		if (!(val & 0x80) && !comp->tape->on) {
@@ -203,13 +172,13 @@ void bk_sys_wr(Computer* comp, int adr, int val) {
 int bk_dbg_rd(Computer* comp, int adr) {
 	comp->wdata = 0xffff;
 	printf("%.4X : rd %.4X\n",comp->cpu->preg[7], adr);
-	assert(0);
+//	assert(0);
 	return -1;
 }
 
 void bk_dbg_wr(Computer* comp, int adr, int val) {
 	printf("%.4X : wr %.4X, %.4X (nod = %i)\n",comp->cpu->preg[7], adr, val, comp->cpu->nod);
-	assert(0);
+//	assert(0);
 }
 
 static xPort bk_io_tab[] = {
@@ -223,7 +192,7 @@ static xPort bk_io_tab[] = {
 	{0xfffe, 0xffca, 2, 2, 2, bk_tfl_rd, bk_tfl_wr},	// 177712
 	{0xfffe, 0xffcc, 2, 2, 2, bk_fcc_rd, NULL},		// 177714: ext (printer / ay / joystick)
 	{0xfffe, 0xffce, 2, 2, 2, bk_sys_rd, bk_sys_wr},	// 177716: system
-	{0x0000, 0x0000, 2, 2, 2, bk_dbg_rd, bk_dbg_wr}
+//	{0x0000, 0x0000, 2, 2, 2, bk_dbg_rd, bk_dbg_wr}
 };
 
 // cpu allways read whole word from even adr
@@ -243,7 +212,7 @@ void bk_io_wr(int adr, int val, void* ptr) {
 	if (comp->cpu->nod & 1)		// LSB
 		comp->iomap[(adr & ~1) & 0xffff] = val & 0xff;
 	if (comp->cpu->nod & 2)		// MSB
-		comp->iomap[(adr | 1) & 0xffff] = (val >> 1) & 0xff;
+		comp->iomap[(adr | 1) & 0xffff] = (val >> 8) & 0xff;
 	hwOut(bk_io_tab, comp, adr & ~1, val, 1);
 }
 
@@ -310,23 +279,6 @@ void bk_mem_map(Computer* comp) {
 	memSetBank(comp->mem, 0x40, MEM_RAM, 1, MEM_16K, bk_ram_rd, bk_ram_wr, comp);		// page 1 : scr 0
 	memSetBank(comp->mem, 0x80, MEM_ROM, 0, MEM_32K, bk_rom_rd, bk_rom_wr, comp);
 	memSetBank(comp->mem, 0xff, MEM_IO, 0xff, MEM_256, bk_io_rd, bk_io_wr, comp);
-// for 11
-#if ENABLE_BK0011
-	memSetBank(comp->mem, 0x40, MEM_RAM, comp->reg[2] & 7, MEM_16K, NULL, NULL, NULL);	// ram @ 0x4000
-	if (comp->reg[1] & 0x80) {
-		memSetBank(comp->mem, 0x80, MEM_ROM, comp->reg[1] & 3, MEM_16K, NULL, NULL, NULL);
-	} else {
-		memSetBank(comp->mem, 0x80, MEM_RAM, comp->reg[1] & 7, MEM_16K, NULL, NULL, NULL);
-	}
-	memSetBank(comp->mem, 0xc0, MEM_ROM, 4, MEM_8K, NULL, NULL, NULL);
-	if (comp->dif->type == DIF_SMK512) {
-		memSetBank(comp->mem, 0xe0, MEM_ROM, 5, MEM_8K, NULL, NULL, NULL);			// disk interface rom
-		memSetBank(comp->mem, 0xfe, MEM_IO, 0xfe, MEM_512, bk_io_rd, bk_io_wr, comp);		// 0170000..0177776 with disk interface
-	} else {
-		memSetBank(comp->mem, 0xe0, MEM_EXT, 7, MEM_8K, NULL, NULL, NULL);			// empty space
-		memSetBank(comp->mem, 0xff, MEM_IO, 0xff, MEM_256, bk_io_rd, bk_io_wr, comp);		// 0177600..0177776 without disk interface
-	}
-#endif
 }
 
 #define BK_BLK	{0,0,0}

@@ -95,19 +95,20 @@ int memrd(int adr, int m1, void* ptr) {
 void memwr(int adr, int val, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 	unsigned char* fptr = comp_get_memcell_flag_ptr(comp, adr);
-	// fptr = getBrkPtr(comp, adr);
-	unsigned char flag = *fptr;
-	if (comp->maping) {
-		if (!(flag & 0xf0)) {
-			flag |= DBG_VIEW_BYTE;
-			*fptr = flag;
+	if (fptr) {
+		unsigned char flag = *fptr;
+		if (comp->maping) {
+			if (!(flag & 0xf0)) {
+				flag |= DBG_VIEW_BYTE;
+				*fptr = flag;
+			}
 		}
-	}
-	bpChecker ch = comp_check_bp(comp, adr, MEM_BRK_WR);
-	if (ch.t >= 0) {
-		comp->brk = 1;
-		comp->brkt = ch.t;
-		comp->brka = ch.a;
+		bpChecker ch = comp_check_bp(comp, adr, MEM_BRK_WR);
+		if (ch.t >= 0) {
+			comp->brk = 1;
+			comp->brkt = ch.t;
+			comp->brka = ch.a;
+		}
 	}
 /*
 	if (flag & MEM_BRK_WR) {
