@@ -261,7 +261,7 @@ void pdp_res(CPU* cpu) {
 	cpu->timer.val = 0xffff;
 	cpu->timer.ival = 0xffff;
 	cpu->timer.flag = 0xff;
-	cpu->iwr(0, PDP11_INIT, cpu->xptr);
+	cpu->xirq(PDP11_INIT, cpu->xptr);	// cpu->iwr(0, PDP11_INIT, cpu->xptr);
 }
 
 // 0006:rtt

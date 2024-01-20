@@ -54,6 +54,14 @@ int bk_kbd_rd(Computer* comp, int adr) {
 	return 0;
 }
 
+void bk11_kbd_wr(Computer* comp, int adr, int val) {
+	comp->reg[0xb2] = (val >> 8) & 0xff;
+// b9-12 = palette
+	comp->vid->paln = (val >> 9) & 0x0f;
+// b14: 0=enable 48.5Hz timer with interrupt 100
+// b15: disable 'STOP' key interrupt
+}
+
 // scroller
 
 int bk_scr_rd(Computer* comp, int adr) {
@@ -167,6 +175,61 @@ void bk_sys_wr(Computer* comp, int adr, int val) {
 	}
 }
 
+// system port for 0011
+
+// 177776: system
+int bk11_sys_rd(Computer* comp, int adr) {
+	comp->wdata = 0xc000;
+	// comp->wdata |= 0x80;		// TL ready
+	if (comp->reg[0xce]) {		// b2: write to system port flag
+		comp->wdata |= 4;
+		comp->reg[0xce] = 0;	// reset on reading
+	}
+	// b5: tape signal
+	if (comp->tape->on && !comp->tape->rec && (comp->tape->volPlay & 0x80)) {
+		comp->wdata |= 0x20;
+	}
+	// b6: key pressed
+	if (!(comp->keyb->flag & 0x20)) {
+		comp->wdata |= 0x40;		// = 0 if any key pressed, 1 if not
+	}
+	// b7: TL ready
+	return 0;
+}
+
+// b2,5,6 = tape signal (msb b6)
+// b4: TL in/out
+// b6: beeper
+void bk11_sys_wr(Computer* comp, int adr, int val) {
+	if (val & 0x800) {			// b11 set
+		// printf("rom bits: %i.%i.x.%i.%i\n",!!(val & 0x10),!!(val & 8),!!(val & 2), !!(val & 1));
+		if (val & 0x1b) {			// b0,1,3,4: rom 0,1,2,3 @ #8000
+			if (val & 0x01) comp->reg[1] = 0x80;
+			if (val & 0x02) comp->reg[1] = 0x81;
+			if (val & 0x08) comp->reg[1] = 0x82;
+			if (val & 0x10) comp->reg[1] = 0x83;
+		} else {
+			comp->reg[1] = (val >> 8) & 7;		// ram b8,9,10 @ #8000 (reg[1].b7=0:ram)
+		}
+		comp->reg[2] = (val >> 12) & 7;			// ram b12,13,14 @ #4000
+		comp->vid->curscr = !!(val & 0x04);
+		bk11_mem_map(comp);
+	} else if (comp->cpu->nod & 1) {
+		// b7: tape motor control (1:stop, 0:play)
+		if (!(val & 0x80) && !comp->tape->on) {
+			tapPlay(comp->tape);
+		} else if ((val & 0x80) && comp->tape->on && !comp->tape->rec) {
+			tapStop(comp->tape);
+		}
+		// b6 : beep
+		comp->beep->lev = (val & 0x40) ? 1 : 0;
+		// b6 : tape rec (main)
+		comp->tape->levRec = (val & 0x40) ? 1 : 0;
+		// b4: TL write
+		comp->reg[0xce] = 1;	// write to system port
+	}
+}
+
 // * debug
 
 int bk_dbg_rd(Computer* comp, int adr) {
@@ -184,7 +247,7 @@ void bk_dbg_wr(Computer* comp, int adr, int val) {
 static xPort bk_io_tab[] = {
 	{0xfffc, 0xfe58, 2, 2, 2, bk_fdc_rd, bk_fdc_wr},	// 177130..32:fdc
 	{0xfffe, 0xffb0, 2, 2, 2, bk_kbf_rd, bk_kbf_wr},	// 177660: keyflag
-	{0xfffe, 0xffb2, 2, 2, 2, bk_kbd_rd, bk_kbd_wr},	// 177662: keycode / video ctrl
+	{0xfffe, 0xffb2, 2, 2, 2, bk_kbd_rd, NULL},		// 177662: keycode / video ctrl
 	{0xfffe, 0xffb4, 2, 2, 2, bk_scr_rd, bk_scr_wr},	// 177664: scroller
 	{0xfffc, 0xffbc, 2, 2, 2, bk_str_rd, NULL},		// 177704: storage (pc/psw)
 	{0xfffe, 0xffc6, 2, 2, 2, bk_tiv_rd, bk_tiv_wr},	// 177706: timer
@@ -195,11 +258,32 @@ static xPort bk_io_tab[] = {
 //	{0x0000, 0x0000, 2, 2, 2, bk_dbg_rd, bk_dbg_wr}
 };
 
+static xPort bk11_io_tab[] = {
+	{0xfffc, 0xfe58, 2, 2, 2, bk_fdc_rd, bk_fdc_wr},	// 177130..32:fdc
+	{0xfffe, 0xffb0, 2, 2, 2, bk_kbf_rd, bk_kbf_wr},	// 177660: keyflag
+	{0xfffe, 0xffb2, 2, 2, 2, bk_kbd_rd, bk11_kbd_wr},	// 177662: keycode / video ctrl
+	{0xfffe, 0xffb4, 2, 2, 2, bk_scr_rd, bk_scr_wr},	// 177664: scroller
+	{0xfffc, 0xffbc, 2, 2, 2, bk_str_rd, NULL},		// 177704: storage (pc/psw)
+	{0xfffe, 0xffc6, 2, 2, 2, bk_tiv_rd, bk_tiv_wr},	// 177706: timer
+	{0xfffe, 0xffc8, 2, 2, 2, bk_tva_rd, bk_tva_wr},	// 177710
+	{0xfffe, 0xffca, 2, 2, 2, bk_tfl_rd, bk_tfl_wr},	// 177712
+	{0xfffe, 0xffcc, 2, 2, 2, bk_fcc_rd, NULL},		// 177714: ext (printer / ay / joystick)
+	{0xfffe, 0xffce, 2, 2, 2, bk11_sys_rd, bk11_sys_wr},	// 177716: system
+//	{0x0000, 0x0000, 2, 2, 2, bk_dbg_rd, bk_dbg_wr}
+};
+
 // cpu allways read whole word from even adr
 int bk_io_rd(int adr, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 	adr &= ~1;
 	hwIn(bk_io_tab, comp, adr);
+	return comp->wdata;
+}
+
+int bk11_io_rd(int adr, void* ptr) {
+	Computer* comp = (Computer*)ptr;
+	adr &= ~1;
+	hwIn(bk11_io_tab, comp, adr);
 	return comp->wdata;
 }
 
@@ -214,6 +298,15 @@ void bk_io_wr(int adr, int val, void* ptr) {
 	if (comp->cpu->nod & 2)		// MSB
 		comp->iomap[(adr | 1) & 0xffff] = (val >> 8) & 0xff;
 	hwOut(bk_io_tab, comp, adr & ~1, val, 1);
+}
+
+void bk11_io_wr(int adr, int val, void* ptr) {
+	Computer* comp = (Computer*)ptr;
+	if (comp->cpu->nod & 1)		// LSB
+		comp->iomap[(adr & ~1) & 0xffff] = val & 0xff;
+	if (comp->cpu->nod & 2)		// MSB
+		comp->iomap[(adr | 1) & 0xffff] = (val >> 8) & 0xff;
+	hwOut(bk11_io_tab, comp, adr & ~1, val, 1);
 }
 
 int bk_ram_rd(int adr, void* ptr) {
@@ -263,10 +356,26 @@ void bk_sync(Computer* comp, int ns) {
 	difSync(comp->dif, ns);
 }
 
+// bk0010
+// 0000: ram
+// 4000: ram screen
+// 8000: basic rom
+// c000: system rom
+// fe00: io
+
+void bk_mem_map(Computer* comp) {
+	memSetBank(comp->mem, 0x00, MEM_RAM, 6, MEM_16K, bk_ram_rd, bk_ram_wr, comp);		// page 6 (0)
+	memSetBank(comp->mem, 0x40, MEM_RAM, 1, MEM_16K, bk_ram_rd, bk_ram_wr, comp);		// page 1 : scr 0
+	memSetBank(comp->mem, 0x80, MEM_ROM, 0, MEM_32K, bk_rom_rd, bk_rom_wr, comp);
+	memSetBank(comp->mem, 0xff, MEM_IO, 0xff, MEM_256, bk_io_rd, bk_io_wr, comp);
+}
+
+// bk0011
 // 0000: ram
 // 4000: ram window 0
 // 8000: ram window 1 / rom
-// c000: system rom
+// c000: system rom (bos)
+// e000: extend rom (fdd)
 // fe00: io
 
 // port 177716, wr with b11=1
@@ -274,11 +383,22 @@ void bk_sync(Computer* comp, int ns) {
 // b08-10: ram window 1 (8000, 16K)
 // b0,1[,3,4,5,6]: rom page (8000, 16K)
 
-void bk_mem_map(Computer* comp) {
-	memSetBank(comp->mem, 0x00, MEM_RAM, 6, MEM_16K, bk_ram_rd, bk_ram_wr, comp);		// page 6 (0)
-	memSetBank(comp->mem, 0x40, MEM_RAM, 1, MEM_16K, bk_ram_rd, bk_ram_wr, comp);		// page 1 : scr 0
-	memSetBank(comp->mem, 0x80, MEM_ROM, 0, MEM_32K, bk_rom_rd, bk_rom_wr, comp);
-	memSetBank(comp->mem, 0xff, MEM_IO, 0xff, MEM_256, bk_io_rd, bk_io_wr, comp);
+void bk11_mem_map(Computer* comp) {
+	memSetBank(comp->mem, 0x00, MEM_RAM, 6, MEM_16K, bk_ram_rd, bk_ram_wr, comp);		// page 6 (0) @ 0x0000
+	memSetBank(comp->mem, 0x40, MEM_RAM, comp->reg[2] & 7, MEM_16K, bk_ram_rd, bk_ram_wr, comp);	// ram page @ 0x4000
+	if (comp->reg[1] & 0x80) {									// ram/rom @ 0x8000
+		memSetBank(comp->mem, 0x80, MEM_ROM, comp->reg[1] & 3, MEM_16K, bk_rom_rd, bk_rom_wr, comp);
+	} else {
+		memSetBank(comp->mem, 0x80, MEM_RAM, comp->reg[1] & 7, MEM_16K,  bk_ram_rd, bk_ram_wr, comp);
+	}
+	memSetBank(comp->mem, 0xc0, MEM_ROM, 4, MEM_8K,  bk_rom_rd, bk_rom_wr, comp);		// bos
+	if (comp->dif->type == DIF_SMK512) {
+		memSetBank(comp->mem, 0xe0, MEM_ROM, 6, MEM_8K,  bk_rom_rd, bk_rom_wr, comp);			// disk interface rom (page 3, 8K)
+		memSetBank(comp->mem, 0xfe, MEM_IO, 0xfe, MEM_512, bk11_io_rd, bk11_io_wr, comp);		// 0170000..0177776 with disk interface
+	} else {
+		memSetBank(comp->mem, 0xe0, MEM_EXT, 7, MEM_8K,  NULL, NULL, NULL);				// empty space
+		memSetBank(comp->mem, 0xff, MEM_IO, 0xff, MEM_256, bk11_io_rd, bk11_io_wr, comp);		// 0177600..0177776 without disk interface
+	}
 }
 
 #define BK_BLK	{0,0,0}
@@ -325,6 +445,22 @@ void bk_reset(Computer* comp) {
 	bk_mem_map(comp);
 }
 
+void bk11_reset(Computer* comp) {
+	memSetSize(comp->mem, MEM_128K, MEM_64K);
+	for (int i = 0; i < 0x40; i++) {
+		vid_set_col(comp->vid, i, bk_pal[i]);
+	}
+	comp->reg[0] = 1;
+	comp->reg[1] = 0x80;
+	comp->cpu->reset(comp->cpu);
+//	comp->vid->curscr = 0;
+	comp->vid->paln = 0;
+	vid_set_mode(comp->vid, VID_BK_BW);
+	comp->keyb->flag = 0x00;
+	comp->keyb->keycode = 0;
+	bk11_mem_map(comp);
+}
+
 void bk_mwr(Computer* comp, int adr, int val) {
 	memWr(comp->mem, adr, val);
 }
@@ -334,7 +470,7 @@ int bk_mrd(Computer* comp, int adr, int m1) {
 }
 
 // only for sending control signals (like INIT)
-void bk_iowr(Computer* comp, int adr, int val) {
+void bk_irq(Computer* comp, int val) {
 	switch (val) {
 		case PDP11_INIT:
 			comp->keyb->flag = 0;

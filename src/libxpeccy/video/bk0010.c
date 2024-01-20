@@ -1,6 +1,7 @@
 #include "video.h"
 
 #include <string.h>
+#include <assert.h>
 
 static int xadr;
 static unsigned char sbyte;
@@ -43,6 +44,7 @@ void bk_col_dot(Video* vid) {
 	if (vid->hbrd || vid->vbrd || (vid->cutscr && (vid->ray.ys > 0x3f))) {
 		cola = 0;
 	} else {
+		assert(0);
 		xscr = vid->ray.xs;
 		if ((vid->ray.x & 3) == 0) {
 			yscr = (vid->ray.ys + vid->sc.y - 0xd8) & 0xff;

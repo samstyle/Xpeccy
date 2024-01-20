@@ -76,10 +76,10 @@ HardWare hwTab[] = {
 //		HW_NULL,HWG_NULL,"","",16,0,1.0,NULL,16,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL		// separator
 	},{
 		HW_BK0010,HWG_BK,"BK0010","BK0010",8,MEM_32K,(double)29/23,&bkLay,16,
-		bk_init,bk_mem_map,bk_iowr,NULL,bk_mrd,bk_mwr,NULL,bk_reset,bk_sync,bk_keyp,bk_keyr,bk_vol
+		bk_init,bk_mem_map,NULL,NULL,bk_mrd,bk_mwr,bk_irq,bk_reset,bk_sync,bk_keyp,bk_keyr,bk_vol
 	},{
 		HW_BK0011M,HWG_BK,"BK0011M","BK0011M",8,MEM_128K,(double)29/23,&bkLay,16,
-		bk11_init,bk11_mem_map,bk11_iowr,NULL,bk11_mrd,bk11_mwr,NULL,bk11_reset,bk11_sync,bk_keyp,bk_keyr,bk_vol
+		bk_init,bk11_mem_map,NULL,NULL,bk_mrd,bk_mwr,bk_irq,bk11_reset,bk_sync,bk_keyp,bk_keyr,bk_vol
 	},{
 		HW_SPCLST,HWG_SPCLST,"Specualist","Specialist",16,MEM_64K,1.0,&spclstLay,16,
 		spc_init,spc_mem_map,NULL,NULL,spc_mrd,spc_mwr,NULL,spc_reset,spc_sync,spc_keyp,spc_keyr,spc_vol

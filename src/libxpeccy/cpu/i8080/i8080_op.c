@@ -2,7 +2,7 @@
 
 #include <stdio.h>
 
-extern const unsigned char sz53pTab[0x100];
+// extern const unsigned char sz53pTab[0x100];
 
 static int iop_add_h[8] = {0, 0, IFL_A, 0, IFL_A, 0, IFL_A, IFL_A};
 static int iop_sub_h[8] = {IFL_A, 0, 0, 0, IFL_A, IFL_A, IFL_A, 0};
