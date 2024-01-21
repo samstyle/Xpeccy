@@ -64,7 +64,7 @@ void vid_upd_scale() {
 
 void vid_set_zoom(int zoom) {
 	if (zoom < 1) return;
-	if (zoom > 4) return;
+	if (zoom > 6) return;
 	conf.vid.scale = zoom;
 	vid_upd_scale();
 }

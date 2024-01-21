@@ -163,6 +163,18 @@ void MainWin::xkey_press(int xkey) {
 				saveConfig();
 				setMessage(" size x4 ");
 				break;
+			case XCUT_SIZEX5:
+				vid_set_zoom(5);
+				updateWindow();
+				saveConfig();
+				setMessage(" size x5 ");
+				break;
+			case XCUT_SIZEX6:
+				vid_set_zoom(6);
+				updateWindow();
+				saveConfig();
+				setMessage(" size x6 ");
+				break;
 			case XCUT_COMBOSHOT:
 				scrCounter = conf.scrShot.count;
 				scrInterval = 0;

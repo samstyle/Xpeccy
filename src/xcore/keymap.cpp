@@ -424,6 +424,8 @@ static xShortcut short_tab[] = {
 	{SCG_MAIN, XCUT_SIZEX2, "key.size.x2", "Size x2", QKeySequence(), QKeySequence(Qt::ALT | Qt::Key_2)},
 	{SCG_MAIN, XCUT_SIZEX3, "key.size.x3", "Size x3", QKeySequence(), QKeySequence(Qt::ALT | Qt::Key_3)},
 	{SCG_MAIN, XCUT_SIZEX4, "key.size.x4", "Size x4", QKeySequence(), QKeySequence(Qt::ALT | Qt::Key_4)},
+	{SCG_MAIN, XCUT_SIZEX5, "key.size.x5", "Size x5", QKeySequence(), QKeySequence(Qt::ALT | Qt::Key_5)},
+	{SCG_MAIN, XCUT_SIZEX6, "key.size.x6", "Size x6", QKeySequence(), QKeySequence(Qt::ALT | Qt::Key_6)},
 	{SCG_MAIN, XCUT_FULLSCR, "key.fullscreen", "Fullscreen", QKeySequence(), QKeySequence(Qt::ALT | Qt::Key_Return)},
 	{SCG_MAIN, XCUT_RATIO, "key.ratio", "Keep aspect ratio", QKeySequence(), QKeySequence(Qt::ALT | Qt::Key_R)},
 	{SCG_MAIN, XCUT_NOFLICK, "key.noflick", "Noflick", QKeySequence(), QKeySequence(Qt::ALT | Qt::Key_N)},

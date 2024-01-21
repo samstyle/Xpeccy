@@ -405,7 +405,7 @@ void loadConfig() {
 					if (pnam=="scale") {
 						conf.vid.scale = atoi(pval.c_str());
 						if (conf.vid.scale < 1) conf.vid.scale = 1;
-						if (conf.vid.scale > 4) conf.vid.scale = 4;
+						if (conf.vid.scale > 6) conf.vid.scale = 6;
 					}
 					if (pnam=="noflic") noflic = str2bool(pval) ? 50 : 25;		// old parameter
 					if (pnam=="noflick") noflic = getRanged(pval.c_str(), 0, 50);	// new parameter
