@@ -303,6 +303,12 @@ void bk_sync(Computer*, int);
 void bk_keyp(Computer*, keyEntry);
 void bk_keyr(Computer*, keyEntry);
 sndPair bk_vol(Computer*, sndVolume*);
+void bk_irq(Computer*, int);
+
+// bk0011
+void bk11_init(Computer*);
+void bk11_mem_map(Computer*);
+void bk11_reset(Computer*);
 
 // pc specialist
 void spc_init(Computer*);

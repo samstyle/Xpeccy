@@ -44,10 +44,6 @@ xMnem nil_mnem(CPU* cpu, int adr, cbdmr mrd, void* data) {
 void nil_get_regs(CPU* cpu, xRegBunch* bunch) {}
 void nil_set_regs(CPU* cpu, xRegBunch bunch) {}
 
-extern opCode npTab[256];
-extern opCode lrTab[256];
-extern opCode mosTab[256];
-
 extern xRegDsc z80RegTab[];
 extern xRegDsc m6502RegTab[];
 extern xRegDsc lrRegTab[];

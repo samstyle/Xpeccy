@@ -447,6 +447,7 @@ void xDumpTable::resizeEvent(QResizeEvent* ev) {
 	int rh = verticalHeader()->defaultSectionSize();
 	int rc = h / rh;
 	model->setRows(rc);
+	setView(view);
 	update();
 }
 
