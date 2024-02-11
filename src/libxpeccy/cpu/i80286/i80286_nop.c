@@ -65,7 +65,7 @@ void i286_mwr(CPU* cpu, xSegPtr seg, int rpl, unsigned short adr, int val) {
 // real mode
 
 unsigned char i286_fetch_real(CPU* cpu) {
-	unsigned char res = cpu->mrd(cpu->cs.base + cpu->pc, 0, cpu->xptr) & 0xff;
+	unsigned char res = cpu->mrd(cpu->cs.base + cpu->pc, 1, cpu->xptr) & 0xff;
 	cpu->pc++;
 	return res;
 }
@@ -94,7 +94,7 @@ void i286_push(CPU* cpu, unsigned short w) {
 }
 
 unsigned short i286_pop(CPU* cpu) {
-	if ((cpu->msw & I286_FPE) && (cpu->sp + 2 >= cpu->ss.limit)) {
+	if ((cpu->msw & I286_FPE) && (cpu->sp + 2 > cpu->ss.limit)) {
 		THROW(I286_INT_SS);
 	}
 	PAIR(w,h,l) rx;
@@ -110,7 +110,7 @@ unsigned char i286_fetch_prt(CPU* cpu) {
 	unsigned char res = 0xff;
 //	if (i286_check_segment_exec(cpu, &cpu->cs)) {		// check it when CS changed
 		if (i286_check_segment_limit(cpu, &cpu->cs, cpu->pc)) {
-			res = cpu->mrd(cpu->cs.base + cpu->pc, 0, cpu->xptr) & 0xff;
+			res = cpu->mrd(cpu->cs.base + cpu->pc, 1, cpu->xptr) & 0xff;
 			cpu->pc++;
 		} else {
 			THROW(I286_INT_SL);
@@ -1662,6 +1662,8 @@ void i286_op9B(CPU* cpu) {
 	// wait for busy=0
 	if ((cpu->msw & I286_FTS) && (cpu->msw & I286_FMP)) {
 		THROW(I286_INT_NM);		// int 7
+	} else if (cpu->x87sr & 0x80) {
+		THROW(I286_INT_MF);		// int 16
 	}
 }
 
@@ -2304,60 +2306,20 @@ void i286_opD7(CPU* cpu) {
 	cpu->al = i286_mrd(cpu, cpu->ds, 1, cpu->tmpw);
 }
 
-// 80287 template (dummy)
-// opcodes: D8-DF (11011xxx)(mod)
+// 80287 template
+// opcodes: D8-DF (11011xxx),mod,[data,[data]]
+
+extern void x87_exec(CPU*);
 
 void i286_fpu(CPU* cpu) {
-	i286_rd_ea(cpu, 1);
-	THROW(I286_INT_NM);
-}
-
-// d8: for 80287
-void i286_opD8(CPU* cpu) {
-	cpu->pc++;
-	THROW(I286_INT_NM);
-}
-
-// d9: 80287
-void i286_opD9(CPU* cpu) {
-	cpu->pc++;
-	THROW(I286_INT_NM);
-}
-
-// da: 80287
-void i286_opDA(CPU* cpu) {
-	cpu->pc++;
-	THROW(I286_INT_NM);
-}
-
-// db: 80287
-void i286_opDB(CPU* cpu) {
-	cpu->pc++;
-	THROW(I286_INT_NM);
-}
-
-// dc: 80287
-void i286_opDC(CPU* cpu) {
-	cpu->pc++;
-	THROW(I286_INT_NM);
-}
-
-// dd: 80287
-void i286_opDD(CPU* cpu) {
-	cpu->pc++;
-	THROW(I286_INT_NM);
-}
-
-// de: 80287
-void i286_opDE(CPU* cpu) {
-	cpu->pc++;
-	THROW(I286_INT_NM);
-}
-
-// df: 80287
-void i286_opDF(CPU* cpu) {
-	cpu->pc++;
-	THROW(I286_INT_NM);
+	i286_get_ea(cpu, 1);
+	if (cpu->x87sr & 0x80) {
+		THROW(I286_INT_MF);
+	} else {
+		printf("%.8X : x87 : %.2X %.2X\n", cpu->cs.base + cpu->oldpc, cpu->com, cpu->mod);
+//		THROW(I286_INT_NM);
+		x87_exec(cpu);
+	}
 }
 
 // e0,cb: loopnz cb:	cx--,jump short if (cx!=0)&&(fz=0)
@@ -2948,14 +2910,14 @@ opCode i80286_tab[256] = {
 	{0, 1, i286_opD5, 0, "aad :1"},
 	{0, 1, i286_opD6, 0, "? salc"},
 	{0, 1, i286_opD7, 0, "xlatb al,[:D::bx+al]"},
-	{0, 1, i286_fpu, 0, "* x87"},
-	{0, 1, i286_fpu, 0, "* x87"},
-	{0, 1, i286_fpu, 0, "* x87"},
-	{0, 1, i286_fpu, 0, "* x87"},
-	{0, 1, i286_fpu, 0, "* x87"},
-	{0, 1, i286_fpu, 0, "* x87"},
-	{0, 1, i286_fpu, 0, "* x87"},
-	{0, 1, i286_fpu, 0, "* x87"},
+	{0, 1, i286_fpu, 0, "* x87 :z"},
+	{0, 1, i286_fpu, 0, "* x87 :z"},
+	{0, 1, i286_fpu, 0, "* x87 :z"},
+	{0, 1, i286_fpu, 0, "* x87 :z"},
+	{0, 1, i286_fpu, 0, "* x87 :z"},
+	{0, 1, i286_fpu, 0, "* x87 :z"},
+	{0, 1, i286_fpu, 0, "* x87 :z"},
+	{0, 1, i286_fpu, 0, "* x87 :z"},
 	{0, 1, i286_opE0, 0, "loopnz :3"},
 	{0, 1, i286_opE1, 0, "loopz :3"},
 	{0, 1, i286_opE2, 0, "loop :3"},

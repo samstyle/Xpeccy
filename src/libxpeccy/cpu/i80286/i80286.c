@@ -19,6 +19,8 @@ void i286_reset(CPU* cpu) {
 	cpu->es = i286_cash_seg(cpu, 0x0000);
 	cpu->idtr = i286_cash_seg(cpu, 0x0000);
 	cpu->intrq = 0;
+
+	cpu->x87top = 0;
 }
 
 // REAL mode:
@@ -137,9 +139,9 @@ int i286_exec(CPU* cpu) {
 		}
 	} else {
 		if (val < 0) val = I286_INT_DE;		// cuz INT_DE has code 0 (success for setjmp)
-		if (val != I286_INT_NM) {
+		//if (val != I286_INT_NM) {
 			cpu->pc = cpu->oldpc;
-		}
+		//}
 		i286_interrupt(cpu, val);
 	}
 	return cpu->t;
@@ -161,6 +163,8 @@ const char* str_opF[8] = {"incw","decw","call","callf","jmp","jmpf","push","ff /
 const char* str_opQ[8] = {"sldt","str","lldt","ltr","verr","verw","0f00 /6","0f00 /7"};
 const char* str_opW[8] = {"sgdt","sidt","lgdt","lidt","smsw","0f01 /5","lmsw","0f01 /7"};
 
+extern const char* x87_get_mnem(CPU*, int);
+
 xMnem i286_mnem(CPU* cpu, int sadr, cbdmr mrd, void* data) {
 	xMnem mn;
 	mn.cond = 0;
@@ -173,6 +177,11 @@ xMnem i286_mnem(CPU* cpu, int sadr, cbdmr mrd, void* data) {
 	opCode* op;
 	int adr = sadr;
 	unsigned char com;
+	int mod = 0;
+	unsigned char mb = 0;
+	char* ptr = strbuf;
+	const char* p;
+	char* dptr = mnembuf;
 	do {
 		com = cpu->mrd(adr, 0, cpu->xptr);
 		adr++;
@@ -191,11 +200,18 @@ xMnem i286_mnem(CPU* cpu, int sadr, cbdmr mrd, void* data) {
 		mn.flag = op->flag;
 		mn.len++;
 	} while (op->flag & OF_PREFIX);
-	strcpy(strbuf, op->mnem);
-	char* ptr = strbuf;
-	char* dptr = mnembuf;
-	int mod = 0;
-	unsigned char mb = 0;
+	if ((com & 0xf8) == 0xd8) {	// x87 opcodes
+		mb = cpu->mrd(adr++, 0, cpu->xptr);
+		mod = 1;
+		p = x87_get_mnem(cpu, ((com << 8) | mb) & 0x7ff);
+		if (p) {
+			strcpy(strbuf, p);
+		} else {
+			strcpy(strbuf, op->mnem);
+		}
+	} else {			// x86 opcodes
+		strcpy(strbuf, op->mnem);
+	}
 	PAIR(w,h,l)rx;
 	PAIR(w,h,l)seg;
 	PAIR(w,h,l)disp;
@@ -246,6 +262,10 @@ xMnem i286_mnem(CPU* cpu, int sadr, cbdmr mrd, void* data) {
 					dptr += sprintf(dptr, "#%.4X::%.4X", seg.w, rx.w);
 					// mn.oadr = rx.w;
 					break;
+				case '7':
+					if (!mod) {mod = 1; mb = cpu->mrd(adr, 0, cpu->xptr); adr++;}
+					sprintf(dptr, "%i", mb & 7);
+					break;
 				case 'r': if (!mod) {mod = 1; mb = cpu->mrd(adr, 0, cpu->xptr); adr++;}
 					if (op->flag & OF_WORD) {	// word
 						dptr += sprintf(dptr, "%s", str_regw[(mb >> 3) & 7]);
@@ -255,6 +275,15 @@ xMnem i286_mnem(CPU* cpu, int sadr, cbdmr mrd, void* data) {
 					break;
 				case 's': if (!mod) {mod = 1; mb = cpu->mrd(adr, 0, cpu->xptr); adr++;}
 					dptr += sprintf(dptr, "%s", str_regs[(mb >> 3) & 3]);
+					break;
+				case 'z':				// skip EA & disp
+					if (!mod) {mod = 1; mb = cpu->mrd(adr, 0, cpu->xptr); adr++;}
+					switch(mb & 0xc0) {
+						case 0x00:
+						case 0xc0: break;
+						case 0x40: adr++; break;
+						case 0x80: adr+=2; break;
+					}
 					break;
 				case 'e': if (!mod) {mod = 1; mb = cpu->mrd(adr, 0, cpu->xptr); adr++;}
 					if ((mb & 0xc0) == 0xc0) {		// reg

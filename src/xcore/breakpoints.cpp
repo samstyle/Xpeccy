@@ -164,12 +164,12 @@ void brkInstall(xBrkPoint* brk, int del) {
 				break;
 			case BRK_MEMRAM:
 				map = &conf.prof.cur->brkMapRam;
-				ptr = comp->brkRamMap + (brk->adr & 0x3fffff);
+				ptr = comp->brkRamMap + (brk->adr & comp->mem->ramMask);
 				cnt = brk->eadr - brk->adr + 1;
 				break;
 			case BRK_MEMROM:
 				map = &conf.prof.cur->brkMapRom;
-				ptr = comp->brkRomMap + (brk->adr & 0x7ffff);
+				ptr = comp->brkRomMap + (brk->adr & comp->mem->romMask);
 				cnt = brk->eadr - brk->adr + 1;
 				break;
 			case BRK_MEMSLT:

@@ -245,10 +245,16 @@ struct CPU {
 	xSegPtr tsdr;		// task register (56 bits:idx,base,limit)
 	xSegPtr seg;		// operating segment (for EA and 'replace segment' prefixes)
 	xSegPtr tmpdr;
+	long double x87reg[9];	// x87 registers, [8] is readed from memory converted value
+	unsigned x87top:3;	// x87 top of stack pos (0-7)
+	unsigned short x87cr;	// x87 control register
+	unsigned short x87sr;	// x87 status register
+	unsigned short x87tw;	// x87 tag word
 	unsigned char mod;	// 80286: mod byte (EA/reg)
 	struct {xSegPtr seg; PAIR(adr,adrh,adrl); unsigned reg:1;} ea;
 	int rep;		// 80286: repeat condition id
 	jmp_buf jbuf;
+	// callbacks, depend on x86 mode (real/prt)
 	unsigned char(*x86fetch)(CPU*);
 	unsigned char(*x86mrd)(CPU*,xSegPtr,int,unsigned short);
 	void(*x86mwr)(CPU*,xSegPtr,int,unsigned short,int);

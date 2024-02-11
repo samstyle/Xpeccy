@@ -155,7 +155,8 @@ void xThread::emuCycle(Computer* comp) {
 		}
 #endif
 		if (comp->brk) {
-			xBrkPoint* ptr = brk_find(comp->brkt, comp->brka);
+			// printf("brkt = %i, brka = %X\n", comp->brkt, comp->brka);
+			xBrkPoint* ptr = brk_find(comp->brkt, comp->brka);		// TODO: brk catched, but not found?
 			if (ptr) {
 				QString fnams;
 				QFile file;
@@ -174,7 +175,10 @@ void xThread::emuCycle(Computer* comp) {
 						file.close();
 						comp->brk = 0;
 						break;
-					default: conf.emu.pause |= PR_DEBUG; emit dbgRequest(); break;	// BRK_ACT_DBG
+					default:					// BRK_ACT_DBG
+						conf.emu.pause |= PR_DEBUG;
+						emit dbgRequest();
+						break;
 				}
 				if (!comp->brk && ptr->fetch) {		// to skip fetch-brk and don't stop again
 					tm = !!comp->debug;
@@ -182,6 +186,8 @@ void xThread::emuCycle(Computer* comp) {
 					compExec(comp);
 					comp->debug = !!tm;
 				}
+			} else {
+				comp->brk = 0;
 			}
 		}
 	} while (!comp->brk && conf.snd.fill && !finish && !conf.emu.pause);

@@ -17,8 +17,8 @@ unsigned char* comp_get_memcell_flag_ptr(Computer* comp, int adr) {
 	unsigned char* res = NULL;
 	xAdr xadr = mem_get_xadr(comp->mem, adr);
 	switch (xadr.type) {
-		case MEM_RAM: res = comp->brkRamMap + (xadr.abs & (MEM_4M - 1)); break;
-		case MEM_ROM: res = comp->brkRomMap + (xadr.abs & (MEM_512K - 1)); break;
+		case MEM_RAM: res = comp->brkRamMap + (xadr.abs & comp->mem->ramMask); break;
+		case MEM_ROM: res = comp->brkRomMap + (xadr.abs & comp->mem->romMask); break;
 		case MEM_SLOT: if (comp->slot->brkMap) {res = comp->slot->brkMap + (xadr.abs & comp->slot->memMask);} break;
 	}
 	return res;
@@ -32,18 +32,23 @@ bpChecker comp_check_bp(Computer* comp, int adr, int mask) {
 		ch.ptr = comp->brkAdrMap + (adr & comp->mem->busmask);
 		if (*ch.ptr & mask) {
 			ch.t = BRK_CPUADR;
-			ch.a = adr;
+			ch.a = adr & comp->mem->busmask;
 		}
 	}
 	if (ch.t < 0) {
 		xAdr xadr = mem_get_xadr(comp->mem, adr);
 		switch (xadr.type) {
-			case MEM_RAM: ch.ptr = comp->brkRamMap + (xadr.abs & (MEM_4M - 1)); ch.t = BRK_MEMRAM; break;
-			case MEM_ROM: ch.ptr = comp->brkRomMap + (xadr.abs & (MEM_512K - 1)); ch.t = BRK_MEMROM; break;
-			case MEM_SLOT: if (comp->slot->brkMap) {ch.ptr = comp->slot->brkMap + (xadr.abs & comp->slot->memMask); ch.t = BRK_MEMSLT;} break;
+			case MEM_RAM: xadr.abs &= comp->mem->ramMask; ch.ptr = comp->brkRamMap + xadr.abs; ch.t = BRK_MEMRAM; break;
+			case MEM_ROM: xadr.abs &= comp->mem->romMask; ch.ptr = comp->brkRomMap + xadr.abs; ch.t = BRK_MEMROM; break;
+			case MEM_SLOT: if (comp->slot->brkMap) {
+					xadr.abs &= comp->slot->memMask;
+					ch.ptr = comp->slot->brkMap + xadr.abs;
+					ch.t = BRK_MEMSLT;
+				} break;
 		}
 		if (ch.ptr) {
 			if (*ch.ptr & mask) {
+				printf("xadr.abs = %X, page=%X, off=%X\n",xadr.abs,xadr.bank,xadr.adr & comp->mem->pgmask);
 				ch.a = xadr.abs;
 			} else {
 				ch.t = -1;

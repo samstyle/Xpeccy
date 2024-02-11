@@ -53,7 +53,7 @@ int ibm_bios_rd(int adr, void* p) {
 void ibm_mem_map(Computer* comp) {
 	memSetBank(comp->mem, 0x00, MEM_RAM, 0, MEM_64K, ibm_ram_rd, ibm_ram_wr, comp);		// all is ram (up to 16M), except:
 	memSetBank(comp->mem, 0x0a, MEM_EXT, 0, 0x200, ibm_vga_rd, ibm_vga_wr, comp);		// a0000..bffff video
-	memSetBank(comp->mem, 0x0c, MEM_RAM, 0x0c, 0x100, ibm_ext_rd, ibm_dum_wr, comp);		// c0000..cffff adapter bios
+	memSetBank(comp->mem, 0x0c, MEM_RAM, 0x0c, 0x100, ibm_ext_rd, ibm_dum_wr, comp);	// c0000..cffff adapter bios
 	memSetBank(comp->mem, 0x0e, MEM_ROM, 0, 0x200, ibm_bios_rd, ibm_dum_wr, comp);		// e0000..fffff bios
 }
 
