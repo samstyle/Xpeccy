@@ -100,19 +100,19 @@ void dma_ch_transfer(DMAChan* ch, void* ptr) {
 }
 
 void dma_transfer(i8237DMA* dma) {
-	if (dma->en) {
-		if (!dma->ch[0].blk) dma_ch_transfer(&dma->ch[0], dma->ptr);
-		if (!dma->ch[1].blk) dma_ch_transfer(&dma->ch[1], dma->ptr);
-		if (!dma->ch[2].blk) dma_ch_transfer(&dma->ch[2], dma->ptr);
-		if (!dma->ch[3].blk) dma_ch_transfer(&dma->ch[3], dma->ptr);
-	}
+	if (!dma->ch[0].blk) dma_ch_transfer(&dma->ch[0], dma->ptr);
+	if (!dma->ch[1].blk) dma_ch_transfer(&dma->ch[1], dma->ptr);
+	if (!dma->ch[2].blk) dma_ch_transfer(&dma->ch[2], dma->ptr);
+	if (!dma->ch[3].blk) dma_ch_transfer(&dma->ch[3], dma->ptr);
 }
 
 void dma_sync(i8237DMA* dma, int ns) {
 	dma->ns += ns;
 	while (dma->ns > 0) {
 		dma->ns -= 200;		// 5MHz ~ 200ns/tick
-		dma_transfer(dma);
+		if (dma->en) {
+			dma_transfer(dma);
+		}
 	}
 }
 

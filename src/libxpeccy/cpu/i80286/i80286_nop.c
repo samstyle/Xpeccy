@@ -13,6 +13,10 @@
 // [7:P][6,5:DPL][4:0][3-0:TYPE]		system (gates)
 // rd/wr with segment P=0 -> interrupt
 
+// segment types:
+// 1CRA - code
+// 0EWA - data
+
 // about gates:
 // if jmpf/callf is pointing on call gate segment (type 4), activate task switching
 
