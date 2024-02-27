@@ -722,6 +722,7 @@ int ideIn(IDE* ide, int port, int* val, int dosen) {
 		}
 	} else {
 		if (ide->type == IDE_SMUC) {
+			//printf("smuc rd %.4X\n",port);
 			switch (port) {
 				case 0x5fba:		// version
 					*val = 0x28;	// 1
@@ -730,7 +731,7 @@ int ideIn(IDE* ide, int port, int* val, int dosen) {
 					*val = 0x40;	// 2
 					break;
 				case 0xffba:		// system
-					*val = (nvRd(ide->smuc.nv) ? 0x40 : 0x00);	// TODO: b7: INTRQ from HDD/CF, b6:SDA?
+					*val = (nvRd(ide->smuc.nv) ? 0xff : 0xbf);	// TODO: b7: INTRQ from HDD/CF, b6:SDA?
 					break;
 				case 0x7fba:		// virtual fdd
 					*val = ide->smuc.fdd | 0x3f;
@@ -740,7 +741,7 @@ int ideIn(IDE* ide, int port, int* val, int dosen) {
 					*val = 0xff;
 					break;
 				case 0xdfba:		// cmos
-					*val = (ide->smuc.sys & 0x80) ? 0xff : ide->smuc.cmos->data[ide->smuc.cmos->adr];
+					*val = (ide->smuc.sys & 0x80) ? 0xff : cmos_rd(ide->smuc.cmos, CMOS_DATA); // ide->smuc.cmos->data[ide->smuc.cmos->adr];
 					break;
 			}
 		}
@@ -809,6 +810,7 @@ int ideOut(IDE* ide, int port, int val,int dosen) {
 		}
 	} else {
 		if (ide->type == IDE_SMUC) {
+			//printf("smuc wr %.4X,%.2X\n",port,val);
 			switch (port) {
 				case 0xffba:			// system
 					ide->smuc.sys = val;
@@ -818,10 +820,12 @@ int ideOut(IDE* ide, int port, int val,int dosen) {
 					ide->smuc.fdd = val & 0xc0;
 					break;
 				case 0xdfba:			// cmos
-					if (ide->smuc.sys & 0x80) {
-						ide->smuc.cmos->data[ide->smuc.cmos->adr] = val;
-					} else {
-						ide->smuc.cmos->adr = val;
+					if (ide->smuc.sys & 0x80) {		// data
+						cmos_wr(ide->smuc.cmos, CMOS_DATA, val);
+						// ide->smuc.cmos->data[ide->smuc.cmos->adr] = val;
+					} else {				// address
+						cmos_wr(ide->smuc.cmos, CMOS_ADR, val);
+						// ide->smuc.cmos->adr = val;
 					}
 					break;
 			}

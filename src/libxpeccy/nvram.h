@@ -22,8 +22,8 @@ typedef struct {
 	int sda;
 	int bitcount;
 	unsigned char data;		// data recieved from zx
-	unsigned short adr;
-	int bufpos;
+	unsigned adr:11;
+	unsigned bufpos:4;
 	unsigned char buf[16];		// buffer for writed data (real writing process after STOP condition)
 	unsigned char mem[0x7ff];	// 2K
 } nvRam;

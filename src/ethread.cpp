@@ -186,6 +186,9 @@ void xThread::emuCycle(Computer* comp) {
 					compExec(comp);
 					comp->debug = !!tm;
 				}
+			} else if (comp->brkt == -1) {
+				conf.emu.pause |= PR_DEBUG;
+				emit dbgRequest();
 			} else {
 				comp->brk = 0;
 			}

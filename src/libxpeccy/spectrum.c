@@ -552,20 +552,10 @@ int compExec(Computer* comp) {
 			comp->brka = ch.a;
 			if (*ch.ptr & MEM_BRK_TFETCH) {
 				*ch.ptr &= ~MEM_BRK_TFETCH;
+				comp->brkt = -1;		// temp (not in list)
 			}
 			return 0;
 		}
-/*
-		unsigned char *ptr = getBrkPtr(comp, comp->cpu->pc + comp->cpu->cs.base);
-		unsigned char brk = getBrk(comp, comp->cpu->pc + comp->cpu->cs.base);
-		if (brk & (MEM_BRK_FETCH | MEM_BRK_TFETCH)) {
-			comp->brk = 1;
-			if (brk & MEM_BRK_TFETCH) {
-				*ptr &= ~MEM_BRK_TFETCH;
-			}
-			return 0;
-		}
-*/
 		if (comp->cpu->intrq && comp->brkirq) {
 			comp->brk = 1;
 			comp->brkt = BRK_IRQ;
@@ -659,7 +649,7 @@ int compExec(Computer* comp) {
 
 unsigned char cmsRd(Computer* comp) {
 	unsigned char res = 0xff;
-	if (comp->cmos.adr >= 0xf0) {
+	if (comp->cmos.adr >= 0x70) {
 		switch(comp->cmos.mode) {
 			case 0: res = comp->evo.bcVer[comp->cmos.adr & 0x0f]; break;
 			case 1: res = comp->evo.blVer[comp->cmos.adr & 0x0f]; break;
@@ -679,10 +669,11 @@ void cmsWr(Computer* comp, int val) {
 			}
 			break;
 		default:
-			comp->cmos.data[comp->cmos.adr] = val & 0xff;
-			if (comp->cmos.adr > 0xef) {
+			if (comp->cmos.adr > 0x6f) {
 				comp->cmos.mode = val;	// write to F0..FF : set F0..FF reading mode
 				//printf("cmos mode %i\n",val);
+			} else {
+				cmos_wr(&comp->cmos, CMOS_DATA, val);
 			}
 			break;
 	}

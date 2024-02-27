@@ -9,6 +9,7 @@ extern "C" {
 
 #include <setjmp.h>		// to implement try-catch
 #define THROW(__N) longjmp(cpu->jbuf, __N)
+#define THROW_EC(__N,__C) cpu->errcod = __C; longjmp(cpu->jbuf, __N)
 
 #include "../defines.h"
 
@@ -114,7 +115,12 @@ typedef struct {
 
 typedef struct {
 	int idx;			// 'visible' value
-	unsigned char flag;		// access flag
+//	unsigned char flag;		// access flag
+	unsigned pl:2;
+	unsigned ar:5;
+	unsigned pr:1;
+	unsigned sys:1;			// ar & 0x10
+	unsigned code:1;		// ar & 0x18 = 0x18
 	unsigned base:24;		// segment base addr
 	unsigned short limit;		// segment size in bytes
 } xSegPtr;				// aka segment table descriptor
@@ -244,6 +250,7 @@ struct CPU {
 	xSegPtr ldtr;		// ldt (56 bits:idx,base,limit)
 	xSegPtr tsdr;		// task register (56 bits:idx,base,limit)
 	xSegPtr seg;		// operating segment (for EA and 'replace segment' prefixes)
+	xSegPtr gate;		// gate for far jmp/call/int
 	xSegPtr tmpdr;
 	long double x87reg[9];	// x87 registers, [8] is readed from memory converted value
 	unsigned x87top:3;	// x87 top of stack pos (0-7)
@@ -251,7 +258,7 @@ struct CPU {
 	unsigned short x87sr;	// x87 status register
 	unsigned short x87tw;	// x87 tag word
 	unsigned char mod;	// 80286: mod byte (EA/reg)
-	struct {xSegPtr seg; PAIR(adr,adrh,adrl); unsigned reg:1;} ea;
+	struct {xSegPtr seg; PAIR(adr,adrh,adrl); unsigned reg:1; unsigned cnt:5;} ea;
 	int rep;		// 80286: repeat condition id
 	jmp_buf jbuf;
 	// callbacks, depend on x86 mode (real/prt)
