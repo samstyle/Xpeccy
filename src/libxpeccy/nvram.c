@@ -8,6 +8,8 @@ nvRam* nvCreate() {
 	if (nv == NULL) return NULL;
 	memset(nv,0x00,sizeof(nvRam));
 	nv->mode = NV_IDLE;
+	nv->sdc = 1;
+	nv->sda = 1;
 	return nv;
 }
 
@@ -111,8 +113,8 @@ void nvWr(nvRam* nv,int sda, int sdc, int wp) {
 
 int nvRd(nvRam* nv) {
 	int res = 0;
-	if (nv->ack) {
-		res = 0;			// rd during ack
+	if (nv->ack || (nv->mode == NV_IDLE)) {
+		res = 0;
 	} else if (nv->tx) {
 		res = (nv->data & 0x80) ? 1 : 0;
 	}

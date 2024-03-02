@@ -73,6 +73,7 @@ enum {
 	CGA_GRF_H,	// grf 640 1bpp (cga)
 	VGA_GRF_L,	// grf 320 4bpp (ega)
 	VGA_GRF_H,	// grf 640 4bpp (ega)
+	VGA_GRF_256,	// grf 320 8bpp (vga)
 };
 
 extern int bufSize;
@@ -308,12 +309,17 @@ struct Video {
 		int seq_idx;
 		int grf_idx;
 		int atr_idx;
+		unsigned char dac_idx;
+		int dac_cnt;			// counter to read/write bytes to palette
+		int dac_mode;			// 0 read, 1 write
+		int dac_mask;			// mask for dac index
 		int cpl;			// 40/80 chars per line
-		int line;			// chars line
+//		int line;			// chars line
 		int chline;			// line inside char
 		int chsize;			// char height (0-31)
 		int cadr;			// cursor address
 		unsigned char latch[4];
+		xColor dac_col;
 		cbvid ega_cbline;
 	} vga;
 

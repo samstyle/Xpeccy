@@ -111,7 +111,8 @@ enum {
 	I286_MSW,
 	I286_GDT,
 	I286_LDT,
-	I286_IDT
+	I286_IDT,
+	I286_TSS
 };
 
 #include "../cpu.h"

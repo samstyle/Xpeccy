@@ -17,8 +17,8 @@ unsigned char* comp_get_memcell_flag_ptr(Computer* comp, int adr) {
 	unsigned char* res = NULL;
 	xAdr xadr = mem_get_xadr(comp->mem, adr);
 	switch (xadr.type) {
-		case MEM_RAM: res = comp->brkRamMap + (xadr.abs & (MEM_4M - 1)); break;
-		case MEM_ROM: res = comp->brkRomMap + (xadr.abs & (MEM_512K - 1)); break;
+		case MEM_RAM: res = comp->brkRamMap + (xadr.abs & comp->mem->ramMask); break;
+		case MEM_ROM: res = comp->brkRomMap + (xadr.abs & comp->mem->romMask); break;
 		case MEM_SLOT: if (comp->slot->brkMap) {res = comp->slot->brkMap + (xadr.abs & comp->slot->memMask);} break;
 	}
 	return res;
@@ -32,18 +32,23 @@ bpChecker comp_check_bp(Computer* comp, int adr, int mask) {
 		ch.ptr = comp->brkAdrMap + (adr & comp->mem->busmask);
 		if (*ch.ptr & mask) {
 			ch.t = BRK_CPUADR;
-			ch.a = adr;
+			ch.a = adr & comp->mem->busmask;
 		}
 	}
 	if (ch.t < 0) {
 		xAdr xadr = mem_get_xadr(comp->mem, adr);
 		switch (xadr.type) {
-			case MEM_RAM: ch.ptr = comp->brkRamMap + (xadr.abs & (MEM_4M - 1)); ch.t = BRK_MEMRAM; break;
-			case MEM_ROM: ch.ptr = comp->brkRomMap + (xadr.abs & (MEM_512K - 1)); ch.t = BRK_MEMROM; break;
-			case MEM_SLOT: if (comp->slot->brkMap) {ch.ptr = comp->slot->brkMap + (xadr.abs & comp->slot->memMask); ch.t = BRK_MEMSLT;} break;
+			case MEM_RAM: xadr.abs &= comp->mem->ramMask; ch.ptr = comp->brkRamMap + xadr.abs; ch.t = BRK_MEMRAM; break;
+			case MEM_ROM: xadr.abs &= comp->mem->romMask; ch.ptr = comp->brkRomMap + xadr.abs; ch.t = BRK_MEMROM; break;
+			case MEM_SLOT: if (comp->slot->brkMap) {
+					xadr.abs &= comp->slot->memMask;
+					ch.ptr = comp->slot->brkMap + xadr.abs;
+					ch.t = BRK_MEMSLT;
+				} break;
 		}
 		if (ch.ptr) {
 			if (*ch.ptr & mask) {
+				printf("xadr.abs = %X, page=%X, off=%X\n",xadr.abs,xadr.bank,xadr.adr & comp->mem->pgmask);
 				ch.a = xadr.abs;
 			} else {
 				ch.t = -1;
@@ -547,20 +552,10 @@ int compExec(Computer* comp) {
 			comp->brka = ch.a;
 			if (*ch.ptr & MEM_BRK_TFETCH) {
 				*ch.ptr &= ~MEM_BRK_TFETCH;
+				comp->brkt = -1;		// temp (not in list)
 			}
 			return 0;
 		}
-/*
-		unsigned char *ptr = getBrkPtr(comp, comp->cpu->pc + comp->cpu->cs.base);
-		unsigned char brk = getBrk(comp, comp->cpu->pc + comp->cpu->cs.base);
-		if (brk & (MEM_BRK_FETCH | MEM_BRK_TFETCH)) {
-			comp->brk = 1;
-			if (brk & MEM_BRK_TFETCH) {
-				*ptr &= ~MEM_BRK_TFETCH;
-			}
-			return 0;
-		}
-*/
 		if (comp->cpu->intrq && comp->brkirq) {
 			comp->brk = 1;
 			comp->brkt = BRK_IRQ;
@@ -654,7 +649,7 @@ int compExec(Computer* comp) {
 
 unsigned char cmsRd(Computer* comp) {
 	unsigned char res = 0xff;
-	if (comp->cmos.adr >= 0xf0) {
+	if (comp->cmos.adr >= 0x70) {
 		switch(comp->cmos.mode) {
 			case 0: res = comp->evo.bcVer[comp->cmos.adr & 0x0f]; break;
 			case 1: res = comp->evo.blVer[comp->cmos.adr & 0x0f]; break;
@@ -674,10 +669,11 @@ void cmsWr(Computer* comp, int val) {
 			}
 			break;
 		default:
-			comp->cmos.data[comp->cmos.adr] = val & 0xff;
-			if (comp->cmos.adr > 0xef) {
+			if (comp->cmos.adr > 0x6f) {
 				comp->cmos.mode = val;	// write to F0..FF : set F0..FF reading mode
 				//printf("cmos mode %i\n",val);
+			} else {
+				cmos_wr(&comp->cmos, CMOS_DATA, val);
 			}
 			break;
 	}

@@ -6,6 +6,10 @@
 #include "vga.h"
 
 //#define CGA_MODE 0
+#define USE_VGA 1
+
+// VGA: ATR_REG[col_idx] = index in DAC
+// VGA 256c mode: col_idx = index in DAC
 
 // stretch x2
 // when SEQ(1).b3=1
@@ -26,24 +30,36 @@ void ega_hires_dot(Video* vid) {
 	vid_dot_half(vid, vid->line[(vid->ray.x << 1) | 1]);
 }
 
+// TODO: there is only 2 modes - text & graphics:
+// text: 40 or 80 chars (divide dot clock by 2)
+// graphics: several methods of get vmem.address * several methods to interpret L0-L3 data as color
+
+// 3C2.b2,3 = clock select (00:14MHz, 01:16MHz, 10:from ft.connector, 11:not used
+// 3C2.b6,7 = vres(00:200,01:350,10:400,11:480 lines)
+// SEQ_R1.b3: 1:divide dot clock by 2 (T40 or G320)
+// GRF_R6.b0: 0:text, 1:gfx
+// * GRF_R5.b6: 256color - bytes from L0-L3 is color indexes in DAC (w/o ATR controller)
+
 static int vga_scr_height[4] = {200,350,400,480};
 
 void vga_upd_mode(Video* vid) {
-	// 3C2.bit 2,3 = clock select (00:14MHz, 01:16MHz, 10:from ft.connector, 11:not used
-	// 3C2.bit 6,7 = vres(00:200,01:350,10:400,11:480 lines)
-	// SEQ(1).b3: 1=divide dot clock by 2 (T40 or G320)
-	// GRF_REG[0x06] bit0: 1:gfx, 0:text
-	int mod = (SEQ_REG(1) & 8) | (GRF_REG(6) & 1);
+	int mod;
+	if (GRF_REG(5) & 0x40) {
+		mod = 256;
+	} else {
+		mod = (SEQ_REG(1) & 8) | (GRF_REG(6) & 1);
+	}
 	printf("ega mode = %i\n",mod);
 	switch(mod) {
 		case 0: vid_set_mode(vid, CGA_TXT_H); break;	// T80
 		case 1: vid_set_mode(vid, VGA_GRF_H); break;	// G640
 		case 8: vid_set_mode(vid, CGA_TXT_L); break;	// T40
 		case 9: vid_set_mode(vid, VGA_GRF_L); break;	// G320
+		case 256: vid_set_mode(vid, VGA_GRF_256); break; // 256col
 		default:	// others is undefined
 			break;
 	}
-	int rx = 640;	// (SEQ_REG(1) & 8) ? 320 : 640;
+	int rx = 640;	// (SEQ_REG(1) & 8) ? 320 : 640;	// double dots if double-clock (320 -> 640/2)
 	int ry = vga_scr_height[(vid->reg[EGA_3C2] >> 6) & 3];
 	vid->linedbl = (vid->vga.cga || (ry == 200));
 	if (vid->linedbl) ry <<= 1;
@@ -56,6 +72,10 @@ static const int ega_def_idx[16] = {0,1,2,3,4,5,20,7,56,57,58,59,60,61,62,63};
 void vga_reset(Video* vid) {
 	int i;
 	xColor xcol;
+	vid->vga.dac_idx = 0;
+	vid->vga.dac_mode = 2;
+	vid->vga.dac_mask = 0xff;
+// init ega palette
 	for (i = 0; i < 64; i++) {
 		xcol.r = 0x55 * (((i >> 1) & 2) + ((i >> 5) & 1));
 		xcol.g = 0x55 * ((i & 2) + ((i >> 4) & 1));
@@ -104,6 +124,35 @@ int vga_rd(Video* vid, int port) {
 			if (0b1001 & (1 << port)) res |= 0x10;	// switch sense (0110/0111 ?)
 			// if (vid->intrq) res |= 0x80;
 			break;
+#if USE_VGA
+		case 0x3c7:
+			res = vid->vga.dac_mode ? 0 : 3;
+			break;
+		case 0x3c8:
+			res = vid->vga.dac_idx & 0xff;
+			break;
+		case 0x3c9:
+			if (vid->vga.dac_mode != 0) break;	// not read mode
+			vid->vga.dac_cnt--;
+			switch(vid->vga.dac_cnt) {
+				case 2: vid->vga.dac_col = vid_get_col(vid, vid->vga.dac_idx & vid->vga.dac_mask);
+					res = vid->vga.dac_col.r;
+					break;
+				case 1: res = vid->vga.dac_col.g;
+					break;
+				case 0: res = vid->vga.dac_col.b;
+					vid->vga.dac_idx++;
+					vid->vga.dac_cnt = 3;
+					break;
+			}
+			break;
+		case 0x3ca:
+			res = vid->reg[CGA_3DA];
+			break;
+		case 0x3cc:
+			res = vid->reg[EGA_3C2];		// VGA only
+			break;
+#endif
 		case 0x3b5:
 		case 0x3d5:		// CRT registers C.. may be readed
 			if ((CRT_IDX >= 0x0c) && (CRT_IDX <= VGA_CRC))
@@ -124,6 +173,9 @@ int vga_rd(Video* vid, int port) {
 			if (vid->vblank || vid->hblank)
 				res |= 1;
 			vid->vga.atrig = 0;
+			break;
+		default:
+			printf("EGA/VGA rd %.3X\n",port);
 			break;
 	}
 	return res;
@@ -162,6 +214,38 @@ void vga_wr(Video* vid, int port, int val) {
 				SEQ_CUR_REG = val & 0xff;
 			}
 			break;
+#if USE_VGA
+		// VGA only: 3c3.b0: (0:disable display, 1:enable display)
+		case 0x3c3:
+			break;
+		// DAC (VGA)
+		case 0x3c6:
+			vid->vga.dac_mask = val & 0xff;
+			break;
+		case 0x3c7:		// palette index (read)
+			vid->vga.dac_idx = val & 0xff;
+			vid->vga.dac_cnt = 3;
+			vid->vga.dac_mode = 0;
+			break;
+		case 0x3c8:		// palette index (write)
+			vid->vga.dac_idx = val & 0xff;
+			vid->vga.dac_cnt = 3;
+			vid->vga.dac_mode = 1;
+			break;
+		case 0x3c9:
+			if (vid->vga.dac_mode != 1) break;		// not in write mode
+			vid->vga.dac_cnt--;
+			switch(vid->vga.dac_cnt) {
+				case 2: vid->vga.dac_col.r = (val & 0x3f) << 2; break;			// r
+				case 1: vid->vga.dac_col.g = (val & 0x3f) << 2; break;			// g
+				case 0: vid->vga.dac_col.b = (val & 0x3f) << 2;				// b, write color, go to next index
+					vid_set_col(vid, vid->vga.dac_idx & vid->vga.dac_mask, vid->vga.dac_col);
+					vid->vga.dac_idx++;
+					vid->vga.dac_cnt = 3;
+					break;
+			}
+			break;
+#endif
 		// graphics registers (3ce/3cf)
 		case 0x3ce:
 			GRF_IDX = val & 0xff;
@@ -174,6 +258,12 @@ void vga_wr(Video* vid, int port, int val) {
 			}
 			break;
 		// atribute registers (3c0)
+		// 0-F: color
+		// 10: mode
+		// 11: overscan color
+		// 12: color plane enable
+		// 13: horizontal pel panning
+		// 14: VGA: color select
 		case 0x3c0:
 			if (vid->vga.atrig) {	// data
 				ATR_CUR_REG = val & 0xff;
@@ -184,11 +274,11 @@ void vga_wr(Video* vid, int port, int val) {
 			vid->vga.blinken = (ATR_REG(0x10) & 8) ? 1 : 0;
 			break;
 		case 0x3c2:
-			// b0: 0 for 3b?, 1 for 3d? ports access
+			// b0: 0 for 3Bx, 1 for 3Dx ports access
 			// b1: enable ram access
 			// b2,3: clock rate (00:320px, 01:640px, 10:external 11:not used) = switch num?
 			// b4: [EGA] disable internal drivers
-			// b5: page bit for odd/even mode
+			// b5: page bit for odd/even mode (0:low 64K, 1:high 64K)
 			// b6,7: lines 00:200, 01:350, 10:400, 11:480
 			vid->reg[EGA_3C2] = val & 0xff;		// misc.output register
 			vga_upd_mode(vid);
@@ -232,7 +322,11 @@ void vga_wr(Video* vid, int port, int val) {
 		case 0x3ba:
 		case 0x3da:		// [EGA] feature control regiser
 			// b0,1: fc0,fc1 to feature device
+			// VGA: b3 = 0, others is reserved
 			vid->reg[CGA_3DA] = val & 0xff;
+			break;
+		default:
+			printf("EGA/VGA wr %.3X,%.2X\n",port,val);
 			break;
 	}
 }
@@ -258,9 +352,12 @@ void vga_wr(Video* vid, int port, int val) {
 // write mode 02:
 // cpu data b0-3 = color (0..15) = bits for planes 0-3
 // GRF_R08.b0..7: 1=write color bits to planes at this bit-position, 0=skip
+// write mode 03 (VGA):
+// value = GRF_R0 & GRF_R8
 
 // GRF_R05.b4: odd/even mode
 // GRF_R06.b1: chain odd/even (2=0, 3=1)
+// SEQ_R04.b3 - chain4 (adr & 3 = plane)
 
 void vga_mwr(Video* vid, int adr, int val) {
 	adr &= (adr < 0xb0000) ? 0xffff : 0x7fff;
@@ -271,12 +368,14 @@ void vga_mwr(Video* vid, int adr, int val) {
 	} else if ((vid->reg[EGA_3C2] & 2)) {		// vmem enabled
 		unsigned char wmsk = SEQ_REG(2) & 0x0f;	// mapmask (layers write-enable)
 		unsigned char bmsk = GRF_REG(8);	// bitmask
+
 		if (GRF_REG(5) & 0x10) {		// odd/even mode
 			if (adr & 1) wmsk &= 0x0a; else wmsk &= 0x05;
 			//wmsk &= 0x05;			// 0,2
 			//if (adr & 1) wmsk <<= 1;	// 1,3
 			adr >>= 1;
 		}
+
 		int bt,lay,lm;
 		for (lay = 0; lay < 4; lay++) {
 			lm = (1 << lay);
@@ -342,7 +441,7 @@ int vga_mrd(Video* vid, int adr) {
 		int rp = GRF_REG(4) & 3;
 		if (GRF_REG(5) & 0x10) {
 			rp = (rp & 2) | (adr & 1);
-			adr = (adr >> 1) | ((adr & 1) ? MEM_64K : 0);
+			adr = (adr >> 1) | ((adr & 1) << 16);
 		}
 
 		for(res = 0; res < 4; res++)		// store latches
@@ -377,12 +476,14 @@ int vga_mrd(Video* vid, int adr) {
 // :: if line==CRT_R12h {HBlank=1}
 // :: else if line==CRT_R06h {frame_end}
 
-// SEQ_REG(4).b2 - odd/even mode for cpu addresses; 0:odd addresses to odd plane, even-to even; 1:normal mode
-// GRF_REG(5).b4 - odd/even mode; 1:on 0:off
+// SEQ_R4.b2 - odd/even mode for cpu addresses; 0:odd addresses to odd plane, even-to even; 1:normal mode
+// GRF_R5.b4 - odd/even mode; 1:on 0:off
 
 // ATR_REG(10).b0 : 1:gfx, 0:txt
 //	gfx: if GRF_REG(5).bit5=1:cga4; else if GRF_REG(6).b2,3=11:cga2; else ega;
 //	txt: txt
+
+// GRF_R5.b6: 256color - 2bits from L0-L3 is color index in DAC (w/o ATR controller)
 
 void vga_check_vsync(Video* vid) {
 	int vs_start;
@@ -408,7 +509,7 @@ void cga_t80_ini(Video* vid) {
 }
 
 void cga_t40_frm(Video* vid) {
-	vid->vga.line = 0;
+//	vid->vga.line = 0;
 	vid->vga.chline = 0;	// CRT_REG(0x08) & 0x1f;
 	vid->bgadr = (CRT_REG(0x0c) << 8) | (CRT_REG(0x0d));	// screen start address
 	vid->vadr = vid->bgadr;
@@ -426,11 +527,17 @@ void cga_t40_line(Video* vid) {
 		vid->atrbyte = vid->ram[vid->vadr + MEM_64K];	// attr	(plane 1)
 		vid->fadr = vid->idx * 32;			// offset of 1st char byte in plane 2 (allways 32 bytes/char in font plane)
 		vid->fadr += vid->vga.chline;			// +line in char
-		if (!vid->vga.cga && (!vid->vga.blinken || !(vid->atrbyte & 0x08))) {	// font select (each 8K)
-			vid->fadr += (SEQ_REG(3) & 0x03) << 13;
+
+		if (vid->vga.cga) {
+			vid->fadr += (SEQ_REG(3) & 0x0c) << 11;	// cga (one charset A)
+		} else if (!vid->vga.blinken || !(vid->atrbyte & 0x08)) {
+			vid->fadr += (SEQ_REG(3) & 0x03) << 13;	// vga charset A (b13,14)
+			vid->fadr += (SEQ_REG(3) & 0x20) << 10;	// b15 (VGA)
 		} else {
-			vid->fadr += (SEQ_REG(3) & 0x0c) << 11;
+			vid->fadr += (SEQ_REG(3) & 0x0c) << 11;	// vga charset B (b13,14)
+			vid->fadr += (SEQ_REG(3) & 0x10) << 11;	// b15 (VGA)
 		}
+
 		vid->idx = vid->ram[0x20000 + vid->fadr];	// pixels
 		if ((vid->vadr == vid->vga.cadr) && !(CRT_REG(0x0a) & 0x20)) {		// cursor position, cursor enabled
 			if ((vid->vga.chline > (CRT_REG(0x0a) & 0x1f)) \
@@ -455,7 +562,7 @@ void cga_t40_line(Video* vid) {
 	}
 	vid->vga.chline++;
 	if (vid->vga.chline > CRT_REG(9)) {			// char height register
-		vid->vga.line++;
+//		vid->vga.line++;
 		vid->vga.chline = 0;
 //		vid->vadr = vid->tadr;				// vadr to next line
 	} else {
@@ -484,30 +591,47 @@ int vga_seq_adr(Video* vid, int idx) {
 		adr &= ~0x4000;
 		adr |= ((vid->ray.y & 2) << 13);
 	}
-	if (!(SEQ_REG(4) & 4)) {		// odd/even
+/*	if (!(SEQ_REG(4) & 8)) {			// VGA: chain4
+		adr = (adr >> 2) | ((adr & 3) << 16);
+	} else */ if (!(SEQ_REG(4) & 4)) {		// odd/even: b0 = plane, b1-15 = adr
 		adr = (adr >> 1) | ((adr & 1) << 16);
 	}
 	adr += vid->bgadr;
 	return adr;
 }
 
+int vga_get_col(Video* vid, int idx) {
+	idx &= ATR_REG(0x12);
+#if USE_VGA
+	if (ATR_REG(0x10) & 0x80) {
+		idx &= 0x0f;
+		idx |= (ATR_REG(0x14) & 0x0f) << 4;	// replace b4-7
+	} else {
+		idx &= 0x3f;
+		idx |= (ATR_REG(0x14) & 0x0c) << 4;	// replace b6,7 only
+	}
+#endif
+	return idx;
+}
+
 // res = HResolution (320 or 640)
-// SEQ(1).bit2: if 1, data from 2 planes as 16-bit stream, result - 2 streams by 16 bits; 0 - separate 4 streams by 8 bits (all planes)
-// GRF(5).bit5: if 1, 2 bits from stream forms one color/cga; 0 - 1 bit per color/ega
-// GRF(17h).bit0: 0:vadr.b13=ray.y.bit0
-// GRF(17h).bit1: 0:vadr.b14=ray.y.bit1
-// GRF(17h).bit2: 1:inc line counter each 2nd line, 0:each line
-// GRF(17h).bit5: if (bit6=0) {0:vadr.b0=vadr.b13, 1:vadr.b0=vadr.b15;}
-// GRF(17h).bit6: 0:word mode (vadr<<=1), 1:byte mode
-// GRF(17h).bit7: 0:disable Hsync/Vsync
+// SEQ_R01.bit2: if 1, data from 2 planes as 16-bit stream, result - 2 streams by 16 bits; 0 - separate 4 streams by 8 bits (all planes)
+// SEQ_R01.bit5: if 1, data from 4 planes as 32-bit stream (VGA only)
+// GRF_R05.bit5: if 1, 2 bits from 2 streams forms one color/cga; 0 - 1 bit per color/ega
+// GRF_R05.bit6: 1: 2 bits from 4 planes forms 8bit color index (VGA 256 colors, rewrites GRF_R05.bit5), don't get color from ATR
+// GRF_R17h.bit0: 0:vadr.b13=ray.y.bit0
+// GRF_R17h.bit1: 0:vadr.b14=ray.y.bit1
+// GRF_R17h.bit2: 1:inc line counter each 2nd line, 0:each line
+// GRF_R17h.bit5: if (bit6=0) {0:vadr.b0=vadr.b13, 1:vadr.b0=vadr.b15;}
+// GRF_R17h.bit6: 0:word mode (vadr<<=1), 1:byte mode
+// GRF_R17h.bit7: 0:disable Hsync/Vsync
+
 void vga_4bpp(Video* vid, int res) {
 	memset(vid->line, CRT_REG(0x11), 0x500);
 	int pos = 0;
 	res = vid->vga.cpl;
 	vid->tadr = vid->fadr;
 	vid->vadr = vid->fadr;
-	// TODO:fadr = line idx (starts from 0, increment every fetch)
-	//	vadr = calculated from fadr due bits below + screen start adr, pick byte(s) to b0..3
 	int k,msk;
 	int col,b0,b1,b2,b3;
 	switch ((SEQ_REG(1) & 4) | (GRF_REG(5) & 0x20)) {
@@ -539,7 +663,7 @@ void vga_4bpp(Video* vid, int res) {
 				b1 = ((vid->ram[vid->vadr+0x20000] & 0xff) << 8) | ((vid->ram[vid->vadr + 0x30000]) & 0xff);
 				vid->fadr++;
 				for (k = 0; k < 8; k++) {
-					col = ((b0 & 0x8000) >> 14) | ((b1 & 0x8000) >> 15);
+					col = ((b0 & 0x8000) >> 15) | ((b1 & 0x8000) >> 14);
 					b0 <<= 1;
 					b1 <<= 1;
 					col &= ATR_REG(0x12);
@@ -580,11 +704,13 @@ void vga_4bpp(Video* vid, int res) {
 		case 2: if (!(vid->ray.y & 1)) vid->fadr = vid->tadr; break;
 		case 3: break;
 	}
+/*
 	if (CRT_REG(17) & 4) {
 		vid->vga.line += (vid->ray.y & 1);
 	} else {
 		vid->vga.line++;
 	}
+*/
 	// correct colors for cga mode, but not for all games...
 	if (GRF_REG(5) & 0x10) {
 		for(pos = 0; pos < res; pos++) {
@@ -594,6 +720,35 @@ void vga_4bpp(Video* vid, int res) {
 				vid->line[pos] &= ~0x38;
 			}
 		}
+	}
+}
+
+// GRF_R5.b5: interleaved shift
+// GRF_R5.b6: 256-color shift
+// 00: single shift (1 byte from each plane = 4bpp)
+// 01: interleaved shift
+//	at 1st 4 pix : col = ((b0 >> 6) & 0x03) | ((b2 >> 4) & 0x0c)
+//	at 2nd 4 pix : col = ((b1 >> 6) & 0x03) | ((b3 >> 4) & 0x0c)
+// 1x: 256-color shift
+//	?: 1 plane = 1 pixel color, OR take 2 bits from all 4 planes = pixel color
+
+void vga256_line(Video* vid) {
+	memset(vid->line, CRT_REG(0x11), 0x500);
+	int pos = 0;
+	vid->tadr = vid->fadr;
+	vid->vadr = vid->fadr;
+	int b0,b1,b2,b3;
+	while (pos < 320) {
+		vid->vadr = vga_seq_adr(vid, vid->fadr);
+		b0 = vid->ram[vid->vadr] & 0xff;
+		b1 = vid->ram[vid->vadr + 0x10000] & 0xff;
+		b2 = vid->ram[vid->vadr + 0x20000] & 0xff;
+		b3 = vid->ram[vid->vadr + 0x30000] & 0xff;
+		vid->fadr++;
+		vid->line[pos++] = b0;
+		vid->line[pos++] = b1;
+		vid->line[pos++] = b2;
+		vid->line[pos++] = b3;
 	}
 }
 

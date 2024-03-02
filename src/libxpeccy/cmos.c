@@ -52,6 +52,7 @@ int rtc_read(CMOS* cms) {
 	ctime = localtime(&rtime);
 //	int cur_time = (ctime->tm_hour << 16) + (ctime->tm_min << 8) + ctime->tm_sec;
 	switch (cms->adr) {
+		// TODO: non-bcd mode
 		case 0x00: res = toBCD(ctime->tm_sec); break;
 		case 0x02: res = toBCD(ctime->tm_min); break;
 		case 0x04: res = toBCD(ctime->tm_hour); break;

@@ -53,7 +53,7 @@ int ibm_bios_rd(int adr, void* p) {
 void ibm_mem_map(Computer* comp) {
 	memSetBank(comp->mem, 0x00, MEM_RAM, 0, MEM_64K, ibm_ram_rd, ibm_ram_wr, comp);		// all is ram (up to 16M), except:
 	memSetBank(comp->mem, 0x0a, MEM_EXT, 0, 0x200, ibm_vga_rd, ibm_vga_wr, comp);		// a0000..bffff video
-	memSetBank(comp->mem, 0x0c, MEM_RAM, 0x0c, 0x100, ibm_ext_rd, ibm_dum_wr, comp);		// c0000..cffff adapter bios
+	memSetBank(comp->mem, 0x0c, MEM_RAM, 0x0c, 0x100, ibm_ext_rd, ibm_dum_wr, comp);	// c0000..cffff adapter bios
 	memSetBank(comp->mem, 0x0e, MEM_ROM, 0, 0x200, ibm_bios_rd, ibm_dum_wr, comp);		// e0000..fffff bios
 }
 
@@ -172,6 +172,18 @@ void ibm_outKbd(Computer* comp, int adr, int val) {
 			break;
 	}
 	//printf("%.4X:%.4X kbd out %.3X, %.2X\n",comp->cpu->cs.idx,comp->cpu->pc,adr,val);
+}
+
+// gameport
+
+int ibm_inGP(Computer* comp, int adr) {
+	int res = 0;
+
+	return res;
+}
+
+void ibm_outGP(Computer* comp, int adr, int val) {
+
 }
 
 // cmos
@@ -501,6 +513,8 @@ static xPort ibmPortMap[] = {
 	{0x03f8,0x0090,2,2,2,ibm_inPOS, ibm_outPOS},	// 090..097 POS
 
 	{0x03e1,0x00c0,2,2,2,ibm_inDMA, ibm_outDMA},	// dma2: c0..ce, d0..de
+
+	{0x03f8,0x0200,2,2,2,ibm_inGP, ibm_outGP},	// 200..207: gamepad
 
 //	{0x03f8,0x0170,2,2,2,ibm_dumird,ibm_dumiwr},	// secondary ide
 	{0x03f8,0x01f0,2,2,2,ibm_in1fx,	ibm_out1fx},	// primary ide (1f0..1f7)

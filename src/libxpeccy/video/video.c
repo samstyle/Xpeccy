@@ -846,6 +846,7 @@ void cga320_2bpp_line(Video*);
 void cga640_1bpp_line(Video*);
 void vga320_4bpp_line(Video*);
 void vga640_4bpp_line(Video*);
+void vga256_line(Video*);
 void cga_t40_dot(Video*);
 void cga_lores_dot(Video*);
 void ega_hires_dot(Video*);
@@ -911,6 +912,7 @@ static xVideoMode vidModeTab[] = {
 	{CGA_GRF_H, NULL, cga_t40_dot, NULL, cga640_1bpp_line, cga_t40_frm},
 	{VGA_GRF_L, vga_glo_ini, cga_t40_dot, NULL, vga320_4bpp_line, cga_t40_frm},
 	{VGA_GRF_H, vga_ghi_ini, cga_t40_dot, NULL, vga640_4bpp_line, cga_t40_frm},
+	{VGA_GRF_256, vga_glo_ini, cga_lores_dot, NULL, vga256_line, cga_t40_frm},
 
 	{VID_UNKNOWN, NULL, vidDrawBorder, NULL, NULL, NULL}
 };

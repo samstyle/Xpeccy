@@ -7,6 +7,10 @@ extern opCode i80286_tab[256];
 extern opCode i286_0f_tab[256];
 
 extern xSegPtr i286_cash_seg(CPU*, unsigned short);
+extern xSegPtr i286_cash_seg_a(CPU*, int);
+extern void i286_push(CPU*, unsigned short);
+extern unsigned short i286_sys_mrdw(CPU*, xSegPtr, unsigned short);
+extern void i286_switch_task(CPU*, int, int, int);
 
 void i286_reset(CPU* cpu) {
 	x86_set_mode(cpu, X86_REAL);
@@ -19,11 +23,12 @@ void i286_reset(CPU* cpu) {
 	cpu->es = i286_cash_seg(cpu, 0x0000);
 	cpu->idtr = i286_cash_seg(cpu, 0x0000);
 	cpu->intrq = 0;
+
+	cpu->x87top = 0;
 }
 
 // REAL mode:
 
-extern void i286_push(CPU*, unsigned short);
 
 void i286_int_real(CPU* cpu, int vec) {
 	if (cpu->halt) {
@@ -35,14 +40,8 @@ void i286_int_real(CPU* cpu, int vec) {
 	i286_push(cpu, cpu->pc);
 	cpu->f &= ~(I286_FI | I286_FT);
 	cpu->tmpi = (vec & 0xff) << 2;
-	PAIR(w,h,l)seg;
-	PAIR(w,h,l)off;
-	off.l = i286_mrd(cpu, cpu->idtr, 0, cpu->tmpi++);	// adr
-	off.h = i286_mrd(cpu, cpu->idtr, 0, cpu->tmpi++);
-	seg.l = i286_mrd(cpu, cpu->idtr, 0, cpu->tmpi++);	// seg
-	seg.h = i286_mrd(cpu, cpu->idtr, 0, cpu->tmpi);
-	cpu->cs = i286_cash_seg(cpu, seg.w);
-	cpu->pc = off.w;
+	cpu->pc = i286_sys_mrdw(cpu, cpu->idtr, cpu->tmpi);
+	cpu->cs = i286_cash_seg(cpu, i286_sys_mrdw(cpu, cpu->idtr, cpu->tmpi+2));
 }
 
 // PRT mode: descriptors @ IDTR segment
@@ -57,36 +56,96 @@ void i286_int_real(CPU* cpu, int vec) {
 //	bit1-4: 0011
 //	bit0: 1 for trap, 0 for interrupt
 // +6,7 unused
+// TODO: INT accepts int/trap/task gates only. any other -> #GP(selector)
+// FIXME: IDTR already contains gates descriptors, rewrite all (!!!)
 
 void i286_int_prt(CPU* cpu, int vec) {
 	if (cpu->idtr.limit < (vec & 0xfff8)) {		// check idtr limit
-		i286_push(cpu, cpu->idtr.idx);		// error code = segment index
-		THROW(I286_INT_GP);
+		THROW_EC(I286_INT_GP, cpu->idtr.idx);
 	} else if (cpu->f & I286_FI) {
 		PAIR(w,h,l)seg;
 		PAIR(w,h,l)off;
-		int adr = cpu->idtr.base + (vec & 0xfff8);
+		int adr = cpu->idtr.base + (vec << 3);	// 8 bytes/entry
+		cpu->gate = i286_cash_seg_a(cpu, adr);	// get gate descriptor inside IDT
+		switch(cpu->gate.ar) {
+			case 5:		// task gate
+				off.w = cpu->pc;
+				seg.w = cpu->cs.idx;
+				adr = cpu->f;
+				i286_switch_task(cpu, cpu->gate.base & 0xffff, 1, 0);
+				i286_push(cpu, adr);
+				i286_push(cpu, seg.w);
+				i286_push(cpu, off.w);
+				break;
+			case 6:		// interrupt gate
+			case 7:		// trap gate
+				if (!cpu->gate.pr) {
+					THROW_EC(I286_INT_GP, (vec << 3));
+				} else {
+					if (cpu->cs.pl > cpu->gate.pl) {	// priv.transitions
+						off.w = cpu->sp;
+						seg.w = cpu->ss.idx;
+						cpu->sp = i286_sys_mrdw(cpu, cpu->tsdr, 2 + 4 * cpu->gate.pl);				// new stack
+						cpu->ss = i286_cash_seg(cpu, i286_sys_mrdw(cpu, cpu->tsdr, 4 + 4 * cpu->gate.pl));
+						i286_push(cpu, seg.w);		// push old ss:sp
+						i286_push(cpu, off.w);
+					}
+					i286_push(cpu, cpu->f);
+					i286_push(cpu, cpu->cs.idx);
+					i286_push(cpu, cpu->pc);
+					if (cpu->errcod >= 0) {
+						i286_push(cpu, cpu->errcod);
+						cpu->errcod = -1;
+					}
+					off.l = cpu->mrd(adr, 0, cpu->xptr);		// offset
+					off.h = cpu->mrd(adr + 1, 0, cpu->xptr);
+					seg.l = cpu->mrd(adr + 2, 0, cpu->xptr);	// cs segment selector
+					seg.h = cpu->mrd(adr + 3, 0, cpu->xptr);
+					cpu->tmpdr = i286_cash_seg(cpu, seg.w);
+					if (!cpu->tmpdr.code) {
+						THROW_EC(I286_INT_GP, (vec << 3));
+					} else if (!cpu->tmpdr.pr) {
+						THROW_EC(I286_INT_NP, seg.w);
+					} else if (cpu->pc > cpu->tmpdr.limit) {
+						THROW_EC(I286_INT_GP, 0);
+					}
+					cpu->pc = off.w;
+					cpu->cs = cpu->tmpdr;
+					cpu->fx.n = 0;			// clear N flag
+					if (!(cpu->gate.ar & 1)) {	// disable interrupts on int.gate / don't change on trap gate
+						cpu->fx.i = 0;
+					}
+				}
+				break;
+			default:
+				THROW_EC(I286_INT_GP, vec);
+				break;
+		}
+
+
 		off.l = cpu->mrd(adr, 0, cpu->xptr);	// offset
-		off.w = cpu->mrd(adr+1, 0, cpu->xptr);
+		off.h = cpu->mrd(adr+1, 0, cpu->xptr);
 		seg.l = cpu->mrd(adr+2, 0, cpu->xptr);	// segment
 		seg.h = cpu->mrd(adr+3, 0, cpu->xptr);
 		unsigned char fl = cpu->mrd(adr+5, 0, cpu->xptr);	// flags
-		cpu->tmpdr = i286_cash_seg(cpu, seg.w);
-		if ((cpu->tmpdr.flag & 0x60) < (fl & 0x60)) {	// check priv
-			i286_push(cpu, 0);			// error code
-			THROW(I286_INT_GP);
+		cpu->tmpdr = i286_cash_seg(cpu, seg.w);		// [code] segment: TODO if this is tss gate
+		if ((cpu->tmpdr.pl) < ((fl >> 5) & 3)) {	// check priv
+			THROW_EC(I286_INT_GP, 0);
 		} else {					// do interrupt
 			if (cpu->halt) {
 				cpu->halt = 0;
 				cpu->pc++;
 			}
+			// i286_check_gate(cpu, off.w, seg.w);	// check [&execute] traps/gates, destination is cpu->ea.seg:cpu->ea.adr
 			i286_push(cpu, cpu->f);
 			if (!(fl & 1)) cpu->f &= ~I286_FI;
 			i286_push(cpu, cpu->cs.idx);
 			i286_push(cpu, cpu->pc);
 			i286_push(cpu, cpu->errcod & 0xffff);
-			cpu->cs = i286_cash_seg(cpu, seg.w);
+			cpu->cs = cpu->tmpdr;
 			cpu->pc = off.w;
+			//cpu->cs = i286_cash_seg(cpu, seg.w);
+			//cpu->pc = off.w;
 		}
 	}
 	cpu->t = 1;
@@ -98,6 +157,7 @@ void i286_interrupt(CPU* cpu, int vec) {
 	} else {
 		i286_int_real(cpu, vec);
 	}
+	cpu->errcod = -1;
 }
 
 // external INT
@@ -137,9 +197,7 @@ int i286_exec(CPU* cpu) {
 		}
 	} else {
 		if (val < 0) val = I286_INT_DE;		// cuz INT_DE has code 0 (success for setjmp)
-		if (val != I286_INT_NM) {
-			cpu->pc = cpu->oldpc;
-		}
+		cpu->pc = cpu->oldpc;
 		i286_interrupt(cpu, val);
 	}
 	return cpu->t;
@@ -161,6 +219,8 @@ const char* str_opF[8] = {"incw","decw","call","callf","jmp","jmpf","push","ff /
 const char* str_opQ[8] = {"sldt","str","lldt","ltr","verr","verw","0f00 /6","0f00 /7"};
 const char* str_opW[8] = {"sgdt","sidt","lgdt","lidt","smsw","0f01 /5","lmsw","0f01 /7"};
 
+extern const char* x87_get_mnem(CPU*, int);
+
 xMnem i286_mnem(CPU* cpu, int sadr, cbdmr mrd, void* data) {
 	xMnem mn;
 	mn.cond = 0;
@@ -173,6 +233,11 @@ xMnem i286_mnem(CPU* cpu, int sadr, cbdmr mrd, void* data) {
 	opCode* op;
 	int adr = sadr;
 	unsigned char com;
+	int mod = 0;
+	unsigned char mb = 0;
+	char* ptr = strbuf;
+	const char* p;
+	char* dptr = mnembuf;
 	do {
 		com = cpu->mrd(adr, 0, cpu->xptr);
 		adr++;
@@ -191,11 +256,18 @@ xMnem i286_mnem(CPU* cpu, int sadr, cbdmr mrd, void* data) {
 		mn.flag = op->flag;
 		mn.len++;
 	} while (op->flag & OF_PREFIX);
-	strcpy(strbuf, op->mnem);
-	char* ptr = strbuf;
-	char* dptr = mnembuf;
-	int mod = 0;
-	unsigned char mb = 0;
+	if ((com & 0xf8) == 0xd8) {	// x87 opcodes
+		mb = cpu->mrd(adr++, 0, cpu->xptr);
+		mod = 1;
+		p = x87_get_mnem(cpu, ((com << 8) | mb) & 0x7ff);
+		if (p) {
+			strcpy(strbuf, p);
+		} else {
+			strcpy(strbuf, op->mnem);
+		}
+	} else {			// x86 opcodes
+		strcpy(strbuf, op->mnem);
+	}
 	PAIR(w,h,l)rx;
 	PAIR(w,h,l)seg;
 	PAIR(w,h,l)disp;
@@ -246,6 +318,10 @@ xMnem i286_mnem(CPU* cpu, int sadr, cbdmr mrd, void* data) {
 					dptr += sprintf(dptr, "#%.4X::%.4X", seg.w, rx.w);
 					// mn.oadr = rx.w;
 					break;
+				case '7':
+					if (!mod) {mod = 1; mb = cpu->mrd(adr, 0, cpu->xptr); adr++;}
+					sprintf(dptr, "%i", mb & 7);
+					break;
 				case 'r': if (!mod) {mod = 1; mb = cpu->mrd(adr, 0, cpu->xptr); adr++;}
 					if (op->flag & OF_WORD) {	// word
 						dptr += sprintf(dptr, "%s", str_regw[(mb >> 3) & 7]);
@@ -255,6 +331,15 @@ xMnem i286_mnem(CPU* cpu, int sadr, cbdmr mrd, void* data) {
 					break;
 				case 's': if (!mod) {mod = 1; mb = cpu->mrd(adr, 0, cpu->xptr); adr++;}
 					dptr += sprintf(dptr, "%s", str_regs[(mb >> 3) & 3]);
+					break;
+				case 'z':				// skip EA & disp
+					if (!mod) {mod = 1; mb = cpu->mrd(adr, 0, cpu->xptr); adr++;}
+					switch(mb & 0xc0) {
+						case 0x00:
+						case 0xc0: break;
+						case 0x40: adr++; break;
+						case 0x80: adr+=2; break;
+					}
 					break;
 				case 'e': if (!mod) {mod = 1; mb = cpu->mrd(adr, 0, cpu->xptr); adr++;}
 					if ((mb & 0xc0) == 0xc0) {		// reg
@@ -391,6 +476,7 @@ xRegDsc i286RegTab[] = {
 	{I286_LDT, "LDT", REG_RO|REG_WORD|REG_SEG, offsetof(CPU, ldtr)},
 	{I286_GDT, "GDT", REG_RO|REG_24, offsetof(CPU, gdtr)},
 	{I286_IDT, "IDT", REG_RO|REG_24, offsetof(CPU, idtr)},
+	{I286_TSS, "TSS", REG_RO|REG_24, offsetof(CPU, tsdr)},
 	{REG_NONE, "", 0, 0}
 };
 
@@ -429,6 +515,7 @@ void i286_get_regs(CPU* cpu, xRegBunch* bnch) {
 			case I286_GDT: val = cpu->gdtr.base; break;
 			case I286_LDT: val = cpu->ldtr.idx; break;
 			case I286_IDT: val = cpu->idtr.base; break;
+			case I286_TSS: val = cpu->tsdr.base; break;
 		}
 		bnch->regs[idx].value = val;
 		bnch->regs[idx].base = bas;

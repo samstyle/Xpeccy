@@ -13,8 +13,52 @@
 // [7:P][6,5:DPL][4:0][3-0:TYPE]		system (gates)
 // rd/wr with segment P=0 -> interrupt
 
-// about gates:
-// if jmpf/callf is pointing on call gate segment (type 4), activate task switching
+// https://wiki.osdev.org/Descriptor
+// segment types:
+// 1.1CRA - code
+// 1.0EWA - data
+// system segments:
+// 1 - TSS 16bit (available)
+// 2 - LDT
+// 3 - TSS 16bit (busy)
+// 4 - 16bit call gate
+// 5 - Task gate
+// 6 - 16bit interrupt gate
+// 7 - 16bit trap gate
+// 9 - TSS 32/64bit (available)
+// 11 - TSS 32/64bit (busy)
+// 12 - 32bit call gate
+// 14 - 32bit interrupt gate
+// 15 - 32bit trap gate
+
+// gate/trap descriptor:
+// +0,1	offset
+// +2,3 code/TSS selector
+// +4	bit0..4: number of words transported from caller stack to task stack (if dpl != cpl) - for call gate only
+// +5	gate segment flags [7:P][6,5:DPL][4:0][3-0:TYPE]
+// +6,7	offset bit 16..31 [32bit+ only][0]
+
+// TSS descriptor
+// +0,1		back link to previous TSS
+// +2,3,4,5	SP,SS for CPL0 *
+// +6,7,8,9	SP,SS for CPL1 *
+// +10,11,12,13	SP,SS for CPL2 *
+// +14,15	IP (entry point)
+// +16,17	flag
+// +18,19	ax
+// +20,21	cx
+// +22,23	dx
+// +24,25	bx
+// +26,27	sp
+// +28,29	bp
+// +30,31	si
+// +32,33	di
+// +34,35	ES selector
+// +36,37	CS selector
+// +38,39	SS selector
+// +40,41	DS selector
+// +42,43	LDT selector *
+// * - doesn't changed during task switch
 
 // NOTE: x86 parity counts on LSB
 
@@ -26,46 +70,60 @@ int i286_check_segment_limit(CPU* cpu, xSegPtr* seg, unsigned short adr) {
 
 int i286_check_segment_exec(CPU* cpu, xSegPtr* seg) {
 	if (!(cpu->msw & I286_FPE)) return 1;
-	if (!(seg->flag & 0x10)) return 0;	// system segment
-	if (!(seg->flag & 0x08)) return 0;	// data segment
+	if (!(seg->ar & 0x10)) return 0;	// system segment
+	if (!(seg->ar & 0x08)) return 0;	// data segment
 	return 1;				// code segment
 }
 
 int i286_check_segment_rd(CPU* cpu, xSegPtr* seg) {
 	if (!(cpu->msw & I286_FPE)) return 1;
-	if (!(seg->flag & 0x10)) return 0;	// system segment
-	if (!(seg->flag & 0x08)) return 1;	// data segment
-	if (seg->flag & 2) return 1;		// readable code segment
+	if (!(seg->ar & 0x10)) return 0;	// system segment
+	if (!(seg->ar & 0x08)) return 1;	// data segment
+	if (seg->ar & 2) return 1;		// readable code segment
 	return 0;
 }
 
 int i286_check_segment_wr(CPU* cpu, xSegPtr* seg) {
 	if (!(cpu->msw & I286_FPE)) return 1;
-	if (!(seg->flag & 0x10)) return 0;	// system segment
-	if (seg->flag & 0x08) return 0;		// code segment
-	if (seg->flag & 0x02) return 1;		// writeable data segment
+	if (!(seg->ar & 0x10)) return 0;	// system segment
+	if (seg->ar & 0x08) return 0;		// code segment
+	if (seg->ar & 0x02) return 1;		// writeable data segment
 	return 0;
 }
 
-// TODO: check segment limit && permissions for protected mode
 unsigned char i286_mrd(CPU* cpu, xSegPtr seg, int rpl, unsigned short adr) {
-//	if (rpl && (cpu->seg.idx >= 0)) seg = cpu->seg;
-//	cpu->t++;
-//	return cpu->mrd(seg.base + adr, 0, cpu->xptr) & 0xff;
 	return cpu->x86mrd(cpu, seg, rpl, adr);
 }
 
 void i286_mwr(CPU* cpu, xSegPtr seg, int rpl, unsigned short adr, int val) {
-//	if (rpl && (cpu->seg.idx >= 0)) seg = cpu->seg;
-//	cpu->t++;
-//	cpu->mwr(seg.base + adr, val, cpu->xptr);
 	cpu->x86mwr(cpu, seg, rpl, adr, val);
+}
+
+// system mrd/mwr, w/o checks
+
+unsigned char i286_sys_mrd(CPU* cpu, xSegPtr seg, unsigned short adr) {
+	return cpu->mrd(seg.base + adr, 0, cpu->xptr) & 0xff;
+}
+
+unsigned short i286_sys_mrdw(CPU* cpu, xSegPtr seg, unsigned short adr) {
+	unsigned char rl = cpu->mrd(seg.base + adr, 0, cpu->xptr) & 0xff;
+	unsigned char rh = cpu->mrd(seg.base + adr + 1, 0, cpu->xptr) & 0xff;
+	return (rh << 8) | rl;
+}
+
+void i286_sys_mwr(CPU* cpu, xSegPtr seg, unsigned short adr, unsigned char v) {
+	cpu->mwr(seg.base + adr, v, cpu->xptr);
+}
+
+void i286_sys_mwrw(CPU* cpu, xSegPtr seg, unsigned short adr, unsigned short v) {
+	cpu->mwr(seg.base + adr, v & 0xff, cpu->xptr);
+	cpu->mwr(seg.base + adr, (v >> 8) & 0xff, cpu->xptr);
 }
 
 // real mode
 
 unsigned char i286_fetch_real(CPU* cpu) {
-	unsigned char res = cpu->mrd(cpu->cs.base + cpu->pc, 0, cpu->xptr) & 0xff;
+	unsigned char res = cpu->mrd(cpu->cs.base + cpu->pc, 1, cpu->xptr) & 0xff;
 	cpu->pc++;
 	return res;
 }
@@ -94,7 +152,7 @@ void i286_push(CPU* cpu, unsigned short w) {
 }
 
 unsigned short i286_pop(CPU* cpu) {
-	if ((cpu->msw & I286_FPE) && (cpu->sp + 2 >= cpu->ss.limit)) {
+	if ((cpu->msw & I286_FPE) && (cpu->sp + 2 > cpu->ss.limit)) {
 		THROW(I286_INT_SS);
 	}
 	PAIR(w,h,l) rx;
@@ -110,7 +168,7 @@ unsigned char i286_fetch_prt(CPU* cpu) {
 	unsigned char res = 0xff;
 //	if (i286_check_segment_exec(cpu, &cpu->cs)) {		// check it when CS changed
 		if (i286_check_segment_limit(cpu, &cpu->cs, cpu->pc)) {
-			res = cpu->mrd(cpu->cs.base + cpu->pc, 0, cpu->xptr) & 0xff;
+			res = cpu->mrd(cpu->cs.base + cpu->pc, 1, cpu->xptr) & 0xff;
 			cpu->pc++;
 		} else {
 			THROW(I286_INT_SL);
@@ -132,8 +190,7 @@ unsigned char i286_mrd_prt(CPU* cpu, xSegPtr seg, int rpl, unsigned short adr) {
 			THROW(I286_INT_SL);
 		}
 	} else {
-		i286_push(cpu, seg.idx);
-		THROW(I286_INT_GP);
+		THROW_EC(I286_INT_GP, seg.idx);
 	}
 	return res;
 }
@@ -148,8 +205,7 @@ void i286_mwr_prt(CPU* cpu, xSegPtr seg, int rpl, unsigned short adr, int val) {
 			THROW(I286_INT_SL);
 		}
 	} else {
-		i286_push(cpu, seg.idx);
-		THROW(I286_INT_GP);
+		THROW_EC(I286_INT_GP, seg.idx);
 	}
 }
 
@@ -200,18 +256,35 @@ unsigned short i286_rd_immw(CPU* cpu) {
 
 // set segment registers
 
-xSegPtr i286_cash_seg(CPU* cpu, unsigned short val) {
+// by address of descriptor in memory
+xSegPtr i286_cash_seg_a(CPU* cpu, int adr) {
 	xSegPtr p;
 	PAIR(w,h,l)off;
+	unsigned short tmp;
+	off.l = cpu->mrd(adr++, 0, cpu->xptr);	// limit:16
+	off.h = cpu->mrd(adr++, 0, cpu->xptr);
+	p.limit = off.w;
+	off.l = cpu->mrd(adr++, 0, cpu->xptr);	// base:24
+	off.h = cpu->mrd(adr++, 0, cpu->xptr);
+	tmp = cpu->mrd(adr++, 0, cpu->xptr);
+	p.base = (tmp << 16) | off.w;
+	tmp = cpu->mrd(adr, 0, cpu->xptr);	// flags:8
+	p.ar = tmp & 0x1f;
+	p.pl = (tmp >> 5) & 3;
+	p.pr = !!(tmp & 0x80);
+	p.sys = !(tmp & 0x10);
+	p.code = !!((tmp & 0x18) == 0x18);
+	return p;
+}
+
+// by selector (GDT/LDT)
+xSegPtr i286_cash_seg(CPU* cpu, unsigned short val) {
+	xSegPtr p;
 	int adr;
 	unsigned short lim;
-	unsigned char tmp;
 	p.idx = val;
 	if (cpu->msw & I286_FPE) {
-		if (val & 2) {
-			adr = cpu->idtr.base;
-			lim = cpu->idtr.limit;
-		} else if (val & 4) {
+		if (val & 4) {
 			adr = cpu->ldtr.base;
 			lim = cpu->ldtr.limit;
 		} else {
@@ -220,31 +293,224 @@ xSegPtr i286_cash_seg(CPU* cpu, unsigned short val) {
 		}
 		val &= 0xfff8;					// offset in a table
 		if (val > lim) {				// check gdt/ldt segment limit
-			THROW(I286_INT_SL);
+			THROW_EC(I286_INT_GP, val);
 		} else {
 			adr += val;
-			off.l = cpu->mrd(adr++, 0, cpu->xptr);	// limit:16
-			off.h = cpu->mrd(adr++, 0, cpu->xptr);
-			p.limit = off.w;
-			off.l = cpu->mrd(adr++, 0, cpu->xptr);	// base:24
-			off.h = cpu->mrd(adr++, 0, cpu->xptr);
-			tmp = cpu->mrd(adr++, 0, cpu->xptr);
-			p.base = (tmp << 16) | off.w;
-			p.flag = cpu->mrd(adr, 0, cpu->xptr);	// flags:8
+			p = i286_cash_seg_a(cpu, adr);
 		}
 	} else {
-		p.flag = 0xf2;		// present, dpl=3, segment, data, writeable
+		//p.flag = 0xf2;		// present, dpl=3, segment, data, writeable
+		p.pr = 1;
+		p.pl = 0;
+		p.ar = 0x12;
+		p.sys = 0;
+		p.code = 0;
 		p.base = val << 4;
 		p.limit = 0xffff;
 	}
 	return p;
 }
 
-// TODO: gates
-// check if CS is pointing on a gate segment in protected mode
-void i286_call_gate(CPU* cpu) {
-	if ((cpu->msw & I286_FPE) && !(cpu->cs.flag & 4)) {	// protected mode && segment is a gate
+// switch task (protected mode)
+// tsss - task switch segment selector
+// nest - nested switch or not
 
+void i286_switch_task(CPU* cpu, int tsss, int nest, int iret) {
+	if (!(tsss & 0xfff8)) {		// segment 0
+		THROW_EC(I286_INT_GP, 0);
+	} else if (tsss & 4) {		// LDT
+		THROW_EC(I286_INT_GP, tsss);
+	} else {
+		xSegPtr seg = i286_cash_seg(cpu, tsss);
+		if (seg.pr) {		// present
+			int dpl = seg.pl;
+			int rpl = tsss & 3;
+			int cpl = cpu->cs.pl;
+			int f = 0;
+			if (!iret && ((dpl < cpl) || (rpl < cpl))) {	// privelegies (skip if IRET)
+				THROW_EC(I286_INT_GP, tsss);
+			} else if (!iret && (seg.ar != 1)) {	// TSS busy (skip if IRET)
+				THROW_EC(I286_INT_GP, tsss);
+			} else {
+				// set new TSS busy
+				int adr = cpu->gdtr.base + (tsss & 0xfff8);
+				f = cpu->mrd(adr + 5, 0, cpu->xptr);
+				f |= 2;
+				cpu->mwr(adr + 5, f, cpu->xptr);
+				// save current state to current TSS
+				i286_sys_mwrw(cpu, cpu->tsdr, 14, cpu->pc);
+				i286_sys_mwrw(cpu, cpu->tsdr, 16, cpu->f);
+				i286_sys_mwrw(cpu, cpu->tsdr, 18, cpu->ax);
+				i286_sys_mwrw(cpu, cpu->tsdr, 20, cpu->cx);
+				i286_sys_mwrw(cpu, cpu->tsdr, 22, cpu->dx);
+				i286_sys_mwrw(cpu, cpu->tsdr, 24, cpu->bx);
+				i286_sys_mwrw(cpu, cpu->tsdr, 26, cpu->sp);
+				i286_sys_mwrw(cpu, cpu->tsdr, 28, cpu->bp);
+				i286_sys_mwrw(cpu, cpu->tsdr, 30, cpu->si);
+				i286_sys_mwrw(cpu, cpu->tsdr, 32, cpu->di);
+				i286_sys_mwrw(cpu, cpu->tsdr, 34, cpu->es.idx);
+				i286_sys_mwrw(cpu, cpu->tsdr, 36, cpu->cs.idx);
+				i286_sys_mwrw(cpu, cpu->tsdr, 38, cpu->ss.idx);
+				i286_sys_mwrw(cpu, cpu->tsdr, 40, cpu->ds.idx);
+				// load registers from new tss
+				i286_sys_mwrw(cpu, seg, 0, cpu->tsdr.idx);	// previous TSS selector as link
+				cpu->tsdr = seg;				// switch to new TSS
+				cpu->pc = i286_sys_mrdw(cpu, cpu->tsdr, 14);
+				cpu->f = i286_sys_mrdw(cpu, cpu->tsdr, 16);
+				cpu->ax = i286_sys_mrdw(cpu, cpu->tsdr, 18);
+				cpu->cx = i286_sys_mrdw(cpu, cpu->tsdr, 20);
+				cpu->dx = i286_sys_mrdw(cpu, cpu->tsdr, 22);
+				cpu->bx = i286_sys_mrdw(cpu, cpu->tsdr, 24);
+				cpu->bp = i286_sys_mrdw(cpu, cpu->tsdr, 28);
+				cpu->si = i286_sys_mrdw(cpu, cpu->tsdr, 30);
+				cpu->di = i286_sys_mrdw(cpu, cpu->tsdr, 32);
+				// nested
+				if (nest) {
+					cpu->f |= I286_FN;
+				}
+				cpu->msw |= I286_FTS;
+				// load ldt, then ss,cs,ds,es
+				cpu->ldtr = i286_cash_seg(cpu, i286_sys_mrdw(cpu, cpu->tsdr, 42));
+				cpu->es = i286_cash_seg(cpu, i286_sys_mrdw(cpu, cpu->tsdr, 34));
+				cpu->cs = i286_cash_seg(cpu, i286_sys_mrdw(cpu, cpu->tsdr, 36));
+				cpu->ds = i286_cash_seg(cpu, i286_sys_mrdw(cpu, cpu->tsdr, 40));
+				if (cpu->pc > cpu->cs.limit) {
+					THROW_EC(I286_INT_GP, 0);
+				}
+				// TODO: check it
+				if (dpl < cpl) {		// switch stack
+					cpu->sp = i286_sys_mrdw(cpu, cpu->tsdr, 2 + 4 * dpl);
+					cpu->ss = i286_cash_seg(cpu, i286_sys_mrdw(cpu, cpu->tsdr, 4 + 4 * dpl));
+				} else {			// don't
+					cpu->sp = i286_sys_mrdw(cpu, cpu->tsdr, 26);
+					cpu->ss = i286_cash_seg(cpu, i286_sys_mrdw(cpu, cpu->tsdr, 38));
+				}
+				// set CPL to RPL of CS selector
+				cpu->cs.pl = cpu->cs.idx & 3;
+			}
+		} else {			// not present
+			THROW_EC(I286_INT_NP, tsss);
+		}
+	}
+}
+
+// gates
+// check cases for go to seg:ip (limit, gate/trap, etc)
+// RPL = sn & 3				requested
+// DPL = (seg.flag >> 5) & 3		destination
+// CPL = (cs.flag >> 5) & 3		current
+void i286_check_gate(CPU* cpu, int ip, int sn) {
+	cpu->ea.seg = i286_cash_seg(cpu, sn);
+	cpu->ea.adr = ip;
+	cpu->ea.reg = 0;
+	cpu->ea.cnt = 0;
+	int rpl = sn & 3;
+	int dpl = cpu->ea.seg.pl;
+	int cpl = cpu->cs.pl;
+	if (cpu->msw & I286_FPE) {			// protected mode
+		if ((sn & 0xfff8) == 0) {		// segment 0 -> #GP(0)
+			THROW_EC(I286_INT_GP, 0);
+		} else if (cpu->ea.seg.ar & 0x10) {	// segment is code/data
+			if (cpu->ea.seg.ar & 8) {	// code
+				if (cpu->ea.seg.ar & 4) {	// conforming
+					if (dpl > cpl) {	// DPL <= CPL
+						THROW_EC(I286_INT_GP, sn);
+					}
+				} else {			// non-conforming
+					if (rpl > cpl) {		// RPL <= CPL
+						THROW_EC(I286_INT_GP, sn);
+					} else if (dpl != cpl) {	// DPL = CPL
+						THROW_EC(I286_INT_GP, sn);
+					}
+					cpu->ea.seg.pl = cpu->cs.pl;		// save CPL
+				}
+				if (!cpu->ea.seg.pr) {			// present
+					THROW_EC(I286_INT_NP, sn);
+				} else if (cpu->ea.adr > cpu->ea.seg.limit) {		// limit
+					THROW_EC(I286_INT_GP, 0);
+				}
+				// result: code segment is valid
+			} else {			// data -> #GP(sn)
+				THROW_EC(I286_INT_GP, sn);
+			}
+		} else {				// segment is system (trap/gates)
+			cpu->gate = cpu->ea.seg;
+			switch (cpu->ea.seg.ar) {		// type
+				case 1:			// TSS (available)
+					if ((dpl < cpl) || (dpl < rpl)) {		// privelegies
+						THROW_EC(I286_INT_GP, sn);
+					} else if (!cpu->ea.seg.pr) {	// present
+						THROW_EC(I286_INT_NP, sn);
+					} else {
+						i286_switch_task(cpu, sn, 1, 0);		// switch to this TSS
+					}
+					break;
+				case 3:			// TSS (busy)
+					THROW_EC(I286_INT_GP, 0);
+					break;
+				case 4:			// call gate
+					if ((dpl < cpl) || (dpl < cpl)) {
+						THROW_EC(I286_INT_GP, sn);
+					} else if (!cpu->ea.seg.pr) {
+						THROW_EC(I286_INT_NP, sn);
+					} else {		// get call gate params
+						cpu->ea.adr = cpu->ea.seg.base & 0xffff;	// offset (bytes 0,1)
+						sn = cpu->ea.seg.limit;				// segment selector (bytes 2,3)
+						cpu->ea.cnt = (cpu->ea.seg.base >> 16) & 0x1f;	// count of words transported from old stack to new stack (byte 4, bits 0..4)
+						if (sn == 0) {
+							THROW_EC(I286_INT_GP, 0);
+						} else {
+							cpu->seg = i286_cash_seg(cpu, sn);	// new code segment
+							if ((cpu->seg.ar & 0x18) != 0x18) {	// is code segment?
+								THROW_EC(I286_INT_GP, cpu->cs.idx);
+							} else if ((cpu->seg.ar & 4) && (cpu->seg.pl > cpl)) {			// conforming
+								THROW_EC(I286_INT_GP, cpu->cs.idx);
+							} else if (!(cpu->seg.ar & 4) && (cpu->seg.pl != cpl)) {		// non-conforming
+								THROW_EC(I286_INT_GP, cpu->cs.idx);
+							} else if (!cpu->seg.pr) {
+								THROW_EC(I286_INT_NP, cpu->cs.idx);
+							} else if (cpu->ea.adr > cpu->seg.limit) {
+								THROW_EC(I286_INT_GP, 0);
+							} else {
+								cpu->ea.seg = cpu->seg;
+								cpu->ea.reg = 1;
+							}
+						}
+					}
+					break;
+				case 5:			// task gate
+					if ((dpl < cpl) || (dpl < rpl)) {		// privs
+						THROW_EC(I286_INT_GP, sn);
+					} else if (!cpu->ea.seg.pr) {	// present
+						THROW_EC(I286_INT_NP, sn);
+					} else {
+						sn = cpu->ea.seg.base & 0xffff;		// TSS selector (bytes 2,3) // i286_sys_mrdw(cpu, cpu->ea.seg, 2);)
+						i286_switch_task(cpu, sn, 0, 0);
+					}
+					break;
+				case 6:			// interrupt gate - get tss selector and switch. = trap gate with disable interrupts
+				case 7:			// trap gate
+					if ((dpl < cpl) || (cpl < rpl)) {		// privs
+						THROW_EC(I286_INT_GP, sn);
+					} else if (!cpu->ea.seg.pr) {	// present
+						THROW_EC(I286_INT_NP, sn);
+					} else {
+						cpu->ea.adr = cpu->ea.seg.base & 0xffff;		// offset (0,1)
+						cpu->ea.seg = i286_cash_seg(cpu, cpu->ea.seg.limit);	// selector (2,3)
+						if (!cpu->ea.seg.code) {				// not code segment
+							THROW_EC(I286_INT_GP, cpu->ea.seg.idx);
+						}
+					}
+					break;
+				default:		// not recognized
+					THROW_EC(I286_INT_GP, sn);
+					break;
+			}
+		}
+	} else {			// real mode: check limits only
+		if (cpu->ea.adr > cpu->ea.seg.limit) {
+			THROW_EC(I286_INT_GP, 0);
+		}
 	}
 }
 
@@ -253,8 +519,7 @@ void i286_call_gate(CPU* cpu) {
 int i286_check_iopl(CPU* cpu) {		// CPL <= IOPL
 	if (!(cpu->msw & I286_FPE)) return 1;	// real mode
 	int iopl = (cpu->f >> 12) & 3;
-	int cpl = (cpu->cs.flag >> 5) & 3;
-	return (cpl <= iopl) ? 1 : 0;
+	return (cpu->cs.pl <= iopl) ? 1 : 0;
 }
 
 // mod r/m
@@ -1644,24 +1909,66 @@ void i286_op99(CPU* cpu) {
 	cpu->dx = (cpu->ah & 0x80) ? 0xffff : 0x0000;
 }
 
+// callf to ncs:nip
+void i286_callf(CPU* cpu, int nip, int ncs) {
+	if (cpu->msw & I286_FPE) {
+		i286_check_gate(cpu, nip, ncs);		// ea.seg:ea.adr is new destination
+		if (cpu->ea.reg) {		// call gate?
+			if (cpu->ea.seg.pl < cpu->cs.pl) {	// more priv
+				unsigned short osp = cpu->sp;
+				unsigned short oss = cpu->ss.idx;
+				unsigned int sadr = cpu->ss.base + cpu->sp;		// old stack top
+				cpu->sp = i286_sys_mrdw(cpu, cpu->tsdr, 2 + (4 * cpu->ea.seg.pl));			// ss:sp for new PL
+				cpu->ss = i286_cash_seg(cpu, i286_sys_mrdw(cpu, cpu->tsdr, 4 + (4 * cpu->ea.seg.pl)));
+				i286_push(cpu, oss);		// push old sp
+				i286_push(cpu, osp);
+				cpu->cs = cpu->ea.seg;
+				cpu->pc = cpu->ea.adr;
+				int cnt = (cpu->ea.cnt << 1);
+				cpu->sp -= cnt;	// space for params
+				int dadr = cpu->ss.base + cpu->sp;			// new stack top
+				cpu->t = 86;
+				while (cnt > 0) {
+					cpu->mwr(dadr, cpu->mrd(sadr, 0, cpu->xptr), cpu->xptr);
+					dadr++;
+					sadr++;
+					cnt--;
+				}
+			} else {
+				cpu->t = 82;
+			}
+		} else {
+			cpu->t = 41;
+		}
+		i286_push(cpu, cpu->cs.idx);		// push return addr
+		i286_push(cpu, cpu->pc);
+		cpu->cs = cpu->ea.seg;
+		cpu->pc = cpu->ea.adr;
+	} else {
+		i286_push(cpu, cpu->cs.idx);
+		i286_push(cpu, cpu->pc);
+		cpu->cs = i286_cash_seg(cpu, ncs);
+		cpu->pc = nip;
+		cpu->t = 41;
+	}
+}
+
 // 9a: callf cd (cd=SEG:ADR)
 void i286_op9A(CPU* cpu) {
-	cpu->ea.adr = i286_rd_immw(cpu);	// offset
-	cpu->tmpw = i286_rd_immw(cpu);		// segment
-	cpu->ea.seg = i286_cash_seg(cpu, cpu->tmpw);
-	i286_push(cpu, cpu->cs.idx);
-	i286_push(cpu, cpu->pc);
-	cpu->cs = cpu->ea.seg;
-	cpu->pc = cpu->ea.adr;
-	cpu->t = 41;
-	i286_call_gate(cpu);
+	unsigned short nip = i286_rd_immw(cpu);		// offset
+	unsigned short ncs = i286_rd_immw(cpu);		// segment
+	i286_callf(cpu, nip, ncs);
 }
 
 // 9b: wait
 void i286_op9B(CPU* cpu) {
 	// wait for busy=0
-	if ((cpu->msw & I286_FTS) && (cpu->msw & I286_FMP)) {
+	if (cpu->msw & I286_FMP) {
 		THROW(I286_INT_NM);		// int 7
+	} else if ((cpu->msw & I286_FTS) && (cpu->msw & I286_FMP)) {
+		THROW(I286_INT_NM);		// int 7
+	} else if (cpu->x87sr & 0x80) {
+		THROW(I286_INT_MF);		// int 16
 	}
 }
 
@@ -2232,10 +2539,83 @@ void i286_opCE(CPU* cpu) {
 
 // cf: iret	pop ip,cs,flag
 void i286_opCF(CPU* cpu) {
-	cpu->pc = i286_pop(cpu);
-	cpu->tmpw = i286_pop(cpu);
-	cpu->cs = i286_cash_seg(cpu, cpu->tmpw);
-	cpu->f = i286_pop(cpu);
+	if (cpu->msw & I286_FPE) {		// protected
+		xSegPtr seg;
+		if (cpu->f & I286_FN) {
+			int tss = i286_sys_mrdw(cpu, cpu->tsdr, 0);	// back link
+			if (tss & 4) {		// must be in GDT
+				THROW_EC(I286_INT_TS, tss);
+			} else if ((tss & 0xfff8) > cpu->gdtr.limit) {
+				THROW_EC(I286_INT_TS, tss);
+			} else {
+				seg = i286_cash_seg(cpu, tss);	// new tss
+				if ((seg.ar & 0x0f) != 3) {	// busy TSS
+					THROW_EC(I286_INT_TS, tss);
+				} else if (!seg.pr) {	// present
+					THROW_EC(I286_INT_NP, tss);
+				}
+				seg = cpu->tsdr;			// current TS
+				i286_switch_task(cpu, tss, 0, 1);	// switch to new task
+				unsigned char tf = i286_sys_mrd(cpu, seg, 5);	// mark old TS as not-busy
+				tf &= ~2;
+				i286_sys_mwr(cpu, seg, 5, tf);
+				if (cpu->pc > cpu->cs.limit) {
+					THROW_EC(I286_INT_GP, 0);
+				}
+			}
+		} else {
+			unsigned short nip = i286_sys_mrdw(cpu, cpu->ss, 0);	// return ip
+			unsigned short ncs = i286_sys_mrdw(cpu, cpu->ss, 2);	// return cs selector
+			seg = i286_cash_seg(cpu, ncs);
+			if (((ncs >> 3) & 0x60) == cpu->cs.pl) {		// rpl = cpl: return at same PL
+				if ((ncs & 0xfff8) == 0) {
+					THROW_EC(I286_INT_GP, 0);
+				} else if ((ncs & 3) < cpu->cs.pl) {
+					THROW_EC(I286_INT_GP, ncs);
+				} else if ((seg.ar & 0x18) != 0x18) {
+					THROW_EC(I286_INT_GP, ncs);
+				} else if ((seg.ar & 4) && (seg.pl > cpu->cs.pl)) {	// conforming and DPL > CPL
+					THROW_EC(I286_INT_GP, ncs);
+				} else if (!(seg.ar & 4) && (seg.pl != cpu->cs.pl)) {	// non-conforming and DPL != CPL
+					THROW_EC(I286_INT_GP, ncs);
+				} else if (!seg.pr) {		// present
+					THROW_EC(I286_INT_NP, ncs);
+				} else if (nip > seg.limit) {
+					THROW_EC(I286_INT_GP, 0);
+				} else {
+					cpu->pc = i286_pop(cpu);
+					cpu->cs = i286_cash_seg(cpu, i286_pop(cpu));
+					cpu->f = i286_pop(cpu);
+				}
+			} else {					// return at lower PL
+				if ((ncs & 0xfff8) == 0) {
+					THROW_EC(I286_INT_GP, 0);
+				} else if ((seg.ar & 0x18) != 0x18) {
+					THROW_EC(I286_INT_GP, ncs);
+				} else if ((seg.ar & 4) && (seg.pl <= cpu->cs.pl)) {
+					THROW_EC(I286_INT_GP, ncs);
+				} else if (!(seg.ar & 4) && (seg.pl != (ncs & 3))) {
+					THROW_EC(I286_INT_GP, ncs);
+				} else if (!seg.pr) {
+					THROW_EC(I286_INT_NP, ncs);
+				} else {
+					cpu->pc = i286_pop(cpu);
+					cpu->cs = i286_cash_seg(cpu, i286_pop(cpu));
+					cpu->f = i286_pop(cpu);
+					int nsp = i286_pop(cpu);
+					cpu->ss = i286_cash_seg(cpu, i286_pop(cpu));
+					cpu->sp = nsp;
+				}
+
+
+			}
+		}
+	} else {				// real
+		cpu->pc = i286_pop(cpu);
+		cpu->tmpw = i286_pop(cpu);
+		cpu->f = i286_pop(cpu);
+		cpu->cs = i286_cash_seg(cpu, cpu->tmpw);
+	}
 	cpu->inten &= ~I286_BLK_NMI;		// nmi on
 }
 
@@ -2304,60 +2684,22 @@ void i286_opD7(CPU* cpu) {
 	cpu->al = i286_mrd(cpu, cpu->ds, 1, cpu->tmpw);
 }
 
-// 80287 template (dummy)
-// opcodes: D8-DF (11011xxx)(mod)
+// 80287 template
+// opcodes: D8-DF (11011xxx),mod,[data,[data]]
+
+extern void x87_exec(CPU*);
 
 void i286_fpu(CPU* cpu) {
-	i286_rd_ea(cpu, 1);
-	THROW(I286_INT_NM);
-}
-
-// d8: for 80287
-void i286_opD8(CPU* cpu) {
-	cpu->pc++;
-	THROW(I286_INT_NM);
-}
-
-// d9: 80287
-void i286_opD9(CPU* cpu) {
-	cpu->pc++;
-	THROW(I286_INT_NM);
-}
-
-// da: 80287
-void i286_opDA(CPU* cpu) {
-	cpu->pc++;
-	THROW(I286_INT_NM);
-}
-
-// db: 80287
-void i286_opDB(CPU* cpu) {
-	cpu->pc++;
-	THROW(I286_INT_NM);
-}
-
-// dc: 80287
-void i286_opDC(CPU* cpu) {
-	cpu->pc++;
-	THROW(I286_INT_NM);
-}
-
-// dd: 80287
-void i286_opDD(CPU* cpu) {
-	cpu->pc++;
-	THROW(I286_INT_NM);
-}
-
-// de: 80287
-void i286_opDE(CPU* cpu) {
-	cpu->pc++;
-	THROW(I286_INT_NM);
-}
-
-// df: 80287
-void i286_opDF(CPU* cpu) {
-	cpu->pc++;
-	THROW(I286_INT_NM);
+	i286_get_ea(cpu, 1);
+	if (cpu->msw & I286_FEM) {
+		THROW(I286_INT_NM);
+	} else if (cpu->x87sr & 0x80) {		// x87 exception
+		THROW(I286_INT_MF);
+	} else {
+//		printf("%.8X : x87 : %.2X %.2X\n", cpu->cs.base + cpu->oldpc, cpu->com, cpu->mod);
+//		THROW(I286_INT_NM);
+		x87_exec(cpu);
+	}
 }
 
 // e0,cb: loopnz cb:	cx--,jump short if (cx!=0)&&(fz=0)
@@ -2420,12 +2762,23 @@ void i286_opE9(CPU* cpu) {
 	cpu->pc += cpu->tmpw;
 }
 
-// ea,ow,sw: jmp ow:sw	(far jump)
+// common: jmpf to ncs:nip using gates in protected mode
+void i286_jmpf(CPU* cpu, int nip, int ncs) {
+	if (cpu->msw & I286_FPE) {		// protected
+		i286_check_gate(cpu, nip, ncs);
+		cpu->pc = cpu->ea.adr;
+		cpu->cs = cpu->ea.seg;
+	} else {				// real
+		cpu->pc = nip;
+		cpu->cs = i286_cash_seg(cpu, ncs);
+	}
+}
+
+// ea,ow,sw: jmpf ow:sw	(far jump)
 void i286_opEA(CPU* cpu) {
-	cpu->tmpw = i286_rd_immw(cpu);
-	cpu->twrd = i286_rd_immw(cpu);
-	cpu->pc = cpu->tmpw;
-	cpu->cs = i286_cash_seg(cpu, cpu->twrd);
+	cpu->tmpw = i286_rd_immw(cpu);	// ip
+	cpu->twrd = i286_rd_immw(cpu);	// cs.selector
+	i286_jmpf(cpu, cpu->tmpw, cpu->twrd);
 }
 
 // eb,cb: jump cb	(short jump)
@@ -2695,17 +3048,13 @@ void i286_opFF(CPU* cpu) {
 			break; // call ew
 		case 3:	cpu->lwr = i286_mrd(cpu, cpu->ea.seg, 1, cpu->ea.adr + 2);	// twrd = segment
 			cpu->hwr = i286_mrd(cpu, cpu->ea.seg, 1, cpu->ea.adr + 3);
-			i286_push(cpu, cpu->cs.idx);
-			i286_push(cpu, cpu->pc);
-			cpu->pc = cpu->tmpw;
-			cpu->cs = i286_cash_seg(cpu, cpu->twrd);
+			i286_callf(cpu, cpu->tmpw, cpu->twrd);
 			break; // callf ed
 		case 4: cpu->pc = cpu->tmpw;
 			break; // jmp ew
 		case 5:	cpu->lwr = i286_mrd(cpu, cpu->ea.seg, 1, cpu->ea.adr + 2);
 			cpu->hwr = i286_mrd(cpu, cpu->ea.seg, 1, cpu->ea.adr + 3);
-			cpu->pc = cpu->tmpw;
-			cpu->cs = i286_cash_seg(cpu, cpu->twrd);
+			i286_jmpf(cpu, cpu->tmpw, cpu->twrd);
 			break; // jmpf ed
 		case 6: i286_push(cpu, cpu->tmpw);
 			break; // push ew
@@ -2948,14 +3297,14 @@ opCode i80286_tab[256] = {
 	{0, 1, i286_opD5, 0, "aad :1"},
 	{0, 1, i286_opD6, 0, "? salc"},
 	{0, 1, i286_opD7, 0, "xlatb al,[:D::bx+al]"},
-	{0, 1, i286_fpu, 0, "* x87"},
-	{0, 1, i286_fpu, 0, "* x87"},
-	{0, 1, i286_fpu, 0, "* x87"},
-	{0, 1, i286_fpu, 0, "* x87"},
-	{0, 1, i286_fpu, 0, "* x87"},
-	{0, 1, i286_fpu, 0, "* x87"},
-	{0, 1, i286_fpu, 0, "* x87"},
-	{0, 1, i286_fpu, 0, "* x87"},
+	{0, 1, i286_fpu, 0, "* x87 :z"},
+	{0, 1, i286_fpu, 0, "* x87 :z"},
+	{0, 1, i286_fpu, 0, "* x87 :z"},
+	{0, 1, i286_fpu, 0, "* x87 :z"},
+	{0, 1, i286_fpu, 0, "* x87 :z"},
+	{0, 1, i286_fpu, 0, "* x87 :z"},
+	{0, 1, i286_fpu, 0, "* x87 :z"},
+	{0, 1, i286_fpu, 0, "* x87 :z"},
 	{0, 1, i286_opE0, 0, "loopnz :3"},
 	{0, 1, i286_opE1, 0, "loopz :3"},
 	{0, 1, i286_opE2, 0, "loop :3"},

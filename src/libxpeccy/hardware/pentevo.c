@@ -261,7 +261,8 @@ void evoOutBEF7(Computer* comp, int port, int val) {	// dos
 }
 
 void evoOutDEF7(Computer* comp, int port, int val) {	// dos
-	comp->cmos.adr = val & 0xff;
+	cmos_wr(&comp->cmos, CMOS_ADR, val);
+//	comp->cmos.adr = val & 0xff;
 //	printf("cmos adr = %.2X\n", comp->cmos.adr);
 }
 
@@ -271,8 +272,10 @@ void evoOutBFF7(Computer* comp, int port, int val) {	// !dos
 }
 
 void evoOutDFF7(Computer* comp, int port, int val) {	// !dos
-	if (comp->pEFF7 & 0x80)
-		comp->cmos.adr = val & 0xff;
+	if (comp->pEFF7 & 0x80) {
+		cmos_wr(&comp->cmos, CMOS_ADR, val);
+		//comp->cmos.adr = val & 0xff;
+	}
 }
 
 void evoOutEFF7(Computer* comp, int port, int val) {	// !dos

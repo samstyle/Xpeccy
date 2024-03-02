@@ -391,7 +391,7 @@ void bk11_mem_map(Computer* comp) {
 	} else {
 		memSetBank(comp->mem, 0x80, MEM_RAM, comp->reg[1] & 7, MEM_16K,  bk_ram_rd, bk_ram_wr, comp);
 	}
-	memSetBank(comp->mem, 0xc0, MEM_ROM, 4, MEM_8K,  bk_rom_rd, bk_rom_wr, comp);		// bos
+	memSetBank(comp->mem, 0xc0, MEM_ROM, 4, MEM_8K,  bk_rom_rd, bk_rom_wr, comp);		// monitor
 	if (comp->dif->type == DIF_SMK512) {
 		memSetBank(comp->mem, 0xe0, MEM_ROM, 6, MEM_8K,  bk_rom_rd, bk_rom_wr, comp);			// disk interface rom (page 3, 8K)
 		memSetBank(comp->mem, 0xfe, MEM_IO, 0xfe, MEM_512, bk11_io_rd, bk11_io_wr, comp);		// 0170000..0177776 with disk interface

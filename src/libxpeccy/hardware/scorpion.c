@@ -8,10 +8,10 @@ HL = 0110..0113
 ProfROM table :
  adr | 0 1 2 3 <- current layer
 -----+---------
-0110 | 0 1 2 3 <- result layers
-0111 | 3 3 3 2
-0112 | 2 2 0 1
-0113 | 1 0 1 0
+0100 | 0 1 2 3 <- result layers
+0104 | 3 3 3 2
+0108 | 2 2 0 1
+010c | 1 0 1 0
 */
 
 static int ZSLays[4][4] = {
@@ -26,7 +26,7 @@ void scoMapMem(Computer* comp) {
 	if (comp->p1FFD & 0x01) {
 		memSetBank(comp->mem,0x00,MEM_RAM,0, MEM_16K, NULL, NULL, NULL);
 	} else {
-		rp = (comp->p1FFD & 0x02) ? 2 : ((comp->dos ? 2 : 0) | ((comp->rom) ? 1 : 0));
+		rp = (comp->p1FFD & 0x02) ? 2 : ((comp->dos ? 2 : 0) | (comp->rom ? 1 : 0));
 		rp |= ((comp->prt2 & 3) << 2);
 		memSetBank(comp->mem,0x00,MEM_ROM,rp, MEM_16K, NULL, NULL, NULL);
 	}
@@ -37,6 +37,9 @@ void scoMapMem(Computer* comp) {
 }
 
 int scoMRd(Computer* comp, int adr, int m1) {
+//	if ((adr & 0xfff3) == 0x100) {
+//		printf("cur:%i, adr:%.3X, res:%i\n",comp->prt2 & 3,adr, ZSLays[(adr & 0x000c) >> 2][comp->prt2 & 3]);
+//	}
 	if ((comp->p1FFD & 2) && ((adr & 0xfff3) == 0x0100) && !m1) {
 		comp->prt2 = ZSLays[(adr & 0x000c) >> 2][comp->prt2 & 3] & 0xff;
 		comp->hw->mapMem(comp);
