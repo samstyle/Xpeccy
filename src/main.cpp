@@ -31,7 +31,7 @@ void help() {
 	printf("Xpeccy command line arguments:\n");
 	printf("-h | --help\t\tshow this help\n");
 	printf("-d | --debug\t\tstart debugging immediately\n");
-	printf("-s | --size {1..4}\tset window size x1..x4.\n");
+	printf("-s | --size {1..6}\tset window size x1..x6.\n");
 	printf("-n | --noflick {0..100}\tset noflick level\n");
 	printf("-r | --ratio {0|1}\tset 'keep aspect ratio' property\n");
 	printf("-p | --profile NAME\tset current profile\n");
@@ -246,7 +246,7 @@ int main(int ac,char** av) {
 				i++;
 			} else if (!strcmp(parg,"-s") || !strcmp(parg, "--size")) {
 				tmpi = atoi(av[i]);
-				if ((tmpi > 0) && (tmpi < 5))
+				if ((tmpi > 0) && (tmpi <= 6))
 					conf.vid.scale = tmpi;
 				i++;
 			} else if (!strcmp(parg, "-n") || !strcmp(parg, "--noflick")) {
