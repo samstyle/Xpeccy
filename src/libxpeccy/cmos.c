@@ -53,13 +53,13 @@ int rtc_read(CMOS* cms) {
 //	int cur_time = (ctime->tm_hour << 16) + (ctime->tm_min << 8) + ctime->tm_sec;
 	switch (cms->adr) {
 		// TODO: non-bcd mode
-		case 0x00: res = toBCD(ctime->tm_sec); break;
-		case 0x02: res = toBCD(ctime->tm_min); break;
-		case 0x04: res = toBCD(ctime->tm_hour); break;
-		case 0x06: res = toBCD(ctime->tm_wday); break;
-		case 0x07: res = toBCD(ctime->tm_mday); break;
-		case 0x08: res = toBCD(ctime->tm_mon + 1); break;	// tm_mon = 0..11, cmos = 1..12
-		case 0x09: res = toBCD(ctime->tm_year % 100); break;
+		case 0x00: res = (cms->data[0x0b] & 4) ? ctime->tm_sec : toBCD(ctime->tm_sec); break;
+		case 0x02: res = (cms->data[0x0b] & 4) ? ctime->tm_min : toBCD(ctime->tm_min); break;
+		case 0x04: res = (cms->data[0x0b] & 4) ? ctime->tm_hour : toBCD(ctime->tm_hour); break;
+		case 0x06: res = (cms->data[0x0b] & 4) ? ctime->tm_wday : toBCD(ctime->tm_wday); break;
+		case 0x07: res = (cms->data[0x0b] & 4) ? ctime->tm_mday : toBCD(ctime->tm_mday); break;
+		case 0x08: res = (cms->data[0x0b] & 4) ? ctime->tm_mon + 1 : toBCD(ctime->tm_mon + 1); break;	// tm_mon = 0..11, cmos = 1..12
+		case 0x09: res = (cms->data[0x0b] & 4) ? ctime->tm_year % 100 : toBCD(ctime->tm_year % 100); break;
 		case 0x0a: res = cms->data[0x0a] & 0x7f; break; // if (cur_time == last_time) {res = 0x26;} else {res=0xa6; last_time = cur_time;} break;
 		case 0x0b: res = cms->data[0x0b]; break;	// TODO: bin/12h bits
 		case 0x0c: res = cms->data[0x0c]; break;

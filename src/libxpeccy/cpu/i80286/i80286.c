@@ -189,8 +189,7 @@ int i286_exec(CPU* cpu) {
 			cpu->t++;
 			do {
 				cpu->t++;
-				cpu->com = i286_mrd(cpu, cpu->cs, 0, cpu->pc);
-				cpu->pc++;
+				cpu->com = cpu->x86fetch(cpu);
 				cpu->op = &cpu->opTab[cpu->com & 0xff];
 				cpu->op->exec(cpu);
 			} while (cpu->op->flag & OF_PREFIX);
