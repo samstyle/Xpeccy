@@ -362,6 +362,7 @@ xRegBunch cpuGetRegs(CPU* cpu) {
 		bunch.regs[i].name = noname;
 		bunch.regs[i].id = REG_NONE;
 		bunch.regs[i].value = 0;
+		bunch.regs[i].base = 0;
 		bunch.regs[i].type = 0;
 	}
 	bunch.flags = dumFlags;

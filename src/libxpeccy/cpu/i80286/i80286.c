@@ -472,7 +472,7 @@ xRegDsc i286RegTab[] = {
 	{I286_DS, "DS", REG_WORD|REG_SEG, offsetof(CPU, ds)},
 	{I286_ES, "ES", REG_WORD|REG_SEG, offsetof(CPU, es)},
 	{I286_MSW, "MSW", REG_RO|REG_WORD, offsetof(CPU, msw)},
-	{I286_LDT, "LDT", REG_RO|REG_WORD|REG_SEG, offsetof(CPU, ldtr)},
+	{I286_LDT, "LDT", REG_RO|REG_24, offsetof(CPU, ldtr)},
 	{I286_GDT, "GDT", REG_RO|REG_24, offsetof(CPU, gdtr)},
 	{I286_IDT, "IDT", REG_RO|REG_24, offsetof(CPU, idtr)},
 	{I286_TSS, "TSS", REG_RO|REG_24, offsetof(CPU, tsdr)},
@@ -497,22 +497,22 @@ void i286_get_regs(CPU* cpu, xRegBunch* bnch) {
 		val = -1;
 		bas = 0;
 		switch (i286RegTab[idx].id) {
-			case I286_IP: val = cpu->pc; break;
-			case I286_SP: val = cpu->sp; break;
-			case I286_BP: val = cpu->bp; break;
-			case I286_SI: val = cpu->si; break;
-			case I286_DI: val = cpu->di; break;
-			case I286_AX: val = cpu->ax; break;
-			case I286_CX: val = cpu->cx; break;
-			case I286_DX: val = cpu->dx; break;
-			case I286_BX: val = cpu->bx; break;
+			case I286_IP: val = cpu->pc; bas = cpu->cs.base; break;
+			case I286_SP: val = cpu->sp; bas = cpu->ss.base; break;
+			case I286_BP: val = cpu->bp; bas = cpu->ss.base; break;
+			case I286_SI: val = cpu->si; bas = cpu->ds.base; break;
+			case I286_DI: val = cpu->di; bas = cpu->ds.base; break;
+			case I286_AX: val = cpu->ax; bas = cpu->ds.base; break;
+			case I286_CX: val = cpu->cx; bas = cpu->ds.base; break;
+			case I286_DX: val = cpu->dx; bas = cpu->ds.base; break;
+			case I286_BX: val = cpu->bx; bas = cpu->ds.base; break;
 			case I286_CS: val = cpu->cs.idx; bas = cpu->cs.base; break;
 			case I286_SS: val = cpu->ss.idx; bas = cpu->ss.base; break;
 			case I286_DS: val = cpu->ds.idx; bas = cpu->ds.base; break;
 			case I286_ES: val = cpu->es.idx; bas = cpu->es.base; break;
 			case I286_MSW: val = cpu->msw; break;
 			case I286_GDT: val = cpu->gdtr.base; break;
-			case I286_LDT: val = cpu->ldtr.idx; break;
+			case I286_LDT: val = cpu->ldtr.base; break;
 			case I286_IDT: val = cpu->idtr.base; break;
 			case I286_TSS: val = cpu->tsdr.base; break;
 		}
