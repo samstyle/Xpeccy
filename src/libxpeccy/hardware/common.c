@@ -241,12 +241,12 @@ int xInFADF(Computer* comp, int port) {
 
 int xInFBDF(Computer* comp, int port) {
 	comp->mouse->used = 1;
-	return comp->mouse->enable ? comp->mouse->xpos : 0xff;
+	return comp->mouse->enable ? comp->mouse->xpos * comp->mouse->sensitivity : 0xff;
 }
 
 int xInFFDF(Computer* comp, int port) {
 	comp->mouse->used = 1;
-	return comp->mouse->enable ? comp->mouse->ypos : 0xff;
+	return comp->mouse->enable ? comp->mouse->ypos * comp->mouse->sensitivity : 0xff;
 }
 
 // out

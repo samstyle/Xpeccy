@@ -460,6 +460,7 @@ int prf_load_conf(xProfile* prf, std::string cfname, int flag) {
 					if (pnam == "mouse") comp->mouse->enable = arg.b;
 					if (pnam == "mouse.wheel") comp->mouse->hasWheel = arg.b;
 					if (pnam == "mouse.swapButtons") comp->mouse->swapButtons = arg.b;
+					if (pnam == "mouse.sensitivity") comp->mouse->sensitivity = arg.d;
 					if (pnam == "joy.extbuttons") comp->joy->extbuttons = arg.b;
 					if (pnam == "kbd.scantab") comp->keyb->pcmode = arg.i;
 					if (pnam == "keymap") {
@@ -655,6 +656,7 @@ int prfSave(std::string nm) {
 	fprintf(file, "mouse = %s\n", YESNO(comp->mouse->enable));
 	fprintf(file, "mouse.wheel = %s\n", YESNO(comp->mouse->hasWheel));
 	fprintf(file, "mouse.swapButtons = %s\n", YESNO(comp->mouse->swapButtons));
+	fprintf(file, "mouse.sensitivity = %f\n", comp->mouse->sensitivity);
 	fprintf(file, "joy.extbuttons = %s\n", YESNO(comp->joy->extbuttons));
 	fprintf(file, "gamepad.map = %s\n", prf->jmapName.c_str());
 	fprintf(file, "kbd.scantab = %i\n", comp->keyb->pcmode);
