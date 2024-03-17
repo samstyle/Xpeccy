@@ -238,10 +238,10 @@ void i286_0F06(CPU* cpu) {
 }
 
 opCode i286_0f_tab[256] = {
-	{OF_PRT | OF_WORD, 1, i286_0F00, 0, ":Q :e"},		// sldt,str,lldt,ltr,verr,verw,?,? ew
-	{OF_WORD, 1, i286_0F01, 0, ":W :e"},			// sgdt,sidt,lgdt,lidt,smsw,?,lmsw,? ew
-	{OF_PRT | OF_WORD, 1, i286_0F02, 0, "lar :r,:e"},	// lar rw,ew
-	{OF_PRT | OF_WORD, 1, i286_0F03, 0, "lsl :r,:e"},	// lsl rw,ew
+	{OF_MODCOM | OF_PRT | OF_WORD, 1, i286_0F00, 0, ":Q :e"},		// sldt,str,lldt,ltr,verr,verw,?,? ew
+	{OF_MODCOM | OF_WORD, 1, i286_0F01, 0, ":W :e"},			// sgdt,sidt,lgdt,lidt,smsw,?,lmsw,? ew
+	{OF_MODRM | OF_PRT | OF_WORD, 1, i286_0F02, 0, "lar :r,:e"},	// lar rw,ew
+	{OF_MODRM | OF_PRT | OF_WORD, 1, i286_0F03, 0, "lsl :r,:e"},	// lsl rw,ew
 	{0, 1, i286_0Fxx, 0, "undef"},
 	{0, 1, i286_0Fxx, 0, "undef"},				// (?) loadall
 	{0, 1, i286_0F06, 0, "clts"},				// clts

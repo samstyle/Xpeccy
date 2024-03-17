@@ -124,6 +124,8 @@ void i286_set_reg(CPU*, int, int);
 unsigned char i286_mrd(CPU*, xSegPtr, int, unsigned short);
 void i286_mwr(CPU*, xSegPtr, int, unsigned short, int);
 
+void i286_init(CPU*);
+void i8086_init(CPU*);
 void i286_reset(CPU*);
 int i286_exec(CPU*);
 xAsmScan i286_asm(const char*, char*);
@@ -132,3 +134,32 @@ void i286_get_regs(CPU*, xRegBunch*);
 void i286_set_regs(CPU*, xRegBunch);
 
 void x86_set_mode(CPU*, int);
+
+// ALU
+unsigned char i286_add8(CPU*, unsigned char, unsigned char, int);
+unsigned short i286_add16(CPU*, unsigned short, unsigned short, int);
+unsigned char i286_sub8(CPU*, unsigned char, unsigned char, int);
+unsigned short i286_sub16(CPU*, unsigned short, unsigned short, int);
+int i286_smul(CPU*, signed short, signed short);
+unsigned char i286_and8(CPU*, unsigned char, unsigned char);
+unsigned short i286_and16(CPU*, unsigned short, unsigned short);
+unsigned char i286_or8(CPU*, unsigned char, unsigned char);
+unsigned short i286_or16(CPU*, unsigned short, unsigned short);
+unsigned char i286_xor8(CPU*, unsigned char, unsigned char);
+unsigned short i286_xor16(CPU*, unsigned short, unsigned short);
+
+// shift/rotation
+unsigned char i286_rol8(CPU* cpu, unsigned char);
+unsigned short i286_rol16(CPU*, unsigned short);
+unsigned char i286_ror8(CPU*, unsigned char);
+unsigned short i286_ror16(CPU*, unsigned short);
+unsigned char i286_rcl8(CPU*, unsigned char);
+unsigned short i286_rcl16(CPU*, unsigned short);
+unsigned char i286_rcr8(CPU*, unsigned char);
+unsigned short i286_rcr16(CPU*, unsigned short);
+unsigned char i286_sal8(CPU*, unsigned char);
+unsigned short i286_sal16(CPU*, unsigned short);
+unsigned char i286_shr8(CPU*, unsigned char);
+unsigned short i286_shr16(CPU*, unsigned short);
+unsigned char i286_sar8(CPU*, unsigned char);
+unsigned short i286_sar16(CPU*, unsigned short);

@@ -82,6 +82,10 @@ typedef int(*cbdmr)(int, void*);
 #define OF_MEMADR	(1<<5)		// operand contains memory address (nn)
 #define OF_WORD		(1<<6)		// i286:use words for mod byte
 #define OF_PRT		(1<<7)		// i286:protect mode only
+#define OF_MODRM	(1<<8)		// i286:mod r/m byte present
+#define OF_COMEXT	(1<<9)		// mod r/m contains command extension bits
+#define OF_GEN		(1<<10)		// opcode depends on cpu generation (86/186/286) cpu->tab is sub-table[cpu->gen]
+#define OF_MODCOM	(OF_MODRM | OF_COMEXT)
 
 typedef struct CPU CPU;
 typedef struct opCode opCode;
@@ -116,11 +120,15 @@ typedef struct {
 typedef struct {
 	int idx;			// 'visible' value
 //	unsigned char flag;		// access flag
-	unsigned pl:2;
-	unsigned ar:5;
-	unsigned pr:1;
-	unsigned sys:1;			// ar & 0x10
+	unsigned pl:2;			// priv.level
+	unsigned ar:5;			// type
+	unsigned ext:1;			// code is conforming | data is growing from limit to FFFF
+	unsigned wr:1;			// write enable (for data, 0 for code)
+	unsigned rd:1;			// read enable (for code, 1 for data)
+	unsigned pr:1;			// present
+	unsigned sys:1;			// !(ar & 0x10)
 	unsigned code:1;		// ar & 0x18 = 0x18
+	unsigned data:1;		// ar & 0x18 = 0x10
 	unsigned base:24;		// segment base addr
 	unsigned short limit;		// segment size in bytes
 } xSegPtr;				// aka segment table descriptor
@@ -159,6 +167,7 @@ struct CPU {
 	unsigned nod:2;			// MOS6502: ignore flag D in ADC/SBC; PDP11: write flags
 
 	int type;			// cpu type id
+	int gen;			// cpu generation (for x86: 0-8086, 1-80186, 2-80286 etc)
 
 	int intrq;			// interrupts request. each bit for each INT type, 1 = requested
 	int inten;			// interrupts enabled mask
@@ -311,6 +320,7 @@ struct cpuCore {
 	int type;				// cpu type
 	const char* name;			// printable name
 	xRegDsc* rdsctab;			// registers descriptors table
+	void (*init)(CPU*);			// call it when core changed
 	void (*reset)(CPU*);			// reset
 	int (*exec)(CPU*);			// exec opcode, return T
 	xAsmScan (*asmbl)(const char*, char*);	// compile mnemonic

@@ -52,13 +52,13 @@ extern xRegDsc i286RegTab[];
 extern xRegDsc pdp11RegTab[];
 
 cpuCore cpuTab[] = {
-	{CPU_Z80, "Z80", z80RegTab, z80_reset, z80_exec, z80_asm, z80_mnem, z80_get_regs, z80_set_regs},
-	{CPU_I8080, "i8080", i8080RegTab, i8080_reset, i8080_exec, i8080_asm, i8080_mnem, i8080_get_regs, i8080_set_regs},
-	{CPU_I80286,"i80286", i286RegTab, i286_reset, i286_exec, i286_asm, i286_mnem, i286_get_regs, i286_set_regs},
-	{CPU_LR35902, "LR35902", lrRegTab, lr_reset, lr_exec, lr_asm, lr_mnem, lr_get_regs, lr_set_regs},
-	{CPU_6502, "MOS6502", m6502RegTab, m6502_reset, m6502_exec, m6502_asm, m6502_mnem, m6502_get_regs, m6502_set_regs},
-	{CPU_VM1, "1801VM1", pdp11RegTab, pdp11_reset, pdp11_exec, pdp11_asm, pdp11_mnem, pdp11_get_regs, pdp11_set_regs},
-	{CPU_NONE, "none", nil_reg_tab, nil_reset, nil_exec, nil_asm, nil_mnem, nil_get_regs, nil_set_regs}
+	{CPU_Z80, "Z80", z80RegTab, NULL, z80_reset, z80_exec, z80_asm, z80_mnem, z80_get_regs, z80_set_regs},
+	{CPU_I8080, "i8080", i8080RegTab, NULL, i8080_reset, i8080_exec, i8080_asm, i8080_mnem, i8080_get_regs, i8080_set_regs},
+	{CPU_I80286,"i80286", i286RegTab, i286_init, i286_reset, i286_exec, i286_asm, i286_mnem, i286_get_regs, i286_set_regs},
+	{CPU_LR35902, "LR35902", lrRegTab, NULL, lr_reset, lr_exec, lr_asm, lr_mnem, lr_get_regs, lr_set_regs},
+	{CPU_6502, "MOS6502", m6502RegTab, NULL, m6502_reset, m6502_exec, m6502_asm, m6502_mnem, m6502_get_regs, m6502_set_regs},
+	{CPU_VM1, "1801VM1", pdp11RegTab, NULL, pdp11_reset, pdp11_exec, pdp11_asm, pdp11_mnem, pdp11_get_regs, pdp11_set_regs},
+	{CPU_NONE, "none", nil_reg_tab, NULL, nil_reset, nil_exec, nil_asm, nil_mnem, nil_get_regs, nil_set_regs}
 };
 
 cpuCore* findCore(int type) {
@@ -93,6 +93,9 @@ void cpuSetType(CPU* cpu, int type) {
 		cpu->mnem = core->mnem;
 		cpu->getregs = core->getregs;
 		cpu->setregs = core->setregs;
+		if (core->init) {
+			core->init(cpu);
+		}
 	}
 }
 
