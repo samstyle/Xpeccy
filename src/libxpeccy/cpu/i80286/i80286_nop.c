@@ -300,14 +300,10 @@ xSegPtr i286_cash_seg(CPU* cpu, unsigned short val) {
 		}
 	} else {
 		//p.flag = 0xf2;		// present, dpl=3, segment, data, writeable
-		p.pr = 1;
-		p.pl = 0;
-		p.ar = 0x12;
-		p.sys = 0;
-		p.code = 0;
 		p.base = val << 4;
 		p.limit = 0xffff;
 	}
+	p.idx = val;
 	return p;
 }
 
