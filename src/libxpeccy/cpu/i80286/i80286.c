@@ -15,7 +15,6 @@ extern void i286_switch_task(CPU*, int, int, int);
 void i086_init(CPU* cpu) {cpu->gen = 0;}
 void i186_init(CPU* cpu) {cpu->gen = 1;}
 void i286_init(CPU* cpu) {cpu->gen = 2;}
-void i386_init(CPU* cpu) {cpu->gen = 3;}
 
 void i286_reset(CPU* cpu) {
 	x86_set_mode(cpu, X86_REAL);

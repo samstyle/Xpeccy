@@ -459,17 +459,15 @@ void compReset(Computer* comp,int res) {
 	comp->dos = ((res == RES_DOS) || (res == RES_SHADOW)) ? 1 : 0;
 	comp->rom = (comp->p7FFD & 0x10) ? 1 : 0;
 	comp->cpm = 0;
-
-	// kbdReleaseAll(comp->keyb);
-	kbdSetMode(comp->keyb, KBD_SPECTRUM);
-	ps2c_reset(comp->ps2c);
-
-	vid_reset(comp->vid);
 	comp->ext = 0;
 	comp->prt2 = 0;
 	comp->p1FFD = 0;
 	comp->pEFF7 = 0;
 
+	vid_reset(comp->vid);
+	// kbdReleaseAll(comp->keyb);
+	kbdSetMode(comp->keyb, KBD_SPECTRUM);
+	ps2c_reset(comp->ps2c);
 	difReset(comp->dif);
 	if (comp->gs->reset)
 		gsReset(comp->gs);

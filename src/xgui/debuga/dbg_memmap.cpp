@@ -65,6 +65,7 @@ void xMMapWidget::draw() {
 	pnt.drawLine(0, 143, 256, 143);
 	pnt.end();
 	ui.labMemMap->setPixmap(img);
+	blockSignals(true);
 	if (comp->hw->grp == HWG_ZX) {
 		ui.numBank0->setValue(comp->mem->map[0x00].num >> 6);
 		ui.numBank1->setValue(comp->mem->map[0x40].num >> 6);
@@ -75,4 +76,5 @@ void xMMapWidget::draw() {
 		setRFIndex(ui.cbBank2, comp->mem->map[0x80].type);
 		setRFIndex(ui.cbBank3, comp->mem->map[0xc0].type);
 	}
+	blockSignals(false);
 }

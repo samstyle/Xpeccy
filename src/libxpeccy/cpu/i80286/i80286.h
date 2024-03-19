@@ -124,6 +124,8 @@ void i286_set_reg(CPU*, int, int);
 unsigned char i286_mrd(CPU*, xSegPtr, int, unsigned short);
 void i286_mwr(CPU*, xSegPtr, int, unsigned short, int);
 
+void i086_init(CPU*);
+void i186_init(CPU*);
 void i286_init(CPU*);
 void i8086_init(CPU*);
 void i286_reset(CPU*);

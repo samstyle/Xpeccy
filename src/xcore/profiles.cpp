@@ -520,7 +520,7 @@ int prf_load_conf(xProfile* prf, std::string cfname, int flag) {
 	memSetSize(comp->mem, tmask, -1);
 	if (!prfSetLayout(prf, prf->layName)) prfSetLayout(prf,"default");
 
-	compReset(comp,RES_DEFAULT);
+	// compReset(comp,RES_DEFAULT);
 
 	return tmp2;
 }
