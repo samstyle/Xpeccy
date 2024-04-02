@@ -69,6 +69,8 @@ typedef int(*cbHwIrd)(Computer*, int);
 typedef void(*cbHwIwr)(Computer*, int, int);
 // int request
 typedef void(*cbHwIrq)(Computer*, int);
+// int ack
+typedef int(*cbHwAck)(Computer*);
 // key press/release
 typedef void(*cbHwKey)(Computer*, keyEntry);
 // get volume
@@ -91,6 +93,7 @@ struct HardWare {
 	cbHwMrd mrd;		// mem rd
 	cbHwMwr mwr;		// mem wr
 	cbHwIrq irq;		// int rq
+	cbHwAck ack;		// int ack
 	cbhwcomp reset;		// reset
 	cbHwSnc sync;		// sync time
 	cbHwKey keyp;		// key press
@@ -135,6 +138,7 @@ void dummyOut(Computer*, int, int);
 int zx_dev_wr(Computer*, int, int);
 int zx_dev_rd(Computer*, int, int*);
 void zx_irq(Computer*, int);
+int zx_ack(Computer*);
 
 void xOutFE(Computer*, int, int);
 void xOutBFFD(Computer*, int, int);
@@ -330,6 +334,7 @@ void ibm_sync(Computer*, int);
 int ibm_mrd(Computer*, int, int);
 void ibm_mwr(Computer*, int, int);
 void ibm_irq(Computer*, int);
+int ibm_ack(Computer*);
 int ibm_iord(Computer*, int);
 void ibm_iowr(Computer*, int, int);
 void ibm_keyp(Computer*, keyEntry);

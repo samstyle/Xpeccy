@@ -115,6 +115,10 @@ void zx_irq(Computer* comp, int t) {
 	}
 }
 
+int zx_ack(Computer* comp) {
+	return comp->intVector & 0xff;
+}
+
 void zx_init(Computer* comp) {
 	comp->nsPerTick &= ~1;		// make even
 	comp->fps = 50;

@@ -48,7 +48,7 @@ bpChecker comp_check_bp(Computer* comp, int adr, int mask) {
 		}
 		if (ch.ptr) {
 			if (*ch.ptr & mask) {
-				printf("xadr.abs = %X, page=%X, off=%X\n",xadr.abs,xadr.bank,xadr.adr & comp->mem->pgmask);
+				// printf("xadr.abs = %X, page=%X, off=%X\n",xadr.abs,xadr.bank,xadr.adr & comp->mem->pgmask);
 				ch.a = xadr.abs;
 			} else {
 				ch.t = -1;
@@ -278,7 +278,8 @@ void iowr(int port, int val, void* ptr) {
 }
 
 int intrq(void* ptr) {
-	return ((Computer*)ptr)->intVector & 0xff;
+	Computer* comp = (Computer*)ptr;
+	return comp->hw->ack ? comp->hw->ack(comp) : 0xff;
 }
 
 void comp_irq(int t, void* ptr) {

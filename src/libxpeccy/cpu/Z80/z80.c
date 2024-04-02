@@ -84,7 +84,7 @@ int z80_int(CPU* cpu) {
 			switch(cpu->imode) {
 				case 0:
 					cpu->t = 2;
-					cpu->op = &cpu->opTab[cpu->irq(cpu->xptr)];
+					cpu->op = &cpu->opTab[cpu->xack(cpu->xptr)];
 					cpu->r++;
 					cpu->t += cpu->op->t;		// +5 (RST38 fetch)
 					cpu->op->exec(cpu);		// +3 +3 execution. 13 total
@@ -104,7 +104,7 @@ int z80_int(CPU* cpu) {
 					cpu->r++;
 					cpu->t = 7;
 					lr_push(cpu, cpu->pc);			// +3 (10) +3 (13)
-					cpu->lptr = cpu->irq(cpu->xptr);	// int vector (FF)
+					cpu->lptr = cpu->xack(cpu->xptr);	// int vector (FF)
 					cpu->hptr = cpu->i;
 					cpu->lpc = z80_mrd(cpu, cpu->mptr++);	// +3 (16)
 					cpu->hpc = z80_mrd(cpu, cpu->mptr);		// +3 (19)

@@ -100,30 +100,33 @@ void i286_mwr(CPU* cpu, xSegPtr seg, int rpl, unsigned short adr, int val) {
 }
 
 // system mrd/mwr, w/o checks
+// TODO: 8086/80186: 20bit adr bus: mask (1<<20)-1
+//	80286: 24bit adr bus: mask (1<<24)-1
+//	mwr/mrd must respect bus size
 
-unsigned char i286_sys_mrd(CPU* cpu, xSegPtr seg, unsigned short adr) {
-	return cpu->mrd(seg.base + adr, 0, cpu->xptr) & 0xff;
-}
+//unsigned char i286_sys_mrd(CPU* cpu, xSegPtr seg, unsigned short adr) {
+//	return cpu_mrd(cpu, seg.base + adr) & 0xff;
+//}
 
 unsigned short i286_sys_mrdw(CPU* cpu, xSegPtr seg, unsigned short adr) {
-	unsigned char rl = cpu->mrd(seg.base + adr, 0, cpu->xptr) & 0xff;
-	unsigned char rh = cpu->mrd(seg.base + adr + 1, 0, cpu->xptr) & 0xff;
+	unsigned char rl = cpu_mrd(cpu, seg.base + adr) & 0xff;
+	unsigned char rh = cpu_mrd(cpu, seg.base + adr + 1) & 0xff;
 	return (rh << 8) | rl;
 }
 
 void i286_sys_mwr(CPU* cpu, xSegPtr seg, unsigned short adr, unsigned char v) {
-	cpu->mwr(seg.base + adr, v, cpu->xptr);
+	cpu_mwr(cpu, seg.base + adr, v);
 }
 
 void i286_sys_mwrw(CPU* cpu, xSegPtr seg, unsigned short adr, unsigned short v) {
-	cpu->mwr(seg.base + adr, v & 0xff, cpu->xptr);
-	cpu->mwr(seg.base + adr, (v >> 8) & 0xff, cpu->xptr);
+	cpu_mwr(cpu, seg.base + adr, v & 0xff);
+	cpu_mwr(cpu, seg.base + adr, (v >> 8) & 0xff);
 }
 
 // real mode
 
 unsigned char i286_fetch_real(CPU* cpu) {
-	unsigned char res = cpu->mrd(cpu->cs.base + cpu->pc, 1, cpu->xptr) & 0xff;
+	unsigned char res = cpu_fetch(cpu, cpu->cs.base + cpu->pc) & 0xff;
 	cpu->pc++;
 	return res;
 }
@@ -131,13 +134,13 @@ unsigned char i286_fetch_real(CPU* cpu) {
 unsigned char i286_mrd_real(CPU* cpu, xSegPtr seg, int rpl, unsigned short adr) {
 	if (rpl && (cpu->seg.idx >= 0)) seg = cpu->seg;
 	cpu->t++;
-	return cpu->mrd(seg.base + adr, 0, cpu->xptr) & 0xff;
+	return cpu_mrd(cpu, seg.base + adr) & 0xff;
 }
 
 void i286_mwr_real(CPU* cpu, xSegPtr seg, int rpl, unsigned short adr, int val) {
 	if (rpl && (cpu->seg.idx >= 0)) seg = cpu->seg;
 	cpu->t++;
-	cpu->mwr(seg.base + adr, val, cpu->xptr);
+	cpu_mwr(cpu, seg.base + adr, val);
 }
 
 // stack (TODO: real/prt mode stack rd/wr procedures)
@@ -168,7 +171,7 @@ unsigned char i286_fetch_prt(CPU* cpu) {
 	unsigned char res = 0xff;
 //	if (i286_check_segment_exec(cpu, &cpu->cs)) {		// check it when CS changed
 		if (i286_check_segment_limit(cpu, &cpu->cs, cpu->pc)) {
-			res = cpu->mrd(cpu->cs.base + cpu->pc, 1, cpu->xptr) & 0xff;
+			res = cpu_fetch(cpu, cpu->cs.base + cpu->pc) & 0xff;
 			cpu->pc++;
 		} else {
 			THROW(I286_INT_SL);
@@ -185,7 +188,7 @@ unsigned char i286_mrd_prt(CPU* cpu, xSegPtr seg, int rpl, unsigned short adr) {
 	if (rpl && (cpu->seg.idx >= 0)) seg = cpu->seg;
 	if (i286_check_segment_rd(cpu, &seg)) {
 		if (i286_check_segment_limit(cpu, &seg, adr)) {
-			res = cpu->mrd(seg.base + adr, 0, cpu->xptr) & 0xff;
+			res = cpu_fetch(cpu, seg.base + adr) & 0xff;
 		} else {
 			THROW(I286_INT_SL);
 		}
@@ -199,7 +202,7 @@ void i286_mwr_prt(CPU* cpu, xSegPtr seg, int rpl, unsigned short adr, int val) {
 	if (rpl && (cpu->seg.idx >= 0)) seg = cpu->seg;
 	if (i286_check_segment_wr(cpu, &seg)) {
 		if (i286_check_segment_limit(cpu, &seg, adr)) {
-			cpu->mwr(seg.base + adr, val, cpu->xptr);
+			cpu_mwr(cpu, seg.base + adr, val);
 		} else {
 			cpu->pc = cpu->oldpc;
 			THROW(I286_INT_SL);
@@ -212,12 +215,12 @@ void i286_mwr_prt(CPU* cpu, xSegPtr seg, int rpl, unsigned short adr, int val) {
 // iord/wr
 
 unsigned short i286_ird(CPU* cpu, int adr) {
-	return cpu->ird(adr, cpu->xptr) & 0xffff;
+	return cpu_ird(cpu, adr) & 0xffff;
 }
 
 void i286_iwr(CPU* cpu, int adr, int val, int w) {
 	cpu->wrd = !!w;
-	cpu->iwr(adr, val, cpu->xptr);
+	cpu_iwr(cpu, adr, val);
 	cpu->wrd = 0;
 }
 
@@ -261,14 +264,14 @@ xSegPtr i286_cash_seg_a(CPU* cpu, int adr) {
 	xSegPtr p;
 	PAIR(w,h,l)off;
 	unsigned short tmp;
-	off.l = cpu->mrd(adr++, 0, cpu->xptr);	// limit:16
-	off.h = cpu->mrd(adr++, 0, cpu->xptr);
+	off.l = cpu_mrd(cpu, adr++);	// limit:16
+	off.h = cpu_mrd(cpu, adr++);
 	p.limit = off.w;
-	off.l = cpu->mrd(adr++, 0, cpu->xptr);	// base:24
-	off.h = cpu->mrd(adr++, 0, cpu->xptr);
-	tmp = cpu->mrd(adr++, 0, cpu->xptr);
+	off.l = cpu_mrd(cpu, adr++);	// base:24
+	off.h = cpu_mrd(cpu, adr++);
+	tmp = cpu_mrd(cpu, adr++);
 	p.base = (tmp << 16) | off.w;
-	tmp = cpu->mrd(adr, 0, cpu->xptr);	// flags:8
+	tmp = cpu_mrd(cpu, adr);	// flags:8
 	p.ar = tmp & 0x1f;
 	p.pl = (tmp >> 5) & 3;
 	p.pr = !!(tmp & 0x80);
@@ -343,9 +346,9 @@ void i286_switch_task(CPU* cpu, int tsss, int nest, int iret) {
 			} else {
 				// set new TSS busy
 				int adr = cpu->gdtr.base + (tsss & 0xfff8);
-				f = cpu->mrd(adr + 5, 0, cpu->xptr);
+				f = cpu_mrd(cpu, adr + 5);
 				f |= 2;
-				cpu->mwr(adr + 5, f, cpu->xptr);
+				cpu_mwr(cpu, adr + 5, f);
 				// save current state to current TSS
 				i286_sys_mwrw(cpu, cpu->tsdr, 14, cpu->pc);
 				i286_sys_mwrw(cpu, cpu->tsdr, 16, cpu->f);
@@ -1808,7 +1811,7 @@ void i286_callf(CPU* cpu, int nip, int ncs) {
 				int dadr = cpu->ss.base + cpu->sp;			// new stack top
 				cpu->t = 86;
 				while (cnt > 0) {
-					cpu->mwr(dadr, cpu->mrd(sadr, 0, cpu->xptr), cpu->xptr);
+					cpu_mwr(cpu, dadr, cpu_mrd(cpu, sadr));
 					dadr++;
 					sadr++;
 					cnt--;
@@ -1853,18 +1856,35 @@ void i286_op9B(CPU* cpu) {
 
 // 9c: pushf
 void i286_op9C(CPU* cpu) {
-	i286_push(cpu, cpu->f);
+	i286_push(cpu, cpu->f);	// set unused bits
 }
 
-// 9d: popf (real mode: NT and IOP flags not modified)
-// real mode: IOP can changed if cpl=0, FI - if (cpl <= iop)
-// 80286 - only low 8 bits changed in real mode
+// 9d: popf
+// protected mode: IOP can changed if cpl=0, FI - if (cpl <= iop)
+// real mode: NT and IOP flags not modified?
+// CHECK:
+// 8086/80186	bit 12..15 = 1
+// 80286	bit 12..15 = 0
+// 80386+	(read more)
 void i286_op9D(CPU* cpu) {
 	cpu->tmpw = i286_pop(cpu);
 	if (cpu->msw & I286_FPE) {
-		cpu->f = (cpu->f & (I286_FN | I286_FIP)) | (cpu->tmpw & ~(I286_FN | I286_FIP));
+		cpu->f = (cpu->f & (I286_FN | I286_FIP | I286_FI)) | (cpu->tmpw & ~(I286_FN | I286_FIP | I286_FI));
+		if (cpu->cs.pl == 0) {				// CPL==0 can change IOPL
+			cpu->f = (cpu->f & I286_FIP) | (cpu->tmpw & ~I286_FIP);
+		}
+		if (cpu->cs.pl <= ((cpu->f >> 12) & 3)) {	// CPL<=IOPL: can change FI
+			cpu->f = (cpu->f & I286_FI) | (cpu->tmpw & ~I286_FI);
+		}
 	} else {
-		cpu->f = (cpu->f & 0xff00) | cpu->ltw;
+		switch(cpu->gen) {
+			case 2:
+				cpu->f = (cpu->tmpw & 0x0fff);
+				break;
+			default:
+				cpu->f = (cpu->tmpw & 0x0fff) | 0xf000;
+				break;
+		}
 	}
 }
 
@@ -2295,9 +2315,9 @@ void i286_opCF(CPU* cpu) {
 				}
 				seg = cpu->tsdr;			// current TS
 				i286_switch_task(cpu, tss, 0, 1);	// switch to new task
-				unsigned char tf = i286_sys_mrd(cpu, seg, 5);	// mark old TS as not-busy
+				unsigned char tf = cpu_mrd(cpu, seg.base + 5);	// mark old TS as not-busy
 				tf &= ~2;
-				i286_sys_mwr(cpu, seg, 5, tf);
+				cpu_mwr(cpu, seg.base + 5, tf);
 				if (cpu->pc > cpu->cs.limit) {
 					THROW_EC(I286_INT_GP, 0);
 				}

@@ -380,7 +380,11 @@ void MainWin::keyReleaseEvent(QKeyEvent *ev) {
 #else
 				keyid = qKey2id(ev->key());
 #endif
-				//		printf("release: %i\n", keyid);
+				// for debug
+				if ((ev->modifiers() & Qt::AltModifier) && (ev->key() == Qt::Key_PageUp)) {
+					comp->dif->fdc->debug ^= 1;
+					printf("dbg:%i\n",comp->dif->fdc->debug);
+				}
 				xkey_release(keyid);
 			}
 		}

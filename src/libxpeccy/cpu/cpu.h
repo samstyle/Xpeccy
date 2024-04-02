@@ -117,22 +117,6 @@ typedef struct {
 	char arg[8][256];
 } xAsmScan;
 
-typedef struct {
-	int idx;			// 'visible' value
-//	unsigned char flag;		// access flag
-	unsigned pl:2;			// priv.level
-	unsigned ar:5;			// type
-	unsigned ext:1;			// code is conforming | data is growing from limit to FFFF
-	unsigned wr:1;			// write enable (for data, 0 for code)
-	unsigned rd:1;			// read enable (for code, 1 for data)
-	unsigned pr:1;			// present
-	unsigned sys:1;			// !(ar & 0x10)
-	unsigned code:1;		// ar & 0x18 = 0x18
-	unsigned data:1;		// ar & 0x18 = 0x10
-	unsigned base:24;		// segment base addr
-	unsigned short limit;		// segment size in bytes
-} xSegPtr;				// aka segment table descriptor
-
 #include "Z80/z80.h"
 #include "LR35902/lr35902.h"
 #include "MOS6502/6502.h"
@@ -142,9 +126,11 @@ typedef struct {
 
 enum {
 	CPU_NONE = 0,		// dummy
-	CPU_Z80,		// ZX, MSX
+	CPU_Z80,		// ZX, MSX, *PC88xx
 	CPU_I8080,
-	CPU_I80286,
+	CPU_I8086,		// *PC98xx
+	CPU_I80186,
+	CPU_I80286,		// IBM
 	CPU_LR35902,		// GB, GBC
 	CPU_6502,		// NES, Commodore
 	CPU_VM1			// BK
@@ -286,7 +272,7 @@ struct CPU {
 	cbmw mwr;
 	cbir ird;
 	cbiw iwr;
-	cbiack irq;
+	cbiack xack;
 	cbirq xirq;
 	void* xptr;
 
@@ -349,6 +335,12 @@ int cpu_get_reg(CPU*, const char*, bool*);
 bool cpu_set_reg(CPU*, const char*, int);
 
 int parity(int);
+
+int cpu_fetch(CPU*, int);
+int cpu_mrd(CPU*, int);
+void cpu_mwr(CPU*, int, int);
+int cpu_ird(CPU*, int);
+void cpu_iwr(CPU*, int, int);
 
 #ifdef __cplusplus
 }

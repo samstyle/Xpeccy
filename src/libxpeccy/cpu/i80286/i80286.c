@@ -112,10 +112,10 @@ void i286_int_prt(CPU* cpu, int vec) {
 						i286_push(cpu, cpu->errcod);
 						cpu->errcod = -1;
 					}
-					off.l = cpu->mrd(adr, 0, cpu->xptr);		// offset
-					off.h = cpu->mrd(adr + 1, 0, cpu->xptr);
-					seg.l = cpu->mrd(adr + 2, 0, cpu->xptr);	// cs segment selector
-					seg.h = cpu->mrd(adr + 3, 0, cpu->xptr);
+					off.l = cpu_mrd(cpu, adr);		// offset
+					off.h = cpu_mrd(cpu, adr + 1);
+					seg.l = cpu_mrd(cpu, adr + 2);	// cs segment selector
+					seg.h = cpu_mrd(cpu, adr + 3);
 					cpu->tmpdr = i286_cash_seg(cpu, seg.w);
 					if (!cpu->tmpdr.code) {
 						THROW_EC(I286_INT_GP, (vec << 3));
@@ -137,11 +137,11 @@ void i286_int_prt(CPU* cpu, int vec) {
 				break;
 		}
 		/*
-		off.l = cpu->mrd(adr, 0, cpu->xptr);	// offset
-		off.h = cpu->mrd(adr+1, 0, cpu->xptr);
-		seg.l = cpu->mrd(adr+2, 0, cpu->xptr);	// segment
-		seg.h = cpu->mrd(adr+3, 0, cpu->xptr);
-		unsigned char fl = cpu->mrd(adr+5, 0, cpu->xptr);	// flags
+		off.l = cpu_mrd(cpu, adr);	// offset
+		off.h = cpu_mrd(cpu, adr+1);
+		seg.l = cpu_mrd(cpu, adr+2);	// segment
+		seg.h = cpu_mrd(cpu, adr+3);
+		unsigned char fl = cpu_mrd(cpu, adr+5);	// flags
 		cpu->tmpdr = i286_cash_seg(cpu, seg.w);		// [code] segment: TODO if this is tss gate
 		if ((cpu->tmpdr.pl) < ((fl >> 5) & 3)) {	// check priv
 			THROW_EC(I286_INT_GP, 0);
@@ -183,6 +183,7 @@ void i286_ext_int(CPU* cpu) {
 		i286_interrupt(cpu, I286_INT_NMI);
 	} else 	if (cpu->f & I286_FI) {
 		cpu->intrq &= ~I286_INT;
+		cpu->intvec = cpu->xack(cpu->xptr);
 		i286_interrupt(cpu, cpu->intvec);
 	}
 }
@@ -254,7 +255,7 @@ xMnem i286_mnem(CPU* cpu, int sadr, cbdmr mrd, void* data) {
 	const char* p;
 	char* dptr = mnembuf;
 	do {
-		com = cpu->mrd(adr, 0, cpu->xptr);
+		com = cpu_mrd(cpu, adr);
 		adr++;
 		op = &tab[com];
 		while (op->flag & OF_GEN) {
@@ -283,20 +284,20 @@ xMnem i286_mnem(CPU* cpu, int sadr, cbdmr mrd, void* data) {
 	PAIR(w,h,l)disp;
 	// check mod r/m
 	if (op->flag & OF_MODRM) {
-		mb = cpu->mrd(adr++, 0, cpu->xptr);
+		mb = cpu_mrd(cpu, adr++);
 		switch (mb & 0xc0) {
 			case 0x80:
-				disp.l = cpu->mrd(adr++, 0, cpu->xptr);
-				disp.h = cpu->mrd(adr++, 0, cpu->xptr);
+				disp.l = cpu_mrd(cpu, adr++);
+				disp.h = cpu_mrd(cpu, adr++);
 				break;
 			case 0x40:
-				disp.l = cpu->mrd(adr++, 0, cpu->xptr);
+				disp.l = cpu_mrd(cpu, adr++);
 				disp.h = (disp.l & 0x80) ? 0xff : 0x00;
 				break;
 			case 0x00:
 				if ((mb & 7) == 6) {
-					disp.l = cpu->mrd(adr++, 0, cpu->xptr);
-					disp.h = cpu->mrd(adr++, 0, cpu->xptr);
+					disp.l = cpu_mrd(cpu, adr++);
+					disp.h = cpu_mrd(cpu, adr++);
 				} else {
 					disp.w = 0;
 				}
@@ -325,20 +326,20 @@ xMnem i286_mnem(CPU* cpu, int sadr, cbdmr mrd, void* data) {
 			ptr++;
 			switch(*ptr) {
 				case '1':
-					rx.l = cpu->mrd(adr, 0, cpu->xptr);
+					rx.l = cpu_mrd(cpu, adr);
 					adr++;
 					dptr += sprintf(dptr, "#%.2X", rx.l);
 					break;
 				case '2':
-					rx.l = cpu->mrd(adr, 0, cpu->xptr);
+					rx.l = cpu_mrd(cpu, adr);
 					adr++;
-					rx.h = cpu->mrd(adr, 0, cpu->xptr);
+					rx.h = cpu_mrd(cpu, adr);
 					adr++;
 					dptr += sprintf(dptr, "#%.4X", rx.w);
 					mn.oadr = rx.w + cpu->cs.base;
 					break;
 				case '3':
-					rx.l = cpu->mrd(adr, 0, cpu->xptr);
+					rx.l = cpu_mrd(cpu, adr);
 					adr++;
 					rx.h = (rx.l & 0x80) ? 0xff : 0x00;
 					rx.w += adr - cpu->cs.base;
@@ -346,9 +347,9 @@ xMnem i286_mnem(CPU* cpu, int sadr, cbdmr mrd, void* data) {
 					mn.oadr = rx.w + cpu->cs.base;
 					break;
 				case 'n':
-					rx.l = cpu->mrd(adr, 0, cpu->xptr);
+					rx.l = cpu_mrd(cpu, adr);
 					adr++;
-					rx.h = cpu->mrd(adr, 0, cpu->xptr);
+					rx.h = cpu_mrd(cpu, adr);
 					adr++;
 					rx.w += (adr - cpu->cs.base);
 					dptr += sprintf(dptr, "near #%.4X", rx.w);
@@ -356,13 +357,13 @@ xMnem i286_mnem(CPU* cpu, int sadr, cbdmr mrd, void* data) {
 					break;
 				case '4':
 				case 'p':
-					rx.l = cpu->mrd(adr, 0, cpu->xptr);
+					rx.l = cpu_mrd(cpu, adr);
 					adr++;
-					rx.h = cpu->mrd(adr, 0, cpu->xptr);
+					rx.h = cpu_mrd(cpu, adr);
 					adr++;
-					seg.l = cpu->mrd(adr, 0, cpu->xptr);
+					seg.l = cpu_mrd(cpu, adr);
 					adr++;
-					seg.h = cpu->mrd(adr, 0, cpu->xptr);
+					seg.h = cpu_mrd(cpu, adr);
 					adr++;
 					dptr += sprintf(dptr, "#%.4X::%.4X", seg.w, rx.w);
 					// mn.oadr = rx.w;

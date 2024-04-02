@@ -43,10 +43,11 @@ void dma_reset(i8237DMA* dma) {
 }
 
 // set callbacks to read/wr device for one channel
-void dma_set_chan(i8237DMA* dma, int ch, cbdmadrd cr, cbdmadwr cw) {
+void dma_set_chan(i8237DMA* dma, int ch, cbdmadrd cr, cbdmadwr cw, cbdmatc ct) {
 	ch &= 3;
 	dma->ch[ch].rd = cr;
 	dma->ch[ch].wr = cw;
+	dma->ch[ch].tc = ct;
 }
 
 // set callbacks for read/wr memory for all channels
@@ -58,12 +59,15 @@ void dma_set_cb(i8237DMA* dma, cbdmamrd cr, cbdmamwr cw) {
 }
 
 // mode b6,7: 00:by request, 01:single, 10:block, 11:cascade
+// TODO: single = one transfer, block = until cwr<0
 // dma command reg: b0:mem-mem enable (ch0-ch1), b1:hold addres of ch0 (filling)
-void dma_ch_count(DMAChan* ch) {
+void dma_ch_count(DMAChan* ch, void* ptr) {
 	if (!ch->hold)
 		ch->car += (ch->mode & 0x20) ? -1 : 1;
 	ch->cwr--;
-	if (ch->cwr == -1) {	// counter is 1 less than bytes must be sended
+	if (ch->cwr == -1) {		// counter is 1 less than bytes must be sended
+		if (ch->tc)		// send terminal count signal
+			ch->tc(ptr);
 		ch->masked = 1;
 		if (ch->mode & 0x10) {	// auto restore
 			ch->car = ch->bar;
@@ -95,8 +99,9 @@ void dma_ch_transfer(DMAChan* ch, void* ptr) {
 		case 3:		// not allowed
 			break;
 	}
-	if (flag)		// if transfer is successful
-		dma_ch_count(ch);
+	if (flag) {		// if transfer is successful
+		dma_ch_count(ch, ptr);
+	}
 }
 
 void dma_transfer(i8237DMA* dma) {

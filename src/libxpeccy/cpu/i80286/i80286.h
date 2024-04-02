@@ -18,6 +18,22 @@ enum {
 	X86_PROT
 };
 
+typedef struct {
+	int idx;			// 'visible' value
+//	unsigned char flag;		// access flag
+	unsigned pl:2;			// priv.level
+	unsigned ar:5;			// type
+	unsigned ext:1;			// code is conforming | data is growing from limit to FFFF
+	unsigned wr:1;			// write enable (for data, 0 for code)
+	unsigned rd:1;			// read enable (for code, 1 for data)
+	unsigned pr:1;			// present
+	unsigned sys:1;			// !(ar & 0x10)
+	unsigned code:1;		// ar & 0x18 = 0x18
+	unsigned data:1;		// ar & 0x18 = 0x10
+	unsigned base:24;		// segment base addr
+	unsigned short limit;		// segment size in bytes
+} xSegPtr;				// aka segment table descriptor
+
 #ifdef WORDS_LITTLE_ENDIAN
 typedef struct {
 	unsigned c:1;

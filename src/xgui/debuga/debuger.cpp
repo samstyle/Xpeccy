@@ -163,7 +163,7 @@ void DebugWin::stop() {
 	Computer* comp = conf.prof.cur->zx;
 	if (!ui_asm.cbAccT->isChecked())
 		tCount = comp->tickCount;	// before compExec to add current opcode T
-	compExec(comp);			// to prevent double breakpoint catch
+	if (comp->debug) compExec(comp);			// to prevent double breakpoint catch
 	comp->debug = 0;		// back to normal work, turn breakpoints on
 	comp->vid->debug = 0;
 	comp->maping = ui_asm.actMaping->isChecked() ? 1 : 0;
