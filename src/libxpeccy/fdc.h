@@ -113,7 +113,7 @@ void fdc_set_hd(FDC*, int);
 typedef struct DiskHW DiskHW;
 
 struct DiskIF {
-//	unsigned lirq:1;	// last int
+	unsigned flpch:1;	// flp changed (ibm)
 	unsigned inten:1;	// uPD765 interrupt enabled
 	int type;
 	DiskHW* hw;

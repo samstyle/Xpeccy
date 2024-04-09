@@ -64,6 +64,7 @@ void uResp(FDC* fdc, int len, int ie) {
 	fdc->resPos = 0;
 	fdc->resCnt = len;
 	fdc->dir = 1;
+	// printf("FDC resp:"); for(int i = 0; i < len; i++) {printf("%.2X ",fdc->resBuf[i]);} printf("\n");	// print resp
 	if (ie) {uInt(fdc);}
 }
 
@@ -115,7 +116,6 @@ int uGetByte(FDC* fdc) {
 static fdcCall utermTab[] = {&ustp, &unothing};
 
 void uTerm(FDC* fdc) {
-	// printf("uTerm\n");
 	fdc->plan = utermTab;
 	fdc->pos = 0;
 	fdc->wait = 1;
@@ -900,7 +900,7 @@ void uExec(FDC* fdc, unsigned char val) {
 void uWrite(FDC* fdc, int adr, unsigned char val) {
 	if (!(adr & 1)) return;			// wr data only
 	// printf("wr : %.2X\n", val);
-	fdc->intr = 0;			// reset interrupt
+	fdc->intr = 0;				// reset interrupt
 	if (fdc->idle) {			// 1st byte, command
 		// printf("updCom %.2X\n",val);
 		if (fdc->seekend) {		// 'sense interrupt status' after seek/recalibrate only
@@ -921,6 +921,7 @@ void uWrite(FDC* fdc, int adr, unsigned char val) {
 		if (fdc->comCnt == 0) {
 			fdc->irq = 1;		// exec
 			fdc->drq = 0;
+			// printf("FDC com: %.2X ",fdc->com); for (int i = 0; i < fdc->comPos; i++) {printf("%.2X ", fdc->comBuf[i]);} printf("\n");	// print command buf
 		}
 	} else if (fdc->drq && !fdc->dir) {	// data cpu->fdc
 		// printf("data %.2X\n",val);
@@ -948,7 +949,6 @@ unsigned char uRead(FDC* fdc, int adr) {
 					fdc->dir = 0;	// cpu->fdc, waiting for command
 					fdc->idle = 1;
 				}
-				//printf("upd765 resp : %.2X\n",res);
 			} else {			// other
 				res = 0xff;
 			}
@@ -960,10 +960,8 @@ unsigned char uRead(FDC* fdc, int adr) {
 			res = (fdc->state & 0x1f) | (fdc->drq << 7) | (fdc->dir << 6);
 			if (fdc->irq && !fdc->dma)		// only in non-dma mode
 				res |= 0x20;
-			//printf("msr = %.2X, irq=%i, dma=%i\n",res,fdc->irq,fdc->dma);
 		}
 	}
-	// printf("rd %i = %.2X\n",adr & 1, res);
 	return res;
 }
 
@@ -990,7 +988,6 @@ void uReset(FDC* fdc) {
 	fdc->resPos = 0;
 	// TODO:check this
 	fdc->intr = 0;		// ibm bios want interrupt after reset
-//	fdc->inten = 1;
 	uInt(fdc);
 	//fdc->xirq(IRQ_FDC, fdc->xptr);
 	fdc->sr0 = 0xc0;	// and b7,6=11 in sr0

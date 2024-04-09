@@ -207,10 +207,13 @@ int dpcIn(DiskIF* dif, int port, int* rptr, int dos) {
 			break;
 		case 7:
 			// b0: HD
-			// b7: disk changing
+			// b7: disk changing (TODO: set on 'flp rdy line changed' interrupt, reset on reading)
 			res = 0x7f;
 			if (!dif->fdc->flp->door) {
 				res |= 0x80;
+			} else if (dif->flpch) {
+				res |= 0x80;
+				dif->flpch = 0;
 			}
 			break;
 	}
@@ -263,6 +266,7 @@ void dpc_irq(DiskIF* dif, int id) {
 			dif->fdc->sr0 &= 0x1f;
 			dif->fdc->sr0 |= 0xc0;		// 110xxxxx: ready changed
 			dif->fdc->xirq(IRQ_FDC, dif->fdc->xptr);
+			dif->flpch = 1;
 			break;
 	}
 }
