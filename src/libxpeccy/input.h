@@ -105,6 +105,7 @@ typedef struct {
 	unsigned hasWheel:1;
 	unsigned swapButtons:1;
 	unsigned intrq:1;
+	double sensitivity;
 
 	unsigned lmb:1;
 	unsigned rmb:1;
