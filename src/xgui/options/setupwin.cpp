@@ -484,6 +484,7 @@ void SetupWin::start() {
 	ui.ratEnable->setChecked(comp->mouse->enable);
 	ui.ratWheel->setChecked(comp->mouse->hasWheel);
 	ui.cbSwapButtons->setChecked(comp->mouse->swapButtons);
+	ui.sldSensitivity->setValue(comp->mouse->sensitivity * 1000.0f);
 	ui.cbKbuttons->setChecked(comp->joy->extbuttons);
 	ui.sldDeadZone->setValue(conf.joy.dead);
 	setPadName();
@@ -680,6 +681,7 @@ void SetupWin::apply() {
 	comp->mouse->enable = ui.ratEnable->isChecked() ? 1 : 0;
 	comp->mouse->hasWheel = ui.ratWheel->isChecked() ? 1 : 0;
 	comp->mouse->swapButtons = ui.cbSwapButtons->isChecked() ? 1 : 0;
+	comp->mouse->sensitivity = ui.sldSensitivity->value() * 0.001f;
 	comp->joy->extbuttons = ui.cbKbuttons->isChecked() ? 1 : 0;
 	conf.joy.dead = ui.sldDeadZone->value();
 	std::string kmname = getRFText(ui.keyMapBox);

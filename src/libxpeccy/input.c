@@ -374,6 +374,7 @@ unsigned char joyInput(Joystick* joy) {
 Mouse* mouseCreate(cbirq cb, void* p) {
 	Mouse* mou = (Mouse*)malloc(sizeof(Mouse));
 	memset(mou,0x00,sizeof(Mouse));
+	mou->sensitivity = 1.0f;
 	mou->xirq = cb;
 	mou->xptr = p;
 	return mou;
