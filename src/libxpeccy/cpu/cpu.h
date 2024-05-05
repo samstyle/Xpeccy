@@ -82,6 +82,10 @@ typedef int(*cbdmr)(int, void*);
 #define OF_MEMADR	(1<<5)		// operand contains memory address (nn)
 #define OF_WORD		(1<<6)		// i286:use words for mod byte
 #define OF_PRT		(1<<7)		// i286:protect mode only
+#define OF_MODRM	(1<<8)		// i286:mod r/m byte present
+#define OF_COMEXT	(1<<9)		// mod r/m contains command extension bits
+#define OF_GEN		(1<<10)		// opcode depends on cpu generation (86/186/286) cpu->tab is sub-table[cpu->gen]
+#define OF_MODCOM	(OF_MODRM | OF_COMEXT)
 
 typedef struct CPU CPU;
 typedef struct opCode opCode;
@@ -113,18 +117,6 @@ typedef struct {
 	char arg[8][256];
 } xAsmScan;
 
-typedef struct {
-	int idx;			// 'visible' value
-//	unsigned char flag;		// access flag
-	unsigned pl:2;
-	unsigned ar:5;
-	unsigned pr:1;
-	unsigned sys:1;			// ar & 0x10
-	unsigned code:1;		// ar & 0x18 = 0x18
-	unsigned base:24;		// segment base addr
-	unsigned short limit;		// segment size in bytes
-} xSegPtr;				// aka segment table descriptor
-
 #include "Z80/z80.h"
 #include "LR35902/lr35902.h"
 #include "MOS6502/6502.h"
@@ -134,9 +126,11 @@ typedef struct {
 
 enum {
 	CPU_NONE = 0,		// dummy
-	CPU_Z80,		// ZX, MSX
+	CPU_Z80,		// ZX, MSX, *PC88xx
 	CPU_I8080,
-	CPU_I80286,
+	CPU_I8086,		// *PC98xx
+	CPU_I80186,
+	CPU_I80286,		// IBM
 	CPU_LR35902,		// GB, GBC
 	CPU_6502,		// NES, Commodore
 	CPU_VM1			// BK
@@ -159,6 +153,7 @@ struct CPU {
 	unsigned nod:2;			// MOS6502: ignore flag D in ADC/SBC; PDP11: write flags
 
 	int type;			// cpu type id
+	int gen;			// cpu generation (for x86: 0-8086, 1-80186, 2-80286 etc)
 
 	int intrq;			// interrupts request. each bit for each INT type, 1 = requested
 	int inten;			// interrupts enabled mask
@@ -277,7 +272,7 @@ struct CPU {
 	cbmw mwr;
 	cbir ird;
 	cbiw iwr;
-	cbiack irq;
+	cbiack xack;
 	cbirq xirq;
 	void* xptr;
 
@@ -311,6 +306,7 @@ struct cpuCore {
 	int type;				// cpu type
 	const char* name;			// printable name
 	xRegDsc* rdsctab;			// registers descriptors table
+	void (*init)(CPU*);			// call it when core changed
 	void (*reset)(CPU*);			// reset
 	int (*exec)(CPU*);			// exec opcode, return T
 	xAsmScan (*asmbl)(const char*, char*);	// compile mnemonic
@@ -339,6 +335,12 @@ int cpu_get_reg(CPU*, const char*, bool*);
 bool cpu_set_reg(CPU*, const char*, int);
 
 int parity(int);
+
+int cpu_fetch(CPU*, int);
+int cpu_mrd(CPU*, int);
+void cpu_mwr(CPU*, int, int);
+int cpu_ird(CPU*, int);
+void cpu_iwr(CPU*, int, int);
 
 #ifdef __cplusplus
 }

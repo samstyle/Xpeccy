@@ -27,6 +27,7 @@ class xDiskDump : public QTableView {
 	public slots:
 		void setTrack(int);
 		void setDrive(int);
+		void toTarget();
 	private:
 		int drv;
 		xDiskDumpModel* mod;
@@ -42,4 +43,6 @@ class xDiskDumpWidget : public xDockWidget {
 		void draw();
 	private:
 		Ui::FDDDump ui;
+	private slots:
+		void toTarget();
 };

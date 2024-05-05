@@ -89,6 +89,17 @@
        </property>
       </spacer>
      </item>
+     <item>
+      <widget class="QToolButton" name="tbTarget">
+       <property name="text">
+        <string>...</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../../xpeccy.qrc">
+         <normaloff>:/images/target.png</normaloff>:/images/target.png</iconset>
+       </property>
+      </widget>
+     </item>
     </layout>
    </item>
    <item>
@@ -131,6 +142,8 @@
    <header location="global">stdlib.h</header>
   </customwidget>
  </customwidgets>
- <resources/>
+ <resources>
+  <include location="../../xpeccy.qrc"/>
+ </resources>
  <connections/>
 </ui>

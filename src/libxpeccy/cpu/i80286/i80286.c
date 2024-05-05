@@ -12,12 +12,25 @@ extern void i286_push(CPU*, unsigned short);
 extern unsigned short i286_sys_mrdw(CPU*, xSegPtr, unsigned short);
 extern void i286_switch_task(CPU*, int, int, int);
 
+void i086_init(CPU* cpu) {cpu->gen = 0;}
+void i186_init(CPU* cpu) {cpu->gen = 1;}
+void i286_init(CPU* cpu) {cpu->gen = 2;}
+
 void i286_reset(CPU* cpu) {
 	x86_set_mode(cpu, X86_REAL);
 	cpu->f = 0x0002;
 	cpu->msw = 0xfff0;
-	cpu->pc = 0xfff0;	// ip
-	cpu->cs = i286_cash_seg(cpu, 0xf000);
+	switch (cpu->gen) {
+		case 0:
+		case 1:
+			cpu->pc = 0x0000;
+			cpu->cs = i286_cash_seg(cpu, 0xffff);
+			break;
+		case 2:
+			cpu->pc = 0xfff0;	// ip
+			cpu->cs = i286_cash_seg(cpu, 0xf000);
+			break;
+	}
 	cpu->ss = i286_cash_seg(cpu, 0x0000);
 	cpu->ds = i286_cash_seg(cpu, 0x0000);
 	cpu->es = i286_cash_seg(cpu, 0x0000);
@@ -53,20 +66,22 @@ void i286_int_real(CPU* cpu, int vec) {
 // +4 unused
 // +5	bit 7: present (must be 1)
 //	bit5,6: DPL. if (DPL > CPL=CS PL) then INT GPT
-//	bit1-4: 0011
-//	bit0: 1 for trap, 0 for interrupt
+//	bit0-4: type (5 task gate, 6 int gate, 7 trap gate)
 // +6,7 unused
-// TODO: INT accepts int/trap/task gates only. any other -> #GP(selector)
-// FIXME: IDTR already contains gates descriptors, rewrite all (!!!)
 
 void i286_int_prt(CPU* cpu, int vec) {
 	if (cpu->idtr.limit < (vec & 0xfff8)) {		// check idtr limit
 		THROW_EC(I286_INT_GP, cpu->idtr.idx);
 	} else if (cpu->f & I286_FI) {
+		if (cpu->halt) {
+			cpu->halt = 0;
+			cpu->pc++;
+		}
 		PAIR(w,h,l)seg;
 		PAIR(w,h,l)off;
 		int adr = cpu->idtr.base + (vec << 3);	// 8 bytes/entry
 		cpu->gate = i286_cash_seg_a(cpu, adr);	// get gate descriptor inside IDT
+		cpu->gate.idx = vec;
 		switch(cpu->gate.ar) {
 			case 5:		// task gate
 				off.w = cpu->pc;
@@ -97,10 +112,10 @@ void i286_int_prt(CPU* cpu, int vec) {
 						i286_push(cpu, cpu->errcod);
 						cpu->errcod = -1;
 					}
-					off.l = cpu->mrd(adr, 0, cpu->xptr);		// offset
-					off.h = cpu->mrd(adr + 1, 0, cpu->xptr);
-					seg.l = cpu->mrd(adr + 2, 0, cpu->xptr);	// cs segment selector
-					seg.h = cpu->mrd(adr + 3, 0, cpu->xptr);
+					off.l = cpu_mrd(cpu, adr);		// offset
+					off.h = cpu_mrd(cpu, adr + 1);
+					seg.l = cpu_mrd(cpu, adr + 2);	// cs segment selector
+					seg.h = cpu_mrd(cpu, adr + 3);
 					cpu->tmpdr = i286_cash_seg(cpu, seg.w);
 					if (!cpu->tmpdr.code) {
 						THROW_EC(I286_INT_GP, (vec << 3));
@@ -121,13 +136,12 @@ void i286_int_prt(CPU* cpu, int vec) {
 				THROW_EC(I286_INT_GP, vec);
 				break;
 		}
-
-
-		off.l = cpu->mrd(adr, 0, cpu->xptr);	// offset
-		off.h = cpu->mrd(adr+1, 0, cpu->xptr);
-		seg.l = cpu->mrd(adr+2, 0, cpu->xptr);	// segment
-		seg.h = cpu->mrd(adr+3, 0, cpu->xptr);
-		unsigned char fl = cpu->mrd(adr+5, 0, cpu->xptr);	// flags
+		/*
+		off.l = cpu_mrd(cpu, adr);	// offset
+		off.h = cpu_mrd(cpu, adr+1);
+		seg.l = cpu_mrd(cpu, adr+2);	// segment
+		seg.h = cpu_mrd(cpu, adr+3);
+		unsigned char fl = cpu_mrd(cpu, adr+5);	// flags
 		cpu->tmpdr = i286_cash_seg(cpu, seg.w);		// [code] segment: TODO if this is tss gate
 		if ((cpu->tmpdr.pl) < ((fl >> 5) & 3)) {	// check priv
 			THROW_EC(I286_INT_GP, 0);
@@ -147,6 +161,7 @@ void i286_int_prt(CPU* cpu, int vec) {
 			//cpu->cs = i286_cash_seg(cpu, seg.w);
 			//cpu->pc = off.w;
 		}
+		*/
 	}
 	cpu->t = 1;
 }
@@ -160,15 +175,16 @@ void i286_interrupt(CPU* cpu, int vec) {
 	cpu->errcod = -1;
 }
 
-// external INT
+// external INT (NMI have higher priority)
 void i286_ext_int(CPU* cpu) {
-	if (cpu->f & I286_FI) {
-		cpu->intrq &= ~I286_INT;
-		i286_interrupt(cpu, cpu->intvec);
-	} else if ((cpu->intrq & I286_NMI) && !(cpu->inten & I286_BLK_NMI)) {
+	if ((cpu->intrq & I286_NMI) && !(cpu->inten & I286_BLK_NMI)) {
 		cpu->inten |= I286_BLK_NMI;				// NMI is blocking until RETI, but next NMI will be remembered until then
 		cpu->intrq &= ~I286_NMI;
 		i286_interrupt(cpu, I286_INT_NMI);
+	} else 	if (cpu->f & I286_FI) {
+		cpu->intrq &= ~I286_INT;
+		cpu->intvec = cpu->xack(cpu->xptr);
+		i286_interrupt(cpu, cpu->intvec);
 	}
 }
 
@@ -185,12 +201,14 @@ int i286_exec(CPU* cpu) {
 		if (cpu->intrq)
 			i286_ext_int(cpu);
 		if (cpu->t == 0) {
-			// TODO: check trap/gate CS
 			cpu->t++;
 			do {
 				cpu->t++;
 				cpu->com = cpu->x86fetch(cpu);
 				cpu->op = &cpu->opTab[cpu->com & 0xff];
+				while (cpu->op->flag & OF_GEN) {
+					cpu->op = &cpu->op->tab[cpu->gen];
+				}
 				cpu->op->exec(cpu);
 			} while (cpu->op->flag & OF_PREFIX);
 		}
@@ -232,18 +250,24 @@ xMnem i286_mnem(CPU* cpu, int sadr, cbdmr mrd, void* data) {
 	opCode* op;
 	int adr = sadr;
 	unsigned char com;
-	int mod = 0;
 	unsigned char mb = 0;
 	char* ptr = strbuf;
 	const char* p;
 	char* dptr = mnembuf;
 	do {
-		com = cpu->mrd(adr, 0, cpu->xptr);
+		com = cpu_mrd(cpu, adr);
 		adr++;
 		op = &tab[com];
+		while (op->flag & OF_GEN) {
+			op = &op->tab[cpu->gen];
+		}
 		if (tab == i80286_tab) {
 			switch (com) {
-				case 0x0f: tab = i286_0f_tab; break;
+				case 0x0f:
+					if (cpu->gen >= 2) {
+						tab = i286_0f_tab;
+					}
+					break;
 				case 0x26: rseg = 0; break;		// es
 				case 0x2e: rseg = 1; break;		// cs
 				case 0x36: rseg = 2; break;		// ss
@@ -255,9 +279,38 @@ xMnem i286_mnem(CPU* cpu, int sadr, cbdmr mrd, void* data) {
 		mn.flag = op->flag;
 		mn.len++;
 	} while (op->flag & OF_PREFIX);
+	PAIR(w,h,l)rx;
+	PAIR(w,h,l)seg;
+	PAIR(w,h,l)disp;
+	// check mod r/m
+	if (op->flag & OF_MODRM) {
+		mb = cpu_mrd(cpu, adr++);
+		switch (mb & 0xc0) {
+			case 0x80:
+				disp.l = cpu_mrd(cpu, adr++);
+				disp.h = cpu_mrd(cpu, adr++);
+				break;
+			case 0x40:
+				disp.l = cpu_mrd(cpu, adr++);
+				disp.h = (disp.l & 0x80) ? 0xff : 0x00;
+				break;
+			case 0x00:
+				if ((mb & 7) == 6) {
+					disp.l = cpu_mrd(cpu, adr++);
+					disp.h = cpu_mrd(cpu, adr++);
+				} else {
+					disp.w = 0;
+				}
+				break;
+		}
+#if 1
+		if ((op->flag & OF_COMEXT) && op->tab) {		// mod r/m b3-5 contains opcode extension, op->tab is tab[8] of ext opcodes
+			op = &op->tab[(mb >> 3) & 7];
+		}
+#endif
+	}
+	// check ESC to x87
 	if ((com & 0xf8) == 0xd8) {	// x87 opcodes
-		mb = cpu->mrd(adr++, 0, cpu->xptr);
-		mod = 1;
 		p = x87_get_mnem(cpu, ((com << 8) | mb) & 0x7ff);
 		if (p) {
 			strcpy(strbuf, p);
@@ -267,28 +320,26 @@ xMnem i286_mnem(CPU* cpu, int sadr, cbdmr mrd, void* data) {
 	} else {			// x86 opcodes
 		strcpy(strbuf, op->mnem);
 	}
-	PAIR(w,h,l)rx;
-	PAIR(w,h,l)seg;
-	PAIR(w,h,l)disp;
+
 	do {
 		if (*ptr == ':') {
 			ptr++;
 			switch(*ptr) {
 				case '1':
-					rx.l = cpu->mrd(adr, 0, cpu->xptr);
+					rx.l = cpu_mrd(cpu, adr);
 					adr++;
 					dptr += sprintf(dptr, "#%.2X", rx.l);
 					break;
 				case '2':
-					rx.l = cpu->mrd(adr, 0, cpu->xptr);
+					rx.l = cpu_mrd(cpu, adr);
 					adr++;
-					rx.h = cpu->mrd(adr, 0, cpu->xptr);
+					rx.h = cpu_mrd(cpu, adr);
 					adr++;
 					dptr += sprintf(dptr, "#%.4X", rx.w);
 					mn.oadr = rx.w + cpu->cs.base;
 					break;
 				case '3':
-					rx.l = cpu->mrd(adr, 0, cpu->xptr);
+					rx.l = cpu_mrd(cpu, adr);
 					adr++;
 					rx.h = (rx.l & 0x80) ? 0xff : 0x00;
 					rx.w += adr - cpu->cs.base;
@@ -296,9 +347,9 @@ xMnem i286_mnem(CPU* cpu, int sadr, cbdmr mrd, void* data) {
 					mn.oadr = rx.w + cpu->cs.base;
 					break;
 				case 'n':
-					rx.l = cpu->mrd(adr, 0, cpu->xptr);
+					rx.l = cpu_mrd(cpu, adr);
 					adr++;
-					rx.h = cpu->mrd(adr, 0, cpu->xptr);
+					rx.h = cpu_mrd(cpu, adr);
 					adr++;
 					rx.w += (adr - cpu->cs.base);
 					dptr += sprintf(dptr, "near #%.4X", rx.w);
@@ -306,41 +357,33 @@ xMnem i286_mnem(CPU* cpu, int sadr, cbdmr mrd, void* data) {
 					break;
 				case '4':
 				case 'p':
-					rx.l = cpu->mrd(adr, 0, cpu->xptr);
+					rx.l = cpu_mrd(cpu, adr);
 					adr++;
-					rx.h = cpu->mrd(adr, 0, cpu->xptr);
+					rx.h = cpu_mrd(cpu, adr);
 					adr++;
-					seg.l = cpu->mrd(adr, 0, cpu->xptr);
+					seg.l = cpu_mrd(cpu, adr);
 					adr++;
-					seg.h = cpu->mrd(adr, 0, cpu->xptr);
+					seg.h = cpu_mrd(cpu, adr);
 					adr++;
 					dptr += sprintf(dptr, "#%.4X::%.4X", seg.w, rx.w);
 					// mn.oadr = rx.w;
 					break;
 				case '7':
-					if (!mod) {mod = 1; mb = cpu->mrd(adr, 0, cpu->xptr); adr++;}
 					sprintf(dptr, "%i", mb & 7);
 					break;
-				case 'r': if (!mod) {mod = 1; mb = cpu->mrd(adr, 0, cpu->xptr); adr++;}
+				case 'r':
 					if (op->flag & OF_WORD) {	// word
 						dptr += sprintf(dptr, "%s", str_regw[(mb >> 3) & 7]);
 					} else {
 						dptr += sprintf(dptr, "%s", str_regb[(mb >> 3) & 7]);
 					}
 					break;
-				case 's': if (!mod) {mod = 1; mb = cpu->mrd(adr, 0, cpu->xptr); adr++;}
+				case 's':
 					dptr += sprintf(dptr, "%s", str_regs[(mb >> 3) & 3]);
 					break;
 				case 'z':				// skip EA & disp
-					if (!mod) {mod = 1; mb = cpu->mrd(adr, 0, cpu->xptr); adr++;}
-					switch(mb & 0xc0) {
-						case 0x00:
-						case 0xc0: break;
-						case 0x40: adr++; break;
-						case 0x80: adr+=2; break;
-					}
 					break;
-				case 'e': if (!mod) {mod = 1; mb = cpu->mrd(adr, 0, cpu->xptr); adr++;}
+				case 'e':
 					if ((mb & 0xc0) == 0xc0) {		// reg
 						if (op->flag & OF_WORD) {
 							dptr += sprintf(dptr, "%s", str_regw[mb & 7]);
@@ -348,28 +391,12 @@ xMnem i286_mnem(CPU* cpu, int sadr, cbdmr mrd, void* data) {
 							dptr += sprintf(dptr, "%s", str_regb[mb & 7]);
 						}
 					} else {
-						disp.w = 0;
-						if ((mb & 0xc0) == 0x40) {
-							disp.l = cpu->mrd(adr, 0, cpu->xptr);
-							disp.h = (disp.l & 0x80) ? 0xff : 0x00;
-							adr++;
-						} else if ((mb & 0xc0) == 0x80) {
-							disp.l = cpu->mrd(adr, 0, cpu->xptr);
-							adr++;
-							disp.h = cpu->mrd(adr, 0, cpu->xptr);
-							adr++;
-						}
 						*(dptr++) = '[';
 						if (rseg < 0)
 							rseg = ((mb & 7)==6) ? ((mb & 0xc0) ? 2 : 3) : seg_ea[mb & 7];	// default segment if not overriden
 						dptr += sprintf(dptr, "%s::", str_regs[rseg & 3]);
 						if ((mb & 0xc7) == 0x06) {	// immw, [seg:disp]
-							disp.l = cpu->mrd(adr, 0, cpu->xptr);
-							adr++;
-							disp.h = cpu->mrd(adr, 0, cpu->xptr);
-							adr++;
 							dptr += sprintf(dptr, "#%.4X", disp.w);
-							// disp.w = 0;
 						} else if ((mb & 0xc0) == 0x40) {			// disp is 1 byte
 							dptr += sprintf(dptr, "%s", str_ea[mb & 7]);
 							if (disp.l) {
@@ -382,7 +409,7 @@ xMnem i286_mnem(CPU* cpu, int sadr, cbdmr mrd, void* data) {
 						} else {						// disp is 2 byte or 0
 							if (disp.w)		// if disp!=0
 								dptr += sprintf(dptr, "#%.4X+", disp.w);
-							dptr += sprintf(dptr, "%s", str_ea[mb & 7]);	// TODO: do something to show segment override
+							dptr += sprintf(dptr, "%s", str_ea[mb & 7]);
 
 						}
 						*(dptr++) = ']';
@@ -403,34 +430,34 @@ xMnem i286_mnem(CPU* cpu, int sadr, cbdmr mrd, void* data) {
 						dptr += sprintf(dptr, "REP ");
 					}
 					break;
-				case 'A': if (!mod) {mod = 1; mb = cpu->mrd(adr, 0, cpu->xptr); adr++;}
+				case 'A':
 					dptr += sprintf(dptr, "%s", str_alu[(mb >> 3) & 7]);
 					break;
-				case 'R': if (!mod) {mod = 1; mb = cpu->mrd(adr, 0, cpu->xptr); adr++;}
+				case 'R':
 					dptr += sprintf(dptr, "%s", str_rot[(mb >> 3) & 7]);
 					break;
-				case 'X': if (!mod) {mod = 1; mb = cpu->mrd(adr, 0, cpu->xptr); adr++;}
+				case 'X':
 					if (!(mb & 0x30)) {		// f6 /0 and f6 /1 : test :e,:1
 						strcat(ptr, ",:1");
 					}
 					dptr += sprintf(dptr, "%s", str_opX[(mb >> 3) & 7]);
 					break;
-				case 'Y': if (!mod) {mod = 1; mb = cpu->mrd(adr, 0, cpu->xptr); adr++;}
+				case 'Y':
 					if (!(mb & 0x30)) {		// f7 /0 and f7 /1 : test :e,:2
 						strcat(ptr, ",:2");
 					}
 					dptr += sprintf(dptr, "%s", str_opX[(mb >> 3) & 7]);
 					break;
-				case 'E': if (!mod) {mod = 1; mb = cpu->mrd(adr, 0, cpu->xptr); adr++;}
+				case 'E':
 					dptr += sprintf(dptr, "%s", str_opE[(mb >> 3) & 7]);
 					break;
-				case 'F': if (!mod) {mod = 1; mb = cpu->mrd(adr, 0, cpu->xptr); adr++;}
+				case 'F':
 					dptr += sprintf(dptr, "%s", str_opF[(mb >> 3) & 7]);
 					break;
-				case 'Q': if (!mod) {mod = 1; mb = cpu->mrd(adr, 0, cpu->xptr); adr++;}
+				case 'Q':
 					dptr += sprintf(dptr, "%s", str_opQ[(mb >> 3) & 7]);
 					break;
-				case 'W': if (!mod) {mod = 1; mb = cpu->mrd(adr, 0, cpu->xptr); adr++;}
+				case 'W':
 					dptr += sprintf(dptr, "%s", str_opW[(mb >> 3) & 7]);
 					break;
 				case ':':
@@ -472,10 +499,27 @@ xRegDsc i286RegTab[] = {
 	{I286_DS, "DS", REG_WORD|REG_SEG, offsetof(CPU, ds)},
 	{I286_ES, "ES", REG_WORD|REG_SEG, offsetof(CPU, es)},
 	{I286_MSW, "MSW", REG_RO|REG_WORD, offsetof(CPU, msw)},
-	{I286_LDT, "LDT", REG_RO|REG_WORD|REG_SEG, offsetof(CPU, ldtr)},
+	{I286_LDT, "LDT", REG_RO|REG_24, offsetof(CPU, ldtr)},
 	{I286_GDT, "GDT", REG_RO|REG_24, offsetof(CPU, gdtr)},
 	{I286_IDT, "IDT", REG_RO|REG_24, offsetof(CPU, idtr)},
 	{I286_TSS, "TSS", REG_RO|REG_24, offsetof(CPU, tsdr)},
+	{REG_NONE, "", 0, 0}
+};
+
+xRegDsc i8086RegTab[] = {
+	{I286_IP, "IP", REG_WORD, offsetof(CPU, pc)},
+	{I286_SP, "SP", REG_WORD, offsetof(CPU, sp)},
+	{I286_BP, "BP", REG_WORD, offsetof(CPU, bp)},
+	{I286_SI, "SI", REG_WORD, offsetof(CPU, si)},
+	{I286_DI, "DI", REG_WORD, offsetof(CPU, di)},
+	{I286_AX, "AX", REG_WORD, offsetof(CPU, ax)},
+	{I286_BX, "BX", REG_WORD, offsetof(CPU, bx)},
+	{I286_CX, "CX", REG_WORD, offsetof(CPU, cx)},
+	{I286_DX, "DX", REG_WORD, offsetof(CPU, dx)},
+	{I286_CS, "CS", REG_WORD|REG_SEG, offsetof(CPU, cs)},
+	{I286_SS, "SS", REG_WORD|REG_SEG, offsetof(CPU, ss)},
+	{I286_DS, "DS", REG_WORD|REG_SEG, offsetof(CPU, ds)},
+	{I286_ES, "ES", REG_WORD|REG_SEG, offsetof(CPU, es)},
 	{REG_NONE, "", 0, 0}
 };
 
@@ -497,22 +541,22 @@ void i286_get_regs(CPU* cpu, xRegBunch* bnch) {
 		val = -1;
 		bas = 0;
 		switch (i286RegTab[idx].id) {
-			case I286_IP: val = cpu->pc; break;
-			case I286_SP: val = cpu->sp; break;
-			case I286_BP: val = cpu->bp; break;
-			case I286_SI: val = cpu->si; break;
-			case I286_DI: val = cpu->di; break;
-			case I286_AX: val = cpu->ax; break;
-			case I286_CX: val = cpu->cx; break;
-			case I286_DX: val = cpu->dx; break;
-			case I286_BX: val = cpu->bx; break;
+			case I286_IP: val = cpu->pc; bas = cpu->cs.base; break;
+			case I286_SP: val = cpu->sp; bas = cpu->ss.base; break;
+			case I286_BP: val = cpu->bp; bas = cpu->ss.base; break;
+			case I286_SI: val = cpu->si; bas = cpu->ds.base; break;
+			case I286_DI: val = cpu->di; bas = cpu->ds.base; break;
+			case I286_AX: val = cpu->ax; bas = cpu->ds.base; break;
+			case I286_CX: val = cpu->cx; bas = cpu->ds.base; break;
+			case I286_DX: val = cpu->dx; bas = cpu->ds.base; break;
+			case I286_BX: val = cpu->bx; bas = cpu->ds.base; break;
 			case I286_CS: val = cpu->cs.idx; bas = cpu->cs.base; break;
 			case I286_SS: val = cpu->ss.idx; bas = cpu->ss.base; break;
 			case I286_DS: val = cpu->ds.idx; bas = cpu->ds.base; break;
 			case I286_ES: val = cpu->es.idx; bas = cpu->es.base; break;
 			case I286_MSW: val = cpu->msw; break;
 			case I286_GDT: val = cpu->gdtr.base; break;
-			case I286_LDT: val = cpu->ldtr.idx; break;
+			case I286_LDT: val = cpu->ldtr.base; break;
 			case I286_IDT: val = cpu->idtr.base; break;
 			case I286_TSS: val = cpu->tsdr.base; break;
 		}

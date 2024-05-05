@@ -163,7 +163,7 @@ void DebugWin::stop() {
 	Computer* comp = conf.prof.cur->zx;
 	if (!ui_asm.cbAccT->isChecked())
 		tCount = comp->tickCount;	// before compExec to add current opcode T
-	compExec(comp);			// to prevent double breakpoint catch
+	if (comp->debug) compExec(comp);			// to prevent double breakpoint catch
 	comp->debug = 0;		// back to normal work, turn breakpoints on
 	comp->vid->debug = 0;
 	comp->maping = ui_asm.actMaping->isChecked() ? 1 : 0;
@@ -318,7 +318,7 @@ DebugWin::DebugWin(QWidget* par):QMainWindow(par) {
 	xHexSpin* xhs;
 	QLabel* qlb;
 	QCheckBox* qcb;
-	for(i = 0; i < 20; i++) {		// set max registers here
+	for(i = 0; i < 32; i++) {		// set max registers here
 		lab = new xLabel;
 		lab->id = i;
 		lab->setVisible(false);
@@ -1405,22 +1405,14 @@ void DebugWin::chLayout() {
 	}
 }
 
-int dbg_get_reg_adr(CPU* cpu, xRegister reg) {
-	int adr;
-	if (reg.type & REG_SEG) {
-		adr = reg.base;
+int dbg_get_reg_adr(CPU* cpu, xRegister* reg) {
+	int a = reg->value;
+	if (reg->type & REG_SEG) {
+		a = reg->base;
 	} else if (cpu->type == CPU_I80286) {
-		switch(reg.id) {
-			case I286_IP: adr = cpu->cs.base; break;
-			case I286_SP: adr = cpu->ss.base; break;
-			case I286_BP: adr = cpu->ss.base; break;
-			default: adr = cpu->ds.base; break;
-		}
-		adr += reg.value;
-	} else {
-		adr = reg.value;
+		a += reg->base;
 	}
-	return adr;
+	return a;
 }
 
 void DebugWin::regClick(QMouseEvent* ev) {
@@ -1429,7 +1421,9 @@ void DebugWin::regClick(QMouseEvent* ev) {
 	if (id < 0) return;
 	Computer* comp = conf.prof.cur->zx;
 	xRegBunch bunch = cpuGetRegs(comp->cpu);
-	int adr = dbg_get_reg_adr(comp->cpu, bunch.regs[id]);
+	xRegister reg = bunch.regs[id];
+	int adr = dbg_get_reg_adr(comp->cpu, &reg);
+	qDebug() << adr;
 	switch (ev->button()) {
 		case Qt::RightButton:
 			//ui.dumpTable->setAdr(adr);

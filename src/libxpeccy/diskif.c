@@ -9,6 +9,8 @@ struct DiskHW {
 	int(*in)(struct DiskIF*,int,int*,int);
 	int(*out)(struct DiskIF*,int,int,int);
 	void(*sync)(struct DiskIF*,int);
+	void(*irq)(struct DiskIF*,int);
+	void(*term)(struct DiskIF*);
 };
 
 int fdcFlag = 0;
@@ -39,8 +41,15 @@ void dhwSync(DiskIF* dif, int ns) {
 	fdcSync(dif->fdc, ns);
 }
 
+void dhw_irq(int id, void* p) {
+	DiskIF* dif = (DiskIF*)p;
+	if (dif->fdc->dma || (dif->hw->irq && dif->inten)) {
+		dif->hw->irq(dif, id);
+	}
+}
+
 void fdc_set_hd(FDC* fdc, int hd) {
-	fdc->hd = hd ? 1 : 0;
+	fdc->hd = !!hd;
 	fdc->bytedelay = hd ? 16000 : 32000;
 	flp_set_hd(fdc->flop[0], hd);
 	flp_set_hd(fdc->flop[1], hd);
@@ -116,6 +125,7 @@ void bdiSync(DiskIF* dif, int ns) {
 void uReset(FDC*);
 unsigned char uRead(FDC*, int);
 void uWrite(FDC*, int, unsigned char);
+void uTCount(FDC*);
 
 int pdosGetPort(int p) {
 	int port = -1;
@@ -140,25 +150,32 @@ int pdosOut(DiskIF* dif, int port, int val, int dos) {
 }
 
 void pdosReset(DiskIF* dif) {
-	dif->fdc->inten = 0;
-	dif->lirq = 0;
+//	dif->inten = 0;
+//	dif->lirq = 0;
 	uReset(dif->fdc);
 }
 
 // TODO: interrupt on flp ready signal changed (on a disk change)
 void pdosSync(DiskIF* dif, int ns) {
 	dhwSync(dif, ns);
-/*
-	if (dif->fdc->flp->insert && !dif->fdc->flp->door) {
-		dif->fdc->flp->door = 1;
-		dif->fdc->intr = 1;
+	if (dif->fdc->flp->dwait > 0) {
+		dif->fdc->flp->dwait -= ns;
+		if (dif->fdc->flp->dwait < 0) {
+			dif->fdc->flp->dwait = 0;
+			dhw_irq(IRQ_FDD_RDY, dif);
+//			dif->fdc->sr0 &= 0x1f;
+//			dif->fdc->sr0 |= 0xc0;		// 110xxxxx: ready changed
+//			dif->fdc->xirq(IRQ_FDC, dif->fdc->xptr);	// rdy 0->1
+			dif->fdc->flp->door = dif->fdc->flp->insert;
+			printf("insert:%i\tdoor:%i\n",dif->fdc->flp->insert,dif->fdc->flp->door);
+		}
 	}
-*/
 }
 
 // pc (i8275 = upd765)
 
-int dpcIn(DiskIF* dif, int port, int* res, int dos) {
+int dpcIn(DiskIF* dif, int port, int* rptr, int dos) {
+	int res = 0xff;
 	switch (port & 7) {
 		case 0:
 			// b4:trk 0
@@ -166,12 +183,12 @@ int dpcIn(DiskIF* dif, int port, int* res, int dos) {
 			// b2:index
 			// b1:wr protect
 			// b0:step dir
-			*res = 0;
-			if (!dif->fdc->flp->trk == 0) *res |= 0x10;
-			if (dif->fdc->side) *res |= 0x08;
-			if (!dif->fdc->flp->index) *res |= 0x04;
-			if (!dif->fdc->flp->protect) *res |= 0x02;
-			if (dif->fdc->dir) *res |= 0x01;
+			res = 0;
+			if (!dif->fdc->flp->trk == 0) res |= 0x10;
+			if (dif->fdc->side) res |= 0x08;
+			if (!dif->fdc->flp->index) res |= 0x04;
+			if (!dif->fdc->flp->protect) res |= 0x02;
+			if (dif->fdc->dir) res |= 0x01;
 			break;
 		case 1:
 			// b5:drive (0:a, 1:b)
@@ -180,20 +197,27 @@ int dpcIn(DiskIF* dif, int port, int* res, int dos) {
 			// b2:write enable
 			// b1:drv 1 motor enable
 			// b0:drv 0 motor enable
-			*res = 0;
-			if (dif->fdc->flp->id & 1) *res |= 0x20;
-			if (dif->fdc->flop[1]->motor) *res |= 2;
-			if (dif->fdc->flop[0]->motor) *res |= 1;
+			res = 0;
+			if (dif->fdc->flp->id & 1) res |= 0x20;
+			if (dif->fdc->flop[1]->motor) res |= 2;
+			if (dif->fdc->flop[0]->motor) res |= 1;
 			break;
 		case 4:
-		case 5: *res = uRead(dif->fdc, port & 1);
+		case 5: res = uRead(dif->fdc, port & 1);
 			break;
 		case 7:
 			// b0: HD
-			// b7: disk changed
-			*res = 0x01;
+			// b7: disk changing (TODO: set on 'flp rdy line changed' interrupt, reset on reading)
+			res = 0x7f;
+			if (!dif->fdc->flp->door) {
+				res |= 0x80;
+			} else if (dif->flpch) {
+				res |= 0x80;
+				dif->flpch = 0;
+			}
 			break;
 	}
+	*rptr = res;
 	return 1;
 }
 
@@ -209,7 +233,7 @@ int dpcOut(DiskIF* dif, int port, int val, int dos) {
 			if (val & (0x10 << (val & 3)))
 				dif->fdc->flp->motor = 1;
 			if (!(val & 4)) uReset(dif->fdc);
-			dif->fdc->inten = (val & 8) ? 1 : 0;
+			dif->inten = (val & 8) ? 1 : 0;
 			break;
 		case 4:
 		case 5: uWrite(dif->fdc, port & 1, val);
@@ -236,6 +260,21 @@ int dpcOut(DiskIF* dif, int port, int val, int dos) {
 	return 1;
 }
 
+void dpc_irq(DiskIF* dif, int id) {
+	switch(id) {
+		case IRQ_FDD_RDY:
+			dif->fdc->sr0 &= 0x1f;
+			dif->fdc->sr0 |= 0xc0;		// 110xxxxx: ready changed
+			dif->fdc->xirq(IRQ_FDC, dif->fdc->xptr);
+			dif->flpch = 1;
+			break;
+	}
+}
+
+void dpc_term(DiskIF* dif) {
+	uTCount(dif->fdc);
+}
+
 // bk
 
 void vp1_reset(FDC*);
@@ -260,12 +299,12 @@ int bkdOut(DiskIF* dif, int port, int val, int dos) {
 // common
 
 static DiskHW dhwTab[] = {
-	{DIF_NONE,&dumReset,&dumIn,&dumOut,&dumSync},
-	{DIF_BDI,&bdiReset,&bdiIn,&bdiOut,&dhwSync},
-	{DIF_P3DOS,&pdosReset,&pdosIn,&pdosOut,&pdosSync},	// upd765 (+3dos)
-	{DIF_PC,&pdosReset,&dpcIn,&dpcOut,&pdosSync},		// i8275 = upd765
-	{DIF_SMK512,&bkdReset,&bkdIn,&bkdOut,&dhwSync},
-	{DIF_END,NULL,NULL,NULL,NULL}
+	{DIF_NONE,&dumReset,&dumIn,&dumOut,&dumSync,NULL,NULL},
+	{DIF_BDI,&bdiReset,&bdiIn,&bdiOut,&dhwSync,NULL,NULL},
+	{DIF_P3DOS,&pdosReset,&pdosIn,&pdosOut,&pdosSync,NULL,NULL},	// upd765 (+3dos)
+	{DIF_PC,&pdosReset,&dpcIn,&dpcOut,&pdosSync,dpc_irq,dpc_term},		// i8275 = upd765
+	{DIF_SMK512,&bkdReset,&bkdIn,&bkdOut,&dhwSync,NULL,NULL},
+	{DIF_END,NULL,NULL,NULL,NULL,NULL,NULL}
 };
 
 DiskHW* findDHW(int id) {
@@ -295,13 +334,14 @@ DiskIF* difCreate(int type, cbirq cb, void* p) {
 	memset(dif->fdc,0x00,sizeof(FDC));
 	dif->fdc->wait = -1;
 	dif->fdc->plan = NULL;
-	dif->fdc->flop[0] = flpCreate(0);
-	dif->fdc->flop[1] = flpCreate(1);
-	dif->fdc->flop[2] = flpCreate(2);
-	dif->fdc->flop[3] = flpCreate(3);
+	dif->fdc->flop[0] = flpCreate(0, dhw_irq, dif);
+	dif->fdc->flop[1] = flpCreate(1, dhw_irq, dif);
+	dif->fdc->flop[2] = flpCreate(2, dhw_irq, dif);
+	dif->fdc->flop[3] = flpCreate(3, dhw_irq, dif);
 	dif->fdc->flp = dif->fdc->flop[0];
 	dif->fdc->xptr = p;
 	dif->fdc->xirq = cb;
+	dif->fdc->debug = 0;
 	fdc_set_hd(dif->fdc, 0);
 	difSetHW(dif, type);
 	return dif;
@@ -318,10 +358,12 @@ void difDestroy(DiskIF* dif) {
 }
 
 void difReset(DiskIF* dif) {
+	dif->inten = 1;
 	dif->hw->reset(dif);
 }
 
 void difSync(DiskIF* dif, int ns) {
+/*
 	if (dif->fdc->flp->dwait > 0) {
 		dif->fdc->flp->dwait -= ns;
 		if (dif->fdc->flp->dwait < 0) {
@@ -331,6 +373,7 @@ void difSync(DiskIF* dif, int ns) {
 			printf("insert:%i\tdoor:%i\n",dif->fdc->flp->insert,dif->fdc->flp->door);
 		}
 	}
+*/
 	dif->hw->sync(dif, ns);
 }
 
@@ -340,4 +383,9 @@ int difOut(DiskIF* dif, int port, int val, int dos) {
 
 int difIn(DiskIF* dif, int port, int* res, int dos) {
 	return dif->hw->in(dif,port,res,dos);
+}
+
+void difTerminal(DiskIF* dif) {
+	if (dif->hw->term)
+		dif->hw->term(dif);
 }

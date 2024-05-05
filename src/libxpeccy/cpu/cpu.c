@@ -16,6 +16,13 @@ int parity(int val) {
 	return parity & 1;
 }
 
+// TODO: apply cpu adr bus mask here
+int cpu_fetch(CPU* cpu, int adr) {return cpu->mrd(adr, 1, cpu->xptr);}
+int cpu_mrd(CPU* cpu, int adr) {return cpu->mrd(adr, 0, cpu->xptr);}
+void cpu_mwr(CPU* cpu, int adr, int v) {cpu->mwr(adr, v, cpu->xptr);}
+int cpu_ird(CPU* cpu, int adr) {return cpu->ird(adr, cpu->xptr);}
+void cpu_iwr(CPU* cpu, int adr, int v) {cpu->iwr(adr, v, cpu->xptr);}
+
 // no-proc
 
 const char nomnem[] = "undef";
@@ -52,13 +59,15 @@ extern xRegDsc i286RegTab[];
 extern xRegDsc pdp11RegTab[];
 
 cpuCore cpuTab[] = {
-	{CPU_Z80, "Z80", z80RegTab, z80_reset, z80_exec, z80_asm, z80_mnem, z80_get_regs, z80_set_regs},
-	{CPU_I8080, "i8080", i8080RegTab, i8080_reset, i8080_exec, i8080_asm, i8080_mnem, i8080_get_regs, i8080_set_regs},
-	{CPU_I80286,"i80286", i286RegTab, i286_reset, i286_exec, i286_asm, i286_mnem, i286_get_regs, i286_set_regs},
-	{CPU_LR35902, "LR35902", lrRegTab, lr_reset, lr_exec, lr_asm, lr_mnem, lr_get_regs, lr_set_regs},
-	{CPU_6502, "MOS6502", m6502RegTab, m6502_reset, m6502_exec, m6502_asm, m6502_mnem, m6502_get_regs, m6502_set_regs},
-	{CPU_VM1, "1801VM1", pdp11RegTab, pdp11_reset, pdp11_exec, pdp11_asm, pdp11_mnem, pdp11_get_regs, pdp11_set_regs},
-	{CPU_NONE, "none", nil_reg_tab, nil_reset, nil_exec, nil_asm, nil_mnem, nil_get_regs, nil_set_regs}
+	{CPU_Z80, "Z80", z80RegTab, NULL, z80_reset, z80_exec, z80_asm, z80_mnem, z80_get_regs, z80_set_regs},
+	{CPU_I8080, "i8080", i8080RegTab, NULL, i8080_reset, i8080_exec, i8080_asm, i8080_mnem, i8080_get_regs, i8080_set_regs},
+	{CPU_I8086,"i8086", i286RegTab, i086_init, i286_reset, i286_exec, i286_asm, i286_mnem, i286_get_regs, i286_set_regs},
+	{CPU_I80186,"i80186", i286RegTab, i186_init, i286_reset, i286_exec, i286_asm, i286_mnem, i286_get_regs, i286_set_regs},
+	{CPU_I80286,"i80286", i286RegTab, i286_init, i286_reset, i286_exec, i286_asm, i286_mnem, i286_get_regs, i286_set_regs},
+	{CPU_LR35902, "LR35902", lrRegTab, NULL, lr_reset, lr_exec, lr_asm, lr_mnem, lr_get_regs, lr_set_regs},
+	{CPU_6502, "MOS6502", m6502RegTab, NULL, m6502_reset, m6502_exec, m6502_asm, m6502_mnem, m6502_get_regs, m6502_set_regs},
+	{CPU_VM1, "1801VM1", pdp11RegTab, NULL, pdp11_reset, pdp11_exec, pdp11_asm, pdp11_mnem, pdp11_get_regs, pdp11_set_regs},
+	{CPU_NONE, "none", nil_reg_tab, NULL, nil_reset, nil_exec, nil_asm, nil_mnem, nil_get_regs, nil_set_regs}
 };
 
 cpuCore* findCore(int type) {
@@ -93,6 +102,9 @@ void cpuSetType(CPU* cpu, int type) {
 		cpu->mnem = core->mnem;
 		cpu->getregs = core->getregs;
 		cpu->setregs = core->setregs;
+		if (core->init) {
+			core->init(cpu);
+		}
 	}
 }
 
@@ -104,7 +116,7 @@ CPU* cpuCreate(int type, cbmr fmr, cbmw fmw, cbir fir, cbiw fiw, cbiack frq, cbi
 	cpu->mwr = fmw;
 	cpu->ird = fir;
 	cpu->iwr = fiw;
-	cpu->irq = frq;
+	cpu->xack = frq;
 	cpu->xirq = xirq;
 	cpuSetType(cpu, type);
 	return cpu;
@@ -362,6 +374,7 @@ xRegBunch cpuGetRegs(CPU* cpu) {
 		bunch.regs[i].name = noname;
 		bunch.regs[i].id = REG_NONE;
 		bunch.regs[i].value = 0;
+		bunch.regs[i].base = 0;
 		bunch.regs[i].type = 0;
 	}
 	bunch.flags = dumFlags;
@@ -386,7 +399,7 @@ int cpu_get_reg(CPU* cpu, const char* name, bool* f) {
 			} else {
 				ptr = ((void*)cpu) + rt[i].offset;
 				switch(rt[i].type & REG_TMASK) {
-					// case REG_BIT: res = (*(cpu + rt[i].offset)) & 1; break;
+					// case REG_BIT: res = (*(unsigned char*)ptr) & 1; break;
 					case REG_BYTE: res = (*(unsigned char*)ptr) & 0xff; break;
 					case REG_WORD: res = (*(unsigned short*)ptr) & 0xffff; break;
 					case REG_24: res = (*(int*)ptr) & 0xffffff; break;

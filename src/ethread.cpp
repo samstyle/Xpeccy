@@ -100,7 +100,7 @@ void xThread::emuCycle(Computer* comp) {
 	sndNs = 0;
 	wavNs = 0;
 	conf.snd.fill = 1;
-	do {
+	while (!comp->brk && conf.snd.fill && !finish && !conf.emu.pause) {
 		// exec 1 opcode (or handle INT, NMI)
 		if (conf.emu.pause) {
 			sndNs += 1000;
@@ -180,12 +180,12 @@ void xThread::emuCycle(Computer* comp) {
 						emit dbgRequest();
 						break;
 				}
-				if (!comp->brk && ptr->fetch) {		// to skip fetch-brk and don't stop again
-					tm = !!comp->debug;
-					comp->debug = 1;
-					compExec(comp);
-					comp->debug = !!tm;
-				}
+//				if (!comp->brk && ptr->fetch) {		// to skip fetch-brk and don't stop again (bad idea)
+//					tm = !!comp->debug;
+//					comp->debug = 1;
+//					compExec(comp);
+//					comp->debug = !!tm;
+//				}
 			} else if (comp->brkt == -1) {
 				conf.emu.pause |= PR_DEBUG;
 				emit dbgRequest();
@@ -193,7 +193,7 @@ void xThread::emuCycle(Computer* comp) {
 				comp->brk = 0;
 			}
 		}
-	} while (!comp->brk && conf.snd.fill && !finish && !conf.emu.pause);
+	};
 	comp->brk = 0;
 	comp->nmiRequest = 0;
 }

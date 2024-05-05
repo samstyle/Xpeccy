@@ -40,12 +40,12 @@ xSegPtr i286_get_dsc(CPU* cpu, int sel) {
 	} else {
 		dt.idx = sel;
 		cpu->tmpi += (sel & 0xfff8);
-		cpu->lwr = cpu->mrd(cpu->tmpi, 0, cpu->xptr);	// limit
-		cpu->hwr = cpu->mrd(cpu->tmpi+1, 0, cpu->xptr);
+		cpu->lwr = cpu_mrd(cpu, cpu->tmpi);	// limit
+		cpu->hwr = cpu_mrd(cpu, cpu->tmpi + 1);
 		dt.limit = cpu->twrd;
-		cpu->lwr = cpu->mrd(cpu->tmpi+2, 0, cpu->xptr);	// base
-		cpu->hwr = cpu->mrd(cpu->tmpi+3, 0, cpu->xptr);
-		cpu->tmp = cpu->mrd(cpu->tmpi+4, 0, cpu->xptr);
+		cpu->lwr = cpu_mrd(cpu, cpu->tmpi + 2);	// base
+		cpu->hwr = cpu_mrd(cpu, cpu->tmpi + 3);
+		cpu->tmp = cpu_mrd(cpu, cpu->tmpi + 4);
 		dt.base = (cpu->tmp << 16) | cpu->twrd;
 	}
 	return dt;
@@ -206,7 +206,7 @@ void i286_0F02(CPU* cpu) {
 		} else {
 			cpu->tmpi += (cpu->tmpw & 0xfff8);
 			cpu->tmpi += 5;
-			cpu->htw = cpu->mrd(cpu->tmpi, 0, cpu->xptr);
+			cpu->htw = cpu_mrd(cpu, cpu->tmpi);
 			cpu->ltw = 0;
 			i286_set_reg(cpu, cpu->tmpw, 1);
 		}
@@ -225,8 +225,8 @@ void i286_0F03(CPU* cpu) {
 			// TODO: int?
 		} else {
 			cpu->tmpi += (cpu->tmpw & 0xfff8);
-			cpu->ltw = cpu->mrd(cpu->tmpi, 0, cpu->xptr);		// +0,1 : limit
-			cpu->htw = cpu->mrd(cpu->tmpi+1, 0, cpu->xptr);
+			cpu->ltw = cpu_mrd(cpu, cpu->tmpi);		// +0,1 : limit
+			cpu->htw = cpu_mrd(cpu, cpu->tmpi + 1);
 			i286_set_reg(cpu, cpu->tmpw, 1);
 		}
 	}
@@ -238,10 +238,10 @@ void i286_0F06(CPU* cpu) {
 }
 
 opCode i286_0f_tab[256] = {
-	{OF_PRT | OF_WORD, 1, i286_0F00, 0, ":Q :e"},		// sldt,str,lldt,ltr,verr,verw,?,? ew
-	{OF_WORD, 1, i286_0F01, 0, ":W :e"},			// sgdt,sidt,lgdt,lidt,smsw,?,lmsw,? ew
-	{OF_PRT | OF_WORD, 1, i286_0F02, 0, "lar :r,:e"},	// lar rw,ew
-	{OF_PRT | OF_WORD, 1, i286_0F03, 0, "lsl :r,:e"},	// lsl rw,ew
+	{OF_MODCOM | OF_PRT | OF_WORD, 1, i286_0F00, 0, ":Q :e"},		// sldt,str,lldt,ltr,verr,verw,?,? ew
+	{OF_MODCOM | OF_WORD, 1, i286_0F01, 0, ":W :e"},			// sgdt,sidt,lgdt,lidt,smsw,?,lmsw,? ew
+	{OF_MODRM | OF_PRT | OF_WORD, 1, i286_0F02, 0, "lar :r,:e"},	// lar rw,ew
+	{OF_MODRM | OF_PRT | OF_WORD, 1, i286_0F03, 0, "lsl :r,:e"},	// lsl rw,ew
 	{0, 1, i286_0Fxx, 0, "undef"},
 	{0, 1, i286_0Fxx, 0, "undef"},				// (?) loadall
 	{0, 1, i286_0F06, 0, "clts"},				// clts

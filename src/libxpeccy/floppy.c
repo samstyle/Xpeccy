@@ -4,7 +4,7 @@
 
 #include "floppy.h"
 
-Floppy* flpCreate(int id) {
+Floppy* flpCreate(int id, cbflpirq cb, void* p) {
 	Floppy* flp = (Floppy*)malloc(sizeof(Floppy));
 	memset(flp,0x00,sizeof(Floppy));
 	flp->id = id;
@@ -16,6 +16,8 @@ Floppy* flpCreate(int id) {
 	flp->insert = 0;
 	flp->door = 0;
 	flp->dwait = 0;
+	flp->xirq = cb;
+	flp->xptr = p;
 	flp_set_hd(flp, 0);
 	return flp;
 }
@@ -287,10 +289,12 @@ void flpFillFields(Floppy* flp,int tr, int flag) {
 }
 
 // if path is NULL, insert new unformatted disk
+// for uPD765: RDY state changed -> interrupt
 void flp_insert(Floppy* flp, const char* path) {
+	flp->xirq(IRQ_FDD_RDY, flp->xptr);	// rdy 1->0
 	flp->insert = 1;
 	flp->door = 0;
-	flp->dwait = 5e8;	// .5 sec
+	flp->dwait = 1e9;	// door will be closing after 1 sec
 	flp->changed = 0;
 	if (!path) flpClearDisk(flp);
 	flp_set_path(flp, path);
@@ -299,10 +303,11 @@ void flp_insert(Floppy* flp, const char* path) {
 
 void flp_eject(Floppy* flp) {
 	flp_set_path(flp, NULL);
+	flp->xirq(IRQ_FDD_RDY, flp->xptr);	// rdy 1->0
+	flp->door = 0;
 	flp->insert = 0;
 	flp->dwait = 5e8;
 }
-
 
 void flpGetTrack(Floppy* flp,int tr,unsigned char* dst) {
 	memcpy(dst,flp->data[tr].byte,flp->trklen);
