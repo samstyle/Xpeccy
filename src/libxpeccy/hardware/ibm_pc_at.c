@@ -3,6 +3,8 @@
 #include "hardware.h"
 #include "../video/vga.h"
 
+clock_t tClock;
+
 // ibm pc/at
 // 00000..9FFFF : ram
 // A0000..BFFFF : video
@@ -58,15 +60,16 @@ void ibm_mem_map(Computer* comp) {
 }
 
 int ibm_mrd(Computer* comp, int adr, int m1) {
-	if (!comp->a20gate || !(comp->ps2c->outport & 1))
+	if (!comp->a20gate || !(comp->ps2c->outport & 2))
 		adr &= ~(1 << 20);
-	return memRd(comp->mem, adr);
+	return (adr < comp->mem->ramSize) ? memRd(comp->mem, adr) : 0xff;
 }
 
 void ibm_mwr(Computer* comp, int adr, int val) {
-	if (!comp->a20gate || !(comp->ps2c->outport & 1))
+	if (!comp->a20gate || !(comp->ps2c->outport & 2))
 		adr &= ~(1 << 20);
-	memWr(comp->mem, adr, val);
+	if (adr < comp->mem->ramSize)
+		memWr(comp->mem, adr, val);
 }
 
 // in/out
@@ -143,7 +146,6 @@ int ibm_inKbd(Computer* comp, int adr) {
 			res = ps2c_rd(comp->ps2c, PS2_RDATA);
 			break;
 		case 1:
-			// comp->reg[0x61] ^= 0x10;		// Toggles with each refresh request (?)
 			res = comp->reg[0x61] & 0x1f;		// b0..3 is copied, b4 is 'mem refresh'
 			if (comp->pit->ch2.out && (res & 8)) res |= 0x20;	// b6: timer2 output
 			break;
@@ -309,12 +311,12 @@ int ibm_inPOS(Computer* comp, int adr) {
 int ibm_fdc_rd(Computer* comp, int adr) {
 	int res = -1;
 	difIn(comp->dif, adr, &res, 0);
-	// printf("%.4X:%.4X\tin %.3X = %.2X\n",comp->cpu->cs.idx,comp->cpu->pc,adr,res);
+//	printf("[%li] %.4X:%.4X\tin %.3X = %.2X\n",EXECTIME,comp->cpu->cs.idx,comp->cpu->pc,adr,res);
 	return res;
 }
 
 void ibm_fdc_wr(Computer* comp, int adr, int val) {
-//	if (adr == 0x3f5) printf("%.4X:%.4X\tout %.3X, %.2X\n",comp->cpu->cs.idx,comp->cpu->pc,adr,val);
+//	printf("[%li] %.4X:%.4X\tout %.3X, %.2X\n",EXECTIME,comp->cpu->cs.idx,comp->cpu->pc,adr,val);
 	difOut(comp->dif, adr, val, 0);
 }
 
@@ -396,6 +398,11 @@ void ibm_dma_flp_wr(int val, void* ptr, int* f) {
 	if (dif->fdc->dma && dif->fdc->irq && dif->fdc->drq && !dif->fdc->dir) {	// dma,execution,data request, from cpu;
 		*f = difOut(dif, 5, val, 0);
 	}
+}
+
+void ibm_dma_flp_tc(void* ptr) {
+	DiskIF* dif = ((Computer*)ptr)->dif;
+	difTerminal(dif);		// stop current command execution
 }
 
 int ibm_dma_hdd_rd(void* ptr, int* f) {
@@ -555,10 +562,10 @@ void ibm_init(Computer* comp) {
 	comp->vid->nsPerDot = 1e9/60/comp->vid->full.x/comp->vid->full.y;
 	fdc_set_hd(comp->dif->fdc, 1);
 	dma_set_cb(comp->dma1, ibm_dma_mrd, ibm_dma_mwr);		// mrd/mwr callbacks
-	dma_set_chan(comp->dma1, 2, ibm_dma_flp_rd, ibm_dma_flp_wr);	// ch2: fdc
-	dma_set_chan(comp->dma1, 3, ibm_dma_hdd_rd, ibm_dma_hdd_wr);	// ch3: hdd
-	dma_set_chan(comp->dma1, 1, ibm_dma1_rd_2, ibm_dma1_wr_2);
-	dma_set_chan(comp->dma2, 0, ibm_dma2_rd_1, ibm_dma2_wr_1);
+	dma_set_chan(comp->dma1, 2, ibm_dma_flp_rd, ibm_dma_flp_wr, ibm_dma_flp_tc);	// ch2: fdc
+	dma_set_chan(comp->dma1, 3, ibm_dma_hdd_rd, ibm_dma_hdd_wr, NULL);	// ch3: hdd
+	dma_set_chan(comp->dma1, 1, ibm_dma1_rd_2, ibm_dma1_wr_2, NULL);
+	dma_set_chan(comp->dma2, 0, ibm_dma2_rd_1, ibm_dma2_wr_1, NULL);
 	comp->dma1->ch[2].blk = 1;		// block dma1 maintaining ch2 (fdc), it working through callbacks
 }
 
@@ -566,29 +573,29 @@ void dma_ch_transfer(DMAChan*, void*);
 
 void ibm_irq(Computer* comp, int t) {
 	switch(t) {
-		case IRQ_FDC:
-		case IRQ_FDD_RDY:
-			pic_int(comp->mpic, 6); break;		// fdc interrupt (drq | rdy changing)
+		case IRQ_FDC: pic_int(comp->mpic, 6); break;						// fdc interrupt (drq | rdy changing)
 		case IRQ_FDC_RD: dma_ch_transfer(&comp->dma1->ch[2], comp->dma1->ptr); break;		// dma1.ch2 fdc->mem
 		case IRQ_FDC_WR: dma_ch_transfer(&comp->dma1->ch[2], comp->dma1->ptr); break;		// dma1.ch2 mem->fdc
-
 		case IRQ_HDD_PRI: pic_int(comp->spic, 6); break;
 		case IRQ_KBD: pic_int(comp->mpic, 1); break;
 		case IRQ_MOUSE: pic_int(comp->spic, 4); break;
-		case IRQ_SLAVE_PIC: pic_int(comp->mpic, 2); break;	// slave pic -> master pic int2
-		case IRQ_MASTER_PIC: t = pic_ack(comp->mpic);
-			if (t < 0) t = pic_ack(comp->spic);
-			comp->cpu->intrq |= I286_INT;
-			comp->cpu->intvec = t;
-			break;
-		case IRQ_PIT_CH0:		// input 0 master pic (int 8)
-			pic_int(comp->mpic, 0);
-			break;
+		case IRQ_SLAVE_PIC: pic_int(comp->mpic, 2); break;		// slave pic -> master pic int2
+		case IRQ_MASTER_PIC: comp->cpu->intrq |= I286_INT; break;	// cpu will read int-vector by calling ibm_ack
+		case IRQ_PIT_CH0: pic_int(comp->mpic, 0); break;		// input 0 master pic (int 8)
 		case IRQ_PIT_CH1: comp->reg[0x61] ^= 0x10; break;
-		case IRQ_PIT_CH2: if (comp->reg[0x61] & 2) comp->beep->lev = comp->pit->ch2.out; break;		// reg61.bit2: enable pit.ch2.out->speaker
-		case IRQ_RESET: comp->cpu->reset(comp->cpu);
-			break;
+		case IRQ_PIT_CH2: if (comp->reg[0x61] & 2) {
+				comp->beep->lev = comp->pit->ch2.out;
+			}
+			break;		// reg61.bit2: enable pit.ch2.out->speaker
+		case IRQ_RESET: comp->cpu->reset(comp->cpu); break;
+		case IRQ_BRK: comp->brk = 1; comp->brkt = -1; break;		// debug: any device breakpoint
 	}
+}
+
+int ibm_ack(Computer* comp) {
+	int t = pic_ack(comp->mpic);
+	if (t < 0) t = pic_ack(comp->spic);
+	return t;
 }
 
 void ibm_sync(Computer* comp, int ns) {
@@ -599,20 +606,6 @@ void ibm_sync(Computer* comp, int ns) {
 	ps2c_sync(comp->ps2c, ns);
 	// pit (todo: irq for pit)
 	pit_sync(comp->pit, ns);
-	// ch0 connected to int0
-//	if (!comp->pit->ch0.lout && comp->pit->ch0.out) {		// 0->1
-//		pic_int(comp->mpic, 0);	// input 0 master pic (int 8)
-//	}
-//	comp->pit->ch0.lout = comp->pit->ch0.out;
-	// ch1 mem refresh
-//	if (!comp->pit->ch1.lout && comp->pit->ch1.out) {
-//		comp->reg[0x61] ^= 0x10;
-//	}
-//	comp->pit->ch1.lout = comp->pit->ch1.out;
-	// ch2 connected to speaker
-//	comp->pit->ch2.lout = comp->pit->ch2.out;
-//	comp->beep->lev = (comp->reg[0x61] & 2) ? comp->pit->ch2.out : 1;
-
 	// master int 6: fdc
 	difSync(comp->dif, ns);
 	// slave int6: primary hdc

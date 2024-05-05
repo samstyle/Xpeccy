@@ -100,30 +100,33 @@ void i286_mwr(CPU* cpu, xSegPtr seg, int rpl, unsigned short adr, int val) {
 }
 
 // system mrd/mwr, w/o checks
+// TODO: 8086/80186: 20bit adr bus: mask (1<<20)-1
+//	80286: 24bit adr bus: mask (1<<24)-1
+//	mwr/mrd must respect bus size
 
-unsigned char i286_sys_mrd(CPU* cpu, xSegPtr seg, unsigned short adr) {
-	return cpu->mrd(seg.base + adr, 0, cpu->xptr) & 0xff;
-}
+//unsigned char i286_sys_mrd(CPU* cpu, xSegPtr seg, unsigned short adr) {
+//	return cpu_mrd(cpu, seg.base + adr) & 0xff;
+//}
 
 unsigned short i286_sys_mrdw(CPU* cpu, xSegPtr seg, unsigned short adr) {
-	unsigned char rl = cpu->mrd(seg.base + adr, 0, cpu->xptr) & 0xff;
-	unsigned char rh = cpu->mrd(seg.base + adr + 1, 0, cpu->xptr) & 0xff;
+	unsigned char rl = cpu_mrd(cpu, seg.base + adr) & 0xff;
+	unsigned char rh = cpu_mrd(cpu, seg.base + adr + 1) & 0xff;
 	return (rh << 8) | rl;
 }
 
 void i286_sys_mwr(CPU* cpu, xSegPtr seg, unsigned short adr, unsigned char v) {
-	cpu->mwr(seg.base + adr, v, cpu->xptr);
+	cpu_mwr(cpu, seg.base + adr, v);
 }
 
 void i286_sys_mwrw(CPU* cpu, xSegPtr seg, unsigned short adr, unsigned short v) {
-	cpu->mwr(seg.base + adr, v & 0xff, cpu->xptr);
-	cpu->mwr(seg.base + adr, (v >> 8) & 0xff, cpu->xptr);
+	cpu_mwr(cpu, seg.base + adr, v & 0xff);
+	cpu_mwr(cpu, seg.base + adr, (v >> 8) & 0xff);
 }
 
 // real mode
 
 unsigned char i286_fetch_real(CPU* cpu) {
-	unsigned char res = cpu->mrd(cpu->cs.base + cpu->pc, 1, cpu->xptr) & 0xff;
+	unsigned char res = cpu_fetch(cpu, cpu->cs.base + cpu->pc) & 0xff;
 	cpu->pc++;
 	return res;
 }
@@ -131,13 +134,13 @@ unsigned char i286_fetch_real(CPU* cpu) {
 unsigned char i286_mrd_real(CPU* cpu, xSegPtr seg, int rpl, unsigned short adr) {
 	if (rpl && (cpu->seg.idx >= 0)) seg = cpu->seg;
 	cpu->t++;
-	return cpu->mrd(seg.base + adr, 0, cpu->xptr) & 0xff;
+	return cpu_mrd(cpu, seg.base + adr) & 0xff;
 }
 
 void i286_mwr_real(CPU* cpu, xSegPtr seg, int rpl, unsigned short adr, int val) {
 	if (rpl && (cpu->seg.idx >= 0)) seg = cpu->seg;
 	cpu->t++;
-	cpu->mwr(seg.base + adr, val, cpu->xptr);
+	cpu_mwr(cpu, seg.base + adr, val);
 }
 
 // stack (TODO: real/prt mode stack rd/wr procedures)
@@ -168,7 +171,7 @@ unsigned char i286_fetch_prt(CPU* cpu) {
 	unsigned char res = 0xff;
 //	if (i286_check_segment_exec(cpu, &cpu->cs)) {		// check it when CS changed
 		if (i286_check_segment_limit(cpu, &cpu->cs, cpu->pc)) {
-			res = cpu->mrd(cpu->cs.base + cpu->pc, 1, cpu->xptr) & 0xff;
+			res = cpu_fetch(cpu, cpu->cs.base + cpu->pc) & 0xff;
 			cpu->pc++;
 		} else {
 			THROW(I286_INT_SL);
@@ -185,7 +188,7 @@ unsigned char i286_mrd_prt(CPU* cpu, xSegPtr seg, int rpl, unsigned short adr) {
 	if (rpl && (cpu->seg.idx >= 0)) seg = cpu->seg;
 	if (i286_check_segment_rd(cpu, &seg)) {
 		if (i286_check_segment_limit(cpu, &seg, adr)) {
-			res = cpu->mrd(seg.base + adr, 0, cpu->xptr) & 0xff;
+			res = cpu_fetch(cpu, seg.base + adr) & 0xff;
 		} else {
 			THROW(I286_INT_SL);
 		}
@@ -199,7 +202,7 @@ void i286_mwr_prt(CPU* cpu, xSegPtr seg, int rpl, unsigned short adr, int val) {
 	if (rpl && (cpu->seg.idx >= 0)) seg = cpu->seg;
 	if (i286_check_segment_wr(cpu, &seg)) {
 		if (i286_check_segment_limit(cpu, &seg, adr)) {
-			cpu->mwr(seg.base + adr, val, cpu->xptr);
+			cpu_mwr(cpu, seg.base + adr, val);
 		} else {
 			cpu->pc = cpu->oldpc;
 			THROW(I286_INT_SL);
@@ -212,12 +215,12 @@ void i286_mwr_prt(CPU* cpu, xSegPtr seg, int rpl, unsigned short adr, int val) {
 // iord/wr
 
 unsigned short i286_ird(CPU* cpu, int adr) {
-	return cpu->ird(adr, cpu->xptr) & 0xffff;
+	return cpu_ird(cpu, adr) & 0xffff;
 }
 
 void i286_iwr(CPU* cpu, int adr, int val, int w) {
 	cpu->wrd = !!w;
-	cpu->iwr(adr, val, cpu->xptr);
+	cpu_iwr(cpu, adr, val);
 	cpu->wrd = 0;
 }
 
@@ -261,19 +264,32 @@ xSegPtr i286_cash_seg_a(CPU* cpu, int adr) {
 	xSegPtr p;
 	PAIR(w,h,l)off;
 	unsigned short tmp;
-	off.l = cpu->mrd(adr++, 0, cpu->xptr);	// limit:16
-	off.h = cpu->mrd(adr++, 0, cpu->xptr);
+	off.l = cpu_mrd(cpu, adr++);	// limit:16
+	off.h = cpu_mrd(cpu, adr++);
 	p.limit = off.w;
-	off.l = cpu->mrd(adr++, 0, cpu->xptr);	// base:24
-	off.h = cpu->mrd(adr++, 0, cpu->xptr);
-	tmp = cpu->mrd(adr++, 0, cpu->xptr);
+	off.l = cpu_mrd(cpu, adr++);	// base:24
+	off.h = cpu_mrd(cpu, adr++);
+	tmp = cpu_mrd(cpu, adr++);
 	p.base = (tmp << 16) | off.w;
-	tmp = cpu->mrd(adr, 0, cpu->xptr);	// flags:8
+	tmp = cpu_mrd(cpu, adr);	// flags:8
 	p.ar = tmp & 0x1f;
 	p.pl = (tmp >> 5) & 3;
 	p.pr = !!(tmp & 0x80);
 	p.sys = !(tmp & 0x10);
 	p.code = !!((tmp & 0x18) == 0x18);
+	p.data = !!((tmp & 0x18) == 0x10);
+	p.ext = !!(tmp & 4);
+	if (p.sys) {
+		p.ext = 0;
+		p.rd = 1;
+		p.wr = 1;
+	} else if (p.code) {
+		p.wr = 0;
+		p.rd = !!(tmp & 2);
+	} else if (p.data) {
+		p.rd = 1;
+		p.wr = !!(tmp & 2);
+	}
 	return p;
 }
 
@@ -330,9 +346,9 @@ void i286_switch_task(CPU* cpu, int tsss, int nest, int iret) {
 			} else {
 				// set new TSS busy
 				int adr = cpu->gdtr.base + (tsss & 0xfff8);
-				f = cpu->mrd(adr + 5, 0, cpu->xptr);
+				f = cpu_mrd(cpu, adr + 5);
 				f |= 2;
-				cpu->mwr(adr + 5, f, cpu->xptr);
+				cpu_mwr(cpu, adr + 5, f);
 				// save current state to current TSS
 				i286_sys_mwrw(cpu, cpu->tsdr, 14, cpu->pc);
 				i286_sys_mwrw(cpu, cpu->tsdr, 16, cpu->f);
@@ -696,41 +712,11 @@ void i286_wr_ea(CPU* cpu, int val, int wrd) {
 	}
 }
 
+void i8086_nodef(CPU* cpu) {
+	THROW(I286_INT_UD);
+}
+
 // add/adc
-
-static const int i286_add_FO[8] = {0, 0, 0, 1, 1, 0, 0, 0};
-
-unsigned char i286_add8(CPU* cpu, unsigned char p1, unsigned char p2, int cf) {
-	cpu->f &= ~(I286_FS | I286_FZ | I286_FP | I286_FO | I286_FC | I286_FA);
-	int r1 = p1 & 0xff;
-	int r2 = (p2 & 0xff) + (cf ? 1 : 0);
-	int res = r1 + r2;
-	//cpu->tmp = ((p1 & 0x80) >> 7) | ((p2 & 0x80) >> 6) | ((res & 0x80) >> 5);
-	//if (i286_add_FO[cpu->tmp]) cpu->f |= I286_FO;
-	if (((p1 ^ p2 ^ 0x80) & (res ^ p2)) & 0x80) cpu->f |= I286_FO;
-	if (res & 0x80) cpu->f |= I286_FS;
-	if (!(res & 0xff)) cpu->f |= I286_FZ;
-	if ((p1 & 15) + (p2 & 15) > 15) cpu->f |= I286_FA;
-	if (parity(res & 0xff)) cpu->f |= I286_FP;
-	if (res & ~0xff) cpu->f |= I286_FC;
-	return res & 0xff;
-}
-
-unsigned short i286_add16(CPU* cpu, unsigned short p1, unsigned short p2, int cf) {
-	cpu->f &= ~(I286_FS | I286_FZ | I286_FP | I286_FO | I286_FC | I286_FA);
-	int r1 = p1 & 0xffff;
-	int r2 = (p2 & 0xffff) + (cf ? 1 : 0);
-	int res = r1 + r2;
-	//cpu->tmp = ((p1 & 0x8000) >> 15) | ((p2 & 0x8000) >> 14) | ((res & 0x8000) >> 13);
-	//if (i286_add_FO[cpu->tmp]) cpu->f |= I286_FO;
-	if (((p1 ^ p2 ^ 0x8000) & (res ^ p2)) & 0x8000) cpu->f |= I286_FO;
-	if (res & 0x8000) cpu->f |= I286_FS;
-	if (!(res & 0xffff)) cpu->f |= I286_FZ;
-	if ((p1 & 0xfff) + (p2 & 0xfff) > 0xfff) cpu->f |= I286_FA;
-	if (parity(res & 0xff)) cpu->f |= I286_FP;
-	if (res & ~0xffff) cpu->f |= I286_FC;
-	return res & 0xffff;
-}
 
 // 00,mod: add eb,rb	EA.byte += reg.byte
 void i286_op00(CPU* cpu) {
@@ -784,24 +770,6 @@ void i286_op07(CPU* cpu) {
 }
 
 // or
-
-unsigned char i286_or8(CPU* cpu, unsigned char p1, unsigned char p2) {
-	unsigned char res =  p1 | p2;
-	cpu->f &= ~(I286_FO | I286_FS | I286_FZ | I286_FP | I286_FC);
-	if (res & 0x80) cpu->f |= I286_FS;
-	if (!res) cpu->f |= I286_FZ;
-	if (parity(res & 0xff)) cpu->f |= I286_FP;
-	return res;
-}
-
-unsigned short i286_or16(CPU* cpu, unsigned short p1, unsigned short p2) {
-	unsigned short res =  p1 | p2;
-	cpu->f &= ~(I286_FO | I286_FS | I286_FZ | I286_FP | I286_FC);
-	if (res & 0x8000) cpu->f |= I286_FS;
-	if (!res) cpu->f |= I286_FZ;
-	if (parity(res & 0xff)) cpu->f |= I286_FP;
-	return res;
-}
 
 // 08,mod: or eb,rb
 void i286_op08(CPU* cpu) {
@@ -908,40 +876,6 @@ void i286_op17(CPU* cpu) {
 
 // sub/sbc
 
-// static const int i286_sub_FO[8] = {0, 1, 0, 0, 0, 0, 1, 0};
-
-unsigned char i286_sub8(CPU* cpu, unsigned char p1, unsigned char p2, int cf) {
-	cpu->f &= ~(I286_FS | I286_FZ | I286_FP | I286_FO | I286_FC | I286_FA);
-	int r1 = p1 & 0xff;
-	int r2 = (p2 & 0xff) + (cf ? 1 : 0);
-	int res = r1 - r2;
-	//cpu->tmp = ((p1 & 0x80) >> 7) | ((p2 & 0x80) >> 6) | ((res & 0x80) >> 5);
-	//if (i286_sub_FO[cpu->tmp & 7]) cpu->f |= I286_FO;
-	if (((p1 ^ p2) & (p1 ^ res)) & 0x80) cpu->f |= I286_FO;
-	if (res & 0x80) cpu->f |= I286_FS;
-	if (!(res & 0xff)) cpu->f |= I286_FZ;
-	if (parity(res & 0xff)) cpu->f |= I286_FP;
-	if (res & ~0xff) cpu->f |= I286_FC;
-	if ((p1 & 0x0f) < (p2 & 0x0f)) cpu->f |= I286_FA;
-	return res & 0xff;
-}
-
-unsigned short i286_sub16(CPU* cpu, unsigned short p1, unsigned short p2, int cf) {
-	cpu->f &= ~(I286_FS | I286_FZ | I286_FP | I286_FO | I286_FC | I286_FA);
-	int r1 = p1 & 0xffff;
-	int r2 = (p2 & 0xffff) + (cf ? 1 : 0);
-	int res = r1 - r2;
-	//cpu->tmp = ((p1 & 0x8000) >> 15) | ((p2 & 0x8000) >> 14) | ((res & 0x8000) >> 13);
-	//if (i286_sub_FO[cpu->tmp & 7]) cpu->f |= I286_FO;
-	if (((p1 ^ p2) & (p1 ^ res)) & 0x8000) cpu->f |= I286_FO;
-	if (res & 0x8000) cpu->f |= I286_FS;
-	if (!(res & 0xffff)) cpu->f |= I286_FZ;
-	if (parity(res & 0xff)) cpu->f |= I286_FP;
-	if (res & ~0xffff) cpu->f |= I286_FC;
-	if ((p1 & 0x0fff) < (p2 & 0x0fff)) cpu->f |= I286_FA;
-	return res & 0xffff;
-}
-
 // 18,mod: sbb eb,rb	NOTE: sbc
 void i286_op18(CPU* cpu) {
 	i286_rd_ea(cpu, 0);
@@ -994,24 +928,6 @@ void i286_op1F(CPU* cpu) {
 }
 
 // and
-
-unsigned char i286_and8(CPU* cpu, unsigned char p1, unsigned char p2) {
-	cpu->f &= ~(I286_FO | I286_FS | I286_FP | I286_FZ | I286_FC);
-	p1 &= p2;
-	if (p1 & 0x80) cpu->f |= I286_FS;
-	if (!p1) cpu->f |= I286_FZ;
-	if (parity(p1 & 0xff)) cpu->f |= I286_FP;
-	return p1;
-}
-
-unsigned short i286_and16(CPU* cpu, unsigned short p1, unsigned short p2) {
-	cpu->f &= ~(I286_FO | I286_FS | I286_FP | I286_FZ | I286_FC);
-	p1 &= p2;
-	if (p1 & 0x8000) cpu->f |= I286_FS;
-	if (!p1) cpu->f |= I286_FZ;
-	if (parity(p1 & 0xff)) cpu->f |= I286_FP;
-	return p1;
-}
 
 // 20,mod: and eb,rb
 void i286_op20(CPU* cpu) {
@@ -1144,24 +1060,6 @@ void i286_op2F(CPU* cpu) {
 }
 
 // xor
-
-unsigned char i286_xor8(CPU* cpu, unsigned char p1, unsigned char p2) {
-	p1 ^= p2;
-	cpu->f &= ~(I286_FO | I286_FS | I286_FZ | I286_FP | I286_FC);
-	if (p1 & 0x80) cpu->f |= I286_FS;
-	if (!p1) cpu->f |= I286_FZ;
-	if (parity(p1 & 0xff)) cpu->f |= I286_FP;
-	return p1;
-}
-
-unsigned short i286_xor16(CPU* cpu, unsigned short p1, unsigned short p2) {
-	p1 ^= p2;
-	cpu->f &= ~(I286_FO | I286_FS | I286_FZ | I286_FP | I286_FC);
-	if (p1 & 0x8000) cpu->f |= I286_FS;
-	if (!p1) cpu->f |= I286_FZ;
-	if (parity(p1 & 0xff)) cpu->f |= I286_FP;
-	return p1;
-}
 
 // 30,mod: xor eb,rb
 void i286_op30(CPU* cpu) {
@@ -1547,18 +1445,6 @@ void i286_op68(CPU* cpu) {
 	i286_push(cpu, cpu->tmpw);
 }
 
-// mul
-int i286_smul(CPU* cpu, signed short p1, signed short p2) {
-	int res = p1 * p2;
-	cpu->f &= ~(I286_FO | I286_FC);
-	if ((p1 & 0x7fff) * (p2 & 0x7fff) > 0xffff)
-		cpu->f |= I286_FC;
-	cpu->tmp = ((p1 & 0x8000) >> 15) | ((p2 & 0x8000) >> 14) | ((res & 0x8000) >> 13);
-	if (i286_add_FO[cpu->tmp & 7])
-		cpu->f |= I286_FO;
-	return res;
-}
-
 // 69,mod,dw: imul rw,ea,dw: rw = ea.w * wrd
 void i286_op69(CPU* cpu) {
 	i286_rd_ea(cpu, 1);
@@ -1925,7 +1811,7 @@ void i286_callf(CPU* cpu, int nip, int ncs) {
 				int dadr = cpu->ss.base + cpu->sp;			// new stack top
 				cpu->t = 86;
 				while (cnt > 0) {
-					cpu->mwr(dadr, cpu->mrd(sadr, 0, cpu->xptr), cpu->xptr);
+					cpu_mwr(cpu, dadr, cpu_mrd(cpu, sadr));
 					dadr++;
 					sadr++;
 					cnt--;
@@ -1970,18 +1856,35 @@ void i286_op9B(CPU* cpu) {
 
 // 9c: pushf
 void i286_op9C(CPU* cpu) {
-	i286_push(cpu, cpu->f);
+	i286_push(cpu, cpu->f);	// set unused bits
 }
 
-// 9d: popf (real mode: NT and IOP flags not modified)
-// real mode: IOP can changed if cpl=0, FI - if (cpl <= iop)
-// TODO: 80286 - only low 8 bits changed in real mode?
+// 9d: popf
+// protected mode: IOP can changed if cpl=0, FI - if (cpl <= iop)
+// real mode: NT and IOP flags not modified?
+// CHECK:
+// 8086/80186	bit 12..15 = 1
+// 80286	bit 12..15 = 0
+// 80386+	(read more)
 void i286_op9D(CPU* cpu) {
 	cpu->tmpw = i286_pop(cpu);
 	if (cpu->msw & I286_FPE) {
-		cpu->f = (cpu->f & (I286_FN | I286_FIP)) | (cpu->tmpw & ~(I286_FN | I286_FIP));
+		cpu->f = (cpu->f & (I286_FN | I286_FIP | I286_FI)) | (cpu->tmpw & ~(I286_FN | I286_FIP | I286_FI));
+		if (cpu->cs.pl == 0) {				// CPL==0 can change IOPL
+			cpu->f = (cpu->f & I286_FIP) | (cpu->tmpw & ~I286_FIP);
+		}
+		if (cpu->cs.pl <= ((cpu->f >> 12) & 3)) {	// CPL<=IOPL: can change FI
+			cpu->f = (cpu->f & I286_FI) | (cpu->tmpw & ~I286_FI);
+		}
 	} else {
-		cpu->f = cpu->tmpw;
+		switch(cpu->gen) {
+			case 2:
+				cpu->f = (cpu->tmpw & 0x0fff);
+				break;
+			default:
+				cpu->f = (cpu->tmpw & 0x0fff) | 0xf000;
+				break;
+		}
 	}
 }
 
@@ -2226,146 +2129,6 @@ void i286_opBF(CPU* cpu) {cpu->di = i286_rd_immw(cpu);}
 
 // rotate/shift
 
-// rol: FC<-b7...b0<-b7
-unsigned char i286_rol8(CPU* cpu, unsigned char p) {
-	cpu->f &= ~(I286_FC | I286_FO);
-	p = (p << 1) | ((p & 0x80) ? 1 : 0);
-	if (p & 1) cpu->f |= I286_FC;
-	if (!(cpu->f & I286_FC) != !(p & 0x80)) cpu->f |= I286_FO;
-	return p;
-}
-
-unsigned short i286_rol16(CPU* cpu, unsigned short p) {
-	cpu->f &= ~(I286_FC | I286_FO);
-	p = (p << 1) | ((p & 0x8000) ? 1 : 0);
-	if (p & 1) cpu->f |= I286_FC;
-	if (!(cpu->f & I286_FC) != !(p & 0x8000)) cpu->f |= I286_FO;
-	return p;
-}
-
-// ror: b0->b7...b0->CF
-unsigned char i286_ror8(CPU* cpu, unsigned char p) {
-	cpu->f &= ~(I286_FC | I286_FO);
-	p = (p >> 1) | ((p & 1) ? 0x80 : 0);
-	if (p & 0x80) cpu->f |= I286_FC;
-	if (!(p & 0x80) != !(p & 0x40)) cpu->f |= I286_FO;
-	return p;
-}
-
-unsigned short i286_ror16(CPU* cpu, unsigned short p) {
-	cpu->f &= ~(I286_FC | I286_FO);
-	p = (p >> 1) | ((p & 1) ? 0x8000 : 0);
-	if (p & 0x8000) cpu->f |= I286_FC;
-	if (!(p & 0x8000) != !(p & 0x4000)) cpu->f |= I286_FO;
-	return p;
-}
-
-// rcl: CF<-b7..b0<-CF
-unsigned char i286_rcl8(CPU* cpu, unsigned char p) {
-	cpu->tmp = (cpu->f & I286_FC);
-	cpu->f &= ~(I286_FC | I286_FO);
-	if (p & 0x80) cpu->f |= I286_FC;
-	p = (p << 1) | (cpu->tmp ? 1 : 0);
-	if (!(cpu->f & I286_FC) != !(p & 0x80)) cpu->f |= I286_FO;
-	return p;
-}
-
-unsigned short i286_rcl16(CPU* cpu, unsigned short p) {
-	cpu->tmp = (cpu->f & I286_FC);
-	cpu->f &= ~(I286_FC | I286_FO);
-	if (p & 0x8000) cpu->f |= I286_FC;
-	p = (p << 1) | (cpu->tmp ? 1 : 0);
-	if (!(cpu->f & I286_FC) != !(p & 0x8000)) cpu->f |= I286_FO;
-	return p;
-}
-
-// rcr: CF->b7..b0->CF
-unsigned char i286_rcr8(CPU* cpu, unsigned char p) {
-	cpu->tmp = (cpu->f & I286_FC);
-	cpu->f &= ~(I286_FC | I286_FO);
-	if (p & 1) cpu->f |= I286_FC;
-	p >>= 1;
-	if (cpu->tmp) p |= 0x80;
-	if (!(p & 0x80) != !(p & 0x40)) cpu->f |= I286_FO;
-	return p;
-}
-
-unsigned short i286_rcr16(CPU* cpu, unsigned short p) {
-	cpu->tmp = (cpu->f & I286_FC);
-	cpu->f &= ~(I286_FC | I286_FO);
-	if (p & 1) cpu->f |= I286_FC;
-	p >>= 1;
-	if (cpu->tmp) p |= 0x8000;
-	if (!(p & 0x8000) != !(p & 0x4000)) cpu->f |= I286_FO;
-	return p;
-}
-
-// sal: CF<-b7..b0<-0
-unsigned char i286_sal8(CPU* cpu, unsigned char p) {
-	cpu->f &= ~(I286_FC | I286_FO | I286_FZ | I286_FP | I286_FS);
-	if (p & 0x80) cpu->f |= I286_FC;
-	p <<= 1;
-	if (!(cpu->f & I286_FC) != !(p & 0x80)) cpu->f |= I286_FO;
-	if (!p) cpu->f |= I286_FZ;
-	if (parity(p & 0xff)) cpu->f |= I286_FP;
-	if (p & 0x80) cpu->f |= I286_FS;
-	return p;
-}
-
-unsigned short i286_sal16(CPU* cpu, unsigned short p) {
-	cpu->f &= ~(I286_FC | I286_FO | I286_FZ | I286_FP | I286_FS);
-	if (p & 0x8000) cpu->f |= I286_FC;
-	p <<= 1;
-	if (!(cpu->f & I286_FC) != !(p & 0x8000)) cpu->f |= I286_FO;
-	if (!p) cpu->f |= I286_FZ;
-	if (parity(p & 0xff)) cpu->f |= I286_FP;
-	if (p & 0x8000) cpu->f |= I286_FS;
-	return p;
-}
-
-// shr 0->b7..b0->CF
-unsigned char i286_shr8(CPU* cpu, unsigned char p) {
-	cpu->f &= ~(I286_FC | I286_FO | I286_FZ | I286_FP | I286_FS);
-	if (p & 1) cpu->f |= I286_FC;
-	if (p & 0x80) cpu->f |= I286_FO;
-	p >>= 1;
-	if (!p) cpu->f |= I286_FZ;
-	if (parity(p & 0xff)) cpu->f |= I286_FP;
-	if (p & 0x80) cpu->f |= I286_FS;
-	return p;
-}
-
-unsigned short i286_shr16(CPU* cpu, unsigned short p) {
-	cpu->f &= ~(I286_FC | I286_FO | I286_FZ | I286_FP | I286_FS);
-	if (p & 1) cpu->f |= I286_FC;
-	if (p & 0x8000) cpu->f |= I286_FO;
-	p >>= 1;
-	if (!p) cpu->f |= I286_FZ;
-	if (parity(p & 0xff)) cpu->f |= I286_FP;
-	if (p & 0x8000) cpu->f |= I286_FS;
-	return p;
-}
-
-// sar b7->b7..b0->CF
-unsigned char i286_sar8(CPU* cpu, unsigned char p) {
-	cpu->f &= ~(I286_FC | I286_FO | I286_FZ | I286_FP | I286_FS);
-	if (p & 1) cpu->f |= I286_FC;
-	p = (p >> 1) | (p & 0x80);
-	if (!p) cpu->f |= I286_FZ;
-	if (parity(p & 0xff)) cpu->f |= I286_FP;
-	if (p & 0x80) cpu->f |= I286_FS;
-	return p;
-}
-
-unsigned short i286_sar16(CPU* cpu, unsigned short p) {
-	cpu->f &= ~(I286_FC | I286_FO | I286_FZ | I286_FP | I286_FS);
-	if (p & 1) cpu->f |= I286_FC;
-	p = (p >> 1) | (p & 0x8000);
-	if (!p) cpu->f |= I286_FZ;
-	if (parity(p & 0xff)) cpu->f |= I286_FP;
-	if (p & 0x8000) cpu->f |= I286_FS;
-	return p;
-}
 
 typedef unsigned char(*cb286rot8)(CPU*, unsigned char);
 typedef unsigned short(*cb286rot16)(CPU*, unsigned short);
@@ -2552,9 +2315,9 @@ void i286_opCF(CPU* cpu) {
 				}
 				seg = cpu->tsdr;			// current TS
 				i286_switch_task(cpu, tss, 0, 1);	// switch to new task
-				unsigned char tf = i286_sys_mrd(cpu, seg, 5);	// mark old TS as not-busy
+				unsigned char tf = cpu_mrd(cpu, seg.base + 5);	// mark old TS as not-busy
 				tf &= ~2;
-				i286_sys_mwr(cpu, seg, 5, tf);
+				cpu_mwr(cpu, seg.base + 5, tf);
 				if (cpu->pc > cpu->cs.limit) {
 					THROW_EC(I286_INT_GP, 0);
 				}
@@ -2669,9 +2432,9 @@ void i286_opD5(CPU* cpu) {
 	if (parity(cpu->al & 0xff)) cpu->f |= I286_FP;
 }
 
-// d6:
+// d6: salc	al = (flag C) ? 0xff : 0x00
 void i286_opD6(CPU* cpu) {
-	THROW(I286_INT_UD);
+	cpu->al = (cpu->f & I286_FC) ? 0xff : 0x00;
 }
 
 // d7: xlatb	al = [ds:bx+al]		// segment replacement must work
@@ -3076,67 +2839,296 @@ void i286_opFF(CPU* cpu) {
 // :Q - sldt|str|lldt|ltr|verr|verw|/6|/7
 // :W - sgdt|sidt|lgdt|lidt|smsw|/5|lmsw|/7
 
+opCode i286_tabC0[8] = {
+	{OF_MODRM, 1, NULL, NULL, "rol :e,:1"},
+	{OF_MODRM, 1, NULL, NULL, "ror :e,:1"},
+	{OF_MODRM, 1, NULL, NULL, "rcl :e,:1"},
+	{OF_MODRM, 1, NULL, NULL, "rcr :e,:1"},
+	{OF_MODRM, 1, NULL, NULL, "sal :e,:1"},
+	{OF_MODRM, 1, NULL, NULL, "shr :e,:1"},
+	{OF_MODRM, 1, NULL, NULL, "/6 :e,:1"},
+	{OF_MODRM, 1, NULL, NULL, "sar :e,:1"}
+};
+
+opCode i286_tabC1[8] = {
+	{OF_MODRM | OF_WORD, 1, NULL, NULL, "rol :e,:1"},
+	{OF_MODRM | OF_WORD, 1, NULL, NULL, "ror :e,:1"},
+	{OF_MODRM | OF_WORD, 1, NULL, NULL, "rcl :e,:1"},
+	{OF_MODRM | OF_WORD, 1, NULL, NULL, "rcr :e,:1"},
+	{OF_MODRM | OF_WORD, 1, NULL, NULL, "sal :e,:1"},
+	{OF_MODRM | OF_WORD, 1, NULL, NULL, "shr :e,:1"},
+	{OF_MODRM | OF_WORD, 1, NULL, NULL, "/6 :e,:1"},
+	{OF_MODRM | OF_WORD, 1, NULL, NULL, "sar :e,:1"}
+};
+
+opCode i286_tabD0[8] = {
+	{OF_MODRM, 1, NULL, NULL, "rol :e"},
+	{OF_MODRM, 1, NULL, NULL, "ror :e"},
+	{OF_MODRM, 1, NULL, NULL, "rcl :e"},
+	{OF_MODRM, 1, NULL, NULL, "rcr :e"},
+	{OF_MODRM, 1, NULL, NULL, "sal :e"},
+	{OF_MODRM, 1, NULL, NULL, "shr :e"},
+	{OF_MODRM, 1, NULL, NULL, "/6 :e"},
+	{OF_MODRM, 1, NULL, NULL, "sar :e"}
+};
+
+opCode i286_tabD1[8] = {
+	{OF_MODRM | OF_WORD, 1, NULL, NULL, "rol :e"},
+	{OF_MODRM | OF_WORD, 1, NULL, NULL, "ror :e"},
+	{OF_MODRM | OF_WORD, 1, NULL, NULL, "rcl :e"},
+	{OF_MODRM | OF_WORD, 1, NULL, NULL, "rcr :e"},
+	{OF_MODRM | OF_WORD, 1, NULL, NULL, "sal :e"},
+	{OF_MODRM | OF_WORD, 1, NULL, NULL, "shr :e"},
+	{OF_MODRM | OF_WORD, 1, NULL, NULL, "/6 :e"},
+	{OF_MODRM | OF_WORD, 1, NULL, NULL, "sar :e"}
+};
+
+opCode i286_tabD2[8] = {
+	{OF_MODRM, 1, NULL, NULL, "rol :e,cl"},
+	{OF_MODRM, 1, NULL, NULL, "ror :e,cl"},
+	{OF_MODRM, 1, NULL, NULL, "rcl :e,cl"},
+	{OF_MODRM, 1, NULL, NULL, "rcr :e,cl"},
+	{OF_MODRM, 1, NULL, NULL, "sal :e,cl"},
+	{OF_MODRM, 1, NULL, NULL, "shr :e,cl"},
+	{OF_MODRM, 1, NULL, NULL, "/6 :e,cl"},
+	{OF_MODRM, 1, NULL, NULL, "sar :e,cl"}
+};
+
+opCode i286_tabD3[8] = {
+	{OF_MODRM | OF_WORD, 1, NULL, NULL, "rol :e,cl"},
+	{OF_MODRM | OF_WORD, 1, NULL, NULL, "ror :e,cl"},
+	{OF_MODRM | OF_WORD, 1, NULL, NULL, "rcl :e,cl"},
+	{OF_MODRM | OF_WORD, 1, NULL, NULL, "rcr :e,cl"},
+	{OF_MODRM | OF_WORD, 1, NULL, NULL, "sal :e,cl"},
+	{OF_MODRM | OF_WORD, 1, NULL, NULL, "shr :e,cl"},
+	{OF_MODRM | OF_WORD, 1, NULL, NULL, "/6 :e,cl"},
+	{OF_MODRM | OF_WORD, 1, NULL, NULL, "sar :e,cl"}
+};
+
+opCode i286_tabF6[8] = {
+	{OF_MODRM, 1, NULL, NULL, "test :e,:1"},
+	{OF_MODRM, 1, NULL, NULL, "test :e,:1"},
+	{OF_MODRM, 1, NULL, NULL, "not :e"},
+	{OF_MODRM, 1, NULL, NULL, "neg :e"},
+	{OF_MODRM, 1, NULL, NULL, "mul :e"},
+	{OF_MODRM, 1, NULL, NULL, "imul :e"},
+	{OF_MODRM, 1, NULL, NULL, "div :e"},
+	{OF_MODRM, 1, NULL, NULL, "idiv :e"}
+};
+
+opCode i286_tabF7[8] = {
+	{OF_MODRM | OF_WORD, 1, NULL, NULL, "test :e,:2"},
+	{OF_MODRM | OF_WORD, 1, NULL, NULL, "test :e,:2"},
+	{OF_MODRM | OF_WORD, 1, NULL, NULL, "not :e"},
+	{OF_MODRM | OF_WORD, 1, NULL, NULL, "neg :e"},
+	{OF_MODRM | OF_WORD, 1, NULL, NULL, "mul :e"},
+	{OF_MODRM | OF_WORD, 1, NULL, NULL, "imul :e"},
+	{OF_MODRM | OF_WORD, 1, NULL, NULL, "div :e"},
+	{OF_MODRM | OF_WORD, 1, NULL, NULL, "idiv :e"}
+};
+
+opCode i286_tabFE[8] = {
+	{OF_MODRM, 1, NULL, NULL, "inc :e"},
+	{OF_MODRM, 1, NULL, NULL, "dec :e"},
+	{OF_MODRM, 1, NULL, NULL, "call :e"},
+	{OF_MODRM, 1, NULL, NULL, "callf :e"},
+	{OF_MODRM, 1, NULL, NULL, "jmp :e"},
+	{OF_MODRM, 1, NULL, NULL, "jmpf :e"},
+	{OF_MODRM, 1, NULL, NULL, "push :e"},
+	{OF_MODRM, 1, NULL, NULL, "/7 :e"},
+};
+
+opCode i286_tabFF[8] = {
+	{OF_MODRM | OF_WORD, 1, NULL, NULL, "incw :e"},
+	{OF_MODRM | OF_WORD, 1, NULL, NULL, "decw :e"},
+	{OF_MODRM | OF_WORD, 1, NULL, NULL, "call :e"},
+	{OF_MODRM | OF_WORD, 1, NULL, NULL, "callf :e"},
+	{OF_MODRM | OF_WORD, 1, NULL, NULL, "jmp :e"},
+	{OF_MODRM | OF_WORD, 1, NULL, NULL, "jmpf :e"},
+	{OF_MODRM | OF_WORD, 1, NULL, NULL, "push :e"},
+	{OF_MODRM | OF_WORD, 1, NULL, NULL, "/7 :e"},
+};
+
+// cpu generation opcodes
+// tab[i] - opCode for generation i (0,1,2)
+
+opCode x86_tab0F[3] = {
+	{0, 1, i8086_nodef, NULL, "nodef"},
+	{0, 1, i8086_nodef, NULL, "nodef"},
+	{OF_PREFIX, 1, i286_op0F, NULL, "prefix 0F"}
+};
+
+opCode x86_tab60[3] = {
+	{0, 1, i8086_nodef, NULL, "nodef"},
+	{0, 1, i286_op60, 0, "pusha"},
+	{0, 1, i286_op60, 0, "pusha"}
+};
+
+opCode x86_tab61[3] = {
+	{0, 1, i8086_nodef, NULL, "nodef"},
+	{0, 1, i286_op61, 0, "popa"},
+	{0, 1, i286_op61, 0, "popa"}
+};
+
+opCode x86_tab62[3] = {
+	{0, 1, i8086_nodef, NULL, "nodef"},
+	{OF_MODRM | OF_WORD, 1, i286_op62, 0, "bound :r,:e"},
+	{OF_MODRM | OF_WORD, 1, i286_op62, 0, "bound :r,:e"}
+};
+
+opCode x86_tab63[3] = {
+	{0, 1, i8086_nodef, NULL, "nodef"},
+	{0, 1, i8086_nodef, NULL, "nodef"},
+	{OF_MODRM | OF_WORD, 1, i286_op63, 0, "arpl :e,:r"},	// 2+
+};
+
+opCode x86_tab68[3] = {
+	{0, 1, i8086_nodef, NULL, "nodef"},
+	{0, 1, i286_op68, NULL, "push :2"},
+	{0, 1, i286_op68, NULL, "push :2"}
+};
+
+opCode x86_tab69[3] = {
+	{0, 1, i8086_nodef, NULL, "nodef"},
+	{OF_MODRM | OF_WORD, 1, i286_op69, NULL, "imul :r,:e,:2"},
+	{OF_MODRM | OF_WORD, 1, i286_op69, NULL, "imul :r,:e,:2"}
+};
+
+opCode x86_tab6A[3] = {
+	{0, 1, i8086_nodef, NULL, "nodef"},
+	{0, 1, i286_op6A, 0, "push :1"},
+	{0, 1, i286_op6A, 0, "push :1"}
+};
+
+opCode x86_tab6B[3] = {
+	{0, 1, i8086_nodef, NULL, "nodef"},
+	{OF_MODRM | OF_WORD, 1, i286_op6B, 0, "imul :r,:e,:1"},
+	{OF_MODRM | OF_WORD, 1, i286_op6B, 0, "imul :r,:e,:1"}
+};
+
+opCode x86_tab6C[3] = {
+	{0, 1, i8086_nodef, NULL, "nodef"},
+	{OF_SKIPABLE, 1, i286_op6C, 0, ":Linsb [es::di]"},
+	{OF_SKIPABLE, 1, i286_op6C, 0, ":Linsb [es::di]"}
+};
+
+opCode x86_tab6D[3] = {
+	{0, 1, i8086_nodef, NULL, "nodef"},
+	{OF_SKIPABLE, 1, i286_op6D, 0, ":Linsw [es::di]"},
+	{OF_SKIPABLE, 1, i286_op6D, 0, ":Linsw [es::di]"}
+};
+
+opCode x86_tab6E[3] = {
+	{0, 1, i8086_nodef, NULL, "nodef"},
+	{OF_SKIPABLE, 1, i286_op6E, 0, ":Loutsb [:D::si]"},
+	{OF_SKIPABLE, 1, i286_op6E, 0, ":Loutsb [:D::si]"}
+};
+
+opCode x86_tab6F[3] = {
+	{0, 1, i8086_nodef, NULL, "nodef"},
+	{OF_SKIPABLE, 1, i286_op6F, 0, ":Loutsw [:D::si]"},
+	{OF_SKIPABLE, 1, i286_op6F, 0, ":Loutsw [:D::si]"}
+};
+
+opCode x86_tabC0[3] = {
+	{0, 1, i8086_nodef, NULL, "nodef"},
+	{OF_MODCOM, 1, i286_opC0, i286_tabC0, ":R :e,:1"},
+	{OF_MODCOM, 1, i286_opC0, i286_tabC0, ":R :e,:1"}
+};
+
+opCode x86_tabC1[3] = {
+	{0, 1, i8086_nodef, NULL, "nodef"},
+	{OF_MODCOM | OF_WORD, 1, i286_opC1, i286_tabC1, ":R :e,:1"},
+	{OF_MODCOM | OF_WORD, 1, i286_opC1, i286_tabC1, ":R :e,:1"}
+};
+
+opCode x86_tabC6[3] = {
+	{0, 1, i8086_nodef, NULL, "nodef"},
+	{OF_MODRM, 1, i286_opC6, 0, "mov :e,:1"},
+	{OF_MODRM, 1, i286_opC6, 0, "mov :e,:1"}
+};
+
+opCode x86_tabC7[3] = {
+	{0, 1, i8086_nodef, NULL, "nodef"},
+	{OF_MODRM | OF_WORD, 1, i286_opC7, 0, "mov :e,:2"},
+	{OF_MODRM | OF_WORD, 1, i286_opC7, 0, "mov :e,:2"}
+};
+
+opCode x86_tabC8[3] = {
+	{0, 1, i8086_nodef, NULL, "nodef"},
+	{0, 1, i286_opC8, 0, "enter :2,:1"},
+	{0, 1, i286_opC8, 0, "enter :2,:1"}
+};
+
+opCode x86_tabC9[3] = {
+	{0, 1, i8086_nodef, NULL, "nodef"},
+	{0, 1, i286_opC9, 0, "leave"},
+	{0, 1, i286_opC9, 0, "leave"}
+};
+
+// general tab
+
 opCode i80286_tab[256] = {
-	{0, 1, i286_op00, 0, "add :e,:r"},
-	{OF_WORD, 1, i286_op01, 0, "add :e,:r"},
-	{0, 1, i286_op02, 0, "add :r,:e"},
-	{OF_WORD, 1, i286_op03, 0, "add :r,:e"},
+	{OF_MODRM, 1, i286_op00, 0, "add :e,:r"},
+	{OF_MODRM | OF_WORD, 1, i286_op01, 0, "add :e,:r"},
+	{OF_MODRM, 1, i286_op02, 0, "add :r,:e"},
+	{OF_MODRM | OF_WORD, 1, i286_op03, 0, "add :r,:e"},
 	{0, 1, i286_op04, 0, "add al,:1"},
 	{0, 1, i286_op05, 0, "add ax,:2"},
 	{0, 1, i286_op06, 0, "push es"},
 	{0, 1, i286_op07, 0, "pop es"},
-	{0, 1, i286_op08, 0, "or :e,:r"},
-	{OF_WORD, 1, i286_op09, 0, "or :e,:r"},
-	{0, 1, i286_op0A, 0, "or :r,:e"},
-	{OF_WORD, 1, i286_op0B, 0, "or :r,:e"},
+	{OF_MODRM, 1, i286_op08, 0, "or :e,:r"},
+	{OF_MODRM | OF_WORD, 1, i286_op09, 0, "or :e,:r"},
+	{OF_MODRM, 1, i286_op0A, 0, "or :r,:e"},
+	{OF_MODRM | OF_WORD, 1, i286_op0B, 0, "or :r,:e"},
 	{0, 1, i286_op0C, 0, "or al,:1"},
 	{0, 1, i286_op0D, 0, "or ax,:2"},
 	{0, 1, i286_op0E, 0, "push cs"},
-	{OF_PREFIX, 1, i286_op0F, 0, "prefix 0F"},
-	{0, 1, i286_op10, 0, "adc :e,:r"},
-	{OF_WORD, 1, i286_op11, 0, "adc :e,:r"},
-	{0, 1, i286_op12, 0, "adc :r,:e"},
-	{OF_WORD, 1, i286_op13, 0, "adc :r,:e"},
+	{OF_PREFIX | OF_GEN, 1, i286_op0F, x86_tab0F, "prefix 0F"},		// 0,1:nodef	2+:prefix F
+	{OF_MODRM, 1, i286_op10, 0, "adc :e,:r"},
+	{OF_MODRM | OF_WORD, 1, i286_op11, 0, "adc :e,:r"},
+	{OF_MODRM, 1, i286_op12, 0, "adc :r,:e"},
+	{OF_MODRM | OF_WORD, 1, i286_op13, 0, "adc :r,:e"},
 	{0, 1, i286_op14, 0, "adc al,:1"},
 	{0, 1, i286_op15, 0, "adc ax,:2"},
 	{0, 1, i286_op16, 0, "push ss"},
 	{0, 1, i286_op17, 0, "pop ss"},
-	{0, 1, i286_op18, 0, "sbb :e,:r"},
-	{OF_WORD, 1, i286_op19, 0, "sbb :e,:r"},
-	{0, 1, i286_op1A, 0, "sbb :r,:e"},
-	{OF_WORD, 1, i286_op1B, 0, "sbb :r,:e"},
+	{OF_MODRM, 1, i286_op18, 0, "sbb :e,:r"},
+	{OF_MODRM | OF_WORD, 1, i286_op19, 0, "sbb :e,:r"},
+	{OF_MODRM, 1, i286_op1A, 0, "sbb :r,:e"},
+	{OF_MODRM | OF_WORD, 1, i286_op1B, 0, "sbb :r,:e"},
 	{0, 1, i286_op1C, 0, "sbb al,:1"},
 	{0, 1, i286_op1D, 0, "sbb ax,:2"},
 	{0, 1, i286_op1E, 0, "push ds"},
 	{0, 1, i286_op1F, 0, "pop ds"},
-	{0, 1, i286_op20, 0, "and :e,:r"},
-	{OF_WORD, 1, i286_op21, 0, "and :e,:r"},
-	{0, 1, i286_op22, 0, "and :r,:e"},
-	{OF_WORD, 1, i286_op23, 0, "and :r,:e"},
+	{OF_MODRM, 1, i286_op20, 0, "and :e,:r"},
+	{OF_MODRM | OF_WORD, 1, i286_op21, 0, "and :e,:r"},
+	{OF_MODRM, 1, i286_op22, 0, "and :r,:e"},
+	{OF_MODRM | OF_WORD, 1, i286_op23, 0, "and :r,:e"},
 	{0, 1, i286_op24, 0, "and al,:1"},
 	{0, 1, i286_op25, 0, "and ax,:2"},
 	{OF_PREFIX, 1, i286_op26, 0, "segment ES"},
 	{0, 1, i286_op27, 0, "daa"},
-	{0, 1, i286_op28, 0, "sub :e,:r"},
-	{OF_WORD, 1, i286_op29, 0, "sub :e,:r"},
-	{0, 1, i286_op2A, 0, "sub :r,:e"},
-	{OF_WORD, 1, i286_op2B, 0, "sub :r,:e"},
+	{OF_MODRM, 1, i286_op28, 0, "sub :e,:r"},
+	{OF_MODRM | OF_WORD, 1, i286_op29, 0, "sub :e,:r"},
+	{OF_MODRM, 1, i286_op2A, 0, "sub :r,:e"},
+	{OF_MODRM | OF_WORD, 1, i286_op2B, 0, "sub :r,:e"},
 	{0, 1, i286_op2C, 0, "sub al,:1"},
 	{0, 1, i286_op2D, 0, "sub ax,:2"},
 	{OF_PREFIX, 1, i286_op2E, 0, "segment CS"},
 	{0, 1, i286_op2F, 0, "das"},
-	{0, 1, i286_op30, 0, "xor :e,:r"},
-	{OF_WORD, 1, i286_op31, 0, "xor :e,:r"},
-	{0, 1, i286_op32, 0, "xor :r,:e"},
-	{OF_WORD, 1, i286_op33, 0, "xor :r,:e"},
+	{OF_MODRM, 1, i286_op30, 0, "xor :e,:r"},
+	{OF_MODRM | OF_WORD, 1, i286_op31, 0, "xor :e,:r"},
+	{OF_MODRM, 1, i286_op32, 0, "xor :r,:e"},
+	{OF_MODRM | OF_WORD, 1, i286_op33, 0, "xor :r,:e"},
 	{0, 1, i286_op34, 0, "xor al,:1"},
 	{0, 1, i286_op35, 0, "xor ax,:2"},
 	{OF_PREFIX, 1, i286_op36, 0, "segment SS"},
 	{0, 1, i286_op37, 0, "aaa"},
-	{0, 1, i286_op38, 0, "cmp :e,:r"},
-	{OF_WORD, 1, i286_op39, 0, "cmp :e,:r"},
-	{0, 1, i286_op3A, 0, "cmp :r,:e"},
-	{OF_WORD, 1, i286_op3B, 0, "cmp :r,:e"},
+	{OF_MODRM, 1, i286_op38, 0, "cmp :e,:r"},
+	{OF_MODRM | OF_WORD, 1, i286_op39, 0, "cmp :e,:r"},
+	{OF_MODRM, 1, i286_op3A, 0, "cmp :r,:e"},
+	{OF_MODRM | OF_WORD, 1, i286_op3B, 0, "cmp :r,:e"},
 	{0, 1, i286_op3C, 0, "cmp al,:1"},
 	{0, 1, i286_op3D, 0, "cmp ax,:2"},
 	{OF_PREFIX, 1, i286_op3E, 0, "segment DS"},
@@ -3173,22 +3165,22 @@ opCode i80286_tab[256] = {
 	{0, 1, i286_op5D, 0, "pop bp"},
 	{0, 1, i286_op5E, 0, "pop si"},
 	{0, 1, i286_op5F, 0, "pop di"},
-	{0, 1, i286_op60, 0, "pusha"},
-	{0, 1, i286_op61, 0, "popa"},
-	{OF_WORD, 1, i286_op62, 0, "bound :r,:e"},
-	{OF_WORD, 1, i286_op63, 0, "arpl :e,:r"},
-	{OF_PREFIX, 1, i286_op64, 0, "repnc"},		// repeat following cmps/scas cx times or until cf=1
-	{OF_PREFIX, 1, i286_op65, 0, "repc"},		// repeat following cmps/scas cx times or until cf=0
-	{OF_PREFIX, 1, i286_op66, 0, ""},
-	{OF_PREFIX, 1, i286_op67, 0, ""},
-	{0, 1, i286_op68, 0, "push :2"},
-	{OF_WORD, 1, i286_op69, 0, "imul :r,:e,:2"},
-	{0, 1, i286_op6A, 0, "push :1"},
-	{OF_WORD, 1, i286_op6B, 0, "imul :r,:e,:1"},
-	{OF_SKIPABLE, 1, i286_op6C, 0, ":Linsb [es::di]"},
-	{OF_SKIPABLE, 1, i286_op6D, 0, ":Linsw [es::di]"},
-	{OF_SKIPABLE, 1, i286_op6E, 0, ":Loutsb [:D::si]"},
-	{OF_SKIPABLE, 1, i286_op6F, 0, ":Loutsw [:D::si]"},
+	{OF_GEN, 1, i286_op60, x86_tab60, "pusha"},			// 1+
+	{OF_GEN, 1, i286_op61, x86_tab61, "popa"},			// 1+
+	{OF_MODRM | OF_WORD | OF_GEN, 1, i286_op62, x86_tab62, "bound :r,:e"},	// 1+
+	{OF_MODRM | OF_WORD | OF_GEN, 1, i286_op63, x86_tab63, "arpl :e,:r"},	// 2+
+	{OF_PREFIX, 1, i8086_nodef, 0, ""},		// 3+ FS prefix
+	{OF_PREFIX, 1, i8086_nodef, 0, ""},		// 3+ GS prefix
+	{OF_PREFIX, 1, i8086_nodef, 0, ""},		// 3+ op.size override
+	{OF_PREFIX, 1, i8086_nodef, 0, ""},		// 4+ adr.size override
+	{OF_GEN, 1, i286_op68, x86_tab68, "push :2"},			// 1+
+	{OF_MODRM | OF_WORD | OF_GEN, 1, i286_op69, x86_tab69, "imul :r,:e,:2"},	// 1+
+	{OF_GEN, 1, i286_op6A, x86_tab6A, "push :1"},			// 1+
+	{OF_MODRM | OF_WORD | OF_GEN, 1, i286_op6B, x86_tab6B, "imul :r,:e,:1"},	// 1+
+	{OF_SKIPABLE | OF_GEN, 1, i286_op6C, x86_tab6C, ":Linsb [es::di]"},	// 1+
+	{OF_SKIPABLE | OF_GEN, 1, i286_op6D, x86_tab6D, ":Linsw [es::di]"},	// 1+
+	{OF_SKIPABLE | OF_GEN, 1, i286_op6E, x86_tab6E, ":Loutsb [:D::si]"},	// 1+
+	{OF_SKIPABLE | OF_GEN, 1, i286_op6F, x86_tab6F, ":Loutsw [:D::si]"},	// 1+
 	{0, 1, i286_op70, 0, "jo :3"},
 	{0, 1, i286_op71, 0, "jno :3"},
 	{0, 1, i286_op72, 0, "jc :3"},		// jb, jnae
@@ -3205,23 +3197,23 @@ opCode i80286_tab[256] = {
 	{0, 1, i286_op7D, 0, "jnl :3"},
 	{0, 1, i286_op7E, 0, "jle :3"},		// jng
 	{0, 1, i286_op7F, 0, "jnle :3"},	// jg
-	{0, 1, i286_op80, 0, ":A :e,:1"},	// :A = mod:N (add,or,adc,sbb,and,sub,xor,cmp)
-	{OF_WORD, 1, i286_op81, 0, ":A :e,:2"},
-	{0, 1, i286_op82, 0, ":A :e,:1"},
-	{OF_WORD, 1, i286_op83, 0, ":A :e,:1"},
-	{0, 1, i286_op84, 0, "test :e,:r"},
-	{OF_WORD, 1, i286_op85, 0, "test :e,:r"},
-	{0, 1, i286_op86, 0, "xchg :e,:r"},
-	{OF_WORD, 1, i286_op87, 0, "xchg :e,:r"},
-	{0, 1, i286_op88, 0, "mov :e,:r"},
-	{OF_WORD, 1, i286_op89, 0, "mov :e,:r"},
-	{0, 1, i286_op8A, 0, "mov :r,:e"},
-	{OF_WORD, 1, i286_op8B, 0, "mov :r,:e"},
-	{OF_WORD, 1, i286_op8C, 0, "mov :e,:s"},	// :s segment register from mod:N
-	{OF_WORD, 1, i286_op8D, 0, "lea :r,:e"},
-	{OF_WORD, 1, i286_op8E, 0, "mov :s,:e"},
-	{OF_WORD, 1, i286_op8F, 0, "push :e"},
-	{0, 1, i286_op90, 0, "nop"},
+	{OF_MODRM, 1, i286_op80, 0, ":A :e,:1"},	// :A = mod:N (add,or,adc,sbb,and,sub,xor,cmp)
+	{OF_MODRM | OF_WORD, 1, i286_op81, 0, ":A :e,:2"},
+	{OF_MODRM, 1, i286_op82, 0, ":A :e,:1"},
+	{OF_MODRM | OF_WORD, 1, i286_op83, 0, ":A :e,:1"},
+	{OF_MODRM, 1, i286_op84, 0, "test :e,:r"},
+	{OF_MODRM | OF_WORD, 1, i286_op85, 0, "test :e,:r"},
+	{OF_MODRM, 1, i286_op86, 0, "xchg :e,:r"},
+	{OF_MODRM | OF_WORD, 1, i286_op87, 0, "xchg :e,:r"},
+	{OF_MODRM, 1, i286_op88, 0, "mov :e,:r"},
+	{OF_MODRM | OF_WORD, 1, i286_op89, 0, "mov :e,:r"},
+	{OF_MODRM, 1, i286_op8A, 0, "mov :r,:e"},
+	{OF_MODRM | OF_WORD, 1, i286_op8B, 0, "mov :r,:e"},
+	{OF_MODRM | OF_WORD, 1, i286_op8C, 0, "mov :e,:s"},	// :s segment register from mod:N
+	{OF_MODRM | OF_WORD, 1, i286_op8D, 0, "lea :r,:e"},
+	{OF_MODRM | OF_WORD, 1, i286_op8E, 0, "mov :s,:e"},
+	{OF_MODRM | OF_WORD, 1, i286_op8F, 0, "pop :e"},	// !!! /0 push, /1../7 nodef
+	{0, 1, i286_op90, 0, "xchg ax,ax"},
 	{0, 1, i286_op91, 0, "xchg ax,cx"},
 	{0, 1, i286_op92, 0, "xchg ax,dx"},
 	{0, 1, i286_op93, 0, "xchg ax,bx"},
@@ -3269,38 +3261,38 @@ opCode i80286_tab[256] = {
 	{0, 1, i286_opBD, 0, "mov bp,:2"},
 	{0, 1, i286_opBE, 0, "mov si,:2"},
 	{0, 1, i286_opBF, 0, "mov di,:2"},
-	{0, 1, i286_opC0, 0, ":R :e,:1"},	// :R rotate group (rol,ror,rcl,rcr,sal,shr,*rot6,sar)
-	{OF_WORD, 1, i286_opC1, 0, ":R :e,:1"},
+	{OF_MODRM | OF_GEN, 1, i286_opC0, x86_tabC0, ":R :e,:1"},		// 1+ :R rotate group (rol,ror,rcl,rcr,sal,shr,*rot6,sar)
+	{OF_MODRM | OF_WORD | OF_GEN, 1, i286_opC1, x86_tabC1, ":R :e,:1"},	// 1+
 	{0, 1, i286_opC2, 0, "ret :2"},
 	{0, 1, i286_opC3, 0, "ret"},
-	{OF_WORD, 1, i286_opC4, 0, "les :r,:e"},
-	{OF_WORD, 1, i286_opC5, 0, "lds :r,:e"},
-	{0, 1, i286_opC6, 0, "mov :e,:1"},
-	{OF_WORD, 1, i286_opC7, 0, "mov :e,:2"},
-	{0, 1, i286_opC8, 0, "enter :2,:1"},
-	{0, 1, i286_opC9, 0, "leave"},
+	{OF_MODRM | OF_WORD, 1, i286_opC4, 0, "les :r,:e"},
+	{OF_MODRM | OF_WORD, 1, i286_opC5, 0, "lds :r,:e"},
+	{OF_MODRM | OF_GEN, 1, i286_opC6, x86_tabC6, "mov :e,:1"},			// 1+ /0 mov, /1../7 undef !!!
+	{OF_MODRM | OF_WORD |  OF_GEN, 1, i286_opC7, x86_tabC7, "mov :e,:2"},		// 1+ /0 mov, /1../7 undef
+	{OF_GEN, 1, i286_opC8, x86_tabC8, "enter :2,:1"},				// 1+
+	{OF_GEN, 1, i286_opC9, x86_tabC9, "leave"},					// 1+
 	{0, 1, i286_opCA, 0, "retf :2"},
 	{0, 1, i286_opCB, 0, "retf"},
 	{OF_SKIPABLE, 1, i286_opCC, 0, "int 3"},
 	{OF_SKIPABLE, 1, i286_opCD, 0, "int :1"},
 	{OF_SKIPABLE, 1, i286_opCE, 0, "into"},
 	{0, 1, i286_opCF, 0, "iret"},
-	{0, 1, i286_opD0, 0, ":R :e,1"},
-	{OF_WORD, 1, i286_opD1, 0, ":R :e,1"},
-	{0, 1, i286_opD2, 0, ":R :e,cl"},
-	{OF_WORD, 1, i286_opD3, 0, ":R :e,cl"},
+	{OF_MODCOM, 1, i286_opD0, i286_tabD0, ":R :e,1"},
+	{OF_MODCOM | OF_WORD, 1, i286_opD1, i286_tabD1, ":R :e,1"},
+	{OF_MODCOM, 1, i286_opD2, i286_tabD2, ":R :e,cl"},
+	{OF_MODCOM | OF_WORD, 1, i286_opD3, i286_tabD3, ":R :e,cl"},
 	{0, 1, i286_opD4, 0, "aam :1"},
 	{0, 1, i286_opD5, 0, "aad :1"},
-	{0, 1, i286_opD6, 0, "? salc"},
+	{0, 1, i8086_nodef, 0, "? salc"},
 	{0, 1, i286_opD7, 0, "xlatb al,[:D::bx+al]"},
-	{0, 1, i286_fpu, 0, "* x87 :z"},
-	{0, 1, i286_fpu, 0, "* x87 :z"},
-	{0, 1, i286_fpu, 0, "* x87 :z"},
-	{0, 1, i286_fpu, 0, "* x87 :z"},
-	{0, 1, i286_fpu, 0, "* x87 :z"},
-	{0, 1, i286_fpu, 0, "* x87 :z"},
-	{0, 1, i286_fpu, 0, "* x87 :z"},
-	{0, 1, i286_fpu, 0, "* x87 :z"},
+	{OF_MODRM, 1, i286_fpu, 0, "* x87 :z"},				// ESC external x87
+	{OF_MODRM, 1, i286_fpu, 0, "* x87 :z"},
+	{OF_MODRM, 1, i286_fpu, 0, "* x87 :z"},
+	{OF_MODRM, 1, i286_fpu, 0, "* x87 :z"},
+	{OF_MODRM, 1, i286_fpu, 0, "* x87 :z"},
+	{OF_MODRM, 1, i286_fpu, 0, "* x87 :z"},
+	{OF_MODRM, 1, i286_fpu, 0, "* x87 :z"},
+	{OF_MODRM, 1, i286_fpu, 0, "* x87 :z"},
 	{0, 1, i286_opE0, 0, "loopnz :3"},
 	{0, 1, i286_opE1, 0, "loopz :3"},
 	{0, 1, i286_opE2, 0, "loop :3"},
@@ -3323,14 +3315,14 @@ opCode i80286_tab[256] = {
 	{OF_PREFIX, 1, i286_opF3, 0, "repz/rep"},
 	{0, 1, i286_opF4, 0, "hlt"},
 	{0, 1, i286_opF5, 0, "cmc"},
-	{0, 1, i286_opF6, 0, ":X :e"},		// test,test,not,neg,mul,imul,div,idiv
-	{OF_WORD, 1, i286_opF7, 0, ":Y :e"},
+	{OF_MODCOM, 1, i286_opF6, i286_tabF6, ":X :e"},		// test,test,not,neg,mul,imul,div,idiv
+	{OF_MODCOM | OF_WORD, 1, i286_opF7, i286_tabF7, ":Y :e"},
 	{0, 1, i286_opF8, 0, "clc"},
 	{0, 1, i286_opF9, 0, "stc"},
 	{0, 1, i286_opFA, 0, "cli"},
 	{0, 1, i286_opFB, 0, "sti"},
 	{0, 1, i286_opFC, 0, "cld"},
 	{0, 1, i286_opFD, 0, "std"},
-	{0, 1, i286_opFE, 0, ":E :e"},		// inc,dec,...
-	{OF_WORD|OF_SKIPABLE, 1, i286_opFF, 0, ":F :e"},	// incw,decw,not,neg,call,callf,jmp,jmpf,push,???
+	{OF_MODCOM, 1, i286_opFE, i286_tabFE, ":E :e"},		// inc,dec,...
+	{OF_MODCOM | OF_WORD | OF_SKIPABLE, 1, i286_opFF, i286_tabFF, ":F :e"},	// incw,decw,not,neg,call,callf,jmp,jmpf,push,???
 };

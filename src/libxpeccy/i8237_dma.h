@@ -25,6 +25,7 @@
 
 typedef int(*cbdmadrd)(void*, int*);
 typedef void(*cbdmadwr)(int, void*, int*);
+typedef void(*cbdmatc)(void*);
 
 typedef int(*cbdmamrd)(int, int, void*);
 typedef void(*cbdmamwr)(int, int, int, void*);
@@ -45,6 +46,7 @@ typedef struct {
 	int buf;
 	cbdmadrd rd;	// device
 	cbdmadwr wr;
+	cbdmatc tc;	// terminal count
 	cbdmamrd mrd;	// memory
 	cbdmamwr mwr;
 } DMAChan;
@@ -62,7 +64,7 @@ typedef struct {
 i8237DMA* dma_create(void*, int);
 void dma_destroy(i8237DMA*);
 void dma_reset(i8237DMA*);
-void dma_set_chan(i8237DMA*, int, cbdmadrd, cbdmadwr);
+void dma_set_chan(i8237DMA*, int, cbdmadrd, cbdmadwr, cbdmatc);
 void dma_set_cb(i8237DMA*, cbdmamrd, cbdmamwr);
 
 // TODO: send data 'd' from device to dma chan 'ch' (channel doesn't check device data every tick)

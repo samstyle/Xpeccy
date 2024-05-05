@@ -644,10 +644,10 @@ xDumpWidget::xDumpWidget(QString i, QString t, QWidget* p):xDockWidget(i,t,p) {
 
 	ui.cbDumpView->setCurrentIndex(0);
 
-	cellMenu = new QMenu;
-	cellMenu->addAction(ui.actFetch);
-	cellMenu->addAction(ui.actRead);
-	cellMenu->addAction(ui.actWrite);
+//	cellMenu = new QMenu;
+//	cellMenu->addAction(ui.actFetch);
+//	cellMenu->addAction(ui.actRead);
+//	cellMenu->addAction(ui.actWrite);
 
 	connect(this, &QDockWidget::visibilityChanged, this, &xDumpWidget::draw);
 }
@@ -673,12 +673,21 @@ void xDumpWidget::customMenu() {
 
 void xDumpWidget::customMenuAction(QAction* act) {
 	int bt = 0;
+	xAdr xadr;
+	Memory* mem = conf.prof.cur->zx->mem;
 	int adr = ui.dumpTable->getCurrentAdr();
 	if (ui.actFetch->isChecked()) bt |= MEM_BRK_FETCH;
 	if (ui.actRead->isChecked()) bt |= MEM_BRK_RD;
 	if (ui.actWrite->isChecked()) bt |= MEM_BRK_WR;
 	switch (getRFIData(ui.cbDumpView)) {
-		case XVIEW_CPU: emit s_brkrq(BRK_CPUADR, bt, adr); break;
+		case XVIEW_CPU:
+			xadr = mem_get_xadr(mem, adr);
+			switch(xadr.type) {
+				case MEM_RAM: emit s_brkrq(BRK_MEMRAM, bt, xadr.abs); break;
+				case MEM_ROM: emit s_brkrq(BRK_MEMROM, bt, xadr.abs); break;
+				case MEM_EXT: emit s_brkrq(BRK_MEMEXT, bt, xadr.abs); break;
+			}
+			break;
 		case XVIEW_ROM: emit s_brkrq(BRK_MEMROM, bt, adr); break;
 		case XVIEW_RAM: emit s_brkrq(BRK_MEMRAM, bt, adr); break;
 	}

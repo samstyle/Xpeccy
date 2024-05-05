@@ -77,7 +77,7 @@ bool xApp::event(QEvent* ev) {
 }
 
 int main(int ac,char** av) {
-
+	tClock = clock();
 // NOTE:SDL_INIT_VIDEO must be here for SDL_Joystick event processing. Joystick doesn't works without video init
 	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK | SDL_INIT_TIMER);
 	atexit(SDL_Quit);
@@ -189,7 +189,7 @@ int main(int ac,char** av) {
 #endif
 	while (i < ac) {
 		parg = av[i++];
-		if ((strcmp(parg,"-d") == 0) || (strcmp(parg,"--debug") == 0)) {
+		if (!strcmp(parg,"-d") || !strcmp(parg,"--debug")) {
 			dbg = 1;
 		} else if (!strcmp(parg,"-h") || !strcmp(parg,"--help")) {
 			help();

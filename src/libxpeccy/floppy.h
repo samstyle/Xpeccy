@@ -31,6 +31,8 @@ typedef struct {
 	unsigned short pos;	// position in track
 } xSecPos;
 
+typedef void(*cbflpirq)(int, void*);
+
 typedef struct {
 	unsigned trk80:1;	// fdd is 80T
 	unsigned doubleSide:1;	// fdd is DS
@@ -46,6 +48,9 @@ typedef struct {
 	unsigned rd:1;
 	unsigned wr:1;
 
+	cbflpirq xirq;		// send signal to fdc
+	void* xptr;
+
 	int id;
 	unsigned char trk;
 	unsigned char field;
@@ -59,7 +64,7 @@ typedef struct {
 	} data[256];
 } Floppy;
 
-Floppy* flpCreate(int);
+Floppy* flpCreate(int, cbflpirq, void*);
 void flpDestroy(Floppy*);
 
 void flp_set_path(Floppy*, const char*);

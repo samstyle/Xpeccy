@@ -21,6 +21,10 @@ void xDiskDump::update() {
 	setDrive(drv);
 }
 
+void xDiskDump::toTarget() {
+	scrollTo(mod->index(conf.prof.cur->zx->dif->fdc->flp->pos >> 3, 0));
+}
+
 // model
 
 xDiskDumpModel::xDiskDumpModel(QObject* p):xTableModel(p) {
@@ -141,7 +145,16 @@ xDiskDumpWidget::xDiskDumpWidget(QString i, QString t, QWidget* p):xDockWidget(i
 	ui.tabDiskDump->horizontalHeader()->setStretchLastSection(true);
 	connect(ui.cbDrive, SIGNAL(currentIndexChanged(int)), ui.tabDiskDump, SLOT(setDrive(int)));
 	connect(ui.sbTrack, SIGNAL(valueChanged(int)), ui.tabDiskDump, SLOT(setTrack(int)));
+	connect(ui.tbTarget, SIGNAL(released()),this,SLOT(toTarget()));
 	hwList << HWG_ZX << HWG_PC;
+}
+
+void xDiskDumpWidget::toTarget() {
+	FDC* fdc = conf.prof.cur->zx->dif->fdc;
+	Floppy* flp = fdc->flp;
+	ui.cbDrive->setCurrentIndex(flp->id);
+	ui.sbTrack->setValue((flp->trk << 1) | !!fdc->side);
+	ui.tabDiskDump->toTarget();
 }
 
 void xDiskDumpWidget::draw() {

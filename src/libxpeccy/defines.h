@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <time.h>
 
 // compilation flags
 #define USE_HOST_KEYBOARD	1
@@ -69,6 +70,10 @@ enum {
 #endif
 
 typedef PAIR(w,h,l) xpair;
+
+// time
+extern clock_t tClock;
+#define EXECTIME (clock() - tClock)
 
 // memory size
 #define MEM_256	(1<<8)

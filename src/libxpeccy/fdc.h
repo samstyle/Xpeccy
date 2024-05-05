@@ -60,6 +60,7 @@ struct FDC {
 	unsigned idle:1;
 	unsigned crchi:1;
 	unsigned hd:1;		// HD mode (trklen 12500, bytedelay 16000)
+	unsigned debug:1;
 
 	unsigned char trk;	// registers
 	unsigned char sec;
@@ -91,7 +92,7 @@ struct FDC {
 
 	unsigned dma:1;		// not implemented yet
 	unsigned intr:1;	// uPD765 interrupt pending. reset @ com08
-	unsigned inten:1;	// uPD765 interrupt enabled
+//	unsigned inten:1;	// uPD765 interrupt enabled
 	int hlt;		// head load time (all ns)
 	int hut;		// head unload time
 	int srt;		// step rate time
@@ -112,7 +113,8 @@ void fdc_set_hd(FDC*, int);
 typedef struct DiskHW DiskHW;
 
 struct DiskIF {
-	unsigned lirq:1;	// last int
+	unsigned flpch:1;	// flp changed (ibm)
+	unsigned inten:1;	// uPD765 interrupt enabled
 	int type;
 	DiskHW* hw;
 	FDC* fdc;
@@ -127,6 +129,7 @@ void difDestroy(DiskIF*);
 
 void difReset(DiskIF*);
 void difSync(DiskIF*, int);
+void difTerminal(DiskIF*);
 int difOut(DiskIF*, int, int, int);
 int difIn(DiskIF*, int, int*, int);
 
