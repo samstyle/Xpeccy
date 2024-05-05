@@ -663,8 +663,6 @@ void MainWin::paintEvent(QPaintEvent*) {
 	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
 	glFlush();
-	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-//	SwapBuffers()
 //	pnt.endNativePainting();
 //	QPainter pnt(this);
 	drawIcons(pnt);
