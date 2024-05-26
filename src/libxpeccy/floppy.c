@@ -294,11 +294,11 @@ void flp_insert(Floppy* flp, const char* path) {
 	flp->xirq(IRQ_FDD_RDY, flp->xptr);	// rdy 1->0
 	flp->insert = 1;
 	flp->door = 0;
-	flp->dwait = 1e9;	// door will be closing after 1 sec
+	flp->dwait = 5e8;	// door will be closing after .5 sec
 	flp->changed = 0;
 	if (!path) flpClearDisk(flp);
 	flp_set_path(flp, path);
-	printf("insert:%i\tdoor:%i\n",flp->insert,flp->door);
+//	printf("insert:%i\tdoor:%i\n",flp->insert,flp->door);
 }
 
 void flp_eject(Floppy* flp) {

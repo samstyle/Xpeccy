@@ -418,6 +418,9 @@ void mouseRelease(Mouse* mou, int wut) {
 	}
 }
 
+int mouseGetX(Mouse* mou) {return mou->xpos * mou->sensitivity;}
+int mouseGetY(Mouse* mou) {return mou->ypos * mou->sensitivity;}
+
 // interrupt packet:
 // byte1:	b7:Y overflow
 //		b6:X overflow

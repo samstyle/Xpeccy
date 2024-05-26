@@ -193,6 +193,7 @@ void xPadBinder::startBindPad() {
 
 void xPadBinder::onTimer() {
 	SDL_Event ev;
+	SDL_JoystickUpdate();
 	while(SDL_PollEvent(&ev)) {
 		if (mode == PBMODE_PAD) {
 			switch(ev.type) {
@@ -206,6 +207,7 @@ void xPadBinder::onTimer() {
 				case SDL_JOYBUTTONDOWN:
 					ent.type = JOY_BUTTON;
 					ent.num = ev.jbutton.button;
+					ent.state = 1;
 					mode = PBMODE_FREE;
 					break;
 				case SDL_JOYHATMOTION:

@@ -158,18 +158,19 @@ void pdosReset(DiskIF* dif) {
 // TODO: interrupt on flp ready signal changed (on a disk change)
 void pdosSync(DiskIF* dif, int ns) {
 	dhwSync(dif, ns);
+/*
 	if (dif->fdc->flp->dwait > 0) {
 		dif->fdc->flp->dwait -= ns;
 		if (dif->fdc->flp->dwait < 0) {
 			dif->fdc->flp->dwait = 0;
-			dhw_irq(IRQ_FDD_RDY, dif);
-//			dif->fdc->sr0 &= 0x1f;
-//			dif->fdc->sr0 |= 0xc0;		// 110xxxxx: ready changed
-//			dif->fdc->xirq(IRQ_FDC, dif->fdc->xptr);	// rdy 0->1
-			dif->fdc->flp->door = dif->fdc->flp->insert;
-			printf("insert:%i\tdoor:%i\n",dif->fdc->flp->insert,dif->fdc->flp->door);
+			if (dif->fdc->flp->door != dif->fdc->flp->insert) {
+				dhw_irq(IRQ_FDD_RDY, dif);
+				dif->fdc->flp->door = dif->fdc->flp->insert;
+//				printf("insert:%i\tdoor:%i\n",dif->fdc->flp->insert,dif->fdc->flp->door);
+			}
 		}
 	}
+*/
 }
 
 // pc (i8275 = upd765)
@@ -207,7 +208,7 @@ int dpcIn(DiskIF* dif, int port, int* rptr, int dos) {
 			break;
 		case 7:
 			// b0: HD
-			// b7: disk changing (TODO: set on 'flp rdy line changed' interrupt, reset on reading)
+			// b7: disk changing (set on interrupt, reset on reading)
 			res = 0x7f;
 			if (!dif->fdc->flp->door) {
 				res |= 0x80;
@@ -363,18 +364,18 @@ void difReset(DiskIF* dif) {
 }
 
 void difSync(DiskIF* dif, int ns) {
-/*
+	dif->hw->sync(dif, ns);
 	if (dif->fdc->flp->dwait > 0) {
 		dif->fdc->flp->dwait -= ns;
 		if (dif->fdc->flp->dwait < 0) {
 			dif->fdc->flp->dwait = 0;
-			dif->fdc->xirq(IRQ_FDD_RDY, dif->fdc->xptr);
-			dif->fdc->flp->door = dif->fdc->flp->insert;
-			printf("insert:%i\tdoor:%i\n",dif->fdc->flp->insert,dif->fdc->flp->door);
+			if (dif->fdc->flp->door != dif->fdc->flp->insert) {
+				dhw_irq(IRQ_FDD_RDY, dif);
+				dif->fdc->flp->door = dif->fdc->flp->insert;
+//				printf("insert:%i\tdoor:%i\n",dif->fdc->flp->insert,dif->fdc->flp->door);
+			}
 		}
 	}
-*/
-	dif->hw->sync(dif, ns);
 }
 
 int difOut(DiskIF* dif, int port, int val, int dos) {
