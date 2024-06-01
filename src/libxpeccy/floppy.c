@@ -58,6 +58,21 @@ unsigned char flpRd(Floppy* flp, int hd) {
 	return flp->data[(flp->trk << 1) | hd].byte[flp->pos];
 }
 
+// TODO: move disk spinning here (if motor is on)
+void flp_sync(Floppy* flp, int ns) {
+	if (flp->dwait > 0) {
+		flp->dwait -= ns;
+		if (flp->dwait < 0) {
+			flp->dwait = 0;
+			if (flp->door != flp->insert) {
+				flp->xirq(IRQ_FDD_RDY, flp->xptr);
+				flp->door = flp->insert;
+//				printf("insert:%i\tdoor:%i\n",dif->fdc->flp->insert,dif->fdc->flp->door);
+			}
+		}
+	}
+}
+
 void flpStep(Floppy* flp, int dir) {
 	switch (dir) {
 		case FLP_FORWARD:

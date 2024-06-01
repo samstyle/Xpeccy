@@ -69,6 +69,7 @@ void flpDestroy(Floppy*);
 
 void flp_set_path(Floppy*, const char*);
 void flp_set_hd(Floppy*, int);
+void flp_sync(Floppy*, int);
 
 void flp_insert(Floppy*, const char*);
 void flp_eject(Floppy*);
