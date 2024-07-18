@@ -4,7 +4,7 @@
 
 #include "i8042_kbd.h"
 
-#define KBD_DELAY 1e6
+#define KBD_DELAY 1e7
 
 // PS/2 controller
 

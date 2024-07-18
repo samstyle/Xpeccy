@@ -216,6 +216,22 @@ MainWin::MainWin() {
 	connect(&srv, SIGNAL(newConnection()),this, SLOT(connected()));
 #endif
 
+// a legacygl code must be here, else the main process doesn't finish properly (???)
+#if USELEGACYGL
+	QGLFormat frmt;
+	frmt.setDoubleBuffer(false);
+	cont = new QGLContext(frmt);
+	setContext(cont);
+	setAutoBufferSwap(true);
+	makeCurrent();
+	curtex = 0;
+	shd_support = QGLShader::hasOpenGLShaders(QGLShader::Vertex) && QGLShader::hasOpenGLShaders(QGLShader::Fragment);
+	qDebug() << "vtx_shd";
+	vtx_shd = new QGLShader(QGLShader::Vertex, cont);
+	qDebug() << "frg_shd";
+	frg_shd = new QGLShader(QGLShader::Fragment, cont);
+#endif
+
 	qDebug() << "end:constructor";
 }
 

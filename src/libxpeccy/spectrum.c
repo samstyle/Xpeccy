@@ -399,6 +399,7 @@ Computer* compCreate() {
 	comp->mpic = pic_create(1, comp_irq, comp);
 	comp->spic = pic_create(0, comp_irq, comp);
 	comp->pit = pit_create(comp_irq, comp);
+	comp->com1 = uart_create(IRQ_COM1, comp_irq, comp);
 //	pit_reset(&comp->pit);
 //	comp->mpic.master = 1;
 //	comp->spic.master = 0;

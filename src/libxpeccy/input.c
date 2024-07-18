@@ -421,7 +421,7 @@ void mouseRelease(Mouse* mou, int wut) {
 int mouseGetX(Mouse* mou) {return mou->xpos * mou->sensitivity;}
 int mouseGetY(Mouse* mou) {return mou->ypos * mou->sensitivity;}
 
-// interrupt packet:
+// interrupt packet (ps/2 mouse):
 // byte1:	b7:Y overflow
 //		b6:X overflow
 //		b5:Y delta sign
@@ -434,6 +434,19 @@ int mouseGetY(Mouse* mou) {return mou->ypos * mou->sensitivity;}
 // byte3	abs Y delta
 
 void mouse_interrupt(Mouse* mouse) {
+	if (mouse->queueSize > 0) return;
+#if 1
+	// microsoft serial mouse
+	// TODO: something wrong with negative deltas
+	mouse->outbuf = 0x40;
+	if (mouse->lmb) mouse->outbuf |= 0x20;
+	if (mouse->rmb) mouse->outbuf |= 0x10;
+	mouse->outbuf |= ((mouse->ydelta & 0xc0) >> 4);
+	mouse->outbuf |= ((mouse->xdelta & 0xc0) >> 6);
+	mouse->outbuf |= ((abs(mouse->xdelta) & 0x1f) << 8);
+	mouse->outbuf |= ((abs(mouse->ydelta) & 0x1f) << 16);
+#else
+	// ps/2 mouse
 	mouse->outbuf = (abs(mouse->ydelta) & 0xff) << 8;
 	mouse->outbuf |= ((abs(mouse->xdelta) & 0xff) << 16);
 	if (mouse->lmb) mouse->outbuf |= (1 << 0);
@@ -443,7 +456,20 @@ void mouse_interrupt(Mouse* mouse) {
 	if (mouse->xdelta < 0) mouse->outbuf |= (1 << 4);
 	if (mouse->ydelta < 0) mouse->outbuf |= (1 << 5);
 	// b6,7: x,y overflow
+#endif
 	mouse->xdelta = 0;
 	mouse->ydelta = 0;
-	mouse->intrq = 1;
+	mouse->queueSize = 3;
+	printf("mouse send irq. data: %.6X\n", mouse->outbuf);
+	mouse->xirq(IRQ_MOUSE_MOVE, mouse->xptr);
+}
+
+int mouse_rd(Mouse* mouse) {
+	int res = -1;
+	if (mouse->queueSize > 0) {
+		res = mouse->outbuf & 0xff;
+		mouse->outbuf >>= 8;
+		mouse->queueSize--;
+	}
+	return res;
 }

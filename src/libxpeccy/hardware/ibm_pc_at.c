@@ -188,6 +188,17 @@ void ibm_outGP(Computer* comp, int adr, int val) {
 
 }
 
+// serial ports
+// com1,3 - irq4 (master)
+// com2,4 - irq3 (master)
+
+int ibm_mouse_rd(void* p) {
+	return mouse_rd(((Computer*)p)->mouse);
+}
+
+int ibm_inSP0(Computer* comp, int adr) {return uart_rd(comp->com1, adr & 7);}
+void ibm_outSP0(Computer* comp, int adr, int val) {uart_wr(comp->com1, adr & 7, val);}
+
 // cmos
 
 void ibm_out70(Computer* comp, int adr, int val) {
@@ -196,10 +207,6 @@ void ibm_out70(Computer* comp, int adr, int val) {
 
 void ibm_out71(Computer* comp, int adr, int val) {
 	cmos_wr(&comp->cmos, CMOS_DATA, val);
-//	if ((comp->cmos.adr == 0x0e) && (val & 0x20) && (comp->cpu->bp & 0x400)) {
-//		printf("%.4X:%.4X configuration error\n",comp->cpu->cs.idx,comp->cpu->pc);
-//		comp->brk = 1;
-//	}
 }
 
 int ibm_in71(Computer* comp, int adr) {
@@ -521,7 +528,8 @@ static xPort ibmPortMap[] = {
 
 	{0x03e1,0x00c0,2,2,2,ibm_inDMA, ibm_outDMA},	// dma2: c0..ce, d0..de
 
-	{0x03f8,0x0200,2,2,2,ibm_inGP, ibm_outGP},	// 200..207: gamepad
+	{0x03f8,0x0200,2,2,2,ibm_inGP,	ibm_outGP},	// 200..207: gamepad
+	{0x03f8,0x03f8,2,2,2,ibm_inSP0,	ibm_outSP0},	// 2e8..2ef, 2f8..2ff, 3e8..3ef, 3f8..3ff - serial ports (microsoft mouse, modem etc)
 
 //	{0x03f8,0x0170,2,2,2,ibm_dumird,ibm_dumiwr},	// secondary ide
 	{0x03f8,0x01f0,2,2,2,ibm_in1fx,	ibm_out1fx},	// primary ide (1f0..1f7)
@@ -567,6 +575,7 @@ void ibm_init(Computer* comp) {
 	dma_set_chan(comp->dma1, 1, ibm_dma1_rd_2, ibm_dma1_wr_2, NULL);
 	dma_set_chan(comp->dma2, 0, ibm_dma2_rd_1, ibm_dma2_wr_1, NULL);
 	comp->dma1->ch[2].blk = 1;		// block dma1 maintaining ch2 (fdc), it working through callbacks
+	uart_set_dev(comp->com1, ibm_mouse_rd, NULL, comp);	// connect serial mouse to COM1
 }
 
 void dma_ch_transfer(DMAChan*, void*);
@@ -577,11 +586,15 @@ void ibm_irq(Computer* comp, int t) {
 		case IRQ_FDC_RD: dma_ch_transfer(&comp->dma1->ch[2], comp->dma1->ptr); break;		// dma1.ch2 fdc->mem
 		case IRQ_FDC_WR: dma_ch_transfer(&comp->dma1->ch[2], comp->dma1->ptr); break;		// dma1.ch2 mem->fdc
 		case IRQ_HDD_PRI: pic_int(comp->spic, 6); break;
-		case IRQ_KBD: pic_int(comp->mpic, 1); break;
-		case IRQ_MOUSE: pic_int(comp->spic, 4); break;
+		case IRQ_MOUSE_MOVE:
+			uart_ready(comp->com1);
+			break;
+		case IRQ_KBD: pic_int(comp->mpic, 1); break;			// master pic int1 - ps/2 keyboard
+		case IRQ_MOUSE: pic_int(comp->spic, 4); break;			// slave pic int4 - ps/2 mouse
+		case IRQ_COM1: pic_int(comp->mpic, 4); break;			// master pic int 4 - com1,com3
 		case IRQ_SLAVE_PIC: pic_int(comp->mpic, 2); break;		// slave pic -> master pic int2
 		case IRQ_MASTER_PIC: comp->cpu->intrq |= I286_INT; break;	// cpu will read int-vector by calling ibm_ack
-		case IRQ_PIT_CH0: pic_int(comp->mpic, 0); break;		// input 0 master pic (int 8)
+		case IRQ_PIT_CH0: pic_int(comp->mpic, 0); break;		// master pic int0 - timer
 		case IRQ_PIT_CH1: comp->reg[0x61] ^= 0x10; break;
 		case IRQ_PIT_CH2: if (comp->reg[0x61] & 2) {
 				comp->beep->lev = comp->pit->ch2.out;
@@ -611,6 +624,7 @@ void ibm_sync(Computer* comp, int ns) {
 	// slave int6: primary hdc
 	// slave int7: secondary hdc
 	// slave int1: [cga] vertical retrace
+	uart_sync(comp->com1, ns);
 }
 
 // key press/release (at/xt code is already in kbd->outbuf)

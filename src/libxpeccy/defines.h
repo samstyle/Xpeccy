@@ -22,8 +22,10 @@ enum {
 	IRQ_HDD_PRI,
 	IRQ_SLAVE_PIC,
 	IRQ_MASTER_PIC,
+	IRQ_COM1,	// uart8250 com1 = mouse
 	IRQ_KBD,	// ps/2 controller kbd int || gbc buttons
 	IRQ_MOUSE,	// ps/2 controller mouse int
+	IRQ_MOUSE_MOVE,	// mouse moving (mouse -> uart -> pic -> cpu)
 	IRQ_RESET,
 	IRQ_PIT_CH0,
 	IRQ_PIT_CH1,

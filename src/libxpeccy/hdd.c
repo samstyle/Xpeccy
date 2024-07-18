@@ -123,9 +123,6 @@ void ataSetLBA(ATADev* dev) {
 void ataReadSector(ATADev* dev) {
 	long nps;
 	ataSetLBA(dev);
-#ifdef ISDEBUG
-	printf("ataReadSector %X (hd:%.2X cyl:%.4X sec:%.2X)\n",dev->lba,dev->reg.head & 15, dev->reg.cyl, dev->reg.sec);
-#endif
 	if (dev->lba >= dev->maxlba) {					// sector not found
 		dev->reg.state |= HDF_ERR;
 		dev->reg.err |= (HDF_ABRT | HDF_IDNF);

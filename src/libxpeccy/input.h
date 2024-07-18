@@ -104,7 +104,7 @@ typedef struct {
 	unsigned enable:1;
 	unsigned hasWheel:1;
 	unsigned swapButtons:1;
-	unsigned intrq:1;
+//	unsigned intrq:1;
 	double sensitivity;
 
 	unsigned lmb:1;
@@ -120,6 +120,7 @@ typedef struct {
 	int autoy;
 
 	int outbuf;
+	int queueSize;
 	// callbacks
 	cbirq xirq;
 	void* xptr;
@@ -233,6 +234,7 @@ void mousePress(Mouse*, int, int);
 void mouseRelease(Mouse*, int);
 void mouseReleaseAll(Mouse*);
 void mouse_interrupt(Mouse*);
+int mouse_rd(Mouse*);			// read data from mouse if any, return -1 if not
 
 Joystick* joyCreate();
 void joyDestroy(Joystick*);

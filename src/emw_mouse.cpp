@@ -111,7 +111,7 @@ void MainWin::mouseMoveEvent(QMouseEvent *ev) {
 		QPoint dpos = pos() + QPoint(width()/2, height()/2);
 		// TODO: apply sensitivity on xdelta/ydelta - ps/2 interrupt works with delta
 		comp->mouse->xdelta = ev->xGlobalX - dpos.x();
-		comp->mouse->ydelta = dpos.y() - ev->xGlobalY;		// revert sign
+		comp->mouse->ydelta = ev->xGlobalY - dpos.y();
 		comp->mouse->xpos += comp->mouse->xdelta;
 		comp->mouse->ypos += comp->mouse->ydelta;
 		mouse_interrupt(comp->mouse);

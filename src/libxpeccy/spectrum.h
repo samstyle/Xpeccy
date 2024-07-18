@@ -20,6 +20,7 @@ extern "C" {
 #include "i8042_kbd.h"
 #include "i8237_dma.h"
 #include "mos6526_cia.h"
+#include "uart8250.h"
 
 #include "sound/ayym.h"
 #include "sound/gs.h"
@@ -262,6 +263,7 @@ typedef struct {
 	PS2Ctrl* ps2c;
 	i8237DMA* dma1;		// 8-bit dma
 	i8237DMA* dma2;		// 16-bit dma
+	UART* com1;		// com1 (mouse) controller
 } Computer;
 
 #include "hardware/hardware.h"
