@@ -591,7 +591,7 @@ void ibm_irq(Computer* comp, int t) {
 			break;
 		case IRQ_KBD: pic_int(comp->mpic, 1); break;			// master pic int1 - ps/2 keyboard
 		case IRQ_MOUSE: pic_int(comp->spic, 4); break;			// slave pic int4 - ps/2 mouse
-		case IRQ_COM1: pic_int(comp->mpic, 4); break;			// master pic int 4 - com1,com3
+		case IRQ_COM1: pic_int(comp->mpic, 4); break;			// master pic int4 - com1,com3
 		case IRQ_SLAVE_PIC: pic_int(comp->mpic, 2); break;		// slave pic -> master pic int2
 		case IRQ_MASTER_PIC: comp->cpu->intrq |= I286_INT; break;	// cpu will read int-vector by calling ibm_ack
 		case IRQ_PIT_CH0: pic_int(comp->mpic, 0); break;		// master pic int0 - timer

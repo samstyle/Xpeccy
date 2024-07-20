@@ -97,8 +97,6 @@ void MainWin::wheelEvent(QWheelEvent* ev) {
 	}
 }
 
-static int dumove = 0;
-
 void MainWin::mouseMoveEvent(QMouseEvent *ev) {
 	Computer* comp = conf.prof.cur->zx;
 	if (!grabMice || conf.emu.pause) {
@@ -113,7 +111,7 @@ void MainWin::mouseMoveEvent(QMouseEvent *ev) {
 		comp->mouse->xdelta = ev->xGlobalX - dpos.x();
 		comp->mouse->ydelta = ev->xGlobalY - dpos.y();
 		comp->mouse->xpos += comp->mouse->xdelta;
-		comp->mouse->ypos += comp->mouse->ydelta;
+		comp->mouse->ypos -= comp->mouse->ydelta;	// axis is reverted
 		mouse_interrupt(comp->mouse);
 		dumove = 1;
 		cursor().setPos(dpos);

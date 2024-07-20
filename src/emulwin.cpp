@@ -511,6 +511,10 @@ void MainWin::focusOutEvent(QFocusEvent*) {
 void MainWin::focusInEvent(QFocusEvent*) {
 	if (conf.emu.pause & PR_DEBUG)
 		emit s_debug();
+	if (grabMice) {
+		dumove = 1;
+		cursor().setPos(pos() + QPoint(width()/2, height()/2));
+	}
 }
 
 void MainWin::moveEvent(QMoveEvent* ev) {

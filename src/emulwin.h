@@ -130,6 +130,7 @@ typedef struct {
 		void frame_timer();
 	private:
 		unsigned grabMice:1;
+		unsigned dumove:1;
 		unsigned block:1;
 
 		QIcon icon;

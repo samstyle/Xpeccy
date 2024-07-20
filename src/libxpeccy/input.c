@@ -438,13 +438,14 @@ void mouse_interrupt(Mouse* mouse) {
 #if 1
 	// microsoft serial mouse
 	// TODO: something wrong with negative deltas
+//	printf("dx,dy = %i,%i\n",mouse->xdelta,mouse->ydelta);
 	mouse->outbuf = 0x40;
 	if (mouse->lmb) mouse->outbuf |= 0x20;
 	if (mouse->rmb) mouse->outbuf |= 0x10;
 	mouse->outbuf |= ((mouse->ydelta & 0xc0) >> 4);
 	mouse->outbuf |= ((mouse->xdelta & 0xc0) >> 6);
-	mouse->outbuf |= ((abs(mouse->xdelta) & 0x1f) << 8);
-	mouse->outbuf |= ((abs(mouse->ydelta) & 0x1f) << 16);
+	mouse->outbuf |= ((mouse->xdelta & 0x3f) << 8);
+	mouse->outbuf |= ((mouse->ydelta & 0x3f) << 16);
 #else
 	// ps/2 mouse
 	mouse->outbuf = (abs(mouse->ydelta) & 0xff) << 8;
@@ -460,7 +461,7 @@ void mouse_interrupt(Mouse* mouse) {
 	mouse->xdelta = 0;
 	mouse->ydelta = 0;
 	mouse->queueSize = 3;
-	printf("mouse send irq. data: %.6X\n", mouse->outbuf);
+//	printf("mouse send irq. data: %.6X\n", mouse->outbuf);
 	mouse->xirq(IRQ_MOUSE_MOVE, mouse->xptr);
 }
 
