@@ -232,6 +232,8 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	ui.tvPadTable->addAction(ui.actDelBinding);
 	ui.cbScanTab->addItem("Scanset 1 (XT)", KBD_XT);
 	ui.cbScanTab->addItem("Scanset 2 (AT)", KBD_AT);
+	ui.cbMouseType->addItem("Serial", MOUSE_SERIAL);
+	ui.cbMouseType->addItem("PS/2", MOUSE_PS2);
 // all
 	connect(ui.okbut,SIGNAL(released()),this,SLOT(okay()));
 	connect(ui.apbut,SIGNAL(released()),this,SLOT(apply()));
@@ -478,6 +480,7 @@ void SetupWin::start() {
 // input
 	buildkeylist();
 	setRFIndex(ui.cbScanTab, comp->keyb->pcmode);
+	setRFIndex(ui.cbMouseType, comp->mouse->pcmode);
 	idx = ui.keyMapBox->findText(QString(prof->kmapName.c_str()));
 	if (idx < 1) idx = 0;
 	ui.keyMapBox->setCurrentIndex(idx);
@@ -678,6 +681,7 @@ void SetupWin::apply() {
 	comp->saa->enabled = ui.cbSAA->isChecked() ? 1 : 0;
 // input
 	comp->keyb->pcmode = getRFIData(ui.cbScanTab);
+	comp->mouse->pcmode = getRFIData(ui.cbMouseType);
 	comp->mouse->enable = ui.ratEnable->isChecked() ? 1 : 0;
 	comp->mouse->hasWheel = ui.ratWheel->isChecked() ? 1 : 0;
 	comp->mouse->swapButtons = ui.cbSwapButtons->isChecked() ? 1 : 0;

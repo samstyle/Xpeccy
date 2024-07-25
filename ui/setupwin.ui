@@ -1692,6 +1692,20 @@
             </widget>
            </item>
            <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_39" stretch="0,10">
+             <item>
+              <widget class="QLabel" name="label_67">
+               <property name="text">
+                <string>PC mouse</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QComboBox" name="cbMouseType"/>
+             </item>
+            </layout>
+           </item>
+           <item>
             <widget class="QGroupBox" name="groupBox_3">
              <property name="title">
               <string>Kempston joystick</string>

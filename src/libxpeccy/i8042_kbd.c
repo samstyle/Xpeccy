@@ -33,14 +33,22 @@ void ps2c_reset(PS2Ctrl* ctrl) {
 	ctrl->outbuf = 0;
 	ctrl->outport = 2;
 	ctrl->status &= ~0x03;
-	ctrl->status_ch = 0;
+//	ctrl->status_ch = 0;
 	ctrl->ram[0] = 0x00;
 	ctrl->delay = 0;
 }
 
 void ps2c_clear(PS2Ctrl* ctrl) {
-	ctrl->outbuf = 0;
+//	ctrl->outbuf = 0;
 	ctrl->status &= ~0x03;
+}
+
+void ps2c_ready(PS2Ctrl* ctrl, int dev) {
+	if (dev & 1) {		// mouse
+		ctrl->m_rdy = 1;
+	} else {		// keyboard
+		ctrl->k_rdy = 1;
+	}
 }
 
 // ram[0] = configuration byte
@@ -85,46 +93,45 @@ int ps2c_rd(PS2Ctrl* ctrl, int adr) {
 	int res = -1;
 	switch (adr) {
 		case PS2_RDATA:
-			res = ctrl->outbuf & 0xff;
-			ctrl->outbuf >>= 8;
-			ctrl->status &= ~1;
-			if (ctrl->outbuf & 0xff) {
-				ctrl->status_ch = 1;
+			if (ctrl->status & 1) {
+				res = ctrl->outbuf & 0xff;
+				ctrl->status &= ~1;
 			}
 			//printf("i8042 read code %.2X\n",res);
 			break;
 		case PS2_RSTATUS:
 			res = ctrl->status | 0x10;		// b4 = keyboard lock off
-			ctrl->status ^= ctrl->status_ch;
 			ctrl->status &= ~2;
-			ctrl->status_ch = 0;
-//			res &= ~0x01;				// set b0[,1] manually
-//			if (!(ctrl->status & 1) && (ctrl->outbuf & 0xff)) {		// if there is data in buf
-//				ctrl->status_ch = 1;
-//			}
 			break;
 	}
 	return res;
 }
 
+// TODO: do real readings for kbd/mouse in rd_kbd and rd_mouse
+
 // TODO: set status.bit0 after reading status reg (0 immediately, 1 after reading) ???
 void ps2c_wr_ob(PS2Ctrl* ctrl, int val) {
 	ctrl->outbuf = val;
 	ctrl->status &= ~0x21;
-	// ctrl->status |= 0x01;
-	ctrl->status_ch = 0x01;
+	ctrl->status |= 0x01;
 }
 
 void ps2c_wr_ob2(PS2Ctrl* ctrl, int val) {
 	ctrl->outbuf = val;
-	//ctrl->status |= 0x21;
-	ctrl->status &= ~0x21;
-	ctrl->status |= 0x20;
-	ctrl->status_ch = 1;
+	ctrl->status |= 0x21;
 }
 
 // read 1 byte from kbd to outbuf and generate intk if need
 void ps2c_rd_kbd(PS2Ctrl* ctrl) {
+	int d = xt_read(ctrl->kbd);
+	if (ctrl->kbd->lock || (ctrl->ram[0] & 0x10)) return;
+	if (d < 0) {
+		ctrl->k_rdy = 0;
+	} else {
+		ps2c_wr_ob(ctrl, d);
+		ctrl->xirq(IRQ_KBD, ctrl->xptr);
+	}
+/*
 	if (ctrl->kbd->outbuf & 0xff) {
 		if (!ctrl->kbd->lock && !(ctrl->ram[0] & 0x10)) {
 			ps2c_wr_ob(ctrl, xt_read(ctrl->kbd));
@@ -135,15 +142,19 @@ void ps2c_rd_kbd(PS2Ctrl* ctrl) {
 	} else {
 		ctrl->outbuf = 0;
 	}
+*/
 }
 
 void ps2c_rd_mouse(PS2Ctrl* ctrl) {
-	if (ctrl->ram[0] & 0x20) return;	// 2nd device disabled
-	ps2c_wr_ob2(ctrl, ctrl->mouse->outbuf);
-	ctrl->mouse->outbuf = 0;
-	if ((ctrl->ram[0] & 2) && (ctrl->outbuf & 0xff)) {
-		ctrl->xirq(IRQ_MOUSE, ctrl->xptr);
-		ctrl->delay = KBD_DELAY;
+	int d = mouse_rd(ctrl->mouse);
+	if (ctrl->ram[0] & 0x20) return;	// 2nd device disabled (data readed and droped)
+	if (d < 0) {				// no data left
+		ctrl->m_rdy = 0;
+	} else {
+		ps2c_wr_ob2(ctrl, d);		// write data to outbuf
+		if (ctrl->ram[0] & 2) {		// 2nd device interrupt enabled
+			ctrl->xirq(IRQ_MOUSE, ctrl->xptr);
+		}
 	}
 }
 
@@ -337,16 +348,17 @@ void ps2c_wr(PS2Ctrl* ctrl, int adr, int val) {
 	}
 }
 
-// xt keyboard byterate ~31KHz (~32260ns/byte)
-
 void ps2c_sync(PS2Ctrl* ctrl, int ns) {
 #if !USE_HOST_KEYBOARD
 	xt_sync(ctrl->kbd, ns);
 #endif
 	ctrl->delay -= ns;
 	while (ctrl->delay < 0) {
-		ctrl->delay += 32260;
-		if (ctrl->kbd->outbuf & 0xff)
+		ctrl->delay += 1e9/2000;		// TODO: 2KB/s ?
+		if (ctrl->k_rdy) { // (ctrl->kbd->outbuf & 0xff) {
 			ps2c_rd_kbd(ctrl);
+		} else if (ctrl->m_rdy) {
+			ps2c_rd_mouse(ctrl);
+		}
 	}
 }

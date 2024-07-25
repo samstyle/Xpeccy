@@ -221,7 +221,7 @@ void kbdTrigger(Keyboard* kbd, keyEntry ent) {
 // at/xt keyboard buffer
 // example (at code):
 // 0xE0, 0x72 (code 0x72e0) = cursor down pressed
-// 0xE0, 0xF0, 0x72 (code 72e0) = cursor down released
+// 0xE0, 0xF0, 0x72 (code 72f0e0) = cursor down released
 
 unsigned long add_msb(unsigned long code, unsigned long bt) {
 	unsigned long msk = 0xff;
@@ -281,6 +281,7 @@ void xt_press(Keyboard* kbd, keyEntry kent) {
 	kbd->outbuf = add_msb(kbd->outbuf, xt_get_code(kbd, kent, 0));
 	kbd->kent = kent;
 	kbd->per = kbd->kdel;
+	kbd->xirq(IRQ_KBD_DATA, kbd->xptr);
 	// printf("xt press, buf = %X\n", kbd->outbuf);
 }
 
@@ -288,11 +289,17 @@ void xt_release(Keyboard* kbd, keyEntry kent) {
 	if (kbd->lock) return;
 	kbd->outbuf = add_msb(kbd->outbuf, xt_get_code(kbd, kent, 1));	// kbd->outbuf = xt_get_code(kbd, kent, 1);
 	kbd->per = 0;		// 0 for stopping autorepeat
+	kbd->xirq(IRQ_KBD_DATA, kbd->xptr);
 }
 
 int xt_read(Keyboard* kbd) {
-	int res = kbd->outbuf & 0xff;
-	kbd->outbuf >>= 8;
+	int res;
+	if (kbd->outbuf & 0xff) {
+		res = kbd->outbuf & 0xff;
+		kbd->outbuf >>= 8;
+	} else {
+		res = -1;
+	}
 	return res;
 }
 
@@ -375,6 +382,7 @@ Mouse* mouseCreate(cbirq cb, void* p) {
 	Mouse* mou = (Mouse*)malloc(sizeof(Mouse));
 	memset(mou,0x00,sizeof(Mouse));
 	mou->sensitivity = 1.0f;
+	mou->pcmode = MOUSE_SERIAL;
 	mou->xirq = cb;
 	mou->xptr = p;
 	return mou;
@@ -435,34 +443,37 @@ int mouseGetY(Mouse* mou) {return mou->ypos * mou->sensitivity;}
 
 void mouse_interrupt(Mouse* mouse) {
 	if (mouse->queueSize > 0) return;
-#if 1
-	// microsoft serial mouse
-	// TODO: something wrong with negative deltas
-//	printf("dx,dy = %i,%i\n",mouse->xdelta,mouse->ydelta);
-	mouse->outbuf = 0x40;
-	if (mouse->lmb) mouse->outbuf |= 0x20;
-	if (mouse->rmb) mouse->outbuf |= 0x10;
-	mouse->outbuf |= ((mouse->ydelta & 0xc0) >> 4);
-	mouse->outbuf |= ((mouse->xdelta & 0xc0) >> 6);
-	mouse->outbuf |= ((mouse->xdelta & 0x3f) << 8);
-	mouse->outbuf |= ((mouse->ydelta & 0x3f) << 16);
-#else
-	// ps/2 mouse
-	mouse->outbuf = (abs(mouse->ydelta) & 0xff) << 8;
-	mouse->outbuf |= ((abs(mouse->xdelta) & 0xff) << 16);
-	if (mouse->lmb) mouse->outbuf |= (1 << 0);
-	if (mouse->rmb) mouse->outbuf |= (1 << 1);
-	// b2: mmb
-	mouse->outbuf |= (1 << 3);
-	if (mouse->xdelta < 0) mouse->outbuf |= (1 << 4);
-	if (mouse->ydelta < 0) mouse->outbuf |= (1 << 5);
-	// b6,7: x,y overflow
-#endif
+	switch (mouse->pcmode) {
+		case MOUSE_SERIAL:			// microsoft serial mouse
+			mouse->outbuf = 0x40;
+			if (mouse->lmb) mouse->outbuf |= 0x20;
+			if (mouse->rmb) mouse->outbuf |= 0x10;
+			mouse->outbuf |= ((mouse->ydelta & 0xc0) >> 4);
+			mouse->outbuf |= ((mouse->xdelta & 0xc0) >> 6);
+			mouse->outbuf |= ((mouse->xdelta & 0x3f) << 8);
+			mouse->outbuf |= ((mouse->ydelta & 0x3f) << 16);
+			mouse->queueSize = 3;
+			mouse->xirq(IRQ_MOUSE_DATA, mouse->xptr);
+			break;
+		case MOUSE_PS2:
+			// ps/2 mouse
+			mouse->outbuf = (abs(mouse->ydelta) & 0xff) << 8;
+			mouse->outbuf |= ((abs(mouse->xdelta) & 0xff) << 16);
+			if (mouse->lmb) mouse->outbuf |= (1 << 0);
+			if (mouse->rmb) mouse->outbuf |= (1 << 1);
+			// b2: mmb
+			mouse->outbuf |= (1 << 3);
+			if (mouse->xdelta < 0) mouse->outbuf |= (1 << 4);
+			if (mouse->ydelta < 0) mouse->outbuf |= (1 << 5);
+			// b6,7: x,y overflow
+			mouse->queueSize = 3;
+			mouse->xirq(IRQ_MOUSE_DATA, mouse->xptr);
+			break;
+		default:
+			break;
+	}
 	mouse->xdelta = 0;
 	mouse->ydelta = 0;
-	mouse->queueSize = 3;
-//	printf("mouse send irq. data: %.6X\n", mouse->outbuf);
-	mouse->xirq(IRQ_MOUSE_MOVE, mouse->xptr);
 }
 
 int mouse_rd(Mouse* mouse) {

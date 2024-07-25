@@ -56,6 +56,11 @@ enum {
 	KBD_AT
 };
 
+enum {
+	MOUSE_SERIAL = 1,
+	MOUSE_PS2
+};
+
 #define KFL_SHIFT	(1)
 #define KFL_CTRL	(1<<1)
 #define KFL_ALT		(1<<2)
@@ -104,8 +109,8 @@ typedef struct {
 	unsigned enable:1;
 	unsigned hasWheel:1;
 	unsigned swapButtons:1;
-//	unsigned intrq:1;
 	double sensitivity;
+	int pcmode;
 
 	unsigned lmb:1;
 	unsigned rmb:1;

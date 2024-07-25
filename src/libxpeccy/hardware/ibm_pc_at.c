@@ -586,9 +586,14 @@ void ibm_irq(Computer* comp, int t) {
 		case IRQ_FDC_RD: dma_ch_transfer(&comp->dma1->ch[2], comp->dma1->ptr); break;		// dma1.ch2 fdc->mem
 		case IRQ_FDC_WR: dma_ch_transfer(&comp->dma1->ch[2], comp->dma1->ptr); break;		// dma1.ch2 mem->fdc
 		case IRQ_HDD_PRI: pic_int(comp->spic, 6); break;
-		case IRQ_MOUSE_MOVE:
-			uart_ready(comp->com1);
+		case IRQ_MOUSE_DATA:
+			switch (comp->mouse->pcmode) {
+				case MOUSE_SERIAL: uart_ready(comp->com1); break;
+				case MOUSE_PS2: ps2c_ready(comp->ps2c, 1); break;
+				default: comp->mouse->queueSize = 0; break;		// drop mouse data
+			}
 			break;
+		case IRQ_KBD_DATA: ps2c_ready(comp->ps2c, 0); break;		// kbd data ready
 		case IRQ_KBD: pic_int(comp->mpic, 1); break;			// master pic int1 - ps/2 keyboard
 		case IRQ_MOUSE: pic_int(comp->spic, 4); break;			// slave pic int4 - ps/2 mouse
 		case IRQ_COM1: pic_int(comp->mpic, 4); break;			// master pic int4 - com1,com3
