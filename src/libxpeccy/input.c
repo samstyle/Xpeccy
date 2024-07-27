@@ -233,6 +233,10 @@ unsigned long add_msb(unsigned long code, unsigned long bt) {
 	return code;
 }
 
+void xt_add_code(Keyboard* kbd, unsigned long d) {
+	kbd->outbuf = add_msb(kbd->outbuf, d);
+}
+
 unsigned long xt_get_code(Keyboard* kbd, keyEntry kent, int rel) {
 	unsigned long res = 0;
 	int code;
@@ -296,11 +300,65 @@ int xt_read(Keyboard* kbd) {
 	int res;
 	if (kbd->outbuf & 0xff) {
 		res = kbd->outbuf & 0xff;
+		kbd->arg = res & 0xff;
 		kbd->outbuf >>= 8;
 	} else {
 		res = -1;
 	}
 	return res;
+}
+
+void kbd_wr(Keyboard* kbd, int d) {
+	if (kbd->com < 0) {
+		switch (d) {
+			case 0xed: kbd->com = d | 0x100; break;	// leds
+			case 0xee: xt_add_code(kbd, 0xee); break;	// echo
+			case 0xf0: kbd->com = d | 0x100; break;	// get/set scancode
+			case 0xf2: xt_add_code(kbd, 0xfa); break;	// get dev type (no code = at-keyboard)
+			case 0xf3: kbd->com = d | 0x100; break;	// set repeat rate/delay
+			case 0xf4:					// enable sending scancodes
+				kbd->lock = 0;
+				xt_add_code(kbd, 0xfa);
+				break;
+			case 0xf5:					// disable sending scancodes
+				kbd->lock = 1;
+				xt_add_code(kbd, 0xfa);
+				break;
+			case 0xf6: xt_add_code(kbd, 0xfa); break;	// set default params
+			case 0xf7: xt_add_code(kbd, 0xfa); break;	// f7..fd: scanset3 specific
+			case 0xf8: xt_add_code(kbd, 0xfa); break;
+			case 0xf9: xt_add_code(kbd, 0xfa); break;
+			case 0xfa: xt_add_code(kbd, 0xfa); break;
+			case 0xfb: xt_add_code(kbd, 0xfa); break;
+			case 0xfc: xt_add_code(kbd, 0xfa); break;
+			case 0xfd: xt_add_code(kbd, 0xfa); break;
+			case 0xfe: xt_add_code(kbd, kbd->arg & 0xff); break;	// resend last byte
+			case 0xff:			// reset & run selftest		NOTE: reset keyboard, not ps/2 controller(!)
+				xt_add_code(kbd, 0xaa);
+				break;
+		}
+	} else {
+		switch (kbd->com) {
+			case 0x1ed:
+				// set leds: b0-scrlck,b1-numlck,b2-caps
+				xt_add_code(kbd, 0xfa);
+				break;
+			case 0x1f0:
+				// set scancode tab: 0-get current, 1..3-scanset 1..3
+				if (d == 0) {
+					xt_add_code(kbd, 0x02fa);	// (kbd->scanset << 8) | fa)
+				} else {
+					xt_add_code(kbd, 0xfa);
+				}
+				break;
+			case 0x1f3:
+				kbd->kdel = (((d >> 5) & 3) + 1) * 250e6;	// 1st delay - 250,500,750,1000ms
+				kbd->kper = (33 + 7 * (d & 0x1f)) * 1e6;	// repeat period: 33 to 250 ms
+				xt_add_code(kbd, 0xfa);
+				break;
+		}
+		kbd->com = -1;
+	}
 }
 
 unsigned char kbdScanZX(Keyboard* kbd, int port) {
@@ -484,4 +542,8 @@ int mouse_rd(Mouse* mouse) {
 		mouse->queueSize--;
 	}
 	return res;
+}
+
+void mouse_wr(Mouse* mou, int d) {
+
 }

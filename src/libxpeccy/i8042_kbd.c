@@ -29,17 +29,15 @@ void ps2c_destroy(PS2Ctrl* ctrl) {
 
 void ps2c_reset(PS2Ctrl* ctrl) {
 	ctrl->cmd = -1;
-//	ctrl->reset = 0;
 	ctrl->outbuf = 0;
 	ctrl->outport = 2;
 	ctrl->status &= ~0x03;
-//	ctrl->status_ch = 0;
 	ctrl->ram[0] = 0x00;
 	ctrl->delay = 0;
+	ctrl->dmode = PS2C_MODE_KBD;
 }
 
 void ps2c_clear(PS2Ctrl* ctrl) {
-//	ctrl->outbuf = 0;
 	ctrl->status &= ~0x03;
 }
 
@@ -107,8 +105,6 @@ int ps2c_rd(PS2Ctrl* ctrl, int adr) {
 	return res;
 }
 
-// TODO: do real readings for kbd/mouse in rd_kbd and rd_mouse
-
 // TODO: set status.bit0 after reading status reg (0 immediately, 1 after reading) ???
 void ps2c_wr_ob(PS2Ctrl* ctrl, int val) {
 	ctrl->outbuf = val;
@@ -165,84 +161,103 @@ void ps2c_wr(PS2Ctrl* ctrl, int adr, int val) {
 		case PS2_RDATA:
 			//printf("PS/2 controller wr data %.2X\n",val);
 			ctrl->status |= 8;
-			if (ctrl->cmd < 0) {
-				// send byte(s) to keyboard
-				// printf("i8042 kbd wr %.2X\n",val);
-				switch(val) {
-					case 0xed: ctrl->cmd = val | 0x100; break;	// leds
-					case 0xee: ps2c_wr_ob(ctrl, 0xee); break;	// echo
-					case 0xf0: ctrl->cmd = val | 0x100; break;	// get/set scancode
-					case 0xf2: ps2c_wr_ob(ctrl, 0xfa); break;	// get dev type (no code = at-keyboard)
-					case 0xf3: ctrl->cmd = val | 0x100; break;	// set repeat rate/delay
-					case 0xf4:					// enable sending scancodes
-						ctrl->kbd->lock = 0;
-						ps2c_wr_ob(ctrl, 0xfa);
-						break;
-					case 0xf5:					// disable sending scancodes
-						ctrl->kbd->lock = 1;
-						ps2c_wr_ob(ctrl, 0xfa);
-						break;
-					case 0xf6: ps2c_wr_ob(ctrl, 0xfa); break;	// set default params
-					case 0xf7: ps2c_wr_ob(ctrl, 0xfa); break;	// f7..fd: scanset3 specific
-					case 0xf8: ps2c_wr_ob(ctrl, 0xfa); break;
-					case 0xf9: ps2c_wr_ob(ctrl, 0xfa); break;
-					case 0xfa: ps2c_wr_ob(ctrl, 0xfa); break;
-					case 0xfb: ps2c_wr_ob(ctrl, 0xfa); break;
-					case 0xfc: ps2c_wr_ob(ctrl, 0xfa); break;
-					case 0xfd: ps2c_wr_ob(ctrl, 0xfa); break;
-					case 0xfe: ps2c_wr_ob(ctrl, ctrl->data & 0xff); break;	// resend last byte
-					case 0xff: ps2c_reset(ctrl);			// reset & run selftest
-						ps2c_wr_ob(ctrl, 0xaa);
-						break;
-				}
-			} else if ((ctrl->cmd & 0xfe0) == 0x60) {
-				if (ctrl->cmd == 0x60) {
-					ctrl->status &= ~4;
-					ctrl->status |= (val & 4);
-					val &= ~0x40;
-				}
-				ctrl->ram[ctrl->cmd & 0x1f] = val & 0xff;
-				// if (!(ctrl->cmd & 0x1f)) printf("i8042 conf = %.2X\n",val & 0xff);
-			} else {
-				// printf("i8042 arg wr %.2X\n",val);
-				switch (ctrl->cmd) {
-					case 0xd1:		// write to output port
-						ctrl->outport = val;
-						if (!(val & 1)) {
-							//ctrl->reset = 1;
-							ctrl->xirq(IRQ_RESET, ctrl->xptr);
+			switch (ctrl->dmode) {
+				case PS2C_MODE_KBD:
+#if 1
+					kbd_wr(ctrl->kbd, val);
+#else
+					// TODO: Move all to kbd_wr
+					if (ctrl->cmd < 0) {
+						switch(val) {
+							case 0xed: ctrl->cmd = val | 0x100; break;	// leds
+							case 0xee: ps2c_wr_ob(ctrl, 0xee); break;	// echo
+							case 0xf0: ctrl->cmd = val | 0x100; break;	// get/set scancode
+							case 0xf2: ps2c_wr_ob(ctrl, 0xfa); break;	// get dev type (no code = at-keyboard)
+							case 0xf3: ctrl->cmd = val | 0x100; break;	// set repeat rate/delay
+							case 0xf4:					// enable sending scancodes
+								ctrl->kbd->lock = 0;
+								ps2c_wr_ob(ctrl, 0xfa);
+								break;
+							case 0xf5:					// disable sending scancodes
+								ctrl->kbd->lock = 1;
+								ps2c_wr_ob(ctrl, 0xfa);
+								break;
+							case 0xf6: ps2c_wr_ob(ctrl, 0xfa); break;	// set default params
+							case 0xf7: ps2c_wr_ob(ctrl, 0xfa); break;	// f7..fd: scanset3 specific
+							case 0xf8: ps2c_wr_ob(ctrl, 0xfa); break;
+							case 0xf9: ps2c_wr_ob(ctrl, 0xfa); break;
+							case 0xfa: ps2c_wr_ob(ctrl, 0xfa); break;
+							case 0xfb: ps2c_wr_ob(ctrl, 0xfa); break;
+							case 0xfc: ps2c_wr_ob(ctrl, 0xfa); break;
+							case 0xfd: ps2c_wr_ob(ctrl, 0xfa); break;
+							case 0xfe: ps2c_wr_ob(ctrl, ctrl->data & 0xff); break;	// resend last byte
+							case 0xff: // ps2c_reset(ctrl);			// reset & run selftest		NOTE: reset keyboard, not ps/2 controller(!)
+								ps2c_wr_ob(ctrl, 0xaa);
+								break;
 						}
-						// b1:a20 gate. if 0 here [or port 92 bit 1 = 0], a20+ is disabled (always 0)
-						break;
-					case 0xd2:
-						ps2c_wr_ob(ctrl, val);
-						break;
-					case 0xd3:
-						ps2c_wr_ob2(ctrl, val);
-						break;
-					case 0xd4:		// send to mouse
-						break;
-					case 0x1ed:
-						// set leds: b0-scrlck,b1-numlck,b2-caps
-						ps2c_wr_ob(ctrl, 0xfa);
-						break;
-					case 0x1f0:
-						// set scancode tab: 0-get current, 1..3-scanset 1..3
-						if (val == 0) {
-							ps2c_wr_ob(ctrl, 0x02fa);	// (kbd->scanset << 8) | fa)
-						} else {
-							ps2c_wr_ob(ctrl, 0xfa);
+					} else {
+						switch (ctrl->cmd) {
+							case 0x1ed:
+								// set leds: b0-scrlck,b1-numlck,b2-caps
+								ps2c_wr_ob(ctrl, 0xfa);
+								break;
+							case 0x1f0:
+								// set scancode tab: 0-get current, 1..3-scanset 1..3
+								if (val == 0) {
+									ps2c_wr_ob(ctrl, 0x02fa);	// (kbd->scanset << 8) | fa)
+								} else {
+									ps2c_wr_ob(ctrl, 0xfa);
+								}
+								break;
+							case 0x1f3:
+								ctrl->kbd->kdel = (((val >> 5) & 3) + 1) * 250e6;	// 1st delay - 250,500,750,1000ms
+								ctrl->kbd->kper = (33 + 7 * (val & 0x1f)) * 1e6;	// repeat period: 33 to 250 ms
+								ps2c_wr_ob(ctrl, 0xfa);
+								break;
 						}
-						break;
-					case 0x1f3:
-						ctrl->kbd->kdel = (((val >> 5) & 3) + 1) * 250e6;	// 1st delay - 250,500,750,1000ms
-						ctrl->kbd->kper = (33 + 7 * (val & 0x1f)) * 1e6;	// repeat period: 33 to 250 ms
-						ps2c_wr_ob(ctrl, 0xfa);
-						break;
-				}
+						ctrl->cmd = -1;
+					}
+#endif
+					break;
+				case PS2C_MODE_MOU:
+					// write to mouse
+					ctrl->dmode = PS2C_MODE_KBD;
+					ctrl->cmd = -1;
+					break;
+				case PS2C_MODE_COM:
+					switch (ctrl->cmd) {
+						case 0xd1:		// write to output port
+							ctrl->outport = val;
+							if (!(val & 1)) {
+								//ctrl->reset = 1;
+								ctrl->xirq(IRQ_RESET, ctrl->xptr);
+							}
+							// b1:a20 gate. if 0 here [or port 92 bit 1 = 0], a20+ is disabled (always 0)
+							break;
+						case 0xd2:
+							ps2c_wr_ob(ctrl, val);
+							break;
+						case 0xd3:
+							ps2c_wr_ob2(ctrl, val);
+							break;
+						default:
+							if ((ctrl->cmd & 0xe0) == 0x60) {
+								if (ctrl->cmd == 0x60) {
+									ctrl->status &= ~4;
+									ctrl->status |= (val & 4);
+									val &= ~0x40;
+								}
+								ctrl->ram[ctrl->cmd & 0x1f] = val & 0xff;
+								// if (!(ctrl->cmd & 0x1f)) printf("i8042 conf = %.2X\n",val & 0xff);
+							}
+							break;
+					}
+					ctrl->cmd = -1;
+					ctrl->dmode = PS2C_MODE_KBD;
+					break;
 			}
-			ctrl->data = val;
-			ctrl->cmd = -1;
+			ctrl->data = val;	// last byte
+//			ctrl->cmd = -1;
 			break;
 		case PS2_RCMD:
 			// printf("i8042 cmd %.2X\n",val);
@@ -255,6 +270,7 @@ void ps2c_wr(PS2Ctrl* ctrl, int adr, int val) {
 				case 0x40: break;
 				case 0x60:
 					ctrl->cmd = val;		// 60..7F: address to write through 60h
+					ctrl->dmode = PS2C_MODE_COM;
 					break;
 				case 0x80: break;
 				case 0xa0:

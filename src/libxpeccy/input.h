@@ -182,8 +182,8 @@ typedef struct {
 	unsigned wcom:1;		// i8031 waiting for command
 	unsigned warg:1;		// i8031 waiting for argument
 	int submode;			// i8031 mode
-	unsigned char com;
-	unsigned char arg;
+	int com;
+	int arg;
 	unsigned char keycode;		// current pressed key code
 	unsigned char lastkey;		// last pressed key code
 	unsigned char flag1;		// [7] rus.scrlock.numlock.caps.0.alt.ctrl.shift [0]
@@ -231,6 +231,7 @@ void kbd_release(Keyboard* kbd, keyScan* tab, int* mtrx, unsigned char* xk);
 void xt_press(Keyboard*, keyEntry);
 void xt_release(Keyboard*, keyEntry);
 int xt_read(Keyboard*);
+void kbd_wr(Keyboard*, int);
 int xt_sync(Keyboard*, int);
 
 Mouse* mouseCreate(cbirq, void*);
@@ -240,6 +241,7 @@ void mouseRelease(Mouse*, int);
 void mouseReleaseAll(Mouse*);
 void mouse_interrupt(Mouse*);
 int mouse_rd(Mouse*);			// read data from mouse if any, return -1 if not
+void mouse_wr(Mouse*, int);
 
 Joystick* joyCreate();
 void joyDestroy(Joystick*);

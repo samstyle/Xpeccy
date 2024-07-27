@@ -7,11 +7,17 @@
 #define PS2_RCMD	4
 #define PS2_RSTATUS	PS2_RCMD
 
+// data port mode
+enum {
+	PS2C_MODE_KBD = 0,	// default, send data to keyboard
+	PS2C_MODE_MOU,		// send data to mouse
+	PS2C_MODE_COM		// data is argument for controller commands
+};
+
 typedef struct {
 	unsigned m_rdy:1;		// mouse have data to read
 	unsigned k_rdy:1;		// keyboard have data to read (future feature)
-//	unsigned drqr:1;		// data present in outbuf (status.b0)
-//	unsigned drqw:1;		// inbuf need data
+	int dmode;
 
 	Keyboard* kbd;
 	Mouse* mouse;
@@ -24,7 +30,6 @@ typedef struct {
 	int cmd;	// last command for data port writing
 	int data;
 	int status;
-//	int status_ch;
 	int inbuf;		// controller input buffer (cpu wr)
 	unsigned int outbuf;	// controller output buffer (cpu rd)
 	int inport;		// controller input port
