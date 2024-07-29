@@ -501,6 +501,7 @@ int mouseGetY(Mouse* mou) {return mou->ypos * mou->sensitivity;}
 
 void mouse_interrupt(Mouse* mouse) {
 	if (mouse->queueSize > 0) return;
+	if (mouse->lock) return;
 	switch (mouse->pcmode) {
 		case MOUSE_SERIAL:			// microsoft serial mouse
 			mouse->outbuf = 0x40;
@@ -538,12 +539,54 @@ int mouse_rd(Mouse* mouse) {
 	int res = -1;
 	if (mouse->queueSize > 0) {
 		res = mouse->outbuf & 0xff;
+		mouse->data = res;
 		mouse->outbuf >>= 8;
 		mouse->queueSize--;
 	}
 	return res;
 }
 
-void mouse_wr(Mouse* mou, int d) {
+void mouse_resp(Mouse* mou, int d) {
+	if (mou->lock) return;
+	mou->outbuf = d;
+	mou->queueSize = 1;
+	mou->xirq(IRQ_MOUSE_DATA, mou->xptr);
+}
 
+void mouse_wr(Mouse* mou, int d) {
+	if (mou->com < 0) {
+		switch (d) {
+			case 0xe6: mouse_resp(mou, 0xfa); break;	// set scale 1:1
+			case 0xe7: mouse_resp(mou, 0xfa); break;	// set scale 2:1
+			case 0xe8: mou->com = 0x1e8; break;		// +data: set resolution
+			case 0xe9: break;				// status request
+			case 0xea: mouse_resp(mou, 0xfa); break;	// set stream mode
+			case 0xeb: break;				// read data
+			case 0xec: mouse_resp(mou, 0xfa); break;	// reset wrap mode
+			case 0xee: mouse_resp(mou, 0xfa); break;	// set wrap mode
+			case 0xf0: mouse_resp(mou, 0xfa); break;	// set remote mode
+			case 0xf2: mouse_resp(mou, 0x00); break;	// get device id (00 - standard ps/2 mouse)
+			case 0xf3: mou->com = 0x1f3; break;		// set sample rate
+			case 0xf4: mou->lock = 0;
+				mouse_resp(mou, 0xfa);
+				break;		// enable data reporting
+			case 0xf5: mou->lock = 1;
+				mouse_resp(mou, 0xfa);
+				break;		// disable data reporting
+			case 0xf6: mouse_resp(mou, 0xfa); break;	// set defaults
+			case 0xfe: mouse_resp(mou, mou->data); break;	// resend
+			case 0xff: mouse_resp(mou, 0x00); break;	// reset & send id
+		}
+	} else {
+		switch (mou->com) {
+			case 0x1e8:
+				mouse_resp(mou, 0xfa);
+				break;				// d - resolution
+			case 0x1f3:
+				mouse_resp(mou, 0xfa);		// d - sample rate
+				break;
+		}
+		mou->com = -1;
+	}
+//	printf("%s : %X\n",__FUNCTION__,d);
 }

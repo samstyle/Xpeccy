@@ -3,7 +3,7 @@
 #include "defines.h"
 
 typedef int(*xurdcb)(void*);
-typedef void(*xuwrcb)(unsigned char, void*);
+typedef void(*xuwrcb)(int, void*);
 
 typedef struct {
 	unsigned drqr:1;	// byte from device is ready to be read

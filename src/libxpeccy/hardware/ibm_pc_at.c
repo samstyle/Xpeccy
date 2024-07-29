@@ -147,7 +147,7 @@ int ibm_inKbd(Computer* comp, int adr) {
 			break;
 		case 1:
 			res = comp->reg[0x61] & 0x1f;		// b0..3 is copied, b4 is 'mem refresh'
-			if (comp->pit->ch2.out && (res & 8)) res |= 0x20;	// b6: timer2 output
+			if (comp->pit->ch2.out && (res & 8)) res |= 0x20;	// b5: timer2 output
 			break;
 		case 4:
 			res = ps2c_rd(comp->ps2c, PS2_RSTATUS);
@@ -192,9 +192,8 @@ void ibm_outGP(Computer* comp, int adr, int val) {
 // com1,3 - irq4 (master)
 // com2,4 - irq3 (master)
 
-int ibm_mouse_rd(void* p) {
-	return mouse_rd(((Computer*)p)->mouse);
-}
+int ibm_mouse_rd(void* p) {return mouse_rd(((Computer*)p)->mouse);}
+void ibm_mouse_wr(int d, void* p) {mouse_wr(((Computer*)p)->mouse, d);}
 
 int ibm_inSP0(Computer* comp, int adr) {return uart_rd(comp->com1, adr & 7);}
 void ibm_outSP0(Computer* comp, int adr, int val) {uart_wr(comp->com1, adr & 7, val);}
@@ -575,7 +574,7 @@ void ibm_init(Computer* comp) {
 	dma_set_chan(comp->dma1, 1, ibm_dma1_rd_2, ibm_dma1_wr_2, NULL);
 	dma_set_chan(comp->dma2, 0, ibm_dma2_rd_1, ibm_dma2_wr_1, NULL);
 	comp->dma1->ch[2].blk = 1;		// block dma1 maintaining ch2 (fdc), it working through callbacks
-	uart_set_dev(comp->com1, ibm_mouse_rd, NULL, comp);	// connect serial mouse to COM1
+	uart_set_dev(comp->com1, ibm_mouse_rd, ibm_mouse_wr, comp);	// connect serial mouse to COM1
 }
 
 void dma_ch_transfer(DMAChan*, void*);

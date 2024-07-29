@@ -109,8 +109,10 @@ typedef struct {
 	unsigned enable:1;
 	unsigned hasWheel:1;
 	unsigned swapButtons:1;
+	unsigned lock:1;
 	double sensitivity;
 	int pcmode;
+	int com;
 
 	unsigned lmb:1;
 	unsigned rmb:1;
@@ -126,6 +128,7 @@ typedef struct {
 
 	int outbuf;
 	int queueSize;
+	int data;
 	// callbacks
 	cbirq xirq;
 	void* xptr;
