@@ -388,7 +388,7 @@ QList<dasmData> getDisasm(Computer* comp, int& adr) {
 			xadr.bank = page << 6;
 			xadr.adr = adr & 0x3fff;
 			xadr.abs = xadr.adr | (page << 14);
-			drow.flag = comp->brkRamMap[xadr.abs];
+			drow.flag = comp->brkRamMap[xadr.abs & comp->mem->ramMask];
 			drow.ispc = ((xadr.type == pct) && (abs == xadr.abs)) ? 1 : 0;
 			break;
 		case XVIEW_ROM:
@@ -396,7 +396,7 @@ QList<dasmData> getDisasm(Computer* comp, int& adr) {
 			xadr.bank = page << 6;
 			xadr.adr = adr & 0x3fff;
 			xadr.abs = xadr.adr | (page << 14);
-			drow.flag = comp->brkRomMap[xadr.abs];
+			drow.flag = comp->brkRomMap[xadr.abs & comp->mem->romMask];
 			drow.ispc = ((xadr.type == pct) && (abs == xadr.abs)) ? 1 : 0;
 			break;
 		default:
@@ -994,7 +994,7 @@ void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 						adr = xadr.abs & conf.prof.cur->zx->mem->romMask;
 						break;
 					default: bpt = MEM_BRK_SLT;
-						adr = xadr.abs;
+						adr = xadr.abs & conf.prof.cur->zx->slot->memMask;
 						break;
 				}
 				// adr = xadr.abs;

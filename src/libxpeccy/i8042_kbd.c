@@ -72,16 +72,19 @@ void ps2c_ready(PS2Ctrl* ctrl, int dev) {
 // controller output port
 // b0: 0=reset system
 // b1: a20 gate
-// b2: 2nd ps/2 device clock
-// b3: 2nd ps/2 device data
+// b2: 2nd ps/2 device data
+// b3: 2nd ps/2 device clock
 // b4: 1st device output buffer full (irq 1)
 // b5: 2nd device output buffer full (irq 12)
 // b6: 1st ps/2 device clock
 // b7: 1st ps/2 device data
 
 // controller input port
-// b0: kbd data line status
-// b1: mouse data line status
+// b0: kbd data line
+// b1: mouse data line
+// b4: external ram enabled
+// b5: manufactured settings enabled
+// b6: color display
 // b7: kbd enabled
 
 // DONE: ~1ms delay between data bytes from device
@@ -105,37 +108,39 @@ int ps2c_rd(PS2Ctrl* ctrl, int adr) {
 	return res;
 }
 
-// TODO: set status.bit0 after reading status reg (0 immediately, 1 after reading) ???
-void ps2c_wr_ob(PS2Ctrl* ctrl, int val) {
+void ps2c_wr_ob(PS2Ctrl* ctrl, int val, int flg) {
 	ctrl->outbuf = val;
 	ctrl->status &= ~0x21;
 	ctrl->status |= 0x01;
+	if (flg & 1) ctrl->status |= 0x20;
 }
 
+/*
 void ps2c_wr_ob2(PS2Ctrl* ctrl, int val) {
 	ctrl->outbuf = val;
 	ctrl->status |= 0x21;
 }
+*/
 
 // read 1 byte from kbd to outbuf and generate intk if need
 void ps2c_rd_kbd(PS2Ctrl* ctrl) {
+	if (ctrl->ram[0] & 0x10) return;	// 1st device clock disabled
 	int d = xt_read(ctrl->kbd);
-	if (ctrl->kbd->lock || (ctrl->ram[0] & 0x10)) return;
 	if (d < 0) {
 		ctrl->k_rdy = 0;
 	} else {
-		ps2c_wr_ob(ctrl, d);
+		ps2c_wr_ob(ctrl, d, 0);
 		ctrl->xirq(IRQ_KBD, ctrl->xptr);
 	}
 }
 
 void ps2c_rd_mouse(PS2Ctrl* ctrl) {
+	if (ctrl->ram[0] & 0x20) return;	// 2nd device clock disabled
 	int d = mouse_rd(ctrl->mouse);
-	if (ctrl->ram[0] & 0x20) return;	// 2nd device disabled (data readed and droped)
 	if (d < 0) {				// no data left
 		ctrl->m_rdy = 0;
 	} else {
-		ps2c_wr_ob2(ctrl, d);		// write data to outbuf
+		ps2c_wr_ob(ctrl, d, 1);	// write data to outbuf
 		if (ctrl->ram[0] & 2) {		// 2nd device interrupt enabled
 			ctrl->xirq(IRQ_MOUSE, ctrl->xptr);
 		}
@@ -145,6 +150,7 @@ void ps2c_rd_mouse(PS2Ctrl* ctrl) {
 void ps2c_wr(PS2Ctrl* ctrl, int adr, int val) {
 	ctrl->inbuf = val;
 	ctrl->status |= 2;
+	int cont = 0;
 	switch (adr) {
 		case PS2_RDATA:
 			//printf("PS/2 controller wr data %.2X\n",val);
@@ -159,6 +165,9 @@ void ps2c_wr(PS2Ctrl* ctrl, int adr, int val) {
 					break;
 				case PS2C_MODE_COM:
 					switch (ctrl->cmd) {
+						case 0xa5:
+							cont = !val;	// get bytes until 0x00
+							break;
 						case 0xd1:		// write to output port
 							ctrl->outport = val;
 							if (!(val & 1)) {
@@ -167,10 +176,10 @@ void ps2c_wr(PS2Ctrl* ctrl, int adr, int val) {
 							// b1:a20 gate. if 0 here [or port 92 bit 1 = 0], a20+ is disabled (always 0)
 							break;
 						case 0xd2:
-							ps2c_wr_ob(ctrl, val);
+							ps2c_wr_ob(ctrl, val, 0);
 							break;
 						case 0xd3:
-							ps2c_wr_ob2(ctrl, val);
+							ps2c_wr_ob(ctrl, val, 1);
 							break;
 						default:
 							if ((ctrl->cmd & 0xe0) == 0x60) {
@@ -184,8 +193,10 @@ void ps2c_wr(PS2Ctrl* ctrl, int adr, int val) {
 							}
 							break;
 					}
-					ctrl->cmd = -1;
-					ctrl->dmode = PS2C_MODE_KBD;
+					if (!cont) {
+						ctrl->cmd = -1;
+						ctrl->dmode = PS2C_MODE_KBD;
+					}
 					break;
 			}
 			ctrl->data = val;	// last byte
@@ -196,48 +207,54 @@ void ps2c_wr(PS2Ctrl* ctrl, int adr, int val) {
 			switch (val & 0xe0) {
 				case 0x00: break;			// 00..1F nothing?
 				case 0x20:				// 20..3F read byte from internal ram of ps/2 controller
-					ps2c_wr_ob(ctrl, ctrl->ram[val & 0x1f]);
+					ps2c_wr_ob(ctrl, ctrl->ram[val & 0x1f], 0);
 					break;
 				case 0x40: break;
 				case 0x60:
 					ctrl->cmd = val;		// 60..7F: address to write through 60h
 					ctrl->dmode = PS2C_MODE_COM;
 					break;
-				case 0x80: break;
+				case 0x80:
+					if ((val & 0xf0) == 0x90) {
+						ctrl->outport &= 0xf0;
+						ctrl->outport |= (val & 0x0f);
+					}
+					break;
 				case 0xa0:
 					switch(val) {
 						case 0xa1:		// read controller version
-							ps2c_wr_ob(ctrl, 0xFF);
+							ps2c_wr_ob(ctrl, 0xFF, 0);
 							break;
 						case 0xa4:
-							ps2c_wr_ob(ctrl, 0xf1);		// f1:no password protect, fa:password protect presented
+							ps2c_wr_ob(ctrl, 0xf1, 0);		// f1:no password protect, fa:password protect presented
 							break;
-						case 0xa5:		// write password (all input data bytes till 0x00)
+						case 0xa5: ctrl->cmd = val;		// write password (all input data bytes till 0x00)
+							ctrl->dmode = PS2C_MODE_COM;
 							break;
 						case 0xa6:		// allow password check
 							break;
-						case 0xa7:		// disable 2nd ps/2 device
+						case 0xa7:		// disable 2nd ps/2 device clock
 							ctrl->ram[0] |= 0x20;
 							break;
-						case 0xa8:		// enable 2nd ps/2 device
+						case 0xa8:		// enable 2nd ps/2 device clock
 							ctrl->ram[0] &= ~0x20;
 							break;
 						case 0xa9:		// test 2nd ps/2 deivce
-							ps2c_wr_ob(ctrl, 0);
+							ps2c_wr_ob(ctrl, 0, 0);
 							break;
 						case 0xaa:		// run selftest. write 55h to data port
-							ps2c_wr_ob(ctrl, 0x55);
+							ps2c_wr_ob(ctrl, 0x55, 0);
 							break;
 						case 0xab:		// test 1st ps/2 device
-							ps2c_wr_ob(ctrl, 0);
+							ps2c_wr_ob(ctrl, 0, 0);
 							break;
 						case 0xac:		// diagnostic dump (read 32 bytes of internal mem)
 							break;
-						case 0xad:		// disable kbd
+						case 0xad:		// disable kbd (clock)
 							ctrl->ram[0] |= 0x10;
 							ctrl->inport &= 0x7f;
 							break;
-						case 0xae:		// enable kbd
+						case 0xae:		// enable kbd (clock)
 							ctrl->ram[0] &= ~0x10;
 							ctrl->inport |= 0x80;
 							break;
@@ -248,20 +265,20 @@ void ps2c_wr(PS2Ctrl* ctrl, int adr, int val) {
 				case 0xc0:
 					switch (val) {
 						case 0xc0:		// read controller input port
-							ctrl->inport = 0x20;				// kbd unlocked bit set
-							if (!ctrl->kbd->lock) ctrl->outbuf |= 0x80;	// kbd enabled
-							ps2c_wr_ob(ctrl, ctrl->inport);
+							ctrl->inport |= 0x20;				// kbd unlocked bit set
+							// if (!ctrl->kbd->lock) ctrl->inport |= 0x80;	// kbd enabled
+							ps2c_wr_ob(ctrl, ctrl->inport, 0);
 							break;
 						case 0xc1:		// b0..3 input port -> b4..7 status byte
-							//ctrl->status &= 0x0f;
-							//ctrl->status |= ((ctrl->inbuf << 4) & 0xf0);
+							ctrl->status &= 0x0f;
+							ctrl->status |= ((ctrl->inport << 4) & 0xf0);
 							break;
 						case 0xc2:		// b4..7 input port -> b4..7 status byte
-							//ctrl->status &= 0x0f;
-							//ctrl->status |= (ctrl->inbuf & 0xf0);
+							ctrl->status &= 0x0f;
+							ctrl->status |= (ctrl->inport & 0xf0);
 							break;
 						case 0xd0:		// read controller output port
-							ps2c_wr_ob(ctrl, ctrl->outport);
+							ps2c_wr_ob(ctrl, ctrl->outport, 0);
 							break;
 						case 0xd1:		// write next byte to controller output port
 						case 0xd2:		// write next byte to 1st ps/2 output buffer (like it was readed from device)
@@ -287,7 +304,7 @@ void ps2c_wr(PS2Ctrl* ctrl, int adr, int val) {
 								// set outbuf:
 								// b0=kbd clock line status
 								// b1=mouse clock line status
-								ps2c_wr_ob(ctrl, 0);
+								ps2c_wr_ob(ctrl, 0, 0);
 								break;
 						}
 					}

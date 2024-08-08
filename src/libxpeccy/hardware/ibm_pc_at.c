@@ -173,7 +173,7 @@ void ibm_outKbd(Computer* comp, int adr, int val) {
 			ps2c_wr(comp->ps2c, PS2_RCMD, val);
 			break;
 	}
-	//printf("%.4X:%.4X kbd out %.3X, %.2X\n",comp->cpu->cs.idx,comp->cpu->pc,adr,val);
+	if (comp->debug) printf("%.4X:%.4X ps/2 out %.3X, %.2X\n",comp->cpu->cs.idx,comp->cpu->pc,adr,val);
 }
 
 // gameport
@@ -240,6 +240,7 @@ void ibm_out80(Computer* comp, int adr, int val) {
 	if (comp->post != (val & 0xff)) {
 		printf("%4X:%.4X\tPOST %.2X\n",comp->cpu->cs.idx,comp->cpu->pc,val & 0xff);
 		comp->post = val & 0xff;
+		//if (comp->post == 0x84) {comp->debug = 1;}
 	}
 }
 

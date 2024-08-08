@@ -300,7 +300,7 @@ int xt_read(Keyboard* kbd) {
 	int res;
 	if (kbd->outbuf & 0xff) {
 		res = kbd->outbuf & 0xff;
-		kbd->arg = res & 0xff;
+		kbd->lastkey = res & 0xff;
 		kbd->outbuf >>= 8;
 	} else {
 		res = -1;
@@ -308,53 +308,60 @@ int xt_read(Keyboard* kbd) {
 	return res;
 }
 
+void xt_ack(Keyboard* kbd, unsigned long d) {
+	kbd->outbuf = d;
+	kbd->xirq(IRQ_KBD_DATA, kbd->xptr);
+}
+
+// ack FA at every byte
+
 void kbd_wr(Keyboard* kbd, int d) {
 	if (kbd->com < 0) {
 		switch (d) {
-			case 0xed: kbd->com = d | 0x100; break;	// leds
-			case 0xee: xt_add_code(kbd, 0xee); break;	// echo
-			case 0xf0: kbd->com = d | 0x100; break;	// get/set scancode
-			case 0xf2: xt_add_code(kbd, 0xfa); break;	// get dev type (no code = at-keyboard)
-			case 0xf3: kbd->com = d | 0x100; break;	// set repeat rate/delay
+			case 0xed: xt_ack(kbd, 0xfa); kbd->com = d | 0x100; break;	// leds
+			case 0xee: xt_ack(kbd, 0xee); break;	// echo
+			case 0xf0: xt_ack(kbd, 0xfa); kbd->com = d | 0x100; break;	// get/set scancode
+			case 0xf2: xt_ack(kbd, 0x83abfa); break;	// get dev type (no code = at-keyboard)
+			case 0xf3: xt_ack(kbd, 0xfa); kbd->com = d | 0x100; break;	// set repeat rate/delay
 			case 0xf4:					// enable sending scancodes
 				kbd->lock = 0;
-				xt_add_code(kbd, 0xfa);
+				xt_ack(kbd, 0xfa);
 				break;
 			case 0xf5:					// disable sending scancodes
 				kbd->lock = 1;
-				xt_add_code(kbd, 0xfa);
+				xt_ack(kbd, 0xfa);
 				break;
-			case 0xf6: xt_add_code(kbd, 0xfa); break;	// set default params
-			case 0xf7: xt_add_code(kbd, 0xfa); break;	// f7..fd: scanset3 specific
-			case 0xf8: xt_add_code(kbd, 0xfa); break;
-			case 0xf9: xt_add_code(kbd, 0xfa); break;
-			case 0xfa: xt_add_code(kbd, 0xfa); break;
-			case 0xfb: xt_add_code(kbd, 0xfa); break;
-			case 0xfc: xt_add_code(kbd, 0xfa); break;
-			case 0xfd: xt_add_code(kbd, 0xfa); break;
-			case 0xfe: xt_add_code(kbd, kbd->arg & 0xff); break;	// resend last byte
-			case 0xff:			// reset & run selftest		NOTE: reset keyboard, not ps/2 controller(!)
-				xt_add_code(kbd, 0xaa);
+			case 0xf6: xt_ack(kbd, 0xfa); break;		// set default params
+			case 0xf7: xt_ack(kbd, 0xfa); break;		// f7..fd: scanset3 specific
+			case 0xf8: xt_ack(kbd, 0xfa); break;
+			case 0xf9: xt_ack(kbd, 0xfa); break;
+			case 0xfa: xt_ack(kbd, 0xfa); break;
+			case 0xfb: xt_ack(kbd, 0xfa); break;
+			case 0xfc: xt_ack(kbd, 0xfa); break;
+			case 0xfd: xt_ack(kbd, 0xfa); break;
+			case 0xfe: xt_ack(kbd, kbd->lastkey & 0xff); break;	// resend last byte
+			case 0xff:						// reset & run selftest
+				xt_ack(kbd, 0xfa);
 				break;
 		}
 	} else {
 		switch (kbd->com) {
 			case 0x1ed:
 				// set leds: b0-scrlck,b1-numlck,b2-caps
-				xt_add_code(kbd, 0xfa);
+				xt_ack(kbd, 0xfa);
 				break;
 			case 0x1f0:
 				// set scancode tab: 0-get current, 1..3-scanset 1..3
 				if (d == 0) {
-					xt_add_code(kbd, 0x02fa);	// (kbd->scanset << 8) | fa)
+					xt_ack(kbd, 0x02fa);	// (kbd->scanset << 8) | fa)
 				} else {
-					xt_add_code(kbd, 0xfa);
+					xt_ack(kbd, 0xfa);
 				}
 				break;
 			case 0x1f3:
 				kbd->kdel = (((d >> 5) & 3) + 1) * 250e6;	// 1st delay - 250,500,750,1000ms
 				kbd->kper = (33 + 7 * (d & 0x1f)) * 1e6;	// repeat period: 33 to 250 ms
-				xt_add_code(kbd, 0xfa);
+				xt_ack(kbd, 0xfa);
 				break;
 		}
 		kbd->com = -1;
@@ -546,7 +553,7 @@ int mouse_rd(Mouse* mouse) {
 	return res;
 }
 
-void mouse_resp(Mouse* mou, int d) {
+void mouse_ack(Mouse* mou, int d) {
 	if (mou->lock) return;
 	mou->outbuf = d;
 	mou->queueSize = 1;
@@ -556,35 +563,37 @@ void mouse_resp(Mouse* mou, int d) {
 void mouse_wr(Mouse* mou, int d) {
 	if (mou->com < 0) {
 		switch (d) {
-			case 0xe6: mouse_resp(mou, 0xfa); break;	// set scale 1:1
-			case 0xe7: mouse_resp(mou, 0xfa); break;	// set scale 2:1
-			case 0xe8: mou->com = 0x1e8; break;		// +data: set resolution
+			case 0xe6: mouse_ack(mou, 0xfa); break;	// set scale 1:1
+			case 0xe7: mouse_ack(mou, 0xfa); break;	// set scale 2:1
+			case 0xe8: mouse_ack(mou, 0xfa);
+				mou->com = 0x1e8;
+				break;		// +data: set resolution
 			case 0xe9: break;				// status request
-			case 0xea: mouse_resp(mou, 0xfa); break;	// set stream mode
+			case 0xea: mouse_ack(mou, 0xfa); break;	// set stream mode
 			case 0xeb: break;				// read data
-			case 0xec: mouse_resp(mou, 0xfa); break;	// reset wrap mode
-			case 0xee: mouse_resp(mou, 0xfa); break;	// set wrap mode
-			case 0xf0: mouse_resp(mou, 0xfa); break;	// set remote mode
-			case 0xf2: mouse_resp(mou, 0x00); break;	// get device id (00 - standard ps/2 mouse)
-			case 0xf3: mou->com = 0x1f3; break;		// set sample rate
+			case 0xec: mouse_ack(mou, 0xfa); break;	// reset wrap mode
+			case 0xee: mouse_ack(mou, 0xfa); break;	// set wrap mode
+			case 0xf0: mouse_ack(mou, 0xfa); break;	// set remote mode
+			case 0xf2: mouse_ack(mou, 0x00); break;	// get device id (00 - standard ps/2 mouse)
+			case 0xf3: mouse_ack(mou, 0xfa);
+				mou->com = 0x1f3;
+				break;		// set sample rate
 			case 0xf4: mou->lock = 0;
-				mouse_resp(mou, 0xfa);
+				mouse_ack(mou, 0xfa);
 				break;		// enable data reporting
 			case 0xf5: mou->lock = 1;
-				mouse_resp(mou, 0xfa);
+				mouse_ack(mou, 0xfa);
 				break;		// disable data reporting
-			case 0xf6: mouse_resp(mou, 0xfa); break;	// set defaults
-			case 0xfe: mouse_resp(mou, mou->data); break;	// resend
-			case 0xff: mouse_resp(mou, 0x00); break;	// reset & send id
+			case 0xf6: mouse_ack(mou, 0xfa); break;	// set defaults
+			case 0xfe: mouse_ack(mou, mou->data); break;	// resend
+			case 0xff: mouse_ack(mou, 0x00); break;	// reset & send id
 		}
 	} else {
 		switch (mou->com) {
 			case 0x1e8:
-				mouse_resp(mou, 0xfa);
 				break;				// d - resolution
 			case 0x1f3:
-				mouse_resp(mou, 0xfa);		// d - sample rate
-				break;
+				break;				// d - sample rate
 		}
 		mou->com = -1;
 	}
