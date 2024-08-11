@@ -288,6 +288,7 @@ void cmsWr(Computer*, int);
 
 void rzxStop(Computer*);
 
+void comp_brk(Computer*);
 unsigned char* getBrkPtr(Computer*, int);
 unsigned char getBrk(Computer*, int);
 void setBrk(Computer*, int, unsigned char);

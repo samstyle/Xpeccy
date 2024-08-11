@@ -16,9 +16,10 @@ PS2Ctrl* ps2c_create(Keyboard* kp, Mouse* mp, cbirq cb, void* p) {
 		ctrl->mouse = mp;
 		ctrl->xirq = cb;
 		ctrl->xptr = p;
-		ctrl->cmd = -1;
+//		ctrl->cmd = -1;
 		ctrl->status = 0;
-		ctrl->delay = 0;
+//		ctrl->delay = 0;
+		ps2c_reset(ctrl);
 	}
 	return ctrl;
 }
@@ -46,6 +47,7 @@ void ps2c_ready(PS2Ctrl* ctrl, int dev) {
 		ctrl->m_rdy = 1;
 	} else {		// keyboard
 		ctrl->k_rdy = 1;
+		printf("kbd ready\n");
 	}
 }
 
@@ -54,10 +56,10 @@ void ps2c_ready(PS2Ctrl* ctrl, int dev) {
 // b6: convert scan codes
 // b5: ? 1-translate code to xt (tab 1), 0-to at (tab2)
 // b4: disable kbd
-// b3: 1-override inhibit keyswitch
+// b3: - (not in ps/2: 1-override inhibit keyswitch)
 // b2: system flag (1-warm reboot)
-// b1: reserved
-// b0: enable keyboard irq1
+// b1: enable mouse irq(12)
+// b0: enable keyboard irq(1)
 
 // status byte (rd from 0x64)
 // b0: 1=output buffer full (can be readed from 0x60)
@@ -86,9 +88,6 @@ void ps2c_ready(PS2Ctrl* ctrl, int dev) {
 // b5: manufactured settings enabled
 // b6: color display
 // b7: kbd enabled
-
-// DONE: ~1ms delay between data bytes from device
-// DONE?: xt/at keyboard autorepeat
 
 int ps2c_rd(PS2Ctrl* ctrl, int adr) {
 	int res = -1;
@@ -124,8 +123,9 @@ void ps2c_wr_ob2(PS2Ctrl* ctrl, int val) {
 
 // read 1 byte from kbd to outbuf and generate intk if need
 void ps2c_rd_kbd(PS2Ctrl* ctrl) {
-	if (ctrl->ram[0] & 0x10) return;	// 1st device clock disabled
+	if (ctrl->ram[0] & 0x10) return;	// 1st device clock disabled: TODO: bios trying to read ack while kbd clock is disabled
 	int d = xt_read(ctrl->kbd);
+	printf("xt_read %.2X\n",d);
 	if (d < 0) {
 		ctrl->k_rdy = 0;
 	} else {
@@ -151,6 +151,7 @@ void ps2c_wr(PS2Ctrl* ctrl, int adr, int val) {
 	ctrl->inbuf = val;
 	ctrl->status |= 2;
 	int cont = 0;
+	printf("ps/2 controller wr %i, %.2X (mode: %i)\n", adr, val, ctrl->dmode);
 	switch (adr) {
 		case PS2_RDATA:
 			//printf("PS/2 controller wr data %.2X\n",val);
@@ -186,7 +187,8 @@ void ps2c_wr(PS2Ctrl* ctrl, int adr, int val) {
 								if (ctrl->cmd == 0x60) {
 									ctrl->status &= ~4;
 									ctrl->status |= (val & 4);
-									val &= ~0x40;
+									// val &= ~0x40;
+									printf("ps/2 control byte = %.2X\n",val);
 								}
 								ctrl->ram[ctrl->cmd & 0x1f] = val & 0xff;
 								// if (!(ctrl->cmd & 0x1f)) printf("i8042 conf = %.2X\n",val & 0xff);

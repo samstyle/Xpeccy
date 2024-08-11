@@ -681,6 +681,12 @@ void cmsWr(Computer* comp, int val) {
 
 // breaks
 
+// activate breakpoint w/o type (exit to debuga)
+void comp_brk(Computer* comp) {
+	comp->brk = 1;
+	comp->brkt = -1;
+}
+
 static unsigned char dumBrk = 0x00;
 
 unsigned char* getBrkPtr(Computer* comp, int madr) {

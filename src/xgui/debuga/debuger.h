@@ -91,6 +91,7 @@ class DebugWin : public QMainWindow {
 		xPitWidget* wid_pit;
 		xPicWidget* wid_pic;
 		xVgaWidget* wid_vga;
+		xPS2Widget* wid_ps2;
 		xAYWidget* wid_ay;
 		xTapeWidget* wid_tape;
 		xFDDWidget* wid_fdd;
@@ -157,7 +158,7 @@ class DebugWin : public QMainWindow {
 
 		bool fillAll();
 		void fillNotCPU();
-		void fillTabs();
+//		void fillTabs();
 		void doStep();
 
 		void saveDasm();

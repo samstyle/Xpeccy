@@ -286,3 +286,17 @@ class xZXScrWidget : public xDockWidget {
 		Ui::ZXScrWidget ui;
 		QImage scrImg;
 };
+
+// ps/2
+
+#include "ui_form_ps2.h"
+
+class xPS2Widget : public xDockWidget {
+	Q_OBJECT
+	public:
+		xPS2Widget(QString, QString, QWidget* = nullptr);
+	public slots:
+		void draw();
+	private:
+		Ui::PS2Widget ui;
+};

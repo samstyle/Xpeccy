@@ -275,11 +275,12 @@ DebugWin::DebugWin(QWidget* par):QMainWindow(par) {
 	wid_cia = new xCiaWidget("","CIA");
 	wid_vic = new xVicWidget("","VIC");
 	wid_mmap = new xMMapWidget(":/images/memory.png","Memory map");
+	wid_ps2 = new xPS2Widget("","PS/2");
 
 	dockWidgets << wid_dump << wid_disk_dump << wid_vmem_dump << wid_cmos_dump;
 	dockWidgets << wid_brk << wid_zxscr << wid_ay << wid_tape;
 	dockWidgets << wid_fdd << wid_mmap << wid_gb << wid_ppu;
-	dockWidgets << wid_cia << wid_dma << wid_pic << wid_pit << wid_vga;
+	dockWidgets << wid_cia << wid_dma << wid_pic << wid_pit << wid_vga << wid_ps2;
 
 	addDockWidget(Qt::RightDockWidgetArea, wid_dump);
 	tabifyDockWidget(wid_dump, wid_disk_dump);
@@ -298,6 +299,7 @@ DebugWin::DebugWin(QWidget* par):QMainWindow(par) {
 	tabifyDockWidget(wid_brk, wid_pic);
 	tabifyDockWidget(wid_brk, wid_pit);
 	tabifyDockWidget(wid_brk, wid_vga);
+	tabifyDockWidget(wid_brk, wid_ps2);
 	wid_dump->raise();
 	wid_brk->raise();
 
@@ -832,258 +834,10 @@ void setSignal(QLabel* lab, int on) {
 	lab->setFont(fnt);
 }
 
-//QString getAYmix(aymChan*);
 /*
-QString getAYmix(aymChan* ch) {
-	QString res = ch->tdis ? "-" : "T";
-	res += ch->ndis ? "-" : "N";
-	res += ch->een ? "E" : "-";
-	return res;
-}
-*/
-//void drawBar(QLabel*, int, int);
-/*
-void drawBar(QLabel* lab, int lev, int max) {
-	if (lev > max) lev = max;
-	if (lev < 0) lev = 0;
-	QPixmap pxm(100, lab->height() / 2);
-	QPainter pnt;
-	pxm.fill(Qt::black);
-	pnt.begin(&pxm);
-	pnt.fillRect(0,0,pxm.width() * lev / max, pxm.height(), Qt::green);
-	pnt.setPen(Qt::red);
-	pnt.drawLine(pxm.width() / 2, 0, pxm.width() / 2, pxm.height());
-	pnt.end();
-	lab->setPixmap(pxm);
-}
-*/
-
-/*
-void DebugWin::fillAY() {
-	if (ui.tabsPanel->currentWidget() != ui.ayTab) return;
-	Computer* comp = conf.prof.cur->zx;
-	aymChip* chp = comp->ts->chipA;
-	ui.leToneA->setText(gethexword(((chp->reg[1] << 8) | chp->reg[0]) & 0x0fff));
-	ui.leToneB->setText(gethexword(((chp->reg[3] << 8) | chp->reg[2]) & 0x0fff));
-	ui.leToneC->setText(gethexword(((chp->reg[5] << 8) | chp->reg[4]) & 0x0fff));
-	ui.leVolA->setText(gethexbyte(chp->reg[8] & 0x0f));
-	ui.leVolB->setText(gethexbyte(chp->reg[9] & 0x0f));
-	ui.leVolC->setText(gethexbyte(chp->reg[10] & 0x0f));
-	ui.leMixA->setText(getAYmix(&chp->chanA));
-	ui.leMixB->setText(getAYmix(&chp->chanB));
-	ui.leMixC->setText(getAYmix(&chp->chanC));
-	ui.leToneN->setText(gethexbyte(chp->reg[6]));
-	ui.leEnvTone->setText(gethexword((chp->reg[12] << 8) | chp->reg[11]));
-	ui.leEnvForm->setText(gethexbyte(chp->reg[13]));
-	ui.leVolE->setText(gethexbyte(chp->chanE.vol));
-	ui.labLevA->setText(chp->chanA.lev ? "1" : "0");
-	ui.labLevB->setText(chp->chanB.lev ? "1" : "0");
-	ui.labLevC->setText(chp->chanC.lev ? "1" : "0");
-	ui.labLevN->setText(chp->chanN.lev ? "1" : "0");
-
-	drawBar(ui.labBeep, comp->beep->val, 256);
-}
-*/
-
-/*
-#define TDSTEP 20	// mks/dot
-
-void DebugWin::fillTape() {
-	if (ui.tabsPanel->currentWidget() != ui.tapeTab) return;
-	Computer* comp = conf.prof.cur->zx;
-	Tape* tape = comp->tape;
-	drawBar(ui.labTapein, tape->volPlay, 256);
-	drawBar(ui.labTapeout, tape->levRec, 1);
-	ui.labSigLen->setText(tape->on ? QString("%0 mks").arg(tape->sigLen) : "");
-	ui.labTapeState->setText(tape->on ? (tape->rec ? "rec" : "play") : "stop");
-	ui.labTapePos->setText(tape->on ? QString::number(tape->pos - 1) : "--");
-	// draw tape diagram
-	int wid = 330;
-	int hei = 100;
-	int pos;
-	int bnr;
-	int amp;
-	int oamp = -1;
-	int x = wid / 2;
-	int time = 0;
-	TapeBlock* blk;
-	QPixmap pxm(wid, hei);
-	QPainter pnt;
-	pxm.fill(Qt::black);
-	pnt.begin(&pxm);
-	pnt.setPen(Qt::red);
-	pnt.drawLine(0, hei/2, wid, hei/2);
-	pnt.drawLine(wid / 2, 0, wid/2, hei);
-	pnt.setPen(Qt::green);
-	if (tape->blkCount > 0) {
-		bnr = tape->block;
-		blk = &tape->blkData[bnr];
-		pos = tape->pos;
-		time = tape->sigLen + (wid / 2) * TDSTEP;
-		while ((time >= 0) && (blk != NULL)) {
-			pos--;
-			if (pos < 0) {
-				bnr--;
-				if (bnr < 0) {
-					blk = NULL;
-				} else {
-					blk = &tape->blkData[bnr];
-					pos = blk->sigCount - 1;
-				}
-			} else {
-				time -= blk->data[pos].size;
-			}
-		}
-		if (blk == NULL) {
-			bnr = 0;
-			pos = 0;
-			blk = &tape->blkData[bnr];
-			x = time / TDSTEP;		// skip
-			time = blk->data[pos].size;
-		} else {
-			x = 0;
-			time += blk->data[pos].size;	// remaining time
-		}
-		while (x < wid) {
-			if (pos < blk->sigCount) {
-				amp = hei - blk->data[pos].vol * hei / 256;
-				if (oamp < 0)
-					oamp = amp;
-				while ((time > 0) && (x < wid)) {
-					pnt.drawLine(x, oamp, x + 1, amp);
-					oamp = amp;
-					time -= TDSTEP;
-					x++;
-				}
-				pos++;
-				if (pos < blk->sigCount)
-					time += blk->data[pos].size;
-			} else {
-				bnr++;
-				if (bnr < tape->blkCount) {
-					blk = &tape->blkData[bnr];
-					pos = 0;
-					time += blk->data[pos].size;
-				} else {
-					x = wid;
-				}
-			}
-		}
-	}
-	pnt.end();
-	ui.labTapeDiag->setPixmap(pxm);
-}
-*/
-
-// NOTE: model must be xTableModel child
-/*
-void update_table(QTableView* tab) {
-	xTableModel* mod = (xTableModel*)(tab->model());
-	mod->update();
-	// emit mod->dataChanged(mod->index(0,0), mod->index(99, 99));
-}
-*/
-
 void DebugWin::fillTabs() {
-//	fillMem();
-
-//	wid_fdd.draw();//fillFDC();
-//	wid_gb.draw();//fillGBoy();
-//	wid_ppu.draw();//drawNes();
-//	wid_ay.draw();//fillAY();
-//	wid_tape.draw();//fillTape();
-//	Computer* comp = conf.prof.cur->zx;
-	// cia
-//	wid_cia.draw();
-	/*
-	if (ui.tabsPanel->currentWidget() == ui.ciaTab)	{
-		ui.cia1timera->setText(QString("%0 / %1").arg(gethexword(comp->c64.cia1->timerA.value)).arg(gethexword(comp->c64.cia1->timerA.inival)));
-		ui.cia1timerb->setText(QString("%0 / %1").arg(gethexword(comp->c64.cia1->timerB.value)).arg(gethexword(comp->c64.cia1->timerB.inival)));
-		ui.cia1irq->setText(getbinbyte(comp->c64.cia1->intrq));
-		ui.cia1inten->setText(getbinbyte(comp->c64.cia1->inten));
-		ui.cia1cra->setText(getbinbyte(comp->c64.cia1->timerA.flags));
-		ui.cia1crb->setText(getbinbyte(comp->c64.cia1->timerB.flags));
-		ui.cia2timera->setText(QString("%0 / %1").arg(gethexword(comp->c64.cia2->timerA.value)).arg(gethexword(comp->c64.cia2->timerA.inival)));
-		ui.cia2timerb->setText(QString("%0 / %1").arg(gethexword(comp->c64.cia2->timerB.value)).arg(gethexword(comp->c64.cia2->timerB.inival)));
-		ui.cia2irq->setText(getbinbyte(comp->c64.cia2->intrq));
-		ui.cia2inten->setText(getbinbyte(comp->c64.cia2->inten));
-		ui.cia2cra->setText(getbinbyte(comp->c64.cia2->timerA.flags));
-		ui.cia2crb->setText(getbinbyte(comp->c64.cia2->timerB.flags));
-	}
-	*/
-	// vic
-//	wid_vic.draw();
-	/*
-	if (ui.tabsPanel->currentWidget() == ui.vicTab) {
-		ui.tabVicRegs->update();
-	}
-	*/
-//	wid_zxscr.draw();//updateScreen();
-//	wid_brk.draw();
-	/*
-	if (ui.tabsPanel->currentWidget() == ui.brkTab)	{
-		ui.brkTab->update();
-	}
-	*/
-
-//	ui_misc.labRX->setNum(comp->vid->ray.x);
-//	setSignal(ui_misc.labRX, comp->vid->hblank);
-
-//	ui_misc.labRY->setNum(comp->vid->ray.y);
-//	setSignal(ui_misc.labRY, comp->vid->vblank);
-
-	// memory
-//	wid_mmap.draw();
-	/*
-	if (ui.tabsPanel->currentWidget() == ui.memTab) {
-		ui.widBank->setVisible(comp->hw->grp == HWG_ZX);
-		QPixmap img(256, 192);
-		QPainter pnt;
-		img.fill(Qt::black);
-		pnt.begin(&img);
-		int pg = 0;
-		int x,y;
-		QColor col;
-		for (y = 0; y < 16; y++) {
-			for (x = 0; x < 16; x++) {
-				switch(comp->mem->map[pg & 0xff].type) {
-					case MEM_RAM: col = Qt::darkGreen; break;
-					case MEM_ROM: col = Qt::darkRed; break;
-					case MEM_IO: col = Qt::darkBlue; break;
-					case MEM_SLOT: col = Qt::darkCyan; break;
-					default: col = Qt::darkGray; break;
-				}
-				pnt.fillRect(x * 12, y * 12, 11, 11, col);
-				pg++;
-			}
-		}
-		pnt.setPen(Qt::yellow);
-		pnt.drawLine(0, 47, 256, 47);
-		pnt.drawLine(0, 95, 256, 95);
-		pnt.drawLine(0, 143, 256, 143);
-		pnt.end();
-		ui.labMemMap->setPixmap(img);
-		block = 1;
-		if (comp->hw->grp == HWG_ZX) {
-			ui.numBank0->setValue(comp->mem->map[0x00].num >> 6);
-			ui.numBank1->setValue(comp->mem->map[0x40].num >> 6);
-			ui.numBank2->setValue(comp->mem->map[0x80].num >> 6);
-			ui.numBank3->setValue(comp->mem->map[0xc0].num >> 6);
-			setRFIndex(ui.cbBank0, comp->mem->map[0x00].type);
-			setRFIndex(ui.cbBank1, comp->mem->map[0x40].type);
-			setRFIndex(ui.cbBank2, comp->mem->map[0x80].type);
-			setRFIndex(ui.cbBank3, comp->mem->map[0xc0].type);
-		}
-		block = 0;
-	}
-	*/
-	// update tables
-//	wid_pit.draw();//update_table(ui.tabPit);
-//	wid_vga.draw();//update_table(ui.tabVgaReg);
-//	wid_dma.draw();//update_table(ui.tableDMA);
-//	wid_cmos_dump.draw();// update_table(ui.tabCmos);
-//	wid_pic.draw();//update_table(ui.tablePIC);
 }
+*/
 
 void DebugWin::fillNotCPU() {
 	Computer* comp = conf.prof.cur->zx;
@@ -1097,9 +851,6 @@ void DebugWin::fillNotCPU() {
 			dw->draw();
 	}
 
-//	fillTabs();
-//	wid_disk_dump.draw();//ui.tabDiskDump->update();
-
 	setSignal(ui_misc.labDOS, comp->dos);
 	setSignal(ui_misc.labROM, comp->rom);
 	setSignal(ui_misc.labCPM, comp->cpm);
@@ -1112,7 +863,6 @@ void DebugWin::fillNotCPU() {
 
 	if (memViewer->isVisible())
 		memViewer->fillImage();
-//	wid_dump.draw();
 	fillStack();
 }
 
@@ -1128,264 +878,6 @@ void DebugWin::setScrAtr(int adr, int atr) {
 //	ui.leScr->setValue(adr);
 //	ui.leAtr->setValue(atr);
 }
-
-// gameboy
-
-/*
-extern xColor iniCol[4];
-void drawGBTile(QImage& img, Video* vid, int x, int y, int adr) {
-	int row, bit;
-	int data;
-	unsigned char col;
-	xColor xcol;
-	for (row = 0; row < 8; row++) {
-		data = vid->ram[adr & 0x3fff] & 0xff;
-		adr++;
-		data |= (vid->ram[adr & 0x3fff] & 0xff) << 8;
-		adr++;
-		for (bit = 0; bit < 8; bit++) {
-			col = ((data & 0x80) ? 1 : 0) | ((data & 0x8000) ? 2 : 0);
-			xcol = iniCol[col];
-			img.setPixel(x + bit, y + row, qRgb(xcol.r, xcol.g, xcol.b));
-			data <<= 1;
-		}
-	}
-}
-
-QImage getGBTiles(Video* vid, int tset) {
-	int tadr = (tset & 1) ? 0x800 : 0;
-	if (tset & 2) tadr |= 0x2000;
-	int x,y;
-	QImage img(128, 128, QImage::Format_RGB888);
-	for (y = 0; y < 16; y++) {
-		for (x = 0; x < 16; x++) {
-			drawGBTile(img, vid, x << 3, y << 3, tadr);
-			tadr += 16;
-		}
-	}
-	return img.scaled(256,256);
-}
-
-QImage getGBMap(Video* vid, int tmap, int tset) {
-	QImage img(256, 256, QImage::Format_RGB888);
-	img.fill(qRgb(0,0,0));
-	int adr = tmap ? 0x1c00 : 0x1800;
-	int badr = (tset & 1) ? 0x800 : 0;
-	if (tset & 2) badr |= 0x2000;
-	int tadr;
-	unsigned char tile;
-	int x,y;
-	for (y = 0; y < 32; y++) {
-		for (x = 0; x < 32; x++) {
-			tile = vid->ram[adr & 0x1fff];
-			adr++;
-			tadr = badr;
-			if (tset & 1) {
-				tadr += (tile ^ 0x80) << 4;
-			} else {
-				tadr += tile << 4;
-			}
-			drawGBTile(img, vid, x << 3, y << 3, tadr);
-		}
-	}
-	return img;
-}
-
-QImage getGBPal(Video* gbv) {
-	QImage img(256,256,QImage::Format_RGB888);
-	img.fill(Qt::black);
-	int x,y;
-	int idx = 0;
-	xColor col;
-	QPainter pnt;
-	pnt.begin(&img);
-	for (y = 0; y < 16; y++) {
-		for (x = 0; x < 4; x++) {
-			col = vid_get_col(gbv, idx);
-			idx++;
-			pnt.fillRect((x << 6) + 1, (y << 4) + 1, 62, 14, QColor(col.r, col.g, col.b));
-			if (idx == 32) idx += 32;
-		}
-	}
-	pnt.end();
-	return img;
-}
-
-void DebugWin::fillGBoy() {
-	if (ui.tabsPanel->currentWidget() != ui.gbTab) return;
-	Computer* comp = conf.prof.cur->zx;
-	QImage img;
-	int tset = ui.sbTileset->value();
-	int tmap = ui.sbTilemap->value();
-	if (ui.rbTilesetView->isChecked()) {
-		img = getGBTiles(comp->vid, tset);
-	} else if (ui.rbTilemapView->isChecked()) {
-		img = getGBMap(comp->vid, tmap, tset);
-	} else {
-		img = getGBPal(comp->vid);
-	}
-	ui.gbImage->setPixmap(QPixmap::fromImage(img));
-}
-*/
-
-// nes
-/*
-extern xColor nesPal[64];
-
-void dbgNesConvertColors(Video* vid, unsigned char* buf, QImage& img, int trn) {
-	int x, y;
-	unsigned char col, colidx;
-	xColor xcol;
-	int adr = 0;
-	for (y = 0; y < img.height(); y++) {
-		for (x = 0; x < img.width(); x++) {
-			colidx = buf[adr];
-			if (!(colidx & 3)) colidx = 0;
-			col = vid->ram[0x3f00 | (colidx & 0x3f)];
-			xcol = nesPal[col & 0x3f];
-			if (trn && !(colidx & 3)) {
-				img.setPixel(x, y, qRgba(255, 0, 0, 0));
-			} else {
-				img.setPixel(x, y, qRgba(xcol.r, xcol.g, xcol.b, 0xff));
-			}
-			adr++;
-		}
-	}
-}
-
-QImage dbgNesScreenImg(Video* vid, unsigned short adr, unsigned short tadr) {
-	QImage img(256, 240, QImage::Format_RGB888);
-	img.fill(Qt::black);
-	unsigned char scrmap[256 * 240];
-	memset(scrmap, 0x00, 256 * 240);
-	if (adr != 0) {
-		for(int y = 0; y < 240; y++) {
-			ppuRenderBGLine(vid, scrmap + (y << 8), adr, 0, tadr);
-			adr = ppuYinc(adr);
-		}
-	}
-	dbgNesConvertColors(vid, scrmap, img, 0);
-	return img;
-}
-
-QImage dbgNesSpriteImg(Video* vid, unsigned short tadr) {
-	QImage img(256, 240, QImage::Format_ARGB32);
-	img.fill(Qt::transparent);
-	unsigned char scrmap[256 * 240];
-	memset(scrmap, 0x00, 256 * 240);
-	for (int y = 0; y < 240; y++) {
-		ppuRenderSpriteLine(vid, y + 2, scrmap + (y << 8), NULL, tadr, 8);
-	}
-	dbgNesConvertColors(vid, scrmap, img, 1);
-	return img;
-}
-
-QImage dbgNesTilesImg(Video* vid, unsigned short tadr) {
-	QImage img(256, 256, QImage::Format_RGB888);
-	unsigned char scrmap[256 * 256];
-	int x,y,lin,bit;
-	int adr = tadr;
-	int oadr = 0;
-	unsigned char col;
-	unsigned short bt;
-	img.fill(Qt::black);
-	for (y = 0; y < 256; y += 8) {
-		for (x = 0; x < 256; x += 8) {
-			for (lin = 0; lin < 8; lin++) {
-				bt = nes_ppu_ext_rd(adr + lin, conf.prof.cur->zx) & 0xff;
-				bt |= (nes_ppu_ext_rd(adr + lin + 8, conf.prof.cur->zx) << 8) & 0xff00;
-				for (bit = 0; bit < 8; bit++) {
-					col = ((bt >> 7) & 1) | ((bt >> 14) & 2);
-					scrmap[oadr + (lin << 8) + bit] = col;
-					bt <<= 1;
-				}
-			}
-			oadr += 8;
-			adr += 16;		// next sprite
-		}
-		oadr += 0x700;			// next line (8 lines / sprite)
-	}
-	dbgNesConvertColors(vid, scrmap, img, 0);
-	return img;
-}
-
-void DebugWin::drawNes() {
-	if (ui.tabsPanel->currentWidget() != ui.nesTab) return;
-	Computer* comp = conf.prof.cur->zx;
-	unsigned short adr = 0;
-	unsigned short tadr = 0;
-	QPixmap pic;
-
-	unsigned short vidvadr = comp->vid->vadr;
-	unsigned short vidtadr = comp->vid->tadr;
-
-	// screen
-	int type = getRFIData(ui.nesScrType);
-	int sprt = getRFIData(ui.nesSPTileset);
-	switch(type) {
-		case NES_SCR_OFF: adr = 0; break;
-		case NES_SCR_0:	adr = 0x2000; break;
-		case NES_SCR_1: adr = 0x2400; break;
-		case NES_SCR_2: adr = 0x2800; break;
-		case NES_SCR_3: adr = 0x2c00; break;
-	}
-	tadr = getRFIData(ui.nesBGTileset) & 0xffff;
-//	int px = (comp->vid->sc.x << 3) | (comp->vid->finex & 7);
-//	if (comp->vid->nt & 1) px += 256;
-//	int py = (comp->vid->sc.y << 3) | (comp->vid->finey & 7);
-//	if (comp->vid->nt & 2) py += 240;
-	pic = QPixmap(256, 240);
-	pic.fill(Qt::black);
-	QPainter pnt(&pic);
-	switch (type) {
-		case NES_SCR_ALL:
-			pnt.drawImage(0, 0, dbgNesScreenImg(comp->vid, 0x2000, tadr).scaled(128, 120));
-			pnt.drawImage(128, 0, dbgNesScreenImg(comp->vid, 0x2400, tadr).scaled(128, 120));
-			pnt.drawImage(0, 120, dbgNesScreenImg(comp->vid, 0x2800, tadr).scaled(128, 120));
-			pnt.drawImage(128, 120, dbgNesScreenImg(comp->vid, 0x2c00, tadr).scaled(128, 120));
-//			pnt.setPen(qRgba(0, 0, 0, 128));
-//			pnt.setBrush(Qt::NoBrush);
-//			pnt.drawRect(px / 2, py / 2, 128, 120);
-//			pnt.drawRect(px / 2 - 256, py / 2, 128, 120);
-//			pnt.drawRect(px / 2, py / 2 - 128, 128, 120);
-//			pnt.drawRect(px / 2 - 256, py / 2 - 128, 128, 120);
-			break;
-		case NES_SCR_TILES:
-			pnt.drawImage(0, 0, dbgNesTilesImg(comp->vid, tadr));
-			break;
-		case NES_SCR_OFF:
-			if (sprt > -1)
-				pnt.drawImage(0, 0, dbgNesSpriteImg(comp->vid, sprt & 0xffff));
-			break;
-		case NES_SCR_0:
-		case NES_SCR_1:
-		case NES_SCR_2:
-		case NES_SCR_3:
-			pnt.drawImage(0, 0, dbgNesScreenImg(comp->vid, (comp->vid->tadr & ~0x2c00) | adr, tadr));
-			if (sprt > -1)
-				pnt.drawImage(0, 0, dbgNesSpriteImg(comp->vid, sprt & 0xffff));
-			break;
-	}
-	pnt.end();
-	ui.nesScreen->setPixmap(pic);
-
-	comp->vid->vadr = vidvadr;
-	comp->vid->tadr = vidtadr;
-
-	// registers
-	ui.lab_ppu_r0->setText(gethexbyte(comp->vid->reg[0]));
-	ui.lab_ppu_r1->setText(gethexbyte(comp->vid->reg[1]));
-	ui.lab_ppu_r2->setText(gethexbyte(comp->vid->reg[2]));
-	ui.lab_ppu_r3->setText(gethexbyte(comp->vid->reg[3]));
-	ui.lab_ppu_r4->setText(gethexbyte(comp->vid->reg[4]));
-	ui.lab_ppu_r5->setText(gethexbyte(comp->vid->reg[5]));
-	ui.lab_ppu_r6->setText(gethexbyte(comp->vid->reg[6]));
-	ui.lab_ppu_r7->setText(gethexbyte(comp->vid->reg[7]));
-	// vadr
-	ui.labVAdr->setText(gethexword(comp->vid->vadr & 0x7fff));
-	ui.labTAdr->setText(gethexword(comp->vid->tadr & 0x7fff));
-}
-*/
 
 // ...
 
@@ -2120,236 +1612,43 @@ void DebugWin::loadDump() {
 	}
 }
 
-// screen
+// ps/2 widget (tmp here)
 
-/*
-void DebugWin::updateScreen() {
-	if (ui.tabsPanel->currentWidget() != ui.scrTab) return;
-	Computer* comp = conf.prof.cur->zx;
-	int flag = ui.cbScrAtr->isChecked() ? 1 : 0;
-	flag |= ui.cbScrPix->isChecked() ? 2 : 0;
-	flag |= ui.cbScrGrid->isChecked() ? 4 : 0;
-	vid_get_screen(comp->vid, scrImg.bits(), ui.sbScrBank->value(), ui.leScrAdr->getValue(), flag);
-	xColor bcol;// = comp->vid->pal[comp->vid->nextbrd];
-	bcol.b = (comp->vid->nextbrd & 1) ? ((comp->vid->nextbrd & 8) ? 0xff : 0xa0) : 0x00;
-	bcol.r = (comp->vid->nextbrd & 2) ? ((comp->vid->nextbrd & 8) ? 0xff : 0xa0) : 0x00;
-	bcol.g = (comp->vid->nextbrd & 4) ? ((comp->vid->nextbrd & 8) ? 0xff : 0xa0) : 0x00;
-	QPainter pnt;
-	QPixmap xpxm(276, 212);
-	pnt.begin(&xpxm);
-	pnt.fillRect(0,0,276,212,qRgb(bcol.r, bcol.g, bcol.b));
-	pnt.drawImage(10,10,scrImg);
-	pnt.end();
-	ui.scrLabel->setPixmap(xpxm);
-	ui.labCurScr->setText(QString::number(comp->vid->curscr, 16).rightJustified(2, '0'));
-}
-*/
-
-// breakpoints
-
-/*
-void DebugWin::addBrk() {
-	brkManager->edit(NULL);
+xPS2Widget::xPS2Widget(QString i, QString t, QWidget* p):xDockWidget(i,t,p) {
+	QWidget* wid = new QWidget;
+	setWidget(wid);
+	ui.setupUi(wid);
+	setObjectName("PS2WIDGET");
+	hwList << HWG_PC;
 }
 
-void DebugWin::editBrk() {
-	QModelIndexList idxl = ui.bpList->selectionModel()->selectedRows();
-	if (idxl.size() < 1) return;
-	int row = idxl.first().row();
-	xBrkPoint* brk = &conf.prof.cur->brkList[row];
-	brkManager->edit(brk);
-}
-
-static bool qmidx_greater(const QModelIndex idx1, const QModelIndex idx2) {
-	return (idx1.row() > idx2.row());
-}
-
-void DebugWin::delBrk() {
-	QModelIndexList idxl = ui.bpList->selectionModel()->selectedRows();
-	std::sort(idxl.begin(), idxl.end(), qmidx_greater); // qGreater<QModelIndex>());
-	QModelIndex idx;
-	xBrkPoint brk;
-	foreach(idx, idxl) {
-		brk = conf.prof.cur->brkList[idx.row()];
-		brkDelete(brk);
-	}
-	ui.bpList->update();
-	fillDisasm();
-	fillDump();
-}
-
-void DebugWin::confirmBrk(xBrkPoint obrk, xBrkPoint brk) {
-	brkDelete(obrk);
-	brkAdd(brk);
-	fillDisasm();
-	fillDump();
-	ui.bpList->update();
-}
-
-void DebugWin::goToBrk(QModelIndex idx) {
-	if (!idx.isValid()) return;
-	int row = idx.row();
-	xBrkPoint brk = conf.prof.cur->brkList[row];
-	int adr;
-	int mtype = MEM_EXT;
-	switch(brk.type) {
-		case BRK_CPUADR:
-			adr = brk.adr;
-			break;
-		default:
-			switch(brk.type) {
-				case BRK_MEMRAM: mtype = MEM_RAM; break;
-				case BRK_MEMROM: mtype = MEM_ROM; break;
-				case BRK_MEMSLT: mtype = MEM_SLOT; break;
-			}
-			adr = memFindAdr(conf.prof.cur->zx->mem, mtype, brk.adr);
-			break;
-	}
-	if (adr < 0) return;
-	ui.dasmTable->setAdr(adr);
-	// fillDisasm();
-}
-
-void DebugWin::saveBrk(QString path) {
-	if (path.isEmpty())
-		path = QFileDialog::getSaveFileName(this, "Save breakpoints", "", "deBUGa breakpoints (*.xbrk)",nullptr,QFileDialog::DontUseNativeDialog);
-	if (path.isEmpty())
-		return;
-	if (!path.endsWith(".xbrk"))
-		path.append(".xbrk");
-	xBrkPoint brk;
-	QFile file(path);
-	QString nm,ar1,ar2,flag;
-	if (file.open(QFile::WriteOnly)) {
-		file.write("; Xpeccy deBUGa breakpoints list\n");
-		foreach(brk, conf.prof.cur->brkList) {
-			//if (!brk.off) {
-				switch(brk.type) {
-					case BRK_IOPORT:
-						nm = "IO";
-						ar1 = gethexword(brk.adr & 0xffff);
-						ar2 = gethexword(brk.mask & 0xffff);
-						break;
-					case BRK_CPUADR:
-						nm = "CPU";
-						ar1 = gethexword(brk.adr & 0xffff);
-						ar2.clear();
-						if (brk.eadr > brk.adr) {
-							ar1.append("-");
-							ar1.append(gethexword(brk.eadr & 0xffff));
-						}
-						break;
-					case BRK_MEMRAM:
-						nm = "RAM";
-						ar1 = gethexbyte((brk.adr >> 14) & 0xff);	// 16K page
-						ar2 = gethexword(brk.adr & 0x3fff);		// adr in page
-						break;
-					case BRK_MEMROM:
-						nm = "ROM";
-						ar1 = gethexbyte((brk.adr >> 14) & 0xff);
-						ar2 = gethexword(brk.adr & 0x3fff);
-						break;
-					case BRK_MEMSLT:
-						nm = "SLT";
-						ar1 = gethexbyte((brk.adr >> 14) & 0xff);
-						ar2 = gethexword(brk.adr & 0x3fff);
-						break;
-					case BRK_IRQ:
-						nm = "IRQ";
-						ar1.clear();
-						ar2.clear();
-						break;
-					default:
-						nm.clear();
-						break;
-				}
-				if (!nm.isEmpty()) {
-					flag.clear();
-					if (brk.fetch) flag.append("F");
-					if (brk.read) flag.append("R");
-					if (brk.write) flag.append("W");
-					if (brk.off) flag.append("0");
-					file.write(QString("%0:%1:%2:%3\n").arg(nm).arg(ar1).arg(ar2).arg(flag).toUtf8());
-				}
-			//}
+QString get_hex_queue(unsigned long d, int l) {
+	QString r;
+	if (l > 0) {
+		while (l > 0) {
+			if (!r.isEmpty()) r.append(",");
+			r.append(gethexbyte(d & 0xff));
+			d >>= 8;
+			l--;
 		}
-		file.close();
 	} else {
-		shitHappens("Can't open file for writing");
+		while (d & 0xff) {
+			if (!r.isEmpty()) r.append(",");
+			r.append(gethexbyte(d & 0xff));
+			d >>= 8;
+		}
 	}
+	return r;
 }
 
-void DebugWin::openBrk() {
-	QString path = QFileDialog::getOpenFileName(this, "Open breakpoints list", "", "deBUGa breakpoints (*.xbrk)",nullptr,QFileDialog::DontUseNativeDialog);
-	if (path.isEmpty()) return;
-	QFile file(path);
-	QString line;
-	QStringList splt;
-	QStringList list;
-	xBrkPoint brk;
-	bool b0,b1;
-	if (file.open(QFile::ReadOnly)) {
-		conf.prof.cur->brkList.clear();
-		while(!file.atEnd()) {
-			line = tr(file.readLine());
-			if (!line.startsWith(";")) {
-				b0 = true;
-				b1 = true;
-				list = line.split(":", X_KeepEmptyParts);
-				while(list.size() < 4)
-					list.append(QString());
-				brk.fetch = list.at(3).contains("F") ? 1 : 0;
-				brk.read = list.at(3).contains("R") ? 1 : 0;
-				brk.write = list.at(3).contains("W") ? 1 : 0;
-				brk.off = list.at(3).contains("0") ? 1 : 0;
-				if (list.at(0) == "IO") {
-					brk.type = BRK_IOPORT;
-					brk.adr = list.at(1).toInt(&b0, 16) & 0xffff;
-					brk.mask = list.at(2).toInt(&b1, 16) & 0xffff;
-				} else if (list.at(0) == "CPU") {
-					brk.type = BRK_CPUADR;
-					if (list.at(1).contains("-")) {		// 1234-ABCD
-						splt = list.at(1).split(QLatin1Char('-'), X_SkipEmptyParts);
-						list[1] = splt.first();
-						list[2] = splt.last();
-					}
-					brk.adr = list.at(1).toInt(&b0, 16) & 0xffff;
-					if (list.at(2).isEmpty()) {
-						brk.eadr = brk.adr;
-					} else {
-						brk.eadr = list.at(2).toInt(&b1, 16) & 0xffff;
-						if (brk.eadr < brk.adr)
-							brk.eadr = brk.adr;
-					}
-				} else if (list.at(0) == "ROM") {
-					brk.type = BRK_MEMROM;
-					brk.adr = (list.at(1).toInt(&b0, 16) & 0xff) << 14;
-					brk.adr |= (list.at(2).toInt(&b1, 16) & 0x3fff);
-				} else if (list.at(0) == "RAM") {
-					brk.type = BRK_MEMRAM;
-					brk.adr = (list.at(1).toInt(&b0, 16) & 0xff) << 14;
-					brk.adr |= (list.at(2).toInt(&b1, 16) & 0x3fff);
-				} else if (list.at(0) == "SLT") {
-					brk.type = BRK_MEMSLT;
-					brk.adr = (list.at(1).toInt(&b0, 16) & 0xff) << 14;
-					brk.adr |= (list.at(2).toInt(&b1, 16) & 0x3fff);
-				} else if (list.at(0) == "IRQ") {
-					brk.type = BRK_IRQ;
-				} else {
-					b0 = false;
-				}
-				if (b0 && b1) {
-					conf.prof.cur->brkList.push_back(brk);
-				}
-			}
-		}
-		file.close();
-		brkInstallAll();
-		ui.bpList->update();
-		fillDisasm();
-		fillDump();
-	} else {
-		shitHappens("Can't open file for reading");
-	}
+void xPS2Widget::draw() {
+	PS2Ctrl* ctrl = conf.prof.cur->zx->ps2c;
+	Keyboard* k = ctrl->kbd;
+	Mouse* m = ctrl->mouse;
+	ui.lab_ps2ctrl->setText(getbinbyte(ctrl->ram[0x00]));
+	ui.lab_ps2status->setText(getbinbyte(ctrl->status));
+	ui.lab_ps2outbuf->setText(gethexbyte(ctrl->outbuf));
+	ui.lab_ps2inbuf->setText(gethexbyte(ctrl->inbuf));
+	ui.lab_ps2kdata->setText(k->outbuf ? get_hex_queue(k->outbuf, 0) : "-");
+	ui.lab_ps2mdata->setText(m->queueSize ? get_hex_queue(m->outbuf, m->queueSize) : "-");
 }
-*/

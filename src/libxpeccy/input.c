@@ -69,14 +69,20 @@ keyScan findKey(keyScan* tab, char key) {
 
 // keyboard
 
+void kbd_reset(Keyboard* kbd) {
+	kbd->pcmode = KBD_AT;
+	kbd->com = -1;
+	kbd->kdel = 5e8;
+	kbd->kper = 5e7;
+	kbd->com = -1;
+}
+
 Keyboard* keyCreate(cbirq cb, void* p) {
 	Keyboard* keyb = (Keyboard*)malloc(sizeof(Keyboard));
 	memset(keyb, 0x00, sizeof(Keyboard));
-	keyb->pcmode = KBD_AT;
-	keyb->kdel = 5e8;
-	keyb->kper = 5e7;
 	keyb->xirq = cb;
 	keyb->xptr = p;
+	kbd_reset(keyb);
 	return keyb;
 }
 
@@ -300,7 +306,7 @@ int xt_read(Keyboard* kbd) {
 	int res;
 	if (kbd->outbuf & 0xff) {
 		res = kbd->outbuf & 0xff;
-		kbd->lastkey = res & 0xff;
+		kbd->lastkey = res;
 		kbd->outbuf >>= 8;
 	} else {
 		res = -1;
@@ -311,6 +317,7 @@ int xt_read(Keyboard* kbd) {
 void xt_ack(Keyboard* kbd, unsigned long d) {
 	kbd->outbuf = d;
 	kbd->xirq(IRQ_KBD_DATA, kbd->xptr);
+	printf("kbd ack %.X\n", d);
 }
 
 // ack FA at every byte
@@ -340,9 +347,8 @@ void kbd_wr(Keyboard* kbd, int d) {
 			case 0xfc: xt_ack(kbd, 0xfa); break;
 			case 0xfd: xt_ack(kbd, 0xfa); break;
 			case 0xfe: xt_ack(kbd, kbd->lastkey & 0xff); break;	// resend last byte
-			case 0xff:						// reset & run selftest
-				xt_ack(kbd, 0xfa);
-				break;
+			case 0xff: kbd_reset(kbd); xt_ack(kbd, 0xaafa); break;			// reset & run selftest: ack FA, then AA (passed)
+			default: xt_ack(kbd, 0xfe); break;			// unknown: resend (FE)
 		}
 	} else {
 		switch (kbd->com) {
@@ -353,9 +359,11 @@ void kbd_wr(Keyboard* kbd, int d) {
 			case 0x1f0:
 				// set scancode tab: 0-get current, 1..3-scanset 1..3
 				if (d == 0) {
-					xt_ack(kbd, 0x02fa);	// (kbd->scanset << 8) | fa)
-				} else {
+					xt_ack(kbd, 0x41fa);	// NOTE: scanset codes: 43,41,3f
+				} else if (d < 3) {
 					xt_ack(kbd, 0xfa);
+				} else  {
+					xt_ack(kbd, 0xfe);
 				}
 				break;
 			case 0x1f3:
