@@ -53,7 +53,8 @@ enum {
 // xt/at mode
 enum {
 	KBD_XT = 1,
-	KBD_AT
+	KBD_AT,
+	KBD_PS2
 };
 
 enum {
@@ -164,7 +165,8 @@ typedef struct {
 	unsigned char extKey[KEYSEQ_MAXLEN];
 	unsigned char msxKey[KEYSEQ_MAXLEN];
 	atmKey atmCode;
-	int atCode;		// 0xXXYYZZ = ZZ,YY,XX in buffer
+	int psCode;		// set 3
+	int atCode;		// set 2	0xXXYYZZ = ZZ,YY,XX in buffer
 	int xtCode;		// set 1
 	int joyMask;
 } keyEntry;
@@ -200,7 +202,8 @@ typedef struct {
 	int msxMap[16];	// MSX keys map
 	// pc keyboard
 	unsigned lock:1;	// ps/2 keyboard disabled
-	int pcmode;		// xt/at
+	int pcmode;		// xt/at/ps2 (self)
+	int pcmodeovr;		// override pcmode (0:pcmode, xt/at - convert scancodes in ps/2 controller)
 	unsigned long outbuf;	// 0 = empty, else key scancode
 	keyEntry kent;
 	int per;

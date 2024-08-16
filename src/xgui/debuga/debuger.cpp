@@ -1622,21 +1622,23 @@ xPS2Widget::xPS2Widget(QString i, QString t, QWidget* p):xDockWidget(i,t,p) {
 	hwList << HWG_PC;
 }
 
-QString get_hex_queue(unsigned long d, int l) {
+QString get_hex_queue_z(unsigned long d) {
 	QString r;
-	if (l > 0) {
-		while (l > 0) {
-			if (!r.isEmpty()) r.append(",");
-			r.append(gethexbyte(d & 0xff));
-			d >>= 8;
-			l--;
-		}
-	} else {
-		while (d & 0xff) {
-			if (!r.isEmpty()) r.append(",");
-			r.append(gethexbyte(d & 0xff));
-			d >>= 8;
-		}
+	while (d & 0xff) {
+		if (!r.isEmpty()) r.append(",");
+		r.append(gethexbyte(d & 0xff));
+		d >>= 8;
+	}
+	return r;
+}
+
+QString get_hex_queue_n(unsigned long d, int l) {
+	QString r;
+	while (l > 0) {
+		if (!r.isEmpty()) r.append(",");
+		r.append(gethexbyte(d & 0xff));
+		d >>= 8;
+		l--;
 	}
 	return r;
 }
@@ -1649,6 +1651,6 @@ void xPS2Widget::draw() {
 	ui.lab_ps2status->setText(getbinbyte(ctrl->status));
 	ui.lab_ps2outbuf->setText(gethexbyte(ctrl->outbuf));
 	ui.lab_ps2inbuf->setText(gethexbyte(ctrl->inbuf));
-	ui.lab_ps2kdata->setText(k->outbuf ? get_hex_queue(k->outbuf, 0) : "-");
-	ui.lab_ps2mdata->setText(m->queueSize ? get_hex_queue(m->outbuf, m->queueSize) : "-");
+	ui.lab_ps2kdata->setText(k->outbuf ? get_hex_queue_z(k->outbuf) : "-");
+	ui.lab_ps2mdata->setText(m->queueSize ? get_hex_queue_n(m->outbuf, m->queueSize) : "-");
 }

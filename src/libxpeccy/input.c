@@ -70,11 +70,10 @@ keyScan findKey(keyScan* tab, char key) {
 // keyboard
 
 void kbd_reset(Keyboard* kbd) {
-	kbd->pcmode = KBD_AT;
+	kbd->pcmode = KBD_XT;
 	kbd->com = -1;
 	kbd->kdel = 5e8;
 	kbd->kper = 5e7;
-	kbd->com = -1;
 }
 
 Keyboard* keyCreate(cbirq cb, void* p) {
@@ -246,8 +245,12 @@ void xt_add_code(Keyboard* kbd, unsigned long d) {
 unsigned long xt_get_code(Keyboard* kbd, keyEntry kent, int rel) {
 	unsigned long res = 0;
 	int code;
+	int mode = kbd->pcmodeovr ? kbd->pcmodeovr : kbd->pcmode;
 	if (rel) {
-		switch(kbd->pcmode) {
+		switch(mode) {
+			case KBD_PS2:			// F0,code
+				res = 0xf000 | (kent.psCode & 0xff);
+				break;
 			case KBD_AT:			// insert F0 before each byte with bit7=0
 				code = kent.atCode;
 				while(code) {
@@ -266,7 +269,8 @@ unsigned long xt_get_code(Keyboard* kbd, keyEntry kent, int rel) {
 				break;
 		}
 	} else {		// press
-		switch(kbd->pcmode) {
+		switch(mode) {
+			case KBD_PS2: res = kent.psCode; break;
 			case KBD_AT: res = kent.atCode; break;
 			case KBD_XT: res = kent.xtCode; break;
 		}
@@ -316,20 +320,18 @@ int xt_read(Keyboard* kbd) {
 
 void xt_ack(Keyboard* kbd, unsigned long d) {
 	kbd->outbuf = d;
-	kbd->xirq(IRQ_KBD_DATA, kbd->xptr);
-	printf("kbd ack %.X\n", d);
+	kbd->xirq(IRQ_KBD_ACK, kbd->xptr);
 }
 
 // ack FA at every byte
-
 void kbd_wr(Keyboard* kbd, int d) {
 	if (kbd->com < 0) {
 		switch (d) {
-			case 0xed: xt_ack(kbd, 0xfa); kbd->com = d | 0x100; break;	// leds
+			case 0xed: xt_ack(kbd, 0xfa); kbd->com = d; break;	// leds
 			case 0xee: xt_ack(kbd, 0xee); break;	// echo
-			case 0xf0: xt_ack(kbd, 0xfa); kbd->com = d | 0x100; break;	// get/set scancode
+			case 0xf0: xt_ack(kbd, 0xfa); kbd->com = d; break;	// get/set scancode
 			case 0xf2: xt_ack(kbd, 0x83abfa); break;	// get dev type (no code = at-keyboard)
-			case 0xf3: xt_ack(kbd, 0xfa); kbd->com = d | 0x100; break;	// set repeat rate/delay
+			case 0xf3: xt_ack(kbd, 0xfa); kbd->com = d; break;	// set repeat rate/delay
 			case 0xf4:					// enable sending scancodes
 				kbd->lock = 0;
 				xt_ack(kbd, 0xfa);
@@ -338,7 +340,7 @@ void kbd_wr(Keyboard* kbd, int d) {
 				kbd->lock = 1;
 				xt_ack(kbd, 0xfa);
 				break;
-			case 0xf6: xt_ack(kbd, 0xfa); break;		// set default params
+			case 0xf6: kbd->pcmode = KBD_AT; xt_ack(kbd, 0xfa); break;		// set default params
 			case 0xf7: xt_ack(kbd, 0xfa); break;		// f7..fd: scanset3 specific
 			case 0xf8: xt_ack(kbd, 0xfa); break;
 			case 0xf9: xt_ack(kbd, 0xfa); break;
@@ -352,21 +354,37 @@ void kbd_wr(Keyboard* kbd, int d) {
 		}
 	} else {
 		switch (kbd->com) {
-			case 0x1ed:
+			case 0xed:
 				// set leds: b0-scrlck,b1-numlck,b2-caps
 				xt_ack(kbd, 0xfa);
 				break;
-			case 0x1f0:
+			case 0xf0:
 				// set scancode tab: 0-get current, 1..3-scanset 1..3
-				if (d == 0) {
-					xt_ack(kbd, 0x41fa);	// NOTE: scanset codes: 43,41,3f
-				} else if (d < 3) {
-					xt_ack(kbd, 0xfa);
-				} else  {
-					xt_ack(kbd, 0xfe);
+				switch(d) {
+					case 0: switch(kbd->pcmode) {
+							case KBD_XT: xt_ack(kbd, 0x43fa);
+								break;
+							case KBD_AT: xt_ack(kbd, 0x41fa);
+								break;
+							case KBD_PS2: xt_ack(kbd, 0x3ffa);
+								break;
+						}
+						break;
+					case 1: kbd->pcmode = KBD_XT;
+						xt_ack(kbd, 0xfa);
+						break;
+					case 2: kbd->pcmode = KBD_AT;
+						xt_ack(kbd, 0xfa);
+						break;
+					case 3: kbd->pcmode = KBD_PS2;
+						xt_ack(kbd, 0xfa);
+						break;
+					default:
+						xt_ack(kbd, 0xfe);
+						break;
 				}
 				break;
-			case 0x1f3:
+			case 0xf3:
 				kbd->kdel = (((d >> 5) & 3) + 1) * 250e6;	// 1st delay - 250,500,750,1000ms
 				kbd->kper = (33 + 7 * (d & 0x1f)) * 1e6;	// repeat period: 33 to 250 ms
 				xt_ack(kbd, 0xfa);
@@ -565,7 +583,7 @@ void mouse_ack(Mouse* mou, int d) {
 	if (mou->lock) return;
 	mou->outbuf = d;
 	mou->queueSize = 1;
-	mou->xirq(IRQ_MOUSE_DATA, mou->xptr);
+	mou->xirq(IRQ_MOUSE_ACK, mou->xptr);
 }
 
 void mouse_wr(Mouse* mou, int d) {
@@ -574,7 +592,7 @@ void mouse_wr(Mouse* mou, int d) {
 			case 0xe6: mouse_ack(mou, 0xfa); break;	// set scale 1:1
 			case 0xe7: mouse_ack(mou, 0xfa); break;	// set scale 2:1
 			case 0xe8: mouse_ack(mou, 0xfa);
-				mou->com = 0x1e8;
+				mou->com = d;
 				break;		// +data: set resolution
 			case 0xe9: break;				// status request
 			case 0xea: mouse_ack(mou, 0xfa); break;	// set stream mode
@@ -584,7 +602,7 @@ void mouse_wr(Mouse* mou, int d) {
 			case 0xf0: mouse_ack(mou, 0xfa); break;	// set remote mode
 			case 0xf2: mouse_ack(mou, 0x00); break;	// get device id (00 - standard ps/2 mouse)
 			case 0xf3: mouse_ack(mou, 0xfa);
-				mou->com = 0x1f3;
+				mou->com = d;
 				break;		// set sample rate
 			case 0xf4: mou->lock = 0;
 				mouse_ack(mou, 0xfa);
@@ -598,9 +616,11 @@ void mouse_wr(Mouse* mou, int d) {
 		}
 	} else {
 		switch (mou->com) {
-			case 0x1e8:
+			case 0xe8:
+				mouse_ack(mou, 0xfa);
 				break;				// d - resolution
-			case 0x1f3:
+			case 0xf3:
+				mouse_ack(mou, 0xfa);
 				break;				// d - sample rate
 		}
 		mou->com = -1;

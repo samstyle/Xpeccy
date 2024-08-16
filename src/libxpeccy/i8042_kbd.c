@@ -44,18 +44,17 @@ void ps2c_clear(PS2Ctrl* ctrl) {
 
 void ps2c_ready(PS2Ctrl* ctrl, int dev) {
 	if (dev & 1) {		// mouse
-		ctrl->m_rdy = 1;
+		if ((dev & 2) || !(ctrl->ram[0] & 0x20)) ctrl->m_rdy = 1;
 	} else {		// keyboard
-		ctrl->k_rdy = 1;
-		printf("kbd ready\n");
+		if ((dev & 2) || !(ctrl->ram[0] & 0x10)) ctrl->k_rdy = 1;
 	}
 }
 
 // ram[0] = configuration byte
 // b7: reserved
 // b6: convert scan codes
-// b5: ? 1-translate code to xt (tab 1), 0-to at (tab2)
-// b4: disable kbd
+// b5: disable mouse clock
+// b4: disable kbd clock
 // b3: - (not in ps/2: 1-override inhibit keyswitch)
 // b2: system flag (1-warm reboot)
 // b1: enable mouse irq(12)
@@ -107,6 +106,7 @@ int ps2c_rd(PS2Ctrl* ctrl, int adr) {
 	return res;
 }
 
+// flag: b0: 0 for keyboard, 1 for mouse
 void ps2c_wr_ob(PS2Ctrl* ctrl, int val, int flg) {
 	ctrl->outbuf = val;
 	ctrl->status &= ~0x21;
@@ -114,18 +114,12 @@ void ps2c_wr_ob(PS2Ctrl* ctrl, int val, int flg) {
 	if (flg & 1) ctrl->status |= 0x20;
 }
 
-/*
-void ps2c_wr_ob2(PS2Ctrl* ctrl, int val) {
-	ctrl->outbuf = val;
-	ctrl->status |= 0x21;
-}
-*/
-
+// NOTE: if its ack recieve anyway. if its key data see at ram[0]&0x10 ???
 // read 1 byte from kbd to outbuf and generate intk if need
 void ps2c_rd_kbd(PS2Ctrl* ctrl) {
-	if (ctrl->ram[0] & 0x10) return;	// 1st device clock disabled: TODO: bios trying to read ack while kbd clock is disabled
+//	if (ctrl->ram[0] & 0x10) return;	// 1st device clock disabled: TODO: bios trying to read ack while kbd clock is disabled
 	int d = xt_read(ctrl->kbd);
-	printf("xt_read %.2X\n",d);
+//	printf("xt_read %.2X\n",d);
 	if (d < 0) {
 		ctrl->k_rdy = 0;
 	} else {
@@ -135,7 +129,7 @@ void ps2c_rd_kbd(PS2Ctrl* ctrl) {
 }
 
 void ps2c_rd_mouse(PS2Ctrl* ctrl) {
-	if (ctrl->ram[0] & 0x20) return;	// 2nd device clock disabled
+//	if (ctrl->ram[0] & 0x20) return;	// 2nd device clock disabled
 	int d = mouse_rd(ctrl->mouse);
 	if (d < 0) {				// no data left
 		ctrl->m_rdy = 0;
@@ -151,7 +145,6 @@ void ps2c_wr(PS2Ctrl* ctrl, int adr, int val) {
 	ctrl->inbuf = val;
 	ctrl->status |= 2;
 	int cont = 0;
-	printf("ps/2 controller wr %i, %.2X (mode: %i)\n", adr, val, ctrl->dmode);
 	switch (adr) {
 		case PS2_RDATA:
 			//printf("PS/2 controller wr data %.2X\n",val);
@@ -187,6 +180,12 @@ void ps2c_wr(PS2Ctrl* ctrl, int adr, int val) {
 								if (ctrl->cmd == 0x60) {
 									ctrl->status &= ~4;
 									ctrl->status |= (val & 4);
+									// TODO: b6:1 convert scancodes; b5:1 to xt/0:to at
+									if (val & 0x40) {
+										ctrl->kbd->pcmodeovr = KBD_XT;
+									} else {
+										ctrl->kbd->pcmodeovr = 0;
+									}
 									// val &= ~0x40;
 									printf("ps/2 control byte = %.2X\n",val);
 								}

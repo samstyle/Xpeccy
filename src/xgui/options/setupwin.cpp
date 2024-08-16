@@ -232,6 +232,7 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	ui.tvPadTable->addAction(ui.actDelBinding);
 	ui.cbScanTab->addItem("Scanset 1 (XT)", KBD_XT);
 	ui.cbScanTab->addItem("Scanset 2 (AT)", KBD_AT);
+	ui.cbScanTab->addItem("Scanset 3 (PS/2)", KBD_PS2);
 	ui.cbMouseType->addItem("Serial", MOUSE_SERIAL);
 	ui.cbMouseType->addItem("PS/2", MOUSE_PS2);
 // all
