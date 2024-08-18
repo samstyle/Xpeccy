@@ -45,7 +45,7 @@ enum {
 	Z80_REG_I,
 	Z80_REG_R
 };
-
+/*
 #define Z80_FS	0x80
 #define	Z80_FZ	0x40
 #define	Z80_F5	0x20
@@ -55,7 +55,7 @@ enum {
 #define	Z80_FV	Z80_FP
 #define	Z80_FN	0x02
 #define	Z80_FC	0x01
-
+*/
 #define Z80_INT	1
 #define Z80_NMI	(1<<1)
 

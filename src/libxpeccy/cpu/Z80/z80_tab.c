@@ -1,10 +1,11 @@
 #include "../cpu.h"
 
-const unsigned char FHaddTab[] = {0, Z80_FH, Z80_FH, Z80_FH, 0, 0, 0, Z80_FH};
-const unsigned char FHsubTab[] = {0, 0, Z80_FH, 0, Z80_FH, 0, Z80_FH, Z80_FH};
-const unsigned char FVaddTab[] = {0, 0, 0, Z80_FV, Z80_FV, 0, 0, 0};
-const unsigned char FVsubTab[] = {0, Z80_FV, 0, 0, 0, 0, Z80_FV, 0};
+const unsigned char FHaddTab[] = {0, 1, 1, 1, 0, 0, 0, 1};
+const unsigned char FHsubTab[] = {0, 0, 1, 0, 1, 0, 1, 1};
+const unsigned char FVaddTab[] = {0, 0, 0, 1, 1, 0, 0, 0};
+const unsigned char FVsubTab[] = {0, 1, 0, 0, 0, 0, 1, 0};
 
+/*
 const unsigned char sz53pTab[0x100] = {
 	 0x44,0x00,0x00,0x04,0x00,0x04,0x04,0x00
 	,0x08,0x0c,0x0c,0x08,0x0c,0x08,0x08,0x0c
@@ -39,6 +40,7 @@ const unsigned char sz53pTab[0x100] = {
 	,0xa4,0xa0,0xa0,0xa4,0xa0,0xa4,0xa4,0xa0
 	,0xa8,0xac,0xac,0xa8,0xac,0xa8,0xa8,0xac
 };
+*/
 
 /*table for daa, contains af*/
 

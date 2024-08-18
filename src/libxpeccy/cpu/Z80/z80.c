@@ -41,24 +41,25 @@ void z80_reset(CPU* cpu) {
 // if block opcode is interrupted, flags will be like this:
 
 void z80_blkio_interrupt(CPU* cpu) {
-	cpu->f &= ~(Z80_F3 | Z80_F5);
-	cpu->f |= cpu->hpc & (Z80_F3 | Z80_F5);
-	if (cpu->f & Z80_FC) {
-		cpu->f &= ~Z80_FH;
+//	cpu->f &= ~(Z80_F3 | Z80_F5);
+//	cpu->f |= cpu->hpc & (Z80_F3 | Z80_F5);
+	cpu->fz.f5 = !!(cpu->hpc & 0x20);
+	cpu->fz.f3 = !!(cpu->hpc & 0x08);
+	if (cpu->fz.c) {
+		cpu->fz.h = 0;
 		if (cpu->tmp & 0x80) {
 			if (parity((cpu->b - 1) & 7) ^ 1)
-				cpu->f ^= Z80_FP;
+				cpu->fz.pv ^= 1;
 			if ((cpu->b & 15) == 0)
-				cpu->f |= Z80_FH;
+				cpu->fz.h = 1;
 		} else {
 			if (parity((cpu->b + 1) & 7) ^ 1)
-				cpu->f ^= Z80_FP;
+				cpu->fz.pv ^= 1;
 			if ((cpu->b & 15) == 15)
-				cpu->f |= Z80_FH;
-
+				cpu->fz.h = 1;
 		}
 	} else if (parity(cpu->b & 7) ^ 1) {
-		cpu->f ^= Z80_FP;
+		cpu->fz.pv ^= 1;
 	}
 }
 
@@ -73,10 +74,12 @@ int z80_int(CPU* cpu) {
 				cpu->pc++;
 				cpu->halt = 0;
 			} else if (cpu->resPV) {
-				cpu->f &= ~Z80_FP;
+				cpu->fz.pv = 0;
 			} else if (cpu->blk) {
-				cpu->f &= ~(Z80_F3 | Z80_F5);
-				cpu->f |= cpu->hpc & (Z80_F3 | Z80_F5);
+				//cpu->f &= ~(Z80_F3 | Z80_F5);
+				//cpu->f |= cpu->hpc & (Z80_F3 | Z80_F5);
+				cpu->fz.f5 = !!(cpu->hpc & 0x20);
+				cpu->fz.f3 = !!(cpu->hpc & 0x08);
 			} else if (cpu->blkio) {
 				z80_blkio_interrupt(cpu);
 			}
@@ -156,7 +159,7 @@ int z80_exec(CPU* cpu) {
 
 // disasm
 
-static unsigned char z80_cnd[4] = {Z80_FZ, Z80_FC, Z80_FP, Z80_FS};
+//static unsigned char z80_cnd[4] = {Z80_FZ, Z80_FC, Z80_FP, Z80_FS};
 
 xMnem z80_mnem(CPU* cpu, int qadr, cbdmr mrd, void* data) {
 	xMnem mn;
@@ -228,7 +231,13 @@ xMnem z80_mnem(CPU* cpu, int qadr, cbdmr mrd, void* data) {
 	} else if (opt == npTab) {
 		if (((op & 0xc7) == 0xc2) || ((op & 0xc7) == 0xc4) || ((op & 0xc7) == 0xc0)) {		// call, jp, ret
 			mn.cond = 1;
-			mn.met = (cpu->f & z80_cnd[(op >> 4) & 3]) ? 0 : 1;
+			// mn.met = (cpu->f & z80_cnd[(op >> 4) & 3]) ? 0 : 1;
+			switch((op >> 4) & 3) {
+				case 0: mn.met = !cpu->fz.z; break;
+				case 1: mn.met = !cpu->fz.c; break;
+				case 2: mn.met = !cpu->fz.pv; break;
+				case 3: mn.met = !cpu->fz.s; break;
+			}
 			if (op & 8)
 				mn.met ^= 1;
 		} else if (op == 0x18) {								// jr
@@ -236,7 +245,8 @@ xMnem z80_mnem(CPU* cpu, int qadr, cbdmr mrd, void* data) {
 			mn.met = 1;
 		} else if ((op & 0xe7) == 0x20) {							// jr cc
 			mn.cond = 1;
-			mn.met = (cpu->f & z80_cnd[(op >> 4) & 1] ? 0 : 1);
+			//mn.met = (cpu->f & z80_cnd[(op >> 4) & 1] ? 0 : 1);
+			mn.met = (op & 0x10) ? !cpu->fz.z : !cpu->fz.c;
 			if (op & 8)
 				mn.met ^= 1;
 		}

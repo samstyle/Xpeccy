@@ -123,7 +123,12 @@ void npr06(CPU* cpu) {
 // 07	rlca		4
 void npr07(CPU* cpu) {
 	cpu->a = (cpu->a << 1) | (cpu->a >> 7);
-	cpu->f = (cpu->f & (Z80_FS | Z80_FZ | Z80_FP)) | (cpu->a & (Z80_F5 | Z80_F3 | Z80_FC));
+	//cpu->f = (cpu->f & (Z80_FS | Z80_FZ | Z80_FP)) | (cpu->a & (Z80_F5 | Z80_F3 | Z80_FC));
+	cpu->fz.f5 = !!(cpu->a & 0x20);
+	cpu->fz.h = 0;
+	cpu->fz.f3 = !!(cpu->a & 0x08);
+	cpu->fz.n = 0;
+	cpu->fz.c = (cpu->a & 1);
 }
 
 // 08	ex af,af'	4
@@ -165,9 +170,14 @@ void npr0E(CPU* cpu) {
 
 // 0F	rrca		4
 void npr0F(CPU* cpu) {
-	cpu->f = (cpu->f & (Z80_FS | Z80_FZ | Z80_FP)) | (cpu->a & Z80_FC);
+	// cpu->f = (cpu->f & (Z80_FS | Z80_FZ | Z80_FP)) | (cpu->a & Z80_FC);
+	cpu->fz.c = (cpu->a & 1);
 	cpu->a = (cpu->a >> 1) | (cpu->a << 7);
-	cpu->f |= (cpu->a & (Z80_F5 | Z80_F3));
+	// cpu->f |= (cpu->a & (Z80_F5 | Z80_F3));
+	cpu->fz.f5 = !!(cpu->a & 0x20);
+	cpu->fz.h = 0;
+	cpu->fz.f3 = !!(cpu->a & 0x08);
+	cpu->fz.n = 0;
 }
 
 // 10	djnz		5 3rd [5jr]
@@ -217,8 +227,13 @@ void npr16(CPU* cpu) {
 // 17	rla		4
 void npr17(CPU* cpu) {
 	cpu->tmp = cpu->a;
-	cpu->a = (cpu->a << 1) | (cpu->f & Z80_FC);
-	cpu->f = (cpu->f & (Z80_FS | Z80_FZ | Z80_FP)) | (cpu->a & (Z80_F5 | Z80_F3)) | (cpu->tmp >> 7);
+	cpu->a = (cpu->a << 1) | cpu->fz.c;
+	// cpu->f = (cpu->f & (Z80_FS | Z80_FZ | Z80_FP)) | (cpu->a & (Z80_F5 | Z80_F3)) | (cpu->tmp >> 7);
+	cpu->fz.f5 = !!(cpu->a & 0x20);
+	cpu->fz.h = 0;
+	cpu->fz.f3 = !!(cpu->a & 0x08);
+	cpu->fz.n = 0;
+	cpu->fz.c = !!(cpu->tmp & 0x80);
 }
 
 // 18	jr e		4 3rd 5jr
@@ -264,7 +279,12 @@ void npr1E(CPU* cpu) {
 void npr1F(CPU* cpu) {
 	cpu->tmp = cpu->a;
 	cpu->a = (cpu->a >> 1) | (cpu->f << 7);
-	cpu->f = (cpu->f & (Z80_FS | Z80_FZ | Z80_FP)) | (cpu->a & (Z80_F5 | Z80_F3)) | (cpu->tmp & Z80_FC);
+	// cpu->f = (cpu->f & (Z80_FS | Z80_FZ | Z80_FP)) | (cpu->a & (Z80_F5 | Z80_F3)) | (cpu->tmp & Z80_FC);
+	cpu->fz.f5 = !!(cpu->a & 0x20);
+	cpu->fz.h = 0;
+	cpu->fz.f3 = !!(cpu->a & 0x08);
+	cpu->fz.n = 0;
+	cpu->fz.c = cpu->tmp & 1;
 }
 
 // 20	jr nz,e		4 3rd [5jr]
@@ -364,7 +384,11 @@ void npr2E(CPU* cpu) {
 // 2F	cpl		4
 void npr2F(CPU* cpu) {
 	cpu->a ^= 0xff;
-	cpu->f = (cpu->f & (Z80_FS | Z80_FZ | Z80_FP | Z80_FC)) | (cpu->a & (Z80_F5 | Z80_F3)) | Z80_FH | Z80_FN;
+//	cpu->f = (cpu->f & (Z80_FS | Z80_FZ | Z80_FP | Z80_FC)) | (cpu->a & (Z80_F5 | Z80_F3)) | Z80_FH | Z80_FN;
+	cpu->fz.f5 = !!(cpu->a & 0x20);
+	cpu->fz.h = 1;
+	cpu->fz.f3 = !!(cpu->a & 0x08);
+	cpu->fz.n = 1;
 }
 
 // 30	jr nc,e		4 3rd [5jr]
@@ -420,7 +444,12 @@ void npr36(CPU* cpu) {
 
 // 37	scf		4
 void npr37(CPU* cpu) {
-	cpu->f = (cpu->f & (Z80_FS | Z80_FZ | Z80_FP)) | (cpu->a & (Z80_F5 | Z80_F3)) | Z80_FC;
+	//cpu->f = (cpu->f & (Z80_FS | Z80_FZ | Z80_FP)) | (cpu->a & (Z80_F5 | Z80_F3)) | Z80_FC;
+	cpu->fz.f5 = !!(cpu->a & 0x20);
+	cpu->fz.h = 0;
+	cpu->fz.f3 = !!(cpu->a & 0x08);
+	cpu->fz.n = 0;
+	cpu->fz.c = 1;
 }
 
 // 38	jr c,e		4 3rd [5jr]
@@ -467,7 +496,12 @@ void npr3E(CPU* cpu) {
 
 // 3F	ccf		4
 void npr3F(CPU* cpu) {
-	cpu->f = (cpu->f & (Z80_FS | Z80_FZ | Z80_FP)) | ((cpu->f & Z80_FC ) ? Z80_FH : Z80_FC) | (cpu->a & (Z80_F5 | Z80_F3));
+	//cpu->f = (cpu->f & (Z80_FS | Z80_FZ | Z80_FP)) | ((cpu->f & Z80_FC ) ? Z80_FH : Z80_FC) | (cpu->a & (Z80_F5 | Z80_F3));
+	cpu->fz.f5 = !!(cpu->a & 0x20);
+	cpu->fz.h = cpu->fz.c;		// old C in H
+	cpu->fz.f3 = !!(cpu->a & 0x08);
+	cpu->fz.n = 0;
+	cpu->fz.c ^= 1;
 }
 
 // 40..47	ld b,r		4 [3rd]

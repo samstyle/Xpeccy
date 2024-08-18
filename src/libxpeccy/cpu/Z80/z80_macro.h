@@ -1,7 +1,7 @@
 #pragma once
 
 extern const unsigned char daaTab[0x1000];
-extern const unsigned char sz53pTab[0x100];
+// extern const unsigned char sz53pTab[0x100];
 extern const unsigned char FHaddTab[8];
 extern const unsigned char FHsubTab[8];
 extern const unsigned char FVaddTab[8];
@@ -98,25 +98,132 @@ extern const unsigned char FVsubTab[8];
 
 // shift
 
-#define RL(val) {cpu->tmp = val; val = (val << 1) | (cpu->f & Z80_FC); cpu->f = (cpu->tmp >> 7) | sz53pTab[val];}
+#define RL(val) {\
+	cpu->tmp = val;\
+	val = (val << 1) | cpu->fz.c;\
+	cpu->fz.s = !!(val & 0x80);\
+	cpu->fz.z = !val;\
+	cpu->fz.f5 = !!(val & 0x20);\
+	cpu->fz.h = 0;\
+	cpu->fz.f3 = !!(val & 0x08);\
+	cpu->fz.pv = parity(val);\
+	cpu->fz.n = 0;\
+	cpu->fz.c = !!(cpu->tmp & 0x80);\
+}
 
 #define RLC(val) {\
 	val = (val << 1) | (val >> 7);\
-	cpu->f = (val & Z80_FC) | sz53pTab[val];\
+	cpu->fz.s = !!(val & 0x80);\
+	cpu->fz.z = !val;\
+	cpu->fz.f5 = !!(val & 0x20);\
+	cpu->fz.h = 0;\
+	cpu->fz.f3 = !!(val & 0x08);\
+	cpu->fz.pv = parity(val);\
+	cpu->fz.n = 0;\
+	cpu->fz.c = (val & 1);\
 }
 
-#define RR(val) {cpu->tmp = val; val = (val >> 1) | (cpu->f << 7); cpu->f = (cpu->tmp & Z80_FC) | sz53pTab[val];}
-#define RRC(val) {cpu->f = val & Z80_FC; val = (val >> 1) | (val << 7); cpu->f |= sz53pTab[val];}
+#define RR(val) {\
+	cpu->tmp = val;\
+	val = (val >> 1) | (cpu->fz.c << 7);\
+	cpu->fz.c = cpu->tmp & 1;\
+	cpu->fz.s = !!(val & 0x80);\
+	cpu->fz.z = !val;\
+	cpu->fz.f5 = !!(val & 0x20);\
+	cpu->fz.h = 0;\
+	cpu->fz.f3 = !!(val & 0x08);\
+	cpu->fz.pv = parity(val);\
+	cpu->fz.n = 0;\
+}
 
-#define SLA(val) {cpu->f = (val >> 7); val <<= 1; cpu->f |= sz53pTab[val];}
-#define SLL(val) {cpu->f = (val >> 7); val = (val << 1) | 0x01; cpu->f |= sz53pTab[val];}
-#define SRA(val) {cpu->f = val & Z80_FC; val = (val & 0x80) | (val >> 1); cpu->f |= sz53pTab[val];}
-#define SRL(val) {cpu->f = val & Z80_FC; val >>= 1; cpu->f |= sz53pTab[val];}
+#define RRC(val) {\
+	cpu->fz.c = val & 1;\
+	val = (val >> 1) | (val << 7);\
+	cpu->fz.s = !!(val & 0x80);\
+	cpu->fz.z = !val;\
+	cpu->fz.f5 = !!(val & 0x20);\
+	cpu->fz.h = 0;\
+	cpu->fz.f3 = !!(val & 0x08);\
+	cpu->fz.pv = parity(val);\
+	cpu->fz.n = 0;\
+}
+
+#define SLA(val) {\
+	cpu->fz.c = !!(val & 0x80);\
+	val <<= 1;\
+	cpu->fz.s = !!(val & 0x80);\
+	cpu->fz.z = !val;\
+	cpu->fz.f5 = !!(val & 0x20);\
+	cpu->fz.h = 0;\
+	cpu->fz.f3 = !!(val & 0x08);\
+	cpu->fz.pv = parity(val);\
+	cpu->fz.n = 0;\
+}
+
+#define SLL(val) {\
+	cpu->fz.c = !!(val & 0x80);\
+	val = (val << 1) | 0x01;\
+	cpu->fz.s = !!(val & 0x80);\
+	cpu->fz.z = !val;\
+	cpu->fz.f5 = !!(val & 0x20);\
+	cpu->fz.h = 0;\
+	cpu->fz.f3 = !!(val & 0x08);\
+	cpu->fz.pv = parity(val);\
+	cpu->fz.n = 0;\
+}
+
+#define SRA(val) {\
+	cpu->fz.c = val & 1;\
+	val = (val & 0x80) | (val >> 1);\
+	cpu->fz.s = !!(val & 0x80);\
+	cpu->fz.z = !val;\
+	cpu->fz.f5 = !!(val & 0x20);\
+	cpu->fz.h = 0;\
+	cpu->fz.f3 = !!(val & 0x08);\
+	cpu->fz.pv = parity(val);\
+	cpu->fz.n = 0;\
+}
+
+// cpu->f = val & 1; val >>= 1; cpu->f |= sz53pTab[val];}
+#define SRL(val) {\
+	cpu->fz.c = val & 1;\
+	val >>= 1;\
+	cpu->fz.s = !!(val & 0x80);\
+	cpu->fz.z = !val;\
+	cpu->fz.f5 = !!(val & 0x20);\
+	cpu->fz.h = 0;\
+	cpu->fz.f3 = !!(val & 0x08);\
+	cpu->fz.pv = parity(val);\
+	cpu->fz.n = 0;\
+}
 
 // bit
+// TODO:z = bit value, p/v = z, s = (val & (1 << bit) & 0x80)
 
-#define BIT(bit,val) {cpu->f = (cpu->f & Z80_FC ) | Z80_FH | (sz53pTab[val & (0x01 << bit)] & ~(Z80_F5 | Z80_F3)) | (val & (Z80_F5 | Z80_F3));}
-#define BITM(bit,val) {cpu->f = (cpu->f & Z80_FC) | Z80_FH | (sz53pTab[val & (1 << bit)] & ~(Z80_F5 | Z80_F3)) | (cpu->hptr & (Z80_F5 | Z80_F3));}
+// cpu->f = (cpu->f & Z80_FC) | Z80_FH | (sz53pTab[val & (0x01 << bit)] & ~(Z80_F5 | Z80_F3)) | ((val & (1 << bit)) & (Z80_F5 | Z80_F3));}
+#define BIT(bit,val) {\
+	cpu->tmp = val & (1 << bit);\
+	cpu->fz.s = !!(cpu->tmp & 0x80);\
+	cpu->fz.z = !cpu->tmp;\
+	cpu->fz.f5 = !!(cpu->tmp & 0x20);\
+	cpu->fz.h = 1;\
+	cpu->fz.f3 = !!(cpu->tmp & 0x08);\
+	cpu->fz.pv = cpu->fz.z;\
+	cpu->fz.n = 0;\
+}
+
+// cpu->f = (cpu->f & Z80_FC) | Z80_FH | (sz53pTab[val & (1 << bit)] & ~(Z80_F5 | Z80_F3)) | (cpu->hptr & (Z80_F5 | Z80_F3));}
+#define BITM(bit,val) {\
+	cpu->tmp = val & (1 << bit);\
+	cpu->fz.s = !!(cpu->tmp & 0x80);\
+	cpu->fz.z = !cpu->tmp;\
+	cpu->fz.f5 = !!(cpu->hptr & 0x20);\
+	cpu->fz.h = 1;\
+	cpu->fz.f3 = !!(cpu->hptr & 0x08);\
+	cpu->fz.pv = cpu->fz.z;\
+	cpu->fz.n = 0;\
+}
+
 //#define SET(bit,val) {val |= (1 << bit);}
 //#define RES(bit,val) {val &= ~(1 << bit);}
 
@@ -175,4 +282,3 @@ extern const unsigned char FVsubTab[8];
 	SETX(base,bit);\
 	reg = cpu->tmpb;\
 }
-

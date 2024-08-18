@@ -105,7 +105,7 @@ xAsmScan lr_asm(const char* cbuf, char* buf) {
 	return res;
 }
 
-static unsigned char lr_cnd[4] = {Z80_FZ, Z80_FC, Z80_FP, Z80_FS};
+//static unsigned char lr_cnd[4] = {Z80_FZ, Z80_FC, Z80_FP, Z80_FS};
 
 xMnem lr_mnem(CPU* cpu, int qadr, cbdmr mrd, void* data) {
 	int res = 0;
@@ -159,12 +159,14 @@ xMnem lr_mnem(CPU* cpu, int qadr, cbdmr mrd, void* data) {
 	} else if (opt == lrTab) {
 		if (((op & 0xc7) == 0xc2) || ((op & 0xc7) == 0xc4) || ((op & 0xc7) == 0xc0)) {		// call, jp, ret
 			mn.cond = 1;
-			mn.met = (cpu->f & lr_cnd[(op & 0x30) >> 4]) ? 0 : 1;
+			mn.met = (op & 0x10) ? !cpu->fl.z : !cpu->fl.c;
+			//mn.met = (cpu->f & lr_cnd[(op & 0x30) >> 4]) ? 0 : 1;
 			if (op & 8)
 				mn.met ^= 1;
 		} else if ((op & 0xe7) == 0x20) {							// jr
 			mn.cond = 1;
-			mn.met = (cpu->f & lr_cnd[(op & 0x10) >> 4] ? 0 : 1);
+			//mn.met = (cpu->f & lr_cnd[(op & 0x10) >> 4] ? 0 : 1);
+			mn.met = (op & 0x10) ? !cpu->fl.z : !cpu->fl.c;
 			if (op & 8)
 				mn.met ^= 1;
 		}
