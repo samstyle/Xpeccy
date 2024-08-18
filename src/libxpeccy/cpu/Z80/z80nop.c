@@ -83,120 +83,6 @@ void z80_ret(CPU* cpu) {
 	cpu->mptr = cpu->pc;
 }
 
-// ALU
-unsigned char z80_inc8(CPU* cpu, unsigned char v) {
-	v++;
-	cpu->fz.s = !!(v & 0x80);
-	cpu->fz.z = !v;
-	cpu->fz.f5 = !!(v & 0x20);
-	cpu->fz.h = !(v & 0x0f);
-	cpu->fz.f3 = !!(v & 0x80);
-	cpu->fz.n = 0;
-	return v;
-}
-
-unsigned char z80_dec8(CPU* cpu, unsigned char v) {
-	cpu->fz.h = !(v & 0x0f);
-	v--;
-	cpu->fz.s = !!(v & 0x80);
-	cpu->fz.z = !v;
-	cpu->fz.f5 = !!(v & 0x20);
-	cpu->fz.f3 = !!(v & 0x80);
-	cpu->fz.n = 1;
-	return v;
-}
-
-unsigned char z80_add8(CPU* cpu, unsigned char v, unsigned char c) {
-	cpu->tmpw = cpu->a + v + c;
-	cpu->tmp = ((cpu->a & 0x88) >> 3) | ((v & 0x88) >> 2) | ((cpu->tmpw & 0x88) >> 1);
-	cpu->fz.s = !!(cpu->ltw & 0x80);
-	cpu->fz.z = !cpu->ltw;
-	cpu->fz.f5 = !!(cpu->ltw & 0x20);
-	cpu->fz.h = !!FHaddTab[cpu->tmp & 7];
-	cpu->fz.f3 = !!(cpu->ltw & 0x08);
-	cpu->fz.pv = !!FVaddTab[(cpu->tmp >> 4) & 7];
-	cpu->fz.n = 0;
-	cpu->fz.c = !!cpu->htw;
-	return cpu->ltw;
-}
-
-// F3,F5 taked from result
-unsigned char z80_sub8(CPU* cpu, unsigned char v, unsigned char c) {
-	cpu->tmpw = cpu->a - v - c;
-	cpu->tmp = ((cpu->a & 0x88) >> 3) | ((v & 0x88) >> 2) | ((cpu->tmpw & 0x88) >> 1);
-	cpu->fz.s = !!(cpu->ltw & 0x80);
-	cpu->fz.z = !cpu->ltw;
-	cpu->fz.f5 = !!(cpu->ltw & 0x20);
-	cpu->fz.h = !!FHsubTab[cpu->tmp & 7];
-	cpu->fz.f3 = !!(cpu->ltw & 0x08);
-	cpu->fz.pv = !!FVsubTab[(cpu->tmp >> 4) & 7];
-	cpu->fz.n = 1;
-	cpu->fz.c = !!cpu->htw;
-	return cpu->ltw;
-}
-
-// F3,F5 taked from operand
-void z80_cp8(CPU* cpu, unsigned char v) {
-	cpu->tmpw = cpu->a - v;
-	cpu->tmp = ((cpu->a & 0x88) >> 3) | ((v & 0x88) >> 2) | ((cpu->tmpw & 0x88) >> 1);
-	cpu->fz.s = !!(cpu->ltw & 0x80);
-	cpu->fz.z = !cpu->ltw;
-	cpu->fz.f5 = !!(v & 0x20);
-	cpu->fz.h = !!FHsubTab[cpu->tmp & 7];
-	cpu->fz.f3 = !!(v & 0x08);
-	cpu->fz.pv = !!FVsubTab[(cpu->tmp >> 4) & 7];
-	cpu->fz.n = 1;
-	cpu->fz.c = !!cpu->htw;
-}
-
-// S,Z,PV flags affected only by ADC
-unsigned short z80_add16(CPU* cpu, unsigned short v1, unsigned short v2) {
-	cpu->mptr = v1;
-	cpu->tmpi = v1 + v2;
-	cpu->tmp = ((v1 & 0x8800) >> 11) | ((v2 & 0x8800) >> 10) | ((cpu->tmpi & 0x8800) >> 9);
-	v1 = cpu->tmpi & 0xffff;
-	cpu->fz.f5 = !!(v1 & 0x2000);
-	cpu->fz.h = !!FHaddTab[cpu->tmp & 7];
-	cpu->fz.f3 = !!(v1 & 0x0800);
-	cpu->fz.n = 0;
-	cpu->fz.c = !!(cpu->tmpi & ~0xffff);
-	cpu->mptr++;
-	return v1;
-}
-
-unsigned short z80_adc16(CPU* cpu, unsigned short v1, unsigned short v2, unsigned char c) {
-	cpu->mptr = v1;
-	cpu->tmpi = v1 + v2 + c;
-	cpu->tmp = ((v1 & 0x8800) >> 11) | ((v2 & 0x8800) >> 10) | ((cpu->tmpi & 0x8800) >> 9);
-	v1 = cpu->tmpi & 0xffff;
-	cpu->fz.s = !!(v1 & 0x8000);
-	cpu->fz.z = !v1;
-	cpu->fz.f5 = !!(v1 & 0x2000);
-	cpu->fz.h = !!FHaddTab[cpu->tmp & 7];
-	cpu->fz.f3 = !!(v1 & 0x0800);
-	cpu->fz.pv = !!FVaddTab[cpu->tmp >> 4];
-	cpu->fz.n = 0;
-	cpu->fz.c = !!(cpu->tmpi & ~0xffff);
-	cpu->mptr++;
-	return v1;
-}
-
-unsigned short z80_sub16(CPU* cpu, unsigned short v1, unsigned short v2, unsigned char c) {
-	cpu->tmpi = v1 - v2 - c;
-	cpu->tmp = ((v1 & 0x8800) >> 11) | ((v2 & 0x8800) >> 10) | ((cpu->tmpi & 0x8800) >> 9);
-	cpu->mptr = v1 + 1;
-	v1 = cpu->tmpi & 0xffff;
-	cpu->fz.s = !!(v1 & 0x8000);
-	cpu->fz.z = !v1;
-	cpu->fz.f5 = !!(v1 & 0x2000);
-	cpu->fz.h = !!FHsubTab[cpu->tmp & 7];
-	cpu->fz.f3 = !!(v1 & 0x0800);
-	cpu->fz.pv = !!FVsubTab[cpu->tmp >> 4];
-	cpu->fz.n = 1;
-	cpu->fz.c = !!(cpu->tmpi & ~0xffff);
-	return v1;
-}
-
 // opcodes
 // 00	nop		4
 void npr00(CPU* cpu) {}
@@ -693,32 +579,32 @@ void npr9D(CPU* cpu) {cpu->a = z80_sub8(cpu, cpu->l, cpu->fz.c);} //SBC(cpu->l);
 void npr9E(CPU* cpu) {cpu->tmpb = z80_mrd(cpu, cpu->hl); cpu->a = z80_sub8(cpu, cpu->tmpb, cpu->fz.c);} //SBC(cpu->tmpb);}
 void npr9F(CPU* cpu) {cpu->a = z80_sub8(cpu, cpu->a, cpu->fz.c);} //SBC(cpu->a);}
 // a0..a7	and r		4 [3rd]
-void nprA0(CPU* cpu) {cpu->a &= cpu->b; cpu->f = sz53pTab[cpu->a] | Z80_FH;}
-void nprA1(CPU* cpu) {cpu->a &= cpu->c; cpu->f = sz53pTab[cpu->a] | Z80_FH;}
-void nprA2(CPU* cpu) {cpu->a &= cpu->d; cpu->f = sz53pTab[cpu->a] | Z80_FH;}
-void nprA3(CPU* cpu) {cpu->a &= cpu->e; cpu->f = sz53pTab[cpu->a] | Z80_FH;}
-void nprA4(CPU* cpu) {cpu->a &= cpu->h; cpu->f = sz53pTab[cpu->a] | Z80_FH;}
-void nprA5(CPU* cpu) {cpu->a &= cpu->l; cpu->f = sz53pTab[cpu->a] | Z80_FH;}
-void nprA6(CPU* cpu) {cpu->tmp = z80_mrd(cpu, cpu->hl); cpu->a &= cpu->tmp; cpu->f = sz53pTab[cpu->a] | Z80_FH;}
-void nprA7(CPU* cpu) {cpu->f = sz53pTab[cpu->a] | Z80_FH;}
+void nprA0(CPU* cpu) {z80_and8(cpu, cpu->b);}
+void nprA1(CPU* cpu) {z80_and8(cpu, cpu->c);}
+void nprA2(CPU* cpu) {z80_and8(cpu, cpu->d);}
+void nprA3(CPU* cpu) {z80_and8(cpu, cpu->e);}
+void nprA4(CPU* cpu) {z80_and8(cpu, cpu->h);}
+void nprA5(CPU* cpu) {z80_and8(cpu, cpu->l);}
+void nprA6(CPU* cpu) {cpu->tmp = z80_mrd(cpu, cpu->hl); z80_and8(cpu, cpu->tmp);}
+void nprA7(CPU* cpu) {z80_and8(cpu, cpu->a);}
 // a8..af	xor r		4 [3rd]
-void nprA8(CPU* cpu) {cpu->a ^= cpu->b; cpu->f = sz53pTab[cpu->a];}
-void nprA9(CPU* cpu) {cpu->a ^= cpu->c; cpu->f = sz53pTab[cpu->a];}
-void nprAA(CPU* cpu) {cpu->a ^= cpu->d; cpu->f = sz53pTab[cpu->a];}
-void nprAB(CPU* cpu) {cpu->a ^= cpu->e; cpu->f = sz53pTab[cpu->a];}
-void nprAC(CPU* cpu) {cpu->a ^= cpu->h; cpu->f = sz53pTab[cpu->a];}
-void nprAD(CPU* cpu) {cpu->a ^= cpu->l; cpu->f = sz53pTab[cpu->a];}
-void nprAE(CPU* cpu) {cpu->tmp = z80_mrd(cpu, cpu->hl); cpu->a ^= cpu->tmp; cpu->f = sz53pTab[cpu->a];}
-void nprAF(CPU* cpu) {cpu->a = 0; cpu->f = Z80_FZ | Z80_FP;}
+void nprA8(CPU* cpu) {z80_xor8(cpu, cpu->b);}
+void nprA9(CPU* cpu) {z80_xor8(cpu, cpu->c);}
+void nprAA(CPU* cpu) {z80_xor8(cpu, cpu->d);}
+void nprAB(CPU* cpu) {z80_xor8(cpu, cpu->e);}
+void nprAC(CPU* cpu) {z80_xor8(cpu, cpu->h);}
+void nprAD(CPU* cpu) {z80_xor8(cpu, cpu->l);}
+void nprAE(CPU* cpu) {cpu->tmp = z80_mrd(cpu, cpu->hl); z80_xor8(cpu, cpu->tmp);}
+void nprAF(CPU* cpu) {z80_xor8(cpu, cpu->a);}
 // b0..b8	or r		4 [3rd]
-void nprB0(CPU* cpu) {cpu->a |= cpu->b; cpu->f = sz53pTab[cpu->a];}
-void nprB1(CPU* cpu) {cpu->a |= cpu->c; cpu->f = sz53pTab[cpu->a];}
-void nprB2(CPU* cpu) {cpu->a |= cpu->d; cpu->f = sz53pTab[cpu->a];}
-void nprB3(CPU* cpu) {cpu->a |= cpu->e; cpu->f = sz53pTab[cpu->a];}
-void nprB4(CPU* cpu) {cpu->a |= cpu->h; cpu->f = sz53pTab[cpu->a];}
-void nprB5(CPU* cpu) {cpu->a |= cpu->l; cpu->f = sz53pTab[cpu->a];}
-void nprB6(CPU* cpu) {cpu->tmp = z80_mrd(cpu, cpu->hl); cpu->a |= cpu->tmp; cpu->f = sz53pTab[cpu->a];}
-void nprB7(CPU* cpu) {cpu->f = sz53pTab[cpu->a];}
+void nprB0(CPU* cpu) {z80_or8(cpu, cpu->b);}
+void nprB1(CPU* cpu) {z80_or8(cpu, cpu->c);}
+void nprB2(CPU* cpu) {z80_or8(cpu, cpu->d);}
+void nprB3(CPU* cpu) {z80_or8(cpu, cpu->e);}
+void nprB4(CPU* cpu) {z80_or8(cpu, cpu->h);}
+void nprB5(CPU* cpu) {z80_or8(cpu, cpu->l);}
+void nprB6(CPU* cpu) {cpu->tmp = z80_mrd(cpu, cpu->hl); z80_or8(cpu, cpu->tmp);}
+void nprB7(CPU* cpu) {z80_or8(cpu, cpu->a);}
 // b9..bf	cp r		4 [3rd]
 void nprB8(CPU* cpu) {z80_cp8(cpu, cpu->b);} //CP(cpu->b);}
 void nprB9(CPU* cpu) {z80_cp8(cpu, cpu->c);} //CP(cpu->c);}
@@ -982,8 +868,7 @@ void nprE5(CPU* cpu) {
 // e6	and n		4 3rd
 void nprE6(CPU* cpu) {
 	cpu->tmpb = z80_mrd(cpu, cpu->pc++);
-	cpu->a &= cpu->tmpb;
-	cpu->f = sz53pTab[cpu->a] | Z80_FH;
+	z80_and8(cpu, cpu->tmpb);
 }
 
 // e7	rst20		5 3wr 3wr	mptr = 0x20
@@ -1032,8 +917,7 @@ void nprED(CPU* cpu) {
 // ee	xor n		4 3rd
 void nprEE(CPU* cpu) {
 	cpu->tmpb = z80_mrd(cpu, cpu->pc++);
-	cpu->a ^= cpu->tmpb;
-	cpu->f = sz53pTab[cpu->a];
+	z80_xor8(cpu, cpu->tmpb);
 }
 
 // ef	rst28		5 3wr 3wr	mptr = 0x28
@@ -1088,8 +972,7 @@ void nprF5(CPU* cpu) {
 // f6	or n		4 3rd
 void nprF6(CPU* cpu) {
 	cpu->tmpb = z80_mrd(cpu, cpu->pc++);
-	cpu->a |= cpu->tmpb;
-	cpu->f = sz53pTab[cpu->a];
+	z80_or8(cpu, cpu->tmpb);
 }
 
 // f7	rst30		5 3wr 3wr		mptr = 0x30

@@ -1,5 +1,31 @@
 #pragma once
 
+#ifdef WORDS_BIG_ENDIAN
+typedef struct {
+	unsigned _nu:24;		// not used (padding to 32 bits)
+	unsigned s:1;
+	unsigned z:1;
+	unsigned f5:1;
+	unsigned h:1;
+	unsigned f3:1;
+	unsigned pv:1;
+	unsigned n:1;
+	unsigned c:1;
+} z80flag_t;
+#else
+typedef struct {
+	unsigned c:1;
+	unsigned n:1;
+	unsigned pv:1;
+	unsigned f3:1;
+	unsigned h:1;
+	unsigned f5:1;
+	unsigned z:1;
+	unsigned s:1;
+	unsigned _nu:24;		// not used (padding to 32 bits)
+} z80flag_t;
+#endif
+
 #include "../cpu.h"
 #include "z80_macro.h"
 
@@ -33,32 +59,6 @@ enum {
 #define Z80_INT	1
 #define Z80_NMI	(1<<1)
 
-#ifdef WORDS_BIG_ENDIAN
-typedef struct {
-	unsigned _nu:24;		// not used (padding to 32 bits)
-	unsigned s:1;
-	unsigned z:1;
-	unsigned f5:1;
-	unsigned h:1;
-	unsigned f3:1;
-	unsigned pv:1;
-	unsigned n:1;
-	unsigned c:1;
-} z80flag_t;
-#else
-typedef struct {
-	unsigned c:1;
-	unsigned n:1;
-	unsigned pv:1;
-	unsigned f3:1;
-	unsigned h:1;
-	unsigned f5:1;
-	unsigned z:1;
-	unsigned s:1;
-	unsigned _nu:24;		// not used (padding to 32 bits)
-} z80flag_t;
-#endif
-
 void z80_reset(CPU*);
 int z80_exec(CPU*);
 xAsmScan z80_asm(const char*, char*);
@@ -78,10 +78,14 @@ unsigned char z80_inc8(CPU*, unsigned char);
 unsigned char z80_dec8(CPU*, unsigned char);
 unsigned char z80_add8(CPU*, unsigned char, unsigned char);
 unsigned char z80_sub8(CPU*, unsigned char, unsigned char);
-void z80_cp8(CPU*, unsigned char);
 unsigned short z80_add16(CPU*, unsigned short, unsigned short);
 unsigned short z80_adc16(CPU*, unsigned short, unsigned short, unsigned char);
 unsigned short z80_sub16(CPU*, unsigned short, unsigned short, unsigned char);
+void z80_and8(CPU*, unsigned char);
+void z80_or8(CPU*, unsigned char);
+void z80_xor8(CPU*, unsigned char);
+void z80_cp8(CPU*, unsigned char);
+
 unsigned short z80_pop(CPU*);
 void z80_push(CPU*, unsigned short);
 void z80_ret(CPU*);

@@ -289,7 +289,7 @@ void edA0(CPU* cpu) {
 	cpu->t += 2;
 	cpu->bc--;
 	cpu->tmp += cpu->a;
-	cpu->f = (cpu->f & (Z80_FC | Z80_FZ | Z80_FS)) | (cpu->bc ? Z80_FV : 0 ) | (cpu->tmp & Z80_F3) | ((cpu->tmp & 0x02) ? Z80_F5 : 0);
+	cpu->f = (cpu->f & (Z80_FC | Z80_FZ | Z80_FS)) | (cpu->bc ? Z80_FV : 0 ) | (cpu->tmp & Z80_F3) | ((cpu->tmp & 0x20) ? Z80_F5 : 0);
 }
 
 // a1	cpi	4 3rd 5?	mptr++
@@ -340,7 +340,7 @@ void edA8(CPU* cpu) {
 	cpu->t += 2;
 	cpu->bc--;
 	cpu->tmp += cpu->a;
-	cpu->f = (cpu->f & (Z80_FC | Z80_FZ | Z80_FS)) | (cpu->bc ? Z80_FV : 0 ) | (cpu->tmp & Z80_F3) | ((cpu->tmp & 0x02) ? Z80_F5 : 0);
+	cpu->f = (cpu->f & (Z80_FC | Z80_FZ | Z80_FS)) | (cpu->bc ? Z80_FV : 0 ) | (cpu->tmp & Z80_F3) | ((cpu->tmp & 0x20) ? Z80_F5 : 0);
 }
 
 // a9	cpd	4 3rd 5?	mptr--
