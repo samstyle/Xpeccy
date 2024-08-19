@@ -98,6 +98,7 @@ extern const unsigned char FVsubTab[8];
 
 // shift
 
+/*
 #define RL(val) {\
 	cpu->tmp = val;\
 	val = (val << 1) | cpu->fz.c;\
@@ -196,6 +197,7 @@ extern const unsigned char FVsubTab[8];
 	cpu->fz.pv = parity(val);\
 	cpu->fz.n = 0;\
 }
+*/
 
 // bit
 // TODO:z = bit value, p/v = z, s = (val & (1 << bit) & 0x80)
@@ -237,11 +239,11 @@ extern const unsigned char FVsubTab[8];
 	cpu->t += 5;\
 }
 
-#define XDCB(base,name) {\
+#define XDCB(base,_name) {\
 	cpu->mptr = base + (signed char)cpu->tmp;\
 	cpu->t += 5;\
 	cpu->tmpb = z80_mrd(cpu, cpu->mptr); cpu->t++;\
-	name(cpu->tmpb);\
+	cpu->tmpb = _name(cpu, cpu->tmpb);\
 	z80_mwr(cpu, cpu->mptr, cpu->tmpb);\
 }
 

@@ -73,7 +73,7 @@ int z80_mrd(CPU*, int);
 void z80_mwr(CPU*, int, int);
 int z80_iord(CPU*, int);
 void z80_iowr(CPU*, int, int);
-
+// alu
 unsigned char z80_inc8(CPU*, unsigned char);
 unsigned char z80_dec8(CPU*, unsigned char);
 unsigned char z80_add8(CPU*, unsigned char, unsigned char);
@@ -85,6 +85,15 @@ void z80_and8(CPU*, unsigned char);
 void z80_or8(CPU*, unsigned char);
 void z80_xor8(CPU*, unsigned char);
 void z80_cp8(CPU*, unsigned char);
+// rotation
+unsigned char z80_rl(CPU*, unsigned char);
+unsigned char z80_rr(CPU*, unsigned char);
+unsigned char z80_rlc(CPU*, unsigned char);
+unsigned char z80_rrc(CPU*, unsigned char);
+unsigned char z80_sla(CPU*, unsigned char);
+unsigned char z80_sra(CPU*, unsigned char);
+unsigned char z80_sll(CPU*, unsigned char);
+unsigned char z80_srl(CPU*, unsigned char);
 
 unsigned short z80_pop(CPU*);
 void z80_push(CPU*, unsigned short);
