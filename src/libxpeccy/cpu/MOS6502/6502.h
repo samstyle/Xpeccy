@@ -9,6 +9,7 @@ enum {
 	M6502_REG_Y
 };
 
+/*
 #define MFN 0x80	// negative
 #define MFV 0x40	// b7 carry
 #define MF5 0x20	// =1
@@ -17,6 +18,7 @@ enum {
 #define MFI 0x04	// interrupt mask
 #define MFZ 0x02	// zero
 #define MFC 0x01	// carry
+*/
 
 #ifdef WORDS_LITTLE_ENDIAN
 typedef struct {

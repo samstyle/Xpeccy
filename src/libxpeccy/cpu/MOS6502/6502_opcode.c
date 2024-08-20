@@ -129,7 +129,7 @@ void mosop00(CPU* cpu) {
 	cpu->lsp--;
 	cpu->mwr(cpu->sp, cpu->lpc, cpu->xptr);
 	cpu->lsp--;
-	cpu->mwr(cpu->sp, cpu->f | MFB | 0x20, cpu->xptr);		// set B flag
+	cpu->mwr(cpu->sp, cpu->f | 0x10 | 0x20, cpu->xptr);		// set B flag (0x10)
 	cpu->lsp--;
 	cpu->lpc = cpu->mrd(0xfffe, 0, cpu->xptr);
 	cpu->hpc = cpu->mrd(0xffff, 0, cpu->xptr);
@@ -180,7 +180,7 @@ void mosop07(CPU* cpu) {
 
 // php = push f
 void mosop08(CPU* cpu) {
-	cpu->mwr(cpu->sp, cpu->f | MFB, cpu->xptr);		// push B flag 1, but don't change it in F
+	cpu->mwr(cpu->sp, cpu->f | 0x10, cpu->xptr);		// push B flag 1, but don't change it in F
 	cpu->lsp--;
 }
 
@@ -200,7 +200,8 @@ void mosop0B(CPU* cpu) {
 	mosGetImm(cpu->tmp);
 	cpu->tmp &= cpu->a;
 	MFLAGZN(cpu->tmp);
-	cpu->f = (cpu->f & ~MFC) | ((cpu->tmp & 0x80) ? MFC : 0);
+	// cpu->f = (cpu->f & ~MFC) | ((cpu->tmp & 0x80) ? MFC : 0);
+	cpu->fm.c = !!(cpu->tmp & 0x80);
 }
 
 // nop abs nn
@@ -230,7 +231,7 @@ void mosop0F(CPU* cpu) {
 // bpl e = jr p,e
 void mosop10(CPU* cpu) {
 	mosGetImm(cpu->tmp);
-	if (cpu->f & MFN) return;
+	if (cpu->fm.n) return;
 	MJR(cpu->tmp);
 }
 
@@ -278,7 +279,7 @@ void mosop17(CPU* cpu) {
 
 // clc : C=0
 void mosop18(CPU* cpu) {
-	cpu->f &= ~MFC;
+	cpu->fm.c = 0; // &= ~MFC;
 }
 
 // ora abs,y nn
@@ -382,8 +383,8 @@ void mosop28(CPU* cpu) {
 	cpu->tmpb = cpu->mrd(cpu->pc, 0, cpu->xptr);
 	cpu->lsp++;
 	cpu->f = cpu->mrd(cpu->sp, 0 ,cpu->xptr);
-	cpu->f &= ~MFB;					// reset B flag
-	cpu->f |= MF5;					// set bit 5
+	cpu->fm.b = 0; // &= ~MFB;					// reset B flag
+	cpu->fm.f5 = 1; // |= MF5;					// set bit 5
 }
 
 // and n
@@ -430,7 +431,7 @@ void mosop2F(CPU* cpu) {
 // bmi e = jr m,e
 void mosop30(CPU* cpu) {
 	mosGetImm(cpu->tmp);
-	if (cpu->f & MFN) {
+	if (cpu->fm.n) {
 		MJR(cpu->tmp);
 	}
 }
@@ -479,7 +480,7 @@ void mosop37(CPU* cpu) {
 
 // sec
 void mosop38(CPU* cpu) {
-	cpu->f |= MFC;
+	cpu->fm.c = 1; // |= MFC;
 }
 
 // and abs,y nn
@@ -527,7 +528,7 @@ void mosop3F(CPU* cpu) {
 void mosop40(CPU* cpu) {
 	cpu->lsp++;
 	cpu->f = cpu->mrd(cpu->sp, 0, cpu->xptr);
-	cpu->f |= MF5;			// set bit 5
+	cpu->fm.f5 = 1; // |= MF5;			// set bit 5
 //	cpu->f &= ~MFI;
 	cpu->lsp++;
 	cpu->lpc = cpu->mrd(cpu->sp, 0, cpu->xptr);
@@ -632,7 +633,7 @@ void mosop4F(CPU* cpu) {
 // bvc e (v = 0)
 void mosop50(CPU* cpu) {
 	mosGetImm(cpu->tmp);
-	if (cpu->f & MFV) return;
+	if (cpu->fm.v) return;
 	MJR(cpu->tmp);
 }
 
@@ -680,7 +681,7 @@ void mosop57(CPU* cpu) {
 
 // cli
 void mosop58(CPU* cpu) {
-	cpu->f &= ~MFI;
+	cpu->fm.i = 0; // &= ~MFI;
 //	cpu->inten |= MOS6502_INT_IRQ;
 	cpu->noint = 1;
 }
@@ -805,9 +806,11 @@ void mosop6B(CPU* cpu) {
 	cpu->a &= cpu->tmp;
 	cpu->a = (cpu->a << 1) | ((cpu->a & 0x80) ? 1 : 0);
 	MFLAGZN(cpu->a);
-	cpu->f &= ~(MFV | MFC);
-	if (((cpu->a >> 6) ^ (cpu->a >> 5)) & 1) cpu->f |= MFV;
-	if (cpu->a & 0x40) cpu->f |= MFC;
+//	cpu->f &= ~(MFV | MFC);
+//	if (((cpu->a >> 6) ^ (cpu->a >> 5)) & 1) cpu->f |= MFV;
+//	if (cpu->a & 0x40) cpu->f |= MFC;
+	cpu->fm.v = !!(((cpu->a >> 6) ^ (cpu->a >> 5)) & 1);
+	cpu->fm.c = !!(cpu->a & 0x40);
 }
 
 // jmp (nn)
@@ -841,7 +844,7 @@ void mosop6F(CPU* cpu) {
 // bvs e (v = 1)
 void mosop70(CPU* cpu) {
 	mosGetImm(cpu->tmp);
-	if (cpu->f & MFV) {
+	if (cpu->fm.v) {
 		MJR(cpu->tmp);
 	}
 }
@@ -890,7 +893,7 @@ void mosop77(CPU* cpu) {
 
 // sei
 void mosop78(CPU* cpu) {
-	cpu->f |= MFI;
+	cpu->fm.i = 1; // |= MFI;
 //	cpu->inten &= ~MOS6502_INT_IRQ;
 }
 
@@ -1030,7 +1033,7 @@ void mosop8F(CPU* cpu) {
 // bcc e = jr nc,e
 void mosop90(CPU* cpu) {
 	mosGetImm(cpu->tmp);
-	if (cpu->f & MFC) return;
+	if (cpu->fm.c) return;
 	MJR(cpu->tmp);
 }
 
@@ -1241,7 +1244,7 @@ void mosopAF(CPU* cpu) {
 // bcs e = jr c,e
 void mosopB0(CPU* cpu) {
 	mosGetImm(cpu->tmp);
-	if (cpu->f & MFC) {
+	if (cpu->fm.c) {
 		MJR(cpu->tmp);
 	}
 }
@@ -1294,7 +1297,7 @@ void mosopB7(CPU* cpu) {
 
 // clv
 void mosopB8(CPU* cpu) {
-	cpu->f &= ~MFV;
+	cpu->fm.v = 0; // &= ~MFV;
 }
 
 // lda abs,y nn
@@ -1455,7 +1458,7 @@ void mosopCF(CPU* cpu) {
 // bne e = jr nz,e
 void mosopD0(CPU* cpu) {
 	mosGetImm(cpu->tmp);
-	if (cpu->f & MFZ) return;
+	if (cpu->fm.z) return;
 	MJR(cpu->tmp);
 }
 
@@ -1505,7 +1508,7 @@ void mosopD7(CPU* cpu) {
 
 // cld
 void mosopD8(CPU* cpu) {
-	cpu->f &= ~MFD;
+	cpu->fm.d = 0; // &= ~MFD;
 }
 
 // cmp abs,y nn
@@ -1652,7 +1655,7 @@ void mosopEF(CPU* cpu) {
 // beq e = jr z,e
 void mosopF0(CPU* cpu) {
 	mosGetImm(cpu->tmp);
-	if (cpu->f & MFZ) {
+	if (cpu->fm.z) {
 		MJR(cpu->tmp);
 	}
 }
@@ -1703,7 +1706,7 @@ void mosopF7(CPU* cpu) {
 
 // sed
 void mosopF8(CPU* cpu) {
-	cpu->f |= MFD;
+	cpu->fm.d = 1; // |= MFD;
 }
 
 // sbc abs,y nn
