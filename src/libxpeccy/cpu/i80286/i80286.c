@@ -51,7 +51,8 @@ void i286_int_real(CPU* cpu, int vec) {
 	i286_push(cpu, cpu->f);
 	i286_push(cpu, cpu->cs.idx);
 	i286_push(cpu, cpu->pc);
-	cpu->f &= ~(I286_FI | I286_FT);
+	cpu->fx.i = 0;
+	cpu->fx.t = 0;
 	cpu->tmpi = (vec & 0xff) << 2;
 	cpu->pc = i286_sys_mrdw(cpu, cpu->idtr, cpu->tmpi);
 	cpu->cs = i286_cash_seg(cpu, i286_sys_mrdw(cpu, cpu->idtr, cpu->tmpi+2));
@@ -72,7 +73,7 @@ void i286_int_real(CPU* cpu, int vec) {
 void i286_int_prt(CPU* cpu, int vec) {
 	if (cpu->idtr.limit < (vec & 0xfff8)) {		// check idtr limit
 		THROW_EC(I286_INT_GP, cpu->idtr.idx);
-	} else if (cpu->f & I286_FI) {
+	} else if (cpu->fx.i) {
 		if (cpu->halt) {
 			cpu->halt = 0;
 			cpu->pc++;
@@ -181,7 +182,7 @@ void i286_ext_int(CPU* cpu) {
 		cpu->inten |= I286_BLK_NMI;				// NMI is blocking until RETI, but next NMI will be remembered until then
 		cpu->intrq &= ~I286_NMI;
 		i286_interrupt(cpu, I286_INT_NMI);
-	} else 	if (cpu->f & I286_FI) {
+	} else 	if (cpu->fx.i) {
 		cpu->intrq &= ~I286_INT;
 		cpu->intvec = cpu->xack(cpu->xptr);
 		i286_interrupt(cpu, cpu->intvec);

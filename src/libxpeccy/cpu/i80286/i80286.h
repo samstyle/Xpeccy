@@ -1,6 +1,7 @@
 #pragma once
 
 // flag
+/*
 #define I286_FC	0x0001	// carry
 #define I286_FP 0x0004	// parity
 #define I286_FA 0x0010	// half-carry
@@ -12,7 +13,7 @@
 #define I286_FO 0x0800	// overflow
 #define I286_FIP 0x3000	// 2bits: IOPL
 #define I286_FN	0x4000	// nested flag
-
+*/
 enum {
 	X86_REAL = 0,
 	X86_PROT
@@ -44,6 +45,7 @@ typedef struct {
 	unsigned f5:1;
 	unsigned z:1;
 	unsigned s:1;
+	unsigned t:1;
 	unsigned i:1;
 	unsigned d:1;
 	unsigned o:1;
@@ -61,6 +63,7 @@ typedef struct {
 	unsigned o:1;
 	unsigned d:1;
 	unsigned i:1;
+	unsigned t:1;
 	unsigned s:1;
 	unsigned z:1;
 	unsigned f5:1;
