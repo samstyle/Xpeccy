@@ -2,6 +2,7 @@
 
 #define I8080_INT	1
 
+/*
 #define IFL_S	0x80
 #define	IFL_Z	0x40
 #define IFL_5	0x20
@@ -10,6 +11,7 @@
 #define IFL_P	0x04
 #define IFL_1	0x02
 #define IFL_C	0x01
+*/
 
 enum {
 	I8080_REG_PC = 1,

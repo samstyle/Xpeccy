@@ -82,7 +82,7 @@ int spc_vid_rd(int adr, void* p) {
 
 void spc_init(Computer* comp) {
 	vid_set_mode(comp->vid, VID_SPCLST);
-	vid_upd_timings(comp->vid, comp->nsPerTick >> 2);			// CPU:2MHz, dots:8MHz
+	vid_upd_timings(comp->vid, comp->nsPerTick >> 1);			// CPU:2MHz, dots:8MHz
 	comp->vid->mrd = spc_vid_rd;
 	ppi_set_cb(comp->ppi, comp, spc_rd_io_a, NULL,\
 				spc_rd_io_b, NULL,\
@@ -92,12 +92,12 @@ void spc_init(Computer* comp) {
 
 void spc_mem_map(Computer* comp) {
 	if (comp->rom) {
-		memSetBank(comp->mem, 0x00, MEM_ROM, 0, MEM_16K, NULL, NULL, NULL);		// 0xc000...0xf7ff ROM
-		memSetBank(comp->mem, 0x38, MEM_IO, 0, MEM_2K, spc_rd_io, spc_wr_io, comp);	// 0xf800...0xffff IO
-		memSetBank(comp->mem, 0x40, MEM_ROM, 0, MEM_16K, NULL, NULL, NULL);		// 0xc000...0xf7ff ROM
-		memSetBank(comp->mem, 0x78, MEM_IO, 0, MEM_2K, spc_rd_io, spc_wr_io, comp);	// 0xf800...0xffff IO
-		memSetBank(comp->mem, 0x80, MEM_ROM, 0, MEM_16K, NULL, NULL, NULL);		// 0xc000...0xf7ff ROM
-		memSetBank(comp->mem, 0xb8, MEM_IO, 0, MEM_2K, spc_rd_io, spc_wr_io, comp);	// 0xf800...0xffff IO
+		memSetBank(comp->mem, 0x00, MEM_ROM, 0, MEM_16K, NULL, NULL, NULL);		// 0x0000...0x37ff ROM
+		memSetBank(comp->mem, 0x38, MEM_IO, 0, MEM_2K, spc_rd_io, spc_wr_io, comp);	// 0x3800...0x3fff IO
+		memSetBank(comp->mem, 0x40, MEM_ROM, 0, MEM_16K, NULL, NULL, NULL);		// 0x4000...0x77ff ROM
+		memSetBank(comp->mem, 0x78, MEM_IO, 0, MEM_2K, spc_rd_io, spc_wr_io, comp);	// 0x7800...0x7fff IO
+		memSetBank(comp->mem, 0x80, MEM_ROM, 0, MEM_16K, NULL, NULL, NULL);		// 0x8000...0xb7ff ROM
+		memSetBank(comp->mem, 0xb8, MEM_IO, 0, MEM_2K, spc_rd_io, spc_wr_io, comp);	// 0xb800...0xbfff IO
 	} else {
 		memSetBank(comp->mem, 0x00, MEM_RAM, 0, MEM_64K, NULL, NULL, NULL);		// 0x0000...0xbfff RAM
 	}

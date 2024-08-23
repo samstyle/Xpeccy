@@ -32,8 +32,9 @@ int i8080_exec(CPU* cpu) {
 	cpu->op = &i8080_tab[cpu->com];
 	cpu->t = cpu->op->t;
 	cpu->op->exec(cpu);
-	cpu->f &= ~(IFL_5 | IFL_3);
-	cpu->f |= IFL_1;
+	cpu->fi.f5 = 0;
+	cpu->fi.f3 = 0;
+	cpu->fi.f1 = 1;
 	return cpu->t;
 }
 
