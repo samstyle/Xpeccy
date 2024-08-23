@@ -1,7 +1,7 @@
 #pragma once
 
-extern unsigned char FLHaddTab[8];
-extern unsigned char FLHsubTab[8];
+//extern unsigned char FLHaddTab[8];
+//extern unsigned char FLHsubTab[8];
 /*
 
 // ariphmetic
@@ -66,51 +66,82 @@ extern unsigned char FLHsubTab[8];
 
 #define RLX(val) {\
 	cpu->tmp = val;\
-	val = (val << 1) | ((cpu->f & FLC) ? 1 : 0);\
-	cpu->f = ((cpu->tmp & 0x80) ? FLC : 0) | (val ? 0 : FLZ);\
+	val = (val << 1) | cpu->fl.c;\
+	cpu->fl.n = 0;\
+	cpu->fl.h = 0;\
+	cpu->fl.c = !!(cpu->tmp & 0x80);\
+	cpu->fl.z = !val;\
 }
 
+//	cpu->f = ((val & 1) ? FLC : 0) | (val ? 0 : FLZ);
 #define RLCX(val) {\
 	val = (val << 1) | (val >> 7);\
-	cpu->f = ((val & 1) ? FLC : 0) | (val ? 0 : FLZ);\
+	cpu->fl.n = 0;\
+	cpu->fl.h = 0;\
+	cpu->fl.c = val & 1;\
+	cpu->fl.z = !val;\
 }
 
+//	cpu->f = ((cpu->tmp & 1) ? FLC : 0) | (val ? 0 : FLZ);
 #define RRX(val) {\
 	cpu->tmp = val;\
-	val = (val >> 1) | ((cpu->f & FLC) ? 0x80 : 0);\
-	cpu->f = ((cpu->tmp & 1) ? FLC : 0) | (val ? 0 : FLZ);\
+	val = (val >> 1) | (cpu->fl.c ? 0x80 : 0);\
+	cpu->fl.n = 0;\
+	cpu->fl.h = 0;\
+	cpu->fl.c = val & 1;\
+	cpu->fl.z = !val;\
 }
 
 #define RRCX(val) {\
-	cpu->f = (val & 1) ? FLC : 0;\
+	cpu->fl.c = val & 1; /*cpu->f = (val & 1) ? FLC : 0;*/\
 	val = (val >> 1) | (val << 7);\
-	cpu->f |= (val ? 0 : FLZ);\
+	cpu->fl.n = 0;\
+	cpu->fl.h = 0;\
+	cpu->fl.z = !val;\
+	/*cpu->f |= (val ? 0 : FLZ);*/\
 }
 
 #define SLAX(val) {\
-	cpu->f = (val & 0x80) ? FLC : 0;\
+	cpu->fl.c = !!(val & 0x80); /*cpu->f = (val & 0x80) ? FLC : 0;*/\
 	val <<= 1;\
-	cpu->f |= (val ? 0 : FLZ);\
+	cpu->fl.n = 0;\
+	cpu->fl.h = 0;\
+	cpu->fl.z = !val;\
+	/*cpu->f |= (val ? 0 : FLZ);*/\
 }
 
 #define SLLX(val) {\
-	cpu->f = (val & 0x80) ? FLC : 0;\
+	cpu->fl.c = !!(val & 0x80);\
 	val = (val << 1) | 0x01;\
-	cpu->f |= (val ? 0 : FLZ);\
+	cpu->fl.n = 0;\
+	cpu->fl.h = 0;\
+	cpu->fl.z = !val;\
+	/*cpu->f |= (val ? 0 : FLZ);*/\
 }
 
 #define SRAX(val) {\
-	cpu->f = (val & 1) ? FLC : 0;\
+	cpu->fl.c = val & 1;\
 	val = (val & 0x80) | (val >> 1);\
-	cpu->f |= (val ? 0 : FLZ);\
+	cpu->fl.n = 0;\
+	cpu->fl.h = 0;\
+	cpu->fl.z = !val;\
+	/*cpu->f |= (val ? 0 : FLZ);*/\
 }
 
 #define SRLX(val) {\
-	cpu->f = (val & 1) ? FLC : 0;\
+	cpu->fl.c = val & 1;\
 	val >>= 1;\
-	cpu->f |= (val ? 0 : FLZ);\
+	cpu->fl.n = 0;\
+	cpu->fl.h = 0;\
+	cpu->fl.z = !val;\
+	/*cpu->f |= (val ? 0 : FLZ);*/\
 }
 
 // bit
 
-#define BITL(bit,val) {cpu->f = (cpu->f & FLC) | FLH | ((val & (0x01 << bit)) ? 0 : FLZ);}
+// cpu->f = (cpu->f & FLC) | FLH | ((val & (0x01 << bit)) ? 0 : FLZ);
+#define BITL(bit,val) {\
+	cpu->fl.n = 0;\
+	cpu->fl.h = 1;\
+	cpu->fl.z = !(val & (1 << bit));\
+}

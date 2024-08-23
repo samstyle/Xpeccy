@@ -1,9 +1,11 @@
 #pragma once
 
+/*
 #define FLZ 0x80
 #define FLN 0x40
 #define FLH 0x20
 #define FLC 0x10
+*/
 
 #ifdef WORDS_BIG_ENDIAN
 typedef struct {
