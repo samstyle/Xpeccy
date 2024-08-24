@@ -17,6 +17,7 @@ enum {
 	PDP11_INIT = 1
 };
 
+/*
 #define PDP_FC	(1 << 0)
 #define PDP_FV	(1 << 1)
 #define	PDP_FZ	(1 << 2)
@@ -25,6 +26,7 @@ enum {
 #define PDP_F7	(1 << 7)
 #define PDP_F10	(1 << 10)
 #define PDP_F11 (1 << 11)
+*/
 
 #ifdef WORDS_LITTLE_ENDIAN
 typedef struct {

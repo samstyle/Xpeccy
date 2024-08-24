@@ -188,7 +188,7 @@ struct CPU {
 #else
 	struct {
 		unsigned c:1;		// all: carry
-		unsigned n:1;		// z80: substraction
+		unsigned n:1;		// z80: substraction, lr: negative
 		unsigned p:1;		// all: parity z80:+overflow
 		unsigned f3:1;		// z80: f3
 		union {

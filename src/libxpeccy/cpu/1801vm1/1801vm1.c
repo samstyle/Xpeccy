@@ -72,7 +72,7 @@ int pdp11_int(CPU* cpu) {
 	int res = 10;
 	if (cpu->intrq & PDP_INT_IRQ1) {
 		cpu->intrq &= ~PDP_INT_IRQ1;
-		if (!(cpu->f & (PDP_F10 | PDP_F11))) {
+		if (!(cpu->fv.f10 | cpu->fv.f11)) {
 			pdp_wr(cpu, 0xffbc, cpu->preg[7]);
 			pdp_wr(cpu, 0xffbe, cpu->f);
 			pdp_trap(cpu, 0xe002);
@@ -80,13 +80,13 @@ int pdp11_int(CPU* cpu) {
 		}
 	} else if (cpu->intrq & PDP_INT_IRQ2) {
 		cpu->intrq &= ~PDP_INT_IRQ2;
-		if (!(cpu->f & (PDP_F10 | PDP_F7))) {
+		if (!(cpu->fv.f10 | cpu->fv.f7)) {
 			pdp_trap(cpu, 0x0040);			// #40 = 100(8)
 			cpu->wait = 0;
 		}
 	} else if (cpu->intrq & PDP_INT_IRQ3) {
 		cpu->intrq &= ~PDP_INT_IRQ3;
-		if (!(cpu->f & (PDP_F10 | PDP_F7))) {
+		if (!(cpu->fv.f10 | cpu->fv.f7)) {
 			pdp_trap(cpu, 0x00b8);			// #b8 = 270(8)
 			cpu->wait = 0;
 		}
@@ -234,7 +234,7 @@ void pdp_rti(CPU* cpu) {
 	cpu->t += 8;
 	cpu->preg[6] += 2;
 	cpu->f &= 0xff;
-	if (cpu->f & PDP_FT) {
+	if (cpu->fv.t) {
 		cpu->mcir = 5;
 		cpu->vsel = 3;
 		pdp_trap(cpu, 014);
@@ -348,9 +348,11 @@ void pdp_swab(CPU* cpu) {
 	cpu->mcir = 7;
 	twsrc = pdp_src(cpu, cpu->com, 0);
 	twdst = ((twsrc << 8) & 0xff00) | ((twsrc >> 8) & 0xff);
-	cpu->f &= ~(PDP_FC | PDP_FV | PDP_FN | PDP_FZ);	// reset c,v
-	if (twdst & 0x80) cpu->f |= PDP_FN;
-	if (!(twdst & 0xff)) cpu->f |= PDP_FZ;
+	//cpu->f &= ~(PDP_FC | PDP_FV | PDP_FN | PDP_FZ);	// reset c,v
+	cpu->fv.c = 0;
+	cpu->fv.v = 0;
+	cpu->fv.n = !!(twdst & 0x80);
+	cpu->fv.z = !(twdst & 0xff);
 	if (cpu->com & 070) {
 		pdp_wr(cpu, cpu->mptr, twdst);
 	} else {
@@ -387,52 +389,52 @@ void pdp_01xx(CPU* cpu) {
 // bne
 void pdp_02xx(CPU* cpu) {
 	cpu->t += 12;
-	if (~cpu->f & PDP_FZ)
+	if (!cpu->fv.z)
 		pdp_jr(cpu);
 }
 
 // beq
 void pdp_03xx(CPU* cpu) {
 	cpu->t += 12;
-	if (cpu->f & PDP_FZ)
+	if (cpu->fv.z)
 		pdp_jr(cpu);
 }
 
 // bge
 void pdp_04xx(CPU* cpu) {
 	cpu->t += 12;
-	twres = (cpu->f & PDP_FN) ? 1 : 0;
-	if (cpu->f & PDP_FV) twres ^= 1;
-	if (!twres)
+//	twres = cpu->fv.n;
+//	if (cpu->fv.v) twres ^= 1;
+	if (!(cpu->fv.n ^ cpu->fv.v))
 		pdp_jr(cpu);
 }
 
 // blt
 void pdp_05xx(CPU* cpu) {
 	cpu->t += 12;
-	twres = (cpu->f & PDP_FN) ? 1 : 0;
-	if (cpu->f & PDP_FV) twres ^= 1;
-	if (twres)
+//	twres = (cpu->f & PDP_FN) ? 1 : 0;
+//	if (cpu->f & PDP_FV) twres ^= 1;
+	if (cpu->fv.n ^ cpu->fv.v)
 		pdp_jr(cpu);
 }
 
 // bgt
 void pdp_06xx(CPU* cpu) {
 	cpu->t += 12;
-	twres = (cpu->f & PDP_FN) ? 1 : 0;
-	if (cpu->f & PDP_FV) twres ^= 1;
-	if (cpu->f & PDP_FZ) twres |= 1;
-	if (!twres)
+//	twres = (cpu->f & PDP_FN) ? 1 : 0;
+//	if (cpu->f & PDP_FV) twres ^= 1;
+//	if (cpu->f & PDP_FZ) twres |= 1;
+	if (!(cpu->fv.z | (cpu->fv.n ^ cpu->fv.v)))
 		pdp_jr(cpu);
 }
 
 // ble
 void pdp_07xx(CPU* cpu) {
 	cpu->t += 12;
-	twres = (cpu->f & PDP_FN) ? 1 : 0;
-	if (cpu->f & PDP_FV) twres ^= 1;
-	if (cpu->f & PDP_FZ) twres |= 1;
-	if (twres)
+//	twres = (cpu->f & PDP_FN) ? 1 : 0;
+//	if (cpu->f & PDP_FV) twres ^= 1;
+//	if (cpu->f & PDP_FZ) twres |= 1;
+	if (cpu->fv.z | (cpu->fv.n ^ cpu->fv.v))
 		pdp_jr(cpu);
 }
 
@@ -458,8 +460,12 @@ void pdp_jsr(CPU* cpu) {
 void pdp_clr(CPU* cpu) {
 	cpu->mcir = (cpu->com & 0x38) ? 7 : 5;
 	pdp_dst(cpu, 0, cpu->com, 0);
-	cpu->f &= ~(PDP_FC | PDP_FN | PDP_FV);
-	cpu->f |= PDP_FZ;
+//	cpu->f &= ~(PDP_FC | PDP_FN | PDP_FV);
+//	cpu->f |= PDP_FZ;
+	cpu->fv.c = 0;
+	cpu->fv.n = 0;
+	cpu->fv.v = 0;
+	cpu->fv.z = 1;
 }
 
 //0000 1010 01dd dddd	com		invert all bits (cpl)
@@ -472,11 +478,12 @@ void pdp_com(CPU* cpu) {
 	} else {
 		cpu->preg[cpu->com & 7] = twsrc;
 	}
-	cpu->f &= ~(PDP_FN | PDP_FZ | PDP_FV);
-	cpu->f |= PDP_FC;
-	if (twsrc == 0) cpu->f |= PDP_FZ;
-	if (twsrc & 0x8000) cpu->f |= PDP_FN;
-	cpu->f |= PDP_FC;
+//	cpu->f &= ~(PDP_FN | PDP_FZ | PDP_FV);
+//	cpu->f |= PDP_FC;
+	cpu->fv.z = !twsrc;
+	cpu->fv.n = !!(twsrc & 0x8000);
+	cpu->fv.c = 1;
+//	cpu->f |= PDP_FC;
 }
 
 //0000 1010 10dd dddd	inc
@@ -488,10 +495,10 @@ void pdp_inc(CPU* cpu) {
 	} else {
 		cpu->preg[cpu->com & 7] = twsrc;
 	}
-	cpu->f &= ~(PDP_FN | PDP_FV | PDP_FZ);
-	if (twsrc == 0) cpu->f |= PDP_FZ;
-	if (twsrc & 0x8000) cpu->f |= PDP_FN;
-	if (twsrc == 0x8000) cpu->f |= PDP_FV;
+//	cpu->f &= ~(PDP_FN | PDP_FV | PDP_FZ);
+	cpu->fv.z = !twsrc;
+	cpu->fv.n = !!(twsrc & 0x8000);
+	cpu->fv.v = !!(twsrc == 0x8000);
 }
 
 //0000 1010 11dd dddd	dec
@@ -503,10 +510,10 @@ void pdp_dec(CPU* cpu) {
 	} else {
 		cpu->preg[cpu->com & 7] = twsrc;
 	}
-	cpu->f &= ~(PDP_FN | PDP_FV | PDP_FZ);
-	if (twsrc == 0) cpu->f |= PDP_FZ;
-	if (twsrc & 0x8000) cpu->f |= PDP_FN;
-	if (twsrc == 0x7fff) cpu->f |= PDP_FV;
+//	cpu->f &= ~(PDP_FN | PDP_FV | PDP_FZ);
+	cpu->fv.z = !twsrc;
+	cpu->fv.n = !!(twsrc & 0x8000);
+	cpu->fv.v = !!(twsrc == 0x7fff);
 }
 
 static cbcpu pdp_0axx_tab[4] = {pdp_clr, pdp_com, pdp_inc, pdp_dec};
@@ -527,54 +534,58 @@ void pdp_neg(CPU* cpu) {
 	} else {
 		cpu->preg[cpu->com & 7] = twsrc;
 	}
-	cpu->f &= ~(PDP_FN | PDP_FV | PDP_FZ | PDP_FC);
-	if (twsrc == 0) cpu->f |= PDP_FZ;
-	if (twsrc & 0x8000) cpu->f |= PDP_FN;
-	if (twsrc != 0) cpu->f |= PDP_FC;
-	if (twsrc == 0x8000) cpu->f |= PDP_FV;
+//	cpu->f &= ~(PDP_FN | PDP_FV | PDP_FZ | PDP_FC);
+	cpu->fv.z = !twsrc;			// TODO: check flags
+	cpu->fv.n = !!(twsrc & 0x8000);
+	cpu->fv.c = !!(twsrc != 0);
+	cpu->fv.v = !!(twsrc == 0x8000);
 }
 
 void pdp_adc(CPU* cpu) {
 	twsrc = pdp_src(cpu, cpu->com, 0);
-	if (cpu->f & PDP_FC)
+	if (cpu->fv.c)
 		twsrc++;
 	if (cpu->com & 070) {
 		pdp_wr(cpu, cpu->mptr, twsrc);
 	} else {
 		cpu->preg[cpu->com & 7] = twsrc;
 	}
-	cpu->f &= ~(PDP_FN | PDP_FV | PDP_FZ);
-	if (twsrc == 0) cpu->f |= PDP_FZ;
-	if (twsrc & 0x8000) cpu->f |= PDP_FN;
-	if (cpu->f & PDP_FC) {
-		if (twsrc) cpu->f &= ~PDP_FC;
-		if (twsrc == 0x8000) cpu->f |= PDP_FV;
+	//cpu->f &= ~(PDP_FN | PDP_FV | PDP_FZ);
+	cpu->fv.z = !twsrc;
+	cpu->fv.n = !!(twsrc & 0x8000);
+	cpu->fv.v = 0;
+	if (cpu->fv.c) {
+		if (twsrc) cpu->fv.c = 0;
+		if (twsrc == 0x8000) cpu->fv.v = 1;
 	}
 }
 
 void pdp_sbc(CPU* cpu) {
 	twsrc = pdp_src(cpu, cpu->com, 0);
-	if (cpu->f & PDP_FC)
+	if (cpu->fv.c)
 		twsrc--;
 	if (cpu->com & 070) {
 		pdp_wr(cpu, cpu->mptr, twsrc);
 	} else {
 		cpu->preg[cpu->com & 7] = twsrc;
 	}
-	cpu->f &= ~(PDP_FN | PDP_FV | PDP_FZ);
-	if (twsrc == 0) cpu->f |= PDP_FZ;
-	if (twsrc & 0x8000) cpu->f |= PDP_FN;
-	if (cpu->f & PDP_FC) {
-		if (twsrc != 0xffff) cpu->f &= ~PDP_FC;
-		if (twsrc == 0x7fff) cpu->f |= PDP_FV;
+	//cpu->f &= ~(PDP_FN | PDP_FV | PDP_FZ);
+	cpu->fv.z = !twsrc;
+	cpu->fv.n = !!(twsrc & 0x8000);
+	cpu->fv.v = 0;
+	if (cpu->fv.c) {
+		if (twsrc != 0xffff) cpu->fv.c = 0;
+		if (twsrc == 0x7fff) cpu->fv.v = 1;
 	}
 }
 
 void pdp_tst(CPU* cpu) {
 	twsrc = pdp_src(cpu, cpu->com, 0);
-	cpu->f &= ~(PDP_FN | PDP_FV | PDP_FC | PDP_FZ);
-	if (twsrc == 0) cpu->f |= PDP_FZ;
-	if (twsrc & 0x8000) cpu->f |= PDP_FN;
+	//cpu->f &= ~(PDP_FN | PDP_FV | PDP_FC | PDP_FZ);
+	cpu->fv.c = 0;
+	cpu->fv.v = 0;
+	cpu->fv.z = !twsrc;
+	cpu->fv.n = !!(twsrc & 0x8000);
 }
 
 static cbcpu pdp_0bxx_tab[4] = {pdp_neg, pdp_adc, pdp_sbc, pdp_tst};
@@ -586,15 +597,14 @@ void pdp_0bxx(CPU* cpu) {
 //0000 1100 00dd dddd	ror
 void pdp_ror(CPU* cpu) {
 	twsrc = pdp_src(cpu, cpu->com, 0);
-	cpu->tmpw = cpu->f & PDP_FC;
-	cpu->f &= ~(PDP_FC | PDP_FN | PDP_FV | PDP_FZ);
-	if (twsrc & 1) cpu->f |= PDP_FC;
+	cpu->tmpw = cpu->fv.c;
+	//cpu->f &= ~(PDP_FC | PDP_FN | PDP_FV | PDP_FZ);
+	cpu->fv.c = twsrc & 1;
 	twsrc >>= 1;
 	if (cpu->tmpw) twsrc |= 0x8000;
-	if (twsrc & 0x8000) cpu->f |= PDP_FN;
-	if (twsrc == 0) cpu->f |= PDP_FZ;
-	if (((cpu->f & PDP_FC) ? 1 : 0) ^ ((cpu->f & PDP_FN) ? 1 : 0))
-		cpu->f |= PDP_FV;
+	cpu->fv.n = !!(twsrc & 0x8000);
+	cpu->fv.z = !twsrc;
+	cpu->fv.v = cpu->fv.c ^ cpu->fv.n;
 	if (cpu->com & 070) {
 		pdp_wr(cpu, cpu->mptr, twsrc);
 	} else {
@@ -605,15 +615,14 @@ void pdp_ror(CPU* cpu) {
 //0000 1100 01dd dddd	rol
 void pdp_rol(CPU* cpu) {
 	twsrc = pdp_src(cpu, cpu->com, 0);
-	cpu->tmpw = cpu->f & PDP_FC;
-	cpu->f &= ~(PDP_FC | PDP_FN | PDP_FV | PDP_FZ);
-	if (twsrc & 0x8000) cpu->f |= PDP_FC;
+	cpu->tmpw = cpu->fv.c;
+	//cpu->f &= ~(PDP_FC | PDP_FN | PDP_FV | PDP_FZ);
+	cpu->fv.c = !!(twsrc & 0x8000);
 	twsrc <<= 1;
 	if (cpu->tmpw) twsrc |= 1;
-	if (twsrc & 0x8000) cpu->f |= PDP_FN;
-	if (twsrc == 0) cpu->f |= PDP_FZ;
-	if (((cpu->f & PDP_FC) ? 1 : 0) ^ ((cpu->f & PDP_FN) ? 1 : 0))
-		cpu->f |= PDP_FV;
+	cpu->fv.n = !!(twsrc & 0x8000);
+	cpu->fv.z = !twsrc;
+	cpu->fv.v = cpu->fv.c ^ cpu->fv.n;
 	if (cpu->com & 070) {
 		pdp_wr(cpu, cpu->mptr, twsrc);
 	} else {
@@ -624,16 +633,13 @@ void pdp_rol(CPU* cpu) {
 //0000 1100 10dd dddd	asr
 void pdp_asr(CPU* cpu) {
 	twsrc = pdp_src(cpu, cpu->com, 0);
-	cpu->f &= ~(PDP_FC | PDP_FN | PDP_FV | PDP_FZ);
-	if (twsrc & 1) cpu->f |= PDP_FC;
+	//cpu->f &= ~(PDP_FC | PDP_FN | PDP_FV | PDP_FZ);
+	cpu->fv.c = twsrc & 1;
 	twsrc >>= 1;
-	if (twsrc & 0x4000) {
-		twsrc |= 0x8000;
-		cpu->f |= PDP_FN;
-	}
-	if (twsrc == 0) cpu->f |= PDP_FZ;
-	if (((cpu->f & PDP_FC) ? 1 : 0) ^ ((cpu->f & PDP_FN) ? 1 : 0))
-		cpu->f |= PDP_FV;
+	if (twsrc & 0x4000) twsrc |= 0x8000;
+	cpu->fv.n = !!(twsrc & 0x8000);
+	cpu->fv.z = !twsrc;
+	cpu->fv.v = cpu->fv.c ^ cpu->fv.n;
 	if (cpu->com & 070) {
 		pdp_wr(cpu, cpu->mptr, twsrc);
 	} else {
@@ -644,13 +650,12 @@ void pdp_asr(CPU* cpu) {
 //0000 1100 11dd dddd	arl
 void pdp_asl(CPU* cpu) {
 	twsrc = pdp_src(cpu, cpu->com, 0);
-	cpu->f &= ~(PDP_FC | PDP_FN | PDP_FV | PDP_FZ);
-	if (twsrc & 0x8000) cpu->f |= PDP_FC;
+	//cpu->f &= ~(PDP_FC | PDP_FN | PDP_FV | PDP_FZ);
+	cpu->fv.c = !!(twsrc & 0x8000);
 	twsrc <<= 1;
-	if (twsrc & 0x8000) cpu->f |= PDP_FN;
-	if (twsrc == 0) cpu->f |= PDP_FZ;
-	if (((cpu->f & PDP_FC) ? 1 : 0) ^ ((cpu->f & PDP_FN) ? 1 : 0))
-		cpu->f |= PDP_FV;
+	cpu->fv.n = !!(twsrc & 0x8000);
+	cpu->fv.z = !twsrc;
+	cpu->fv.v = cpu->fv.c ^ cpu->fv.n;
 	if (cpu->com & 070) {
 		pdp_wr(cpu, cpu->mptr, twsrc);
 	} else {
@@ -684,9 +689,10 @@ void pdp_mtpi(CPU* cpu) {
 }
 
 void pdp_sxt(CPU* cpu) {
-	twdst = (cpu->f & PDP_FN) ? 0xffff : 0x0000;
-	cpu->f &= ~(PDP_FZ | PDP_FV);
-	if (twdst == 0) cpu->f |= PDP_FZ;
+	twdst = cpu->fv.n ? 0xffff : 0x0000;
+	//cpu->f &= ~(PDP_FZ | PDP_FV);
+	cpu->fv.z = !twdst;
+	cpu->fv.v = 0;
 	pdp_dst(cpu, twdst, cpu->com, 0);
 }
 
@@ -711,56 +717,56 @@ void pdp_0xxx(CPU* cpu) {
 // bpl
 void pdp_80xx(CPU* cpu) {
 	cpu->t += 12;
-	if (~cpu->f & PDP_FN)
+	if (!cpu->fv.n)
 		pdp_jr(cpu);
 }
 
 // bmi
 void pdp_81xx(CPU* cpu) {
 	cpu->t += 12;
-	if (cpu->f & PDP_FN)
+	if (cpu->fv.n)
 		pdp_jr(cpu);
 }
 
 // bhi
 void pdp_82xx(CPU* cpu) {
 	cpu->t += 12;
-	if (!((cpu->f & PDP_FC) || (cpu->f & PDP_FZ)))
+	if (!(cpu->fv.c | cpu->fv.z)) // (cpu->f & PDP_FC) || (cpu->f & PDP_FZ)))
 		pdp_jr(cpu);
 }
 
 // blos
 void pdp_83xx(CPU* cpu) {
 	cpu->t += 12;
-	if ((cpu->f & PDP_FC) || (cpu->f & PDP_FZ))
+	if (cpu->fv.c | cpu->fv.z) // (cpu->f & PDP_FC) || (cpu->f & PDP_FZ))
 		pdp_jr(cpu);
 }
 
 // bvc
 void pdp_84xx(CPU* cpu) {
 	cpu->t += 12;
-	if (~cpu->f & PDP_FV)
+	if (!cpu->fv.v)
 		pdp_jr(cpu);
 }
 
 // bvs
 void pdp_85xx(CPU* cpu) {
 	cpu->t += 12;
-	if (cpu->f & PDP_FV)
+	if (cpu->fv.v)
 		pdp_jr(cpu);
 }
 
 // bcc (bhis)
 void pdp_86xx(CPU* cpu) {
 	cpu->t += 12;
-	if (~cpu->f & PDP_FC)
+	if (!cpu->fv.c)
 		pdp_jr(cpu);
 }
 
 // bcs (blo)
 void pdp_87xx(CPU* cpu) {
 	cpu->t += 12;
-	if (cpu->f & PDP_FC)
+	if (cpu->fv.c)
 		pdp_jr(cpu);
 }
 
@@ -788,18 +794,23 @@ void pdp_clrb(CPU* cpu) {
 	} else {
 		cpu->preg[cpu->com & 7] &= ~0xff;
 	}
-	cpu->f &= ~(PDP_FN | PDP_FC | PDP_FV);
-	cpu->f |= PDP_FZ;
+//	cpu->f &= ~(PDP_FN | PDP_FC | PDP_FV);
+//	cpu->f |= PDP_FZ;
+	cpu->fv.n = 0;
+	cpu->fv.c = 0;
+	cpu->fv.v = 0;
+	cpu->fv.z = 1;
 }
 
 // FC = 1 !!!
 void pdp_comb(CPU* cpu) {
 	twsrc = pdp_src(cpu, cpu->com, 1);
 	twsrc ^= 0xff;
-	cpu->f &= ~(PDP_FN | PDP_FV | PDP_FZ);
-	cpu->f |= PDP_FC;
-	if (twsrc & 0x80) cpu->f |= PDP_FN;
-	if (!(twsrc & 0xff)) cpu->f |= PDP_FZ;
+	//cpu->f &= ~(PDP_FN | PDP_FV | PDP_FZ);
+	cpu->fv.v = 0;
+	cpu->fv.c = 1;
+	cpu->fv.n = !!(twsrc & 0x80);
+	cpu->fv.z = !(twsrc & 0xff);
 	if (cpu->com & 070) {
 		pdp_wrb(cpu, cpu->mptr, twsrc & 0xff);
 	} else {
@@ -812,10 +823,10 @@ void pdp_incb(CPU* cpu) {
 	twdst = (twsrc + 1) & 0xff;
 	twsrc &= 0xff00;
 	twsrc |= twdst;
-	cpu->f &= ~(PDP_FN | PDP_FV | PDP_FZ);
-	if (twdst & 0x80) cpu->f |= PDP_FN;
-	if (twdst == 0) cpu->f |= PDP_FZ;
-	if (twdst == 0x80) cpu->f |= PDP_FV;	// 7f->80
+	// cpu->f &= ~(PDP_FN | PDP_FV | PDP_FZ);
+	cpu->fv.n = !!(twdst & 0x80);
+	cpu->fv.z = !twdst;
+	cpu->fv.v = !!(twdst == 0x80);	// 7f->80
 	if (cpu->com & 070) {
 		pdp_wrb(cpu, cpu->mptr, twdst & 0xff);
 	} else {
@@ -828,10 +839,10 @@ void pdp_decb(CPU* cpu) {
 	twdst = (twsrc - 1) & 0xff;
 	twsrc &= 0xff00;
 	twsrc |= twdst;
-	cpu->f &= ~(PDP_FN | PDP_FV | PDP_FZ);
-	if (twdst & 0x80) cpu->f |= PDP_FN;
-	if (twdst == 0) cpu->f |= PDP_FZ;
-	if (twdst == 0x7f) cpu->f |= PDP_FV;	// 80->7f
+	//cpu->f &= ~(PDP_FN | PDP_FV | PDP_FZ);
+	cpu->fv.n = !!(twdst & 0x80);
+	cpu->fv.z = !twdst;
+	cpu->fv.v = !!(twdst == 0x7f);	// 80->7f
 	if (cpu->com & 070) {
 		pdp_wrb(cpu, cpu->mptr, twdst & 0xff);
 	} else {
@@ -855,11 +866,11 @@ void pdp_negb(CPU* cpu) {
 	twdst = (0 - twsrc) & 0xff;
 	twsrc &= 0xff00;
 	twsrc |= (twdst & 0xff);
-	cpu->f &= ~(PDP_FC | PDP_FN | PDP_FV | PDP_FZ);
-	if (twdst == 0) cpu->f |= PDP_FZ;
-	if (twdst != 0) cpu->f |= PDP_FC;
-	if (twdst & 0x80) cpu->f |= PDP_FN;
-	if (twdst == 0x80) cpu->f |= PDP_FV;
+	// cpu->f &= ~(PDP_FC | PDP_FN | PDP_FV | PDP_FZ);
+	cpu->fv.z = !twdst;
+	cpu->fv.c = !!twdst;
+	cpu->fv.n = !!(twdst & 0x80);
+	cpu->fv.v = !!(twdst == 0x80);
 	if (cpu->com & 070) {
 		pdp_wrb(cpu, cpu->mptr, twsrc & 0xff);
 	} else {
@@ -870,16 +881,17 @@ void pdp_negb(CPU* cpu) {
 void pdp_adcb(CPU* cpu) {
 	twsrc = pdp_src(cpu, cpu->com, 1);
 	twdst = twsrc;
-	if (cpu->f & PDP_FC) twdst++;
+	if (cpu->fv.c) twdst++;
 	twdst &= 0xff;
 	twsrc &= 0xff00;
 	twsrc |= twdst;
-	cpu->f &= ~(PDP_FN | PDP_FV | PDP_FZ);
-	if (twdst == 0) cpu->f |= PDP_FZ;
-	if (twdst & 0x80) cpu->f |= PDP_FN;
-	if (cpu->f & PDP_FC) {
-		if (twdst) cpu->f &= ~PDP_FC;
-		if (twdst == 0x80) cpu->f |= PDP_FV;
+	//cpu->f &= ~(PDP_FN | PDP_FV | PDP_FZ);
+	cpu->fv.z = !twdst;
+	cpu->fv.n = !!(twdst & 0x80);
+	cpu->fv.v = 0;
+	if (cpu->fv.c) {
+		if (twdst) cpu->fv.c = 0;
+		if (twdst == 0x80) cpu->fv.v = 1;
 	}
 	if (cpu->com & 070) {
 		pdp_wrb(cpu, cpu->mptr, twsrc & 0xff);
@@ -891,16 +903,17 @@ void pdp_adcb(CPU* cpu) {
 void pdp_sbcb(CPU* cpu) {
 	twsrc = pdp_src(cpu, cpu->com, 1);
 	twdst = twsrc;
-	if (cpu->f & PDP_FC) twdst--;
+	if (cpu->fv.c) twdst--;
 	twdst &= 0xff;
 	twsrc &= 0xff00;
 	twsrc |= twdst;
-	cpu->f &= ~(PDP_FN | PDP_FV | PDP_FZ);
-	if (twdst == 0) cpu->f |= PDP_FZ;
-	if (twdst & 0x80) cpu->f |= PDP_FN;
-	if (cpu->f & PDP_FC) {
-		if (twdst != 0xff) cpu->f &= ~PDP_FC;
-		if (twdst == 0x7f) cpu->f |= PDP_FV;
+	//cpu->f &= ~(PDP_FN | PDP_FV | PDP_FZ);
+	cpu->fv.z = !twdst;
+	cpu->fv.n = !!(twdst & 0x80);
+	cpu->fv.v = 0;
+	if (cpu->fv.c) {
+		if (twdst != 0xff) cpu->fv.c = 0;
+		if (twdst == 0x7f) cpu->fv.v = 1;
 	}
 	if (cpu->com & 070) {
 		pdp_wrb(cpu, cpu->mptr, twsrc & 0xff);
@@ -911,9 +924,11 @@ void pdp_sbcb(CPU* cpu) {
 
 void pdp_tstb(CPU* cpu) {
 	twsrc = pdp_src(cpu, cpu->com, 1);
-	cpu->f &= ~(PDP_FC | PDP_FN | PDP_FV | PDP_FZ);
-	if (twsrc == 0) cpu->f |= PDP_FZ;
-	if (twsrc & 0x80) cpu->f |= PDP_FN;
+	//cpu->f &= ~(PDP_FC | PDP_FN | PDP_FV | PDP_FZ);
+	cpu->fv.v = 0;
+	cpu->fv.c = 0;
+	cpu->fv.z = !twsrc;
+	cpu->fv.n = !!(twsrc & 0x80);
 }
 
 static cbcpu pdp_8bxx_tab[4] = {pdp_negb, pdp_adcb, pdp_sbcb, pdp_tstb};
@@ -930,18 +945,17 @@ void pdp_8bxx(CPU* cpu) {
 void pdp_rorb(CPU* cpu) {
 	twsrc = pdp_src(cpu, cpu->com, 1);
 	twdst = twsrc & 0xff;
-	cpu->tmpw = cpu->f & PDP_FC;
-	cpu->f &= ~(PDP_FC | PDP_FN | PDP_FV | PDP_FZ);
-	if (twdst & 1) cpu->f |= PDP_FC;
+	cpu->tmpw = cpu->fv.c;
+	//cpu->f &= ~(PDP_FC | PDP_FN | PDP_FV | PDP_FZ);
+	cpu->fv.c = twdst & 1;
 	twdst >>= 1;
 	if (cpu->tmpw) twdst |= 0x80;
 	twdst &= 0xff;
 	twsrc &= 0xff00;
 	twsrc |= twdst;
-	if (twdst == 0) cpu->f |= PDP_FZ;
-	if (twdst & 0x80) cpu->f |= PDP_FN;
-	if (((cpu->f & PDP_FC) ? 1 : 0) ^ ((cpu->f & PDP_FN) ? 1 : 0))
-		cpu->f |= PDP_FV;
+	cpu->fv.z = !twdst;
+	cpu->fv.n = !!(twdst & 0x80);
+	cpu->fv.v = cpu->fv.c ^ cpu->fv.n; //if (((cpu->f & PDP_FC) ? 1 : 0) ^ ((cpu->f & PDP_FN) ? 1 : 0)) cpu->f |= PDP_FV;
 	if (cpu->com & 0x38) {
 		pdp_wrb(cpu, cpu->mptr, twdst & 0xff);
 	} else {
@@ -952,18 +966,17 @@ void pdp_rorb(CPU* cpu) {
 void pdp_rolb(CPU* cpu) {
 	twsrc = pdp_src(cpu, cpu->com, 1);
 	twdst = twsrc & 0xff;
-	cpu->tmpw = cpu->f & PDP_FC;
-	cpu->f &= ~(PDP_FC | PDP_FN | PDP_FV | PDP_FZ);
-	if (twdst & 0x80) cpu->f |= PDP_FC;
+	cpu->tmpw = cpu->fv.c;
+	//cpu->f &= ~(PDP_FC | PDP_FN | PDP_FV | PDP_FZ);
+	cpu->fv.c = !!(twdst & 0x80);
 	twdst <<= 1;
 	twdst &= 0xfe;
 	if (cpu->tmpw) twdst |= 1;
 	twsrc &= 0xff00;
 	twsrc |= twdst;
-	if (twdst == 0) cpu->f |= PDP_FZ;
-	if (twdst & 0x80) cpu->f |= PDP_FN;
-	if (((cpu->f & PDP_FC) ? 1 : 0) ^ ((cpu->f & PDP_FN) ? 1 : 0))
-		cpu->f |= PDP_FV;
+	cpu->fv.z = !twdst;
+	cpu->fv.n = !!(twdst & 0x80);
+	cpu->fv.v = cpu->fv.c ^ cpu->fv.n; //if (((cpu->f & PDP_FC) ? 1 : 0) ^ ((cpu->f & PDP_FN) ? 1 : 0)) cpu->f |= PDP_FV;
 	if (cpu->com & 0x38) {
 		pdp_wrb(cpu, cpu->mptr, twdst & 0xff);
 	} else {
@@ -974,18 +987,17 @@ void pdp_rolb(CPU* cpu) {
 void pdp_asrb(CPU* cpu) {
 	twsrc = pdp_src(cpu, cpu->com, 1);
 	twdst = twsrc & 0xff;
-	cpu->tmpw = cpu->f & PDP_FC;
-	cpu->f &= ~(PDP_FC | PDP_FN | PDP_FV | PDP_FZ);
-	if (twdst & 1) cpu->f |= PDP_FC;
+	cpu->tmpw = cpu->fv.c;
+	//cpu->f &= ~(PDP_FC | PDP_FN | PDP_FV | PDP_FZ);
+	cpu->fv.c = twdst & 1;
 	twdst >>= 1;
 	if (twdst & 0x40) twdst |= 0x80;
 	twdst &= 0xff;
 	twsrc &= 0xff00;
 	twsrc |= twdst;
-	if (twdst == 0) cpu->f |= PDP_FZ;
-	if (twdst & 0x80) cpu->f |= PDP_FN;
-	if (((cpu->f & PDP_FC) ? 1 : 0) ^ ((cpu->f & PDP_FN) ? 1 : 0))
-		cpu->f |= PDP_FV;
+	cpu->fv.z = !twdst;
+	cpu->fv.n = !!(twdst & 0x80);
+	cpu->fv.v = cpu->fv.c ^ cpu->fv.n; // if (((cpu->f & PDP_FC) ? 1 : 0) ^ ((cpu->f & PDP_FN) ? 1 : 0) cpu->f |= PDP_FV;
 	if (cpu->com & 0x38) {
 		pdp_wrb(cpu, cpu->mptr, twdst & 0xff);
 	} else {
@@ -996,17 +1008,16 @@ void pdp_asrb(CPU* cpu) {
 void pdp_aslb(CPU* cpu) {
 	twsrc = pdp_src(cpu, cpu->com, 1);
 	twdst = twsrc & 0xff;
-	cpu->tmpw = cpu->f & PDP_FC;
-	cpu->f &= ~(PDP_FC | PDP_FN | PDP_FV | PDP_FZ);
-	if (twdst & 0x80) cpu->f |= PDP_FC;
+	cpu->tmpw = cpu->fv.c;
+	//cpu->f &= ~(PDP_FC | PDP_FN | PDP_FV | PDP_FZ);
+	cpu->fv.c = !!(twdst & 0x80);
 	twdst <<= 1;
 	twdst &= 0xfe;
 	twsrc &= 0xff00;
 	twsrc |= twdst;
-	if (twdst == 0) cpu->f |= PDP_FZ;
-	if (twdst & 0x80) cpu->f |= PDP_FN;
-	if (((cpu->f & PDP_FC) ? 1 : 0) ^ ((cpu->f & PDP_FN) ? 1 : 0))
-		cpu->f |= PDP_FV;
+	cpu->fv.z = !twdst;
+	cpu->fv.n = !!(twdst & 0x80);
+	cpu->fv.v = cpu->fv.c ^ cpu->fv.n; //if (((cpu->f & PDP_FC) ? 1 : 0) ^ ((cpu->f & PDP_FN) ? 1 : 0)) cpu->f |= PDP_FV;
 	if (cpu->com & 0x38) {
 		pdp_wrb(cpu, cpu->mptr, twdst & 0xff);
 	} else {
@@ -1039,10 +1050,10 @@ void pdp_mfps(CPU* cpu) {
 		if (twsrc & 0x80) twsrc |= 0xff00;
 		cpu->preg[cpu->com & 7] = twsrc;
 	}
-	cpu->f &= ~(PDP_FZ | PDP_FN | PDP_FV);
-	if (!(twsrc & 0xff)) cpu->f |= PDP_FZ;
-	if (twsrc & 0x80) cpu->f |= PDP_FN;
-
+	//cpu->f &= ~(PDP_FZ | PDP_FN | PDP_FV);
+	cpu->fv.v = 0;
+	cpu->fv.z = !(twsrc & 0xff);
+	cpu->fv.n = !!(twsrc & 0x80);
 }
 
 static cbcpu pdp_8dxx_tab[4] = {pdp_mtps, pdp_undef, pdp_undef, pdp_mfps};
@@ -1083,9 +1094,10 @@ void pdp_ashc(CPU* cpu) {
 void pdp_xor(CPU* cpu) {
 	twsrc = pdp_src(cpu, cpu->com, 0);
 	twsrc ^= cpu->preg[(cpu->com >> 6) & 7];
-	cpu->f &= ~(PDP_FV | PDP_FZ | PDP_FN);
-	if (twsrc == 0) cpu->f |= PDP_FZ;
-	if (twsrc & 0x8000) cpu->f |= PDP_FN;
+	//cpu->f &= ~(PDP_FV | PDP_FZ | PDP_FN);
+	cpu->fv.v = 0;
+	cpu->fv.z = !twsrc;
+	cpu->fv.n = !!(twsrc & 0x8000);
 	if (cpu->com & 0x38) {
 		pdp_wr(cpu, cpu->mptr, twsrc);
 	} else {
@@ -1121,9 +1133,10 @@ void pdp_7xxx(CPU* cpu) {
 void pdp_mov(CPU* cpu) {
 	twsrc = pdp_src(cpu, cpu->com >> 6, 0);
 	pdp_dst(cpu, twsrc, cpu->com, 0);
-	cpu->f &= ~(PDP_FN | PDP_FV | PDP_FZ);
-	if (twsrc == 0) cpu->f |= PDP_FZ;
-	if (twsrc & 0x8000) cpu->f |= PDP_FN;
+	//cpu->f &= ~(PDP_FN | PDP_FV | PDP_FZ);
+	cpu->fv.v = 0;
+	cpu->fv.z = !twsrc;
+	cpu->fv.n = !!(twsrc & 0x8000);
 }
 
 // movb works as RMW (read-modify-write)
@@ -1140,9 +1153,10 @@ void pdp_movb(CPU* cpu) {
 			twsrc |= 0xff00;
 		cpu->preg[cpu->com & 7] = twsrc;
 	}
-	cpu->f &= ~(PDP_FN | PDP_FV | PDP_FZ);
-	if (!(twsrc & 0xff)) cpu->f |= PDP_FZ;
-	if (twsrc & 0x80) cpu->f |= PDP_FN;
+	//cpu->f &= ~(PDP_FN | PDP_FV | PDP_FZ);
+	cpu->fv.v = 0;
+	cpu->fv.z = !(twsrc & 0xff);
+	cpu->fv.n = !!(twsrc & 0x80);
 }
 
 // B2SSDD:cmp
@@ -1155,24 +1169,23 @@ void pdp_cmp(CPU* cpu) {
 	twsrc = pdp_src(cpu, cpu->com >> 6, 0);
 	twdst = pdp_src(cpu, cpu->com, 0);
 	twres = twsrc - twdst;
-	cpu->f &= ~(PDP_FC | PDP_FN | PDP_FV | PDP_FZ);
-	if (!(twres & 0xffff)) cpu->f |= PDP_FZ;
-	if (twres & 0x8000) cpu->f |= PDP_FN;
-	if (twres & 0x10000) cpu->f |= PDP_FC;
+	//cpu->f &= ~(PDP_FC | PDP_FN | PDP_FV | PDP_FZ);
+	cpu->fv.z = !(twres & 0xffff);
+	cpu->fv.n = !!(twres & 0x8000);
+	cpu->fv.c = !!(twres & 0x10000);
 	// V: neg - pos = pos || pos - neg = neg
-	if (((twsrc ^ twdst) & 0x8000) && ((twsrc ^ twres) & 0x8000))
-		cpu->f |= PDP_FV;
+	cpu->fv.v = !!(((twsrc ^ twdst) & 0x8000) && ((twsrc ^ twres) & 0x8000));
 }
 
 void pdp_cmpb(CPU* cpu) {
 	twsrc = pdp_src(cpu, cpu->com >> 6, 1) & 0xff;
 	twdst = pdp_src(cpu, cpu->com, 1) & 0xff;
 	twres = twsrc - twdst;
-	cpu->f &= ~(PDP_FC | PDP_FN | PDP_FV | PDP_FZ);
-	if (!(twres & 0xff)) cpu->f |= PDP_FZ;
-	if (twres & 0x80) cpu->f |= PDP_FN;
-	if (twres & 0x100) cpu->f |= PDP_FC;
-	if (((twsrc ^ twdst) & 0x80) && ((twsrc ^ twres) & 0x80)) cpu->f |= PDP_FV;
+	//cpu->f &= ~(PDP_FC | PDP_FN | PDP_FV | PDP_FZ);
+	cpu->fv.z = !(twres & 0xff);
+	cpu->fv.n = !!(twres & 0x80);
+	cpu->fv.c = !!(twres & 0x100);
+	cpu->fv.v = !!(((twsrc ^ twdst) & 0x80) && ((twsrc ^ twres) & 0x80));
 }
 
 // 0x314b
@@ -1191,18 +1204,20 @@ void pdp_bit(CPU* cpu) {
 	twsrc = pdp_src(cpu, cpu->com >> 6, 0);
 	twdst = pdp_src(cpu, cpu->com, 0);
 	twdst &= twsrc;
-	cpu->f &= ~(PDP_FN | PDP_FV | PDP_FZ);
-	if (twdst == 0) cpu->f |= PDP_FZ;
-	if (twdst & 0x8000) cpu->f |= PDP_FN;
+	//cpu->f &= ~(PDP_FN | PDP_FV | PDP_FZ);
+	cpu->fv.v = 0;
+	cpu->fv.z = !twdst;
+	cpu->fv.n = !!(twdst & 0x8000);
 }
 
 void pdp_bitb(CPU* cpu) {
 	twsrc = pdp_src(cpu, cpu->com >> 6, 1) & 0xff;
 	twdst = pdp_src(cpu, cpu->com, 1) & 0xff;
 	twdst &= twsrc;
-	cpu->f &= ~(PDP_FN | PDP_FV | PDP_FZ);
-	if (!twdst) cpu->f |= PDP_FZ;
-	if (twdst & 0x80) cpu->f |= PDP_FN;
+	//cpu->f &= ~(PDP_FN | PDP_FV | PDP_FZ);
+	cpu->fv.v = 0;
+	cpu->fv.z = !twdst;
+	cpu->fv.n = !!(twdst & 0x80);
 }
 
 // B4SSDD:bic (and not)
@@ -1215,9 +1230,10 @@ void pdp_bic(CPU* cpu) {
 	twsrc = pdp_src(cpu, cpu->com >> 6, 0);
 	twdst = pdp_src(cpu, cpu->com, 0);
 	twdst &= ~twsrc;
-	cpu->f &= ~(PDP_FN | PDP_FV | PDP_FZ);
-	if (twdst == 0) cpu->f |= PDP_FZ;
-	if (twdst & 0x8000) cpu->f |= PDP_FN;
+	//cpu->f &= ~(PDP_FN | PDP_FV | PDP_FZ);
+	cpu->fv.v = 0;
+	cpu->fv.z = !twdst;
+	cpu->fv.n = !!(twdst & 0x8000);
 	if (cpu->com & 0x38) {
 		pdp_wr(cpu, cpu->mptr, twdst);
 	} else {
@@ -1229,9 +1245,10 @@ void pdp_bicb(CPU* cpu) {
 	twsrc = pdp_src(cpu, cpu->com >> 6, 1) & 0xff;
 	twdst = pdp_src(cpu, cpu->com, 1);
 	twdst &= ~twsrc;			// src = 00xx; ~src = FFzz; keep high byte of dst
-	cpu->f &= ~(PDP_FN | PDP_FV | PDP_FZ);
-	if (!(twdst & 0xff)) cpu->f |= PDP_FZ;
-	if (twdst & 0x80) cpu->f |= PDP_FN;
+	//cpu->f &= ~(PDP_FN | PDP_FV | PDP_FZ);
+	cpu->fv.v = 0;
+	cpu->fv.z = !(twdst & 0xff);
+	cpu->fv.n = !!(twdst & 0x80);
 	if (cpu->com & 0x38) {
 		pdp_wrb(cpu, cpu->mptr, twdst & 0xff);
 	} else {
@@ -1249,9 +1266,10 @@ void pdp_bis(CPU* cpu) {
 	twsrc = pdp_src(cpu, cpu->com >> 6, 0);
 	twdst = pdp_src(cpu, cpu->com, 0);
 	twdst |= twsrc;
-	cpu->f &= ~(PDP_FN | PDP_FV | PDP_FZ);
-	if (twdst == 0) cpu->f |= PDP_FZ;
-	if (twdst & 0x8000) cpu->f |= PDP_FN;
+	//cpu->f &= ~(PDP_FN | PDP_FV | PDP_FZ);
+	cpu->fv.v = 0;
+	cpu->fv.z = !twdst;
+	cpu->fv.n = !!(twdst & 0x8000);
 	if (cpu->com & 0x38) {
 		pdp_wr(cpu, cpu->mptr, twdst);
 	} else {
@@ -1263,9 +1281,10 @@ void pdp_bisb(CPU* cpu) {
 	twsrc = pdp_src(cpu, cpu->com >> 6, 1) & 0xff;
 	twdst = pdp_src(cpu, cpu->com, 1);
 	twdst |= twsrc;
-	cpu->f &= ~(PDP_FN | PDP_FV | PDP_FZ);
-	if (!(twdst & 0xff)) cpu->f |= PDP_FZ;
-	if (twdst & 0x80) cpu->f |= PDP_FN;
+	//cpu->f &= ~(PDP_FN | PDP_FV | PDP_FZ);
+	cpu->fv.v = 0;
+	cpu->fv.z = !(twdst & 0xff);
+	cpu->fv.n = !!(twdst & 0x80);
 	if (cpu->com & 0x38) {
 		pdp_wrb(cpu, cpu->mptr, twdst & 0xff);
 	} else {
@@ -1278,16 +1297,16 @@ void pdp_bisb(CPU* cpu) {
 // Z: result = 0
 // N: result < 0
 // C: high byte carry
-// V: overflow (if both op is same sign, but res is opposite sign)
+// V: overflow (if both op is same sign, but res is opposite sign)		TODO: V = b15 overflow ^ b14 overflow
 void pdp_add(CPU* cpu) {				// add r1,r7
 	twsrc = pdp_src(cpu, cpu->com >> 6, 0);		// = r1
 	twdst = pdp_src(cpu, cpu->com, 0);		// = r7 (next command)
 	twres = twsrc + twdst;
-	cpu->f &= ~(PDP_FC | PDP_FN | PDP_FV | PDP_FZ);
-	if ((twres & 0xffff) == 0) cpu->f |= PDP_FZ;
-	if (twres & 0x8000) cpu->f |= PDP_FN;
-	if (twres & ~0xffff) cpu->f |= PDP_FC;
-	if (!((twsrc ^ twdst) & 0x8000) && ((twres ^ twsrc) & 0x8000)) cpu->f |= PDP_FV; // neg + neg = pos || pos + pos = neg
+	//cpu->f &= ~(PDP_FC | PDP_FN | PDP_FV | PDP_FZ);
+	cpu->fv.z = !(twres & 0xffff);
+	cpu->fv.n = !!(twres & 0x8000);
+	cpu->fv.c = !!(twres > 0xffff);
+	cpu->fv.v = !!(!((twsrc ^ twdst) & 0x8000) && ((twres ^ twsrc) & 0x8000)); // neg + neg = pos || pos + pos = neg
 	if (cpu->com & 070) {
 		pdp_wr(cpu, cpu->mptr, twres & 0xffff);
 	} else {
@@ -1305,12 +1324,12 @@ void pdp_sub(CPU* cpu) {
 	twsrc = pdp_src(cpu, cpu->com >> 6, 0);
 	twdst = pdp_src(cpu, cpu->com, 0);
 	twres = twdst - twsrc;
-	cpu->f &= ~(PDP_FC | PDP_FN | PDP_FV | PDP_FZ);
-	if ((twres & 0xffff) == 0) cpu->f |= PDP_FZ;
-	if (twres & 0x8000) cpu->f |= PDP_FN;
-	if (twres & ~0xffff) cpu->f |= PDP_FC;
+	//cpu->f &= ~(PDP_FC | PDP_FN | PDP_FV | PDP_FZ);
+	cpu->fv.z = !(twres & 0xffff);
+	cpu->fv.n = !!(twres & 0x8000);
+	cpu->fv.c = !!(twres & ~0xffff);
 	// flag V set if: pos - neg = neg || neg - pos = pos
-	if (((twdst ^ twsrc) & 0x8000) && ((twdst ^ twres) & 0x8000)) cpu->f |= PDP_FV;
+	cpu->fv.v = !!(((twdst ^ twsrc) & 0x8000) && ((twdst ^ twres) & 0x8000));	// neg-pos=pos || pos-neg=neg
 	if (cpu->com & 070) {
 		pdp_wr(cpu, cpu->mptr, twres & 0xffff);
 	} else {
@@ -1630,10 +1649,10 @@ xMnem pdp11_mnem(CPU* cpu, int qadr, cbdmr mrd, void* dat) {
 					dst += sprintf(dst, "%o", dtw);
 					break;
 				case 'f':
-					if (com & PDP_FC) *(dst++) = 'C';
-					if (com & PDP_FZ) *(dst++) = 'Z';
-					if (com & PDP_FV) *(dst++) = 'V';
-					if (com & PDP_FN) *(dst++) = 'N';
+					if (com & 1) *(dst++) = 'C';
+					if (com & 2) *(dst++) = 'V';
+					if (com & 4) *(dst++) = 'Z';
+					if (com & 8) *(dst++) = 'N';
 					if (!(com & 15)) *(dst++) = '0';
 					break;
 				case 's':

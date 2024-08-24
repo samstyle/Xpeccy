@@ -551,7 +551,7 @@ static bkKeyCode bkeyTab[] = {
 	{XKEY_MINUS,'-'},{XKEY_EQUAL,'+'},
 	{XKEY_LBRACK,'('},{XKEY_RBRACK,')'},
 	{XKEY_DOTCOM, ';'},{XKEY_APOS,'"'},
-	{XKEY_COMMA, ','},{XKEY_PERIOD, '.'},{XKEY_BSLASH,'/'},
+	{XKEY_COMMA, ','},{XKEY_PERIOD, '.'},{XKEY_BSLASH,'/'},{XKEY_SLASH,'\\'},
 	{XKEY_SPACE,' '},{XKEY_ENTER,10},
 	{XKEY_BSP,24},
 	{XKEY_TAB,13},
@@ -574,6 +574,19 @@ static char bkkbdlat[] = " lat ";
 static char bkvidcol[] = " color mode ";
 static char bkvidbw[] = " b/w mode ";
 
+void bk_press_keycode(Computer* comp, int code) {
+	comp->keyb->flag |= 0x20;
+	if (!(comp->keyb->flag & 0x80)) {
+		comp->keyb->keycode = code & 0x7f;
+		comp->keyb->flag |= 0x80;
+		if (!(comp->keyb->flag & 0x40)) {		// keyboard interrupt enabled
+			comp->cpu->intvec = (code & 0x80) ? 0274 : 060;
+			comp->cpu->intrq |= PDP_INT_VIRQ;
+//				printf("intrq %X\n", comp->cpu->intvec);
+		}
+	}
+}
+
 void bk_keyp(Computer* comp, keyEntry xkey) {
 	int code = 0;
 	switch(xkey.key) {
@@ -589,7 +602,10 @@ void bk_keyp(Computer* comp, keyEntry xkey) {
 					break;
 			}
 			break;
-		case XKEY_LSHIFT: comp->keyb->shift = 1; break;
+		case XKEY_LSHIFT:
+			comp->keyb->shift = 1;
+//			code = 0274;
+			break;
 		case XKEY_CAPS:
 			comp->keyb->caps ^= 1;
 			code = comp->keyb->caps ? 0274 : 0273;
@@ -611,22 +627,16 @@ void bk_keyp(Computer* comp, keyEntry xkey) {
 	if (code == 0)
 		code = bkey_code(bkeyTab, xkey.key);
 	if (code != 0) {
-		comp->keyb->flag |= 0x20;
-		if (!(comp->keyb->flag & 0x80)) {
-			comp->keyb->keycode = code & 0x7f;
-			comp->keyb->flag |= 0x80;
-			if (!(comp->keyb->flag & 0x40)) {		// keyboard interrupt enabled
-				comp->cpu->intvec = (code & 0x80) ? 0274 : 060;
-				comp->cpu->intrq |= PDP_INT_VIRQ;
-//				printf("intrq %X\n", comp->cpu->intvec);
-			}
-		}
+		bk_press_keycode(comp, code);
 	}
 }
 
 void bk_keyr(Computer* comp, keyEntry xkey) {
 	switch (xkey.key) {
-		case XKEY_LSHIFT: comp->keyb->shift = 0; break;
+		case XKEY_LSHIFT:
+			comp->keyb->shift = 0;
+//			bk_press_keycode(comp, 0273);
+			break;
 	}
 	comp->keyb->flag &= ~0x20;	// 0x20 | 0x80
 }
