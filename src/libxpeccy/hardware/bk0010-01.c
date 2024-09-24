@@ -50,7 +50,7 @@ void bk_kbf_wr(Computer* comp, int adr, int val) {
 int bk_kbd_rd(Computer* comp, int adr) {
 	comp->wdata = (comp->reg[0xb2] << 8) | (comp->keyb->keycode & 0x7f);
 //	comp->wdata = comp->keyb->keycode & 0x7f;
-	comp->keyb->flag &= 0x7f;		// reset b7,flag
+	comp->keyb->flag &= ~0x80;		// reset b7,flag
 	return 0;
 }
 
@@ -440,8 +440,8 @@ void bk_reset(Computer* comp) {
 	comp->vid->curscr = 0;
 	comp->vid->paln = 0;
 	vid_set_mode(comp->vid, VID_BK_BW);
-	comp->keyb->flag = 0x00;
-	comp->keyb->keycode = 0;
+	comp->keyb->flag = 0x40;
+	comp->keyb->keycode = 0x00;
 	bk_mem_map(comp);
 }
 
@@ -456,8 +456,8 @@ void bk11_reset(Computer* comp) {
 //	comp->vid->curscr = 0;
 	comp->vid->paln = 0;
 	vid_set_mode(comp->vid, VID_BK_BW);
-	comp->keyb->flag = 0x00;
-	comp->keyb->keycode = 0;
+	comp->keyb->flag = 0x40;
+	comp->keyb->keycode = 0x00;
 	bk11_mem_map(comp);
 }
 
@@ -473,7 +473,7 @@ int bk_mrd(Computer* comp, int adr, int m1) {
 void bk_irq(Computer* comp, int val) {
 	switch (val) {
 		case PDP11_INIT:
-			comp->keyb->flag = 0;
+			comp->keyb->flag = 0x00;
 			break;
 	}
 }
@@ -545,10 +545,21 @@ static bkKeyCode bkey_small_rus[] = {
 	{ENDKEY, 0}
 };
 
-static bkKeyCode bkeyTab[] = {
+static bkKeyCode bkey_shift[] = {
+	{XKEY_1, '!'},{XKEY_2, '@'},{XKEY_3, '#'},{XKEY_4, '$'},{XKEY_5, '%'},
+	{XKEY_6, '^'},{XKEY_7, '&'},{XKEY_8, '*'},{XKEY_9, '('},{XKEY_0, ')'},
+	{XKEY_MINUS,'_'},{XKEY_EQUAL,'='},
+	{ENDKEY, 0}
+};
+
+static bkKeyCode bkey_noshift[] = {
 	{XKEY_1,'1'},{XKEY_2,'2'},{XKEY_3,'3'},{XKEY_4,'4'},{XKEY_5,'5'},
 	{XKEY_6,'6'},{XKEY_7,'7'},{XKEY_8,'8'},{XKEY_9,'9'},{XKEY_0,'0'},
 	{XKEY_MINUS,'-'},{XKEY_EQUAL,'+'},
+	{ENDKEY, 0}
+};
+
+static bkKeyCode bkeyTab[] = {
 	{XKEY_LBRACK,'('},{XKEY_RBRACK,')'},
 	{XKEY_DOTCOM, ';'},{XKEY_APOS,'"'},
 	{XKEY_COMMA, ','},{XKEY_PERIOD, '.'},{XKEY_BSLASH,'/'},{XKEY_SLASH,'\\'},
@@ -622,6 +633,13 @@ void bk_keyp(Computer* comp, keyEntry xkey) {
 			code = bkey_code(comp->keyb->lang ? bkey_big_rus : bkey_big_lat, xkey.key);
 		} else {
 			code = bkey_code(comp->keyb->lang ? bkey_small_rus : bkey_small_lat, xkey.key);
+		}
+	}
+	if (code == 0) {
+		if (comp->keyb->shift) {
+			code = bkey_code(bkey_shift, xkey.key);
+		} else {
+			code = bkey_code(bkey_noshift, xkey.key);
 		}
 	}
 	if (code == 0)
