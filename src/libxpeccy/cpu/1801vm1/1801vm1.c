@@ -186,9 +186,10 @@ int pdp_adr(CPU* cpu, int type, int b) {
 
 unsigned short pdp_src(CPU* cpu, int type, int b) {
 	unsigned short res;
-	int adr = pdp_adr(cpu, type, b);		// adr = r3
+	int adr = pdp_adr(cpu, type, b);
 	if (adr < 0) {
 		res = cpu->preg[type & 7];
+		if (b) res &= 0xff;
 	} else {
 		cpu->mptr = adr & 0xffff;
 		if (b) {
