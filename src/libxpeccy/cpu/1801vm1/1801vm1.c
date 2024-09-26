@@ -75,7 +75,6 @@ void pdp_trap(CPU* cpu, unsigned short adr) {
 		cpu->preg[7] -= 2;
 	}
 	if ((cpu->mcir & 6) == 2) {		// irq1, halt
-		printf("mcir = %i\n",cpu->mcir);
 		pdp_wr(cpu, 0177676, cpu->f);
 		pdp_wr(cpu, 0177674, cpu->preg[7]);
 	} else {
@@ -1310,6 +1309,7 @@ int pdp11_exec(CPU* cpu) {
 //		}
 	}
 	cpu->pc = cpu->preg[7];
+	cpu->sp = cpu->preg[6];		// for correct deBUGa stack dump
 	pdp_timer(cpu, cpu->t);
 	return cpu->t;
 }
@@ -1390,12 +1390,14 @@ typedef struct {
 	const char* mnem;
 } xPdpDasm;
 
+// TODO: maybe mov Rn,-(sp) -> push Rn | mov (sp)+, Rn -> pop Rn
+
 static xPdpDasm pdp11_dasm_tab[] = {
 	{0xffff, 0x0000, 0, "halt"},
 	{0xffff, 0x0001, 0, "wait"},
 	{0xffff, 0x0002, 0, "rti"},
-	{0xffff, 0x0003, 0, "bpt"},
-	{0xffff, 0x0004, 0, "iot"},
+	{0xffff, 0x0003, OF_SKIPABLE, "bpt"},
+	{0xffff, 0x0004, OF_SKIPABLE, "iot"},
 	{0xffff, 0x0005, 0, "reset"},
 	{0xffff, 0x0006, 0, "rtt"},
 	{0xffc0, 0x0040, 0, "jmp :d"},	// :d lower 6 bits dst(src)
@@ -1445,8 +1447,8 @@ static xPdpDasm pdp11_dasm_tab[] = {
 	{0xff00, 0x8500, 0, "bvs :e"},
 	{0xff00, 0x8600, 0, "bss :e"},
 	{0xff00, 0x8700, 0, "bcs :e"},
-	{0xff00, 0x8800, 0, "emt :x"},	// x: lower 8 bits, number
-	{0xff00, 0x8900, 0, "trap"},
+	{0xff00, 0x8800, OF_SKIPABLE, "emt :x"},	// x: lower 8 bits, number
+	{0xff00, 0x8900, OF_SKIPABLE, "trap :x"},
 	{0xffc0, 0x8a00, 0, "clrb :d"},
 	{0xffc0, 0x8a40, 0, "comb :d"},
 	{0xffc0, 0x8a80, 0, "incb :d"},
@@ -1472,6 +1474,8 @@ static xPdpDasm pdp11_dasm_tab[] = {
 
 static char mnbuf[128];
 static char num7[8] = "01234567";
+
+// TODO: chose between - E(Rn), (Rn + E(unsigned)) or (Rn +- E(signed))
 
 char* put_addressation(char* dst, unsigned short type) {
 	switch ((type >> 3) & 7) {
