@@ -200,6 +200,7 @@ int bk11_sys_rd(Computer* comp, int adr) {
 // b2,5,6 = tape signal (msb b6)
 // b4: TL in/out
 // b6: beeper
+
 void bk11_sys_wr(Computer* comp, int adr, int val) {
 	if (val & 0x800) {			// b11 set
 		// printf("rom bits: %i.%i.x.%i.%i\n",!!(val & 0x10),!!(val & 8),!!(val & 2), !!(val & 1));

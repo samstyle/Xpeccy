@@ -5,20 +5,23 @@ int loadBIN(Computer* comp, const char* name, int drv) {
 	if (!file) return ERR_CANT_OPEN;
 	int err = ERR_OK;
 //	char buf[0x8000];
-	unsigned short adr = fgetw(file);
-	unsigned short len = fgetw(file);
+	int adr = fgetw(file);
+	int len = fgetw(file);
+	adr &= ~1;
+	if (len & 1) len++;
 	int val;
 	if (adr + len > 0x8000) {
 		err = ERR_RAW_LONG;
 	} else {
 //		fread(buf, len, 1, file);
+		comp->cpu->nod = 3;	// words
 		while (len > 0) {
 			val = fgetw(file);
-			memWr(comp->mem, adr, val & 0xffff);
+			memWr(comp->mem, adr, val);
 			adr += 2;
 			len -= 2;
 		}
-		err = ERR_OK;
+//		err = ERR_OK;
 	}
 	fclose(file);
 	return err;

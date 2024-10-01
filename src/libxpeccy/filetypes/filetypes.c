@@ -34,7 +34,7 @@ size_t fgetSize(FILE* file) {
 	return res;
 }
 
-unsigned short fgetw(FILE* file) {
+int fgetw(FILE* file) {
 	int res = fgetc(file) & 0xff;
 	res |= ((fgetc(file) & 0xff) << 8);
 	return res & 0xffff;

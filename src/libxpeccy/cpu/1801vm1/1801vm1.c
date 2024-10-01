@@ -117,7 +117,7 @@ int pdp11_int(CPU* cpu) {
 	} else if (cpu->intrq & PDP_INT_TIMER) {		// timer
 		cpu->intrq &= ~PDP_INT_TIMER;
 		cpu->mcir = 5;
-		pdp_trap(cpu, 0270);
+		//pdp_trap(cpu, 0270);
 		cpu->wait = 0;
 	} else {
 		res = 0;
@@ -248,7 +248,7 @@ void pdp_halt(CPU* cpu) {
 	cpu->mcir = 3;	// 011		// 01x - store pc/f @ 0177674
 	cpu->vsel = 11;	// 1011
 	printf("halt\n");
-	cpu->halt = 1;
+	// cpu->halt = 1;
 	pdp_trap(cpu, 0160002);
 }
 
@@ -982,13 +982,12 @@ void pdp_mtps(CPU* cpu) {
 // V: 0
 // C: not affected
 void pdp_mfps(CPU* cpu) {
-	twsrc = pdp_adr(cpu, cpu->com, 1);
+	cpu->mptr = pdp_adr(cpu, cpu->com, 1);
+	twsrc = cpu->f;
+	if (twsrc & 0x80) twsrc |= 0xff00;
 	if (cpu->com & 0x38) {
-		twsrc = cpu->f;
 		pdp_wrb(cpu, cpu->mptr, twsrc & 0xff);
 	} else {
-		twsrc = cpu->f & 0xff;
-		if (twsrc & 0x80) twsrc |= 0xff00;
 		cpu->preg[cpu->com & 7] = twsrc;
 	}
 	//cpu->f &= ~(PDP_FZ | PDP_FN | PDP_FV);
@@ -1067,6 +1066,11 @@ void pdp_7xxx(CPU* cpu) {
 // N: src < 0
 // C: not changed
 // V: 0
+
+// example: 016737 071324 177716
+// src = 67	(E+R7)		R7+71324 (1st)
+// dst = 37	@(R7)+		177716 (2nd)
+
 void pdp_mov(CPU* cpu) {
 	twsrc = pdp_src(cpu, cpu->com >> 6, 0);
 	pdp_dst(cpu, twsrc, cpu->com, 0);
@@ -1390,7 +1394,7 @@ typedef struct {
 	const char* mnem;
 } xPdpDasm;
 
-// TODO: maybe mov Rn,-(sp) -> push Rn | mov (sp)+, Rn -> pop Rn
+// TODO: maybe mov Rn,-(sp) -> push Rn | mov (sp)+, Rn -> pop Rn | rts r7 -> ret
 
 static xPdpDasm pdp11_dasm_tab[] = {
 	{0xffff, 0x0000, 0, "halt"},
@@ -1401,6 +1405,7 @@ static xPdpDasm pdp11_dasm_tab[] = {
 	{0xffff, 0x0005, 0, "reset"},
 	{0xffff, 0x0006, 0, "rtt"},
 	{0xffc0, 0x0040, 0, "jmp :d"},	// :d lower 6 bits dst(src)
+	{0xffff, 0x0087, 0, "ret"},	// special rts r7 = ret
 	{0xfff8, 0x0080, 0, "rts r:0"},	// :0 bits 0,1,2 number
 	{0xfff0, 0x00a0, 0, "cf :f"},	// :f lower 4 bits flags
 	{0xfff0, 0x00b0, 0, "sf :f"},

@@ -133,7 +133,7 @@ TRFile diskMakeDescriptor(const char*, char, int, int);
 
 int fgeti(FILE*);
 int fgett(FILE*);
-unsigned short fgetw(FILE*);
+int fgetw(FILE*);
 void fputi(int, FILE*);
 void fputw(unsigned short, FILE*);
 
