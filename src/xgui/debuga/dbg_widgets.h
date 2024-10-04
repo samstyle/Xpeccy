@@ -14,6 +14,7 @@
 #include "dbg_memfill.h"
 #include "dbg_sprscan.h"
 #include "dbg_vmem_dump.h"
+#include "dbg_rdump.h"
 
 // ay
 

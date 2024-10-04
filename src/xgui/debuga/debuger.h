@@ -83,6 +83,7 @@ class DebugWin : public QMainWindow {
 		Ui::DisasmWidget ui_asm;
 		Ui::FormDbgMisc ui_misc;
 		xDumpWidget* wid_dump;
+		xRDumpWidget* wid_rdump;
 		xDiskDumpWidget* wid_disk_dump;
 		xCmosDumpWidget* wid_cmos_dump;
 		xVMemDumpWidget* wid_vmem_dump;

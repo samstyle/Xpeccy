@@ -37,8 +37,9 @@ typedef struct {
 #define REG_24		24
 #define REG_32		32
 #define REG_TMASK	0xff
-#define REG_RO		0x100	// protect from changes in debuga
+#define REG_RO		0x100	// protect from changes in deBUGa
 #define REG_SEG		0x200	// register is segment
+#define REG_RDMP	0x400	// use register as line addr for regs-dump in deBUGa (new widget)
 
 typedef struct {
 	int id;

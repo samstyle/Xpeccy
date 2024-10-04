@@ -258,6 +258,7 @@ DebugWin::DebugWin(QWidget* par):QMainWindow(par) {
 	setCentralWidget(cw);
 
 	wid_dump = new xDumpWidget("","DUMP");
+	wid_rdump = new xRDumpWidget("","REG-DUMP");
 	wid_disk_dump = new xDiskDumpWidget(":/images/floppy.png","FDD");
 	wid_cmos_dump = new xCmosDumpWidget("","CMOS");
 	wid_vmem_dump = new xVMemDumpWidget("","VMEM");
@@ -277,12 +278,13 @@ DebugWin::DebugWin(QWidget* par):QMainWindow(par) {
 	wid_mmap = new xMMapWidget(":/images/memory.png","Memory map");
 	wid_ps2 = new xPS2Widget("","PS/2");
 
-	dockWidgets << wid_dump << wid_disk_dump << wid_vmem_dump << wid_cmos_dump;
+	dockWidgets << wid_dump << wid_rdump << wid_disk_dump << wid_vmem_dump << wid_cmos_dump;
 	dockWidgets << wid_brk << wid_zxscr << wid_ay << wid_tape;
 	dockWidgets << wid_fdd << wid_mmap << wid_gb << wid_ppu;
 	dockWidgets << wid_cia << wid_dma << wid_pic << wid_pit << wid_vga << wid_ps2;
 
 	addDockWidget(Qt::RightDockWidgetArea, wid_dump);
+	tabifyDockWidget(wid_dump, wid_rdump);
 	tabifyDockWidget(wid_dump, wid_disk_dump);
 	tabifyDockWidget(wid_dump, wid_vmem_dump);
 	tabifyDockWidget(wid_dump, wid_cmos_dump);

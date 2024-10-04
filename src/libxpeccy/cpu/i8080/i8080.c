@@ -84,12 +84,12 @@ xMnem i8080_mnem(CPU* cpu, int qadr, cbdmr mrd, void* data) {
 }
 
 xRegDsc i8080RegTab[] = {
-	{I8080_REG_PC, "PC", REG_WORD, offsetof(CPU, pc)},
+	{I8080_REG_PC, "PC", REG_WORD | REG_RDMP, offsetof(CPU, pc)},
 	{I8080_REG_AF, "AF", REG_WORD, 0},
-	{I8080_REG_BC, "BC", REG_WORD, offsetof(CPU, bc)},
-	{I8080_REG_DE, "DE", REG_WORD, offsetof(CPU, de)},
-	{I8080_REG_HL, "HL", REG_WORD, offsetof(CPU, hl)},
-	{I8080_REG_SP, "SP", REG_WORD, offsetof(CPU, sp)},
+	{I8080_REG_BC, "BC", REG_WORD | REG_RDMP, offsetof(CPU, bc)},
+	{I8080_REG_DE, "DE", REG_WORD | REG_RDMP, offsetof(CPU, de)},
+	{I8080_REG_HL, "HL", REG_WORD | REG_RDMP, offsetof(CPU, hl)},
+	{I8080_REG_SP, "SP", REG_WORD | REG_RDMP, offsetof(CPU, sp)},
 	{REG_EMPTY, "A", REG_BYTE, offsetof(CPU, a)},
 	{REG_EMPTY, "F", REG_32, offsetof(CPU, f)},
 	{REG_NONE, "", 0, 0}

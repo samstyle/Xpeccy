@@ -159,6 +159,7 @@ set(MOCFILES
 	./src/xgui/debuga/dbg_diskdump.h
 	./src/xgui/debuga/dbg_vmem_dump.h
 	./src/xgui/debuga/dbg_widgets.h
+	./src/xgui/debuga/dbg_rdump.h
 	./src/watcher.h
 	./src/xgui/options/setupwin.h
 	./src/xgui/options/padbinder.h
