@@ -619,7 +619,14 @@ xDumpWidget::xDumpWidget(QString i, QString t, QWidget* p):xDockWidget(i,t,p) {
 	cellMenu->addAction(ui.actRead);
 	cellMenu->addAction(ui.actWrite);
 
-	ui.dumpTable->setColumnWidth(0,70);
+	QFontMetrics fm(font());
+// horizontalAdvance() since 5.11, before - width()
+#if (QT_VERSION >= QT_VERSION_CHECK(5,11,0))
+	ui.dumpTable->setColumnWidth(0,fm.horizontalAdvance("0000:0000"));
+#else
+	ui.dumpTable->setColumnWidth(0,fm.width("0000:0000"));
+#endif
+
 	ui.dumpTable->setItemDelegate(new xItemDelegate(XTYPE_BYTE)); // xid_byte);
 	ui.dumpTable->setItemDelegateForColumn(0, new xItemDelegate(XTYPE_LABEL)); // ) xid_labl);
 	ui.dumpTable->setItemDelegateForColumn(9, new xItemDelegate(XTYPE_NONE)); // xid_none);
