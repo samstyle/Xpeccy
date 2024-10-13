@@ -15,6 +15,9 @@ class xTableModel : public QAbstractTableModel {
 		void updateRow(int);
 		void updateColumn(int);
 		void updateCell(int, int);
+	private:
+		int mrd(int);
+		void mwr(int, int);
 };
 
 class xDockWidget : public QDockWidget {

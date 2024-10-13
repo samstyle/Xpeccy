@@ -501,12 +501,6 @@ int xDisasmModel::fill() {
 	return res;
 }
 
-/*
-void xDisasmModel::update() {
-	emit dataChanged(index(0, 0), index(rowCount() - 1, columnCount() - 1));
-}
-*/
-
 int xDisasmModel::update_lst() {
 	int res = fill();
 	int i;

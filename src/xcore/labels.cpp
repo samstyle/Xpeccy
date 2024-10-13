@@ -49,11 +49,11 @@ QString find_label(xAdr xadr) {
 					lab = conf.prof.cur->labmap.rom[xadr.abs];
 				break;
 			default:
-				if (conf.prof.cur->labmap.ram.contains(xadr.abs)) {
+/*				if (conf.prof.cur->labmap.ram.contains(xadr.abs)) {
 					lab = conf.prof.cur->labmap.ram[xadr.abs];
 				} else if (conf.prof.cur->labmap.rom.contains(xadr.abs)) {
 					lab = conf.prof.cur->labmap.rom[xadr.abs];
-				} else if (conf.prof.cur->labmap.cpu.contains(xadr.adr)) {
+				} else */ if (conf.prof.cur->labmap.cpu.contains(xadr.adr)) {
 					lab = conf.prof.cur->labmap.cpu[xadr.adr];
 				}
 				break;
@@ -91,7 +91,7 @@ int loadLabels(const char* fn) {
 					xadr.adr = arr.at(1).toInt(NULL,16);
 					if (xadr.bank == 0xff) {
 						switch (xadr.adr & 0xc000) {
-							case 0x0000: break;
+							case 0x0000: xadr.bank = 0; break;
 							case 0x4000: xadr.bank = 5; break;
 							case 0x8000: xadr.bank = 2; break;
 							case 0xc000: xadr.bank = 0; break;
@@ -102,8 +102,8 @@ int loadLabels(const char* fn) {
 					name = arr.at(2);
 					switch (xadr.bank) {
 						case 0xff:
-							//xadr.type = MEM_ROM;
-							//xadr.bank = -1;
+							xadr.type = -1;		// cpu
+							xadr.bank = -1;
 							break;
 						case 0x05:
 							xadr.adr |= 0x4000;
@@ -115,8 +115,8 @@ int loadLabels(const char* fn) {
 							xadr.adr |= 0xc000;
 							break;
 					}
-					if (xadr.bank > 0)
-						xadr.bank = xadr.abs >> 8;
+					//if (xadr.bank > 0)
+					//	xadr.bank = xadr.abs >> 8;
 					add_label(xadr, name);
 					//
 				}
@@ -138,7 +138,7 @@ int saveLabels(const char* fn) {
 	QFile file;
 	QString path(fn);
 	if (path.isEmpty())
-		path = QFileDialog::getSaveFileName(NULL, "save SJASM labels",QString(),QString(),nullptr,QFileDialog::DontUseNativeDialog);
+		path = QFileDialog::getSaveFileName(NULL, "save labels",QString(),QString(),nullptr,QFileDialog::DontUseNativeDialog);
 	if (path.isEmpty()) {
 		res = 0;
 	} else {

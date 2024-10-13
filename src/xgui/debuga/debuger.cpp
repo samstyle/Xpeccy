@@ -663,10 +663,12 @@ void DebugWin::reload() {
 	if (comp->mem->snapath) {
 		load_file(comp, comp->mem->snapath, FG_SNAPSHOT, 0);
 		ui_asm.dasmTable->setAdr(comp->cpu->pc + comp->cpu->cs.base);
-		fillAll();
 	}
-	if (!conf.labpath.isEmpty())
+	qDebug() << conf.labpath;
+	if (!conf.labpath.isEmpty()) {
 		loadLabels(conf.labpath.toLocal8Bit().data());
+	}
+	fillAll();
 }
 
 void DebugWin::keyPressEvent(QKeyEvent* ev) {
@@ -1135,6 +1137,7 @@ int rdbyte(int adr, void* ptr) {
 
 int DebugWin::fillDisasm() {
 	conf.dbg.hideadr = ui_asm.actHideAddr->isChecked() ? 1 : 0;
+	conf.dbg.labels = ui_asm.actShowLabels->isChecked() ? 1 : 0;
 	return ui_asm.dasmTable->updContent();
 }
 
