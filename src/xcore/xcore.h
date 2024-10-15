@@ -446,6 +446,7 @@ struct xConfig {
 		int fcount;		// frames counter (for fps showing) (= fcnt ???)
 		int curfps;
 		std::string shader;
+		int shd_support;
 	} vid;
 	struct {
 		unsigned enabled:1;

@@ -74,12 +74,14 @@ void fill_shader_list(QComboBox* box) {
 	box->clear();
 	box->addItem("none", 0);
 #if defined(USEOPENGL)
-	foreach(inf, lst) {
-		box->addItem(inf.fileName(), 1);
+	if (conf.vid.shd_support) {
+		foreach(inf, lst) {
+			box->addItem(inf.fileName(), 1);
+		}
+		box->setCurrentIndex(box->findText(conf.vid.shader.c_str()));
+		if (box->currentIndex() < 0)
+			box->setCurrentIndex(0);
 	}
-	box->setCurrentIndex(box->findText(conf.vid.shader.c_str()));
-	if (box->currentIndex() < 0)
-		box->setCurrentIndex(0);
 #else
 	box->setCurrentIndex(0);
 #endif

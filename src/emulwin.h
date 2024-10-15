@@ -203,7 +203,6 @@ typedef struct {
 		void timerEvent(QTimerEvent*);
 		void moveEvent(QMoveEvent*);
 #if defined(USEOPENGL) && !BLOCKGL
-		bool shd_support;
 		unsigned curtex:2;
 		GLuint texids[4];
 		GLuint curtxid;

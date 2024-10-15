@@ -656,7 +656,7 @@ void MainWin::paintEvent(QPaintEvent*) {
 #if !BLOCKGL
 //	pnt.beginNativePainting();
 	makeCurrent();
-	if (prg.isLinked() && shd_support) {
+	if (prg.isLinked() && conf.vid.shd_support) {
 		prg.bind();
 		prg.setUniformValue("rubyInputSize",GLfloat(bytesPerLine/4.0), GLfloat(conf.prof.cur->zx->vid->vsze.y));
 		prg.setUniformValue("rubyOutputSize",GLfloat(width()), GLfloat(height()));
@@ -677,7 +677,7 @@ void MainWin::paintEvent(QPaintEvent*) {
 	glTexCoord2f(1.0, 1.0); glVertex2f(1.0, 1.0);	// RB
 	glTexCoord2f(0.0, 1.0); glVertex2f(0.0, 1.0);	// LB
 	glEnd();
-	if (prg.isLinked() && shd_support)
+	if (prg.isLinked() && conf.vid.shd_support)
 		prg.release();
 	glDisable(GL_TEXTURE_2D);
 	glMatrixMode(GL_MODELVIEW);
@@ -1066,7 +1066,7 @@ void MainWin::fillUserMenu() {
 	act->setCheckable(true);
 	if (conf.vid.shader.empty()) act->setChecked(true);
 #if defined(USEOPENGL) && !BLOCKGL
-	if (shd_support) {
+	if (conf.vid.shd_support) {
 		QDir dir(conf.path.shdDir.c_str());
 		QFileInfoList lst = dir.entryInfoList(QStringList() << "*.txt", QDir::Files, QDir::Name);
 		foreach(QFileInfo inf, lst) {

@@ -17,7 +17,7 @@ void MainWin::initializeGL() {
 	frmt.setProfile(QSurfaceFormat::CoreProfile);
 	QSurfaceFormat::setDefaultFormat(frmt);
 	// setFormat(frmt);
-	shd_support = QOpenGLShader::hasOpenGLShaders(QOpenGLShader::Vertex) && QOpenGLShader::hasOpenGLShaders(QOpenGLShader::Fragment);
+	conf.vid.shd_support = QOpenGLShader::hasOpenGLShaders(QOpenGLShader::Vertex) && QOpenGLShader::hasOpenGLShaders(QOpenGLShader::Fragment);
 	curtex = 0;
 	qDebug() << "vtx_shd";
 	vtx_shd = new QOpenGLShader(QOpenGLShader::Vertex);
@@ -31,7 +31,7 @@ void MainWin::initializeGL() {
 //	setAutoBufferSwap(true);
 //	makeCurrent();
 //	curtex = 0;
-//	shd_support = QGLShader::hasOpenGLShaders(QGLShader::Vertex) && QGLShader::hasOpenGLShaders(QGLShader::Fragment);
+//	conf.vid.shd_support = QGLShader::hasOpenGLShaders(QGLShader::Vertex) && QGLShader::hasOpenGLShaders(QGLShader::Fragment);
 //	qDebug() << "vtx_shd";
 //	vtx_shd = new QGLShader(QGLShader::Vertex, cont);
 //	qDebug() << "frg_shd";
@@ -50,6 +50,7 @@ void MainWin::initializeGL() {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	}
 	loadShader();
+	if (!conf.vid.shd_support) qDebug() << "WARNING: Shaders not supported";
 	qDebug() << "end:" << __FUNCTION__;
 }
 
@@ -75,7 +76,7 @@ void MainWin::loadShader() {
 	QString frg;
 	QString lin;
 	prg.removeAllShaders();
-	if (!conf.vid.shader.empty() && shd_support) {			// no shader selected
+	if (!conf.vid.shader.empty() && conf.vid.shd_support) {			// no shader selected
 		if (file.open(QFile::ReadOnly)) {
 			while(!file.atEnd()) {
 				lin = file.readLine().trimmed().append("\n");
