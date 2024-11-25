@@ -156,41 +156,43 @@ void xThread::emuCycle(Computer* comp) {
 #endif
 		if (comp->brk) {
 			// printf("brkt = %i, brka = %X\n", comp->brkt, comp->brka);
-			xBrkPoint* ptr = brk_find(comp->brkt, comp->brka);		// TODO: brk catched, but not found?
-			if (ptr) {
-				QString fnams;
-				QFile file;
-				switch (ptr->action) {
-					case BRK_ACT_COUNT: ptr->count++; comp->brk = 0; break;
-					case BRK_ACT_SCR:
-						fnams = QString(conf.scrShot.dir.c_str()).append(SLASH);
-						fnams.append(QString("xpeccy_%0").arg(QTime::currentTime().toString("HHmmss_zzz")));	// TODO: counter-based name (1ms is not enough)
-						tm = 0;
-						do {
-							file.setFileName(QString("%0_%1.scr").arg(fnams).arg(tm));
-							tm++;
-						} while (file.exists());
-						file.open(QFile::WriteOnly);
-						file.write((char*)(comp->mem->ramData + (5 << 14)), 0x1b00);
-						file.close();
-						comp->brk = 0;
-						break;
-					default:					// BRK_ACT_DBG
-						conf.emu.pause |= PR_DEBUG;
-						emit dbgRequest();
-						break;
-				}
-//				if (!comp->brk && ptr->fetch) {		// to skip fetch-brk and don't stop again (bad idea)
-//					tm = !!comp->debug;
-//					comp->debug = 1;
-//					compExec(comp);
-//					comp->debug = !!tm;
-//				}
-			} else if (comp->brkt == -1) {
+			if (comp->brkt == -1) {
 				conf.emu.pause |= PR_DEBUG;
 				emit dbgRequest();
 			} else {
-				comp->brk = 0;
+				xBrkPoint* ptr = brk_find(comp->brkt, comp->brka);		// TODO: brk catched, but not found?
+				if (ptr) {
+					QString fnams;
+					QFile file;
+					switch (ptr->action) {
+						case BRK_ACT_COUNT: ptr->count++; comp->brk = 0; break;
+						case BRK_ACT_SCR:
+							fnams = QString(conf.scrShot.dir.c_str()).append(SLASH);
+							fnams.append(QString("xpeccy_%0").arg(QTime::currentTime().toString("HHmmss_zzz")));	// TODO: counter-based name (1ms is not enough)
+							tm = 0;
+							do {
+								file.setFileName(QString("%0_%1.scr").arg(fnams).arg(tm));
+								tm++;
+							} while (file.exists());
+							file.open(QFile::WriteOnly);
+							file.write((char*)(comp->mem->ramData + (5 << 14)), 0x1b00);
+							file.close();
+							comp->brk = 0;
+							break;
+						default:					// BRK_ACT_DBG
+							conf.emu.pause |= PR_DEBUG;
+							emit dbgRequest();
+							break;
+					}
+//					if (!comp->brk && ptr->fetch) {		// to skip fetch-brk and don't stop again (bad idea)
+//						tm = !!comp->debug;
+//						comp->debug = 1;
+//						compExec(comp);
+//						comp->debug = !!tm;
+//					}
+				} else {
+					comp->brk = 0;
+				}
 			}
 		}
 	};

@@ -5,7 +5,7 @@ xFDDWidget::xFDDWidget(QString i, QString t, QWidget* p):xDockWidget(i,t,p) {
 	setWidget(wid);
 	ui.setupUi(wid);
 	setObjectName("FDCWIDGET");
-	hwList << HWG_ZX << HWG_PC;
+	hwList << HWG_ZX << HWG_PC << HWG_BK;
 }
 
 void xFDDWidget::draw() {

@@ -84,6 +84,7 @@ int flp_format_trk(Floppy* flp, int trk, int spt, int slen, char* data);
 // int flp_format_trk_buf(int trk, int spt, int slen, int trklen, char* data, unsigned char* buf);
 
 void flpFillFields(Floppy*,int,int);
+int flp_check_marker(Floppy*, int);
 
 void flpPutTrack(Floppy*,int,unsigned char*,int);
 void flpGetTrack(Floppy*,int,unsigned char*);

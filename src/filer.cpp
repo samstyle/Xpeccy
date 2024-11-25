@@ -63,7 +63,7 @@ static xFileTypeInfo ft_tab[] = {
 	{FL_C64PRG, 0, ".prg", "*.prg", loadC64prg, NULL, "C64 PRG snapshot"},
 	{FL_BKBIN, 0, ".bin", "*.bin", loadBIN, NULL, "BK bin data"},
 	{FL_BKIMG, 0, ".img", "*.img", loadBkIMG, NULL, "BK disk image"},
-//	{FL_BKBKD, 0, ".bkd", "*.bkd", loadBkIMG, NULL, "BK disk image"},
+	{FL_BKBKD, 0, ".bkd", "*.bkd", loadBkIMG, NULL, "BK disk image"},
 	{FL_RKS, 0, ".rks", "*.rks", loadRKSmem, NULL, "RKS to memory"},
 	{FL_IMA, 1, ".ima", "*.ima", load_ima, NULL, "1.44 FDD image"},
 	{FL_PCIMG, 1, ".img", "*.img", load_ima, NULL, "1.44 FDD image"},
@@ -104,7 +104,7 @@ static xFileGroupInfo fg_tab[] = {
 	{FG_BKTAPE, ".wav", -1, "BK tape", NULL, {FL_WAV, 0}},
 	{FG_BKRAW, "", -1, "BK raw file to tape", &ft_bktap,  {FL_BKRAWTAP, 0}},
 	{FG_PCDISK, "", 0, "FDD image", NULL, {FL_IMA, FL_PCIMG, 0}},
-	// {FG_BKDISK, "", 0, "BK disk image", NULL, {FL_BKIMG, FL_BKBKD, FL_UDI, 0}},
+	{FG_BKDISK, "", 0, "BK disk image", NULL, {FL_BKIMG, FL_BKBKD, FL_UDI, 0}},
 	{FG_RKSTAP, "", -1, "RKS to tape", &ft_rkstap, {FL_RKS, 0}},
 	{FG_RKSMEM, "", -1, "RKS to memory", NULL, {FL_RKS, 0}},
 	{0, "", -1, NULL, NULL, {0}}

@@ -286,7 +286,7 @@ void comp_irq(int t, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 	if (t == IRQ_BRK) {
 		comp->brk = 1;
-		comp->brkt = BRK_IRQ;
+		comp->brkt = -1;
 	}
 	if (comp->hw->irq) comp->hw->irq(comp, t);
 }

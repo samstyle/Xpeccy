@@ -58,6 +58,11 @@ unsigned char flpRd(Floppy* flp, int hd) {
 	return flp->data[(flp->trk << 1) | hd].byte[flp->pos];
 }
 
+int flp_check_marker(Floppy* flp, int hd) {
+	if (!flp->insert || !flp->door) return 0;
+	return !!(flp->data[(flp->trk << 1) | (hd & 1)].field[flp->pos] & 0x80);
+}
+
 // TODO: move disk spinning here (if motor is on)
 void flp_sync(Floppy* flp, int ns) {
 	if (flp->dwait > 0) {
@@ -143,6 +148,7 @@ int flp_format_trk_buf(int trk, int spt, int slen, int trklen, char* data, unsig
 		slen = t;
 		spc = (trklen - 20) / spt;
 		spc -= (72 + slen);		// space 3 size
+		spc &= ~1;			// make it even (for BK disk system)
 		if (spc < 10) {
 			res = 0;
 		} else {
@@ -260,6 +266,9 @@ void flpFillFields(Floppy* flp,int tr, int flag) {
 			}
 		} else {					// TODO: find A1 here, then skip until !A1, this byte will be marker
 			if (flp->data[tr].byte[i] == 0xa1) {
+				if (fld == 0) {
+					flp->data[tr].field[i] = 0x80;
+				}
 				fld = 0x0f;
 			} else {
 				if (fld == 0x0f) {

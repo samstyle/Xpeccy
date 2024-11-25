@@ -95,6 +95,7 @@ QString gethexshift(char);
 QString getdecshift(char);
 QString gethexbyte(int);
 QString gethexword(int);
+QString getoctword(int);
 QString gethex6(int);
 QString gethexint(int);
 

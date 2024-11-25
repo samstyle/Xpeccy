@@ -21,6 +21,7 @@ void pdp_wrb(CPU* cpu, int adr, int val) {	// val is 00..FF
 void pdp_wr(CPU* cpu, int adr, int val) {
 	cpu->nod = 3;
 	adr &= ~1;
+//	if (adr == 0177130) printf("vm wr %.4X,%.4X\n",adr, val);
 	cpu->mwr(adr, val, cpu->xptr);
 }
 
@@ -1450,7 +1451,7 @@ static xPdpDasm pdp11_dasm_tab[] = {
 	{0xff00, 0x8300, 0, "blos :e"},
 	{0xff00, 0x8400, 0, "bvc :e"},
 	{0xff00, 0x8500, 0, "bvs :e"},
-	{0xff00, 0x8600, 0, "bss :e"},
+	{0xff00, 0x8600, 0, "bcc :e"},
 	{0xff00, 0x8700, 0, "bcs :e"},
 	{0xff00, 0x8800, OF_SKIPABLE, "emt :x"},	// x: lower 8 bits, number
 	{0xff00, 0x8900, OF_SKIPABLE, "trap :x"},
@@ -1569,6 +1570,7 @@ xMnem pdp11_mnem(CPU* cpu, int qadr, cbdmr mrd, void* dat) {
 					if (com & 0x80) dtw |= 0xff00;
 					dtw <<= 1;
 					dtw += adr;
+					res.oadr = adr;
 					dst += sprintf(dst, "%o", dtw);
 					break;
 				case 'j':
@@ -1584,6 +1586,7 @@ xMnem pdp11_mnem(CPU* cpu, int qadr, cbdmr mrd, void* dat) {
 					if (com & 8) *(dst++) = 'N';
 					if (!(com & 15)) *(dst++) = '0';
 					break;
+				// TODO: set res.oadr for :s and :d
 				case 's':
 					dst = put_addressation(dst, com >> 6);
 					break;

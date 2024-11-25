@@ -102,14 +102,14 @@ double x87_rd_op(CPU* cpu, int t) {
 			break;
 		case X87_INT32:		// 32-bit int
 			tmp = x87_rd_cnt(cpu, 4);
-			res = tmp & (((long)1 << 31) - 1);
+			res = tmp & (((long long)1 << 31) - 1);
 			if ((tmp >> 31) & 1) {
 				res = -res;
 			}
 			break;
 		case X87_REAL64:	// 64-bit real
 			tmp = x87_rd_cnt(cpu, 8);
-			base = tmp & (((long)1<<51) - 1);
+			base = tmp & (((long long)1<<51) - 1);
 			while (base >= 2.0) {
 				base /= 2.0;
 			}

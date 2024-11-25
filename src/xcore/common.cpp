@@ -44,6 +44,19 @@ QString gethexshift(char shft) {
 	return str;
 }
 
+QString getoctword(int num) {
+	QString str;
+	if (!num) {
+		str = "0";
+	} else {
+		while(num) {
+			str.prepend(hexhalf[num & 7]);
+			num >>= 3;
+		}
+	}
+	return str;
+}
+
 QString getdecshift(char shft) {
 	QString str = (shft < 0) ? "-" : "+";
 	if (shft < 0)

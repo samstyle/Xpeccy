@@ -81,7 +81,8 @@ QVariant xDiskDumpModel::data(const QModelIndex& idx, int role) const {
 			if (col > 8) break;
 			if (offset >= flp->trklen) break;
 			if (!flp->insert) break;
-			switch(flp->data[trk].field[offset]) {
+			ch = flp->data[trk].field[offset];
+			switch(ch & 0x0f) {
 				case 1:			// id
 					res = QColor(220, 220, 255);
 					break;
@@ -93,6 +94,9 @@ QVariant xDiskDumpModel::data(const QModelIndex& idx, int role) const {
 					res = QColor(255, 220, 255);
 					break;
 			}
+//			if (ch & 0x80) {
+//				res = QColor(220,120,120);	// 'broken' A1
+//			}
 			break;
 		case Qt::FontRole:
 			if (col == 0) break;
@@ -146,7 +150,7 @@ xDiskDumpWidget::xDiskDumpWidget(QString i, QString t, QWidget* p):xDockWidget(i
 	connect(ui.cbDrive, SIGNAL(currentIndexChanged(int)), ui.tabDiskDump, SLOT(setDrive(int)));
 	connect(ui.sbTrack, SIGNAL(valueChanged(int)), ui.tabDiskDump, SLOT(setTrack(int)));
 	connect(ui.tbTarget, SIGNAL(released()),this,SLOT(toTarget()));
-	hwList << HWG_ZX << HWG_PC;
+	hwList << HWG_ZX << HWG_PC << HWG_BK;
 }
 
 void xDiskDumpWidget::toTarget() {

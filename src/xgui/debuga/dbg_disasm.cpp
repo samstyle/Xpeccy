@@ -224,7 +224,14 @@ void placeLabel(Computer* comp, dasmData& drow) {
 				mn = cpuDisasm(comp->cpu, (drow.oadr - shift), NULL, dasmrd, comp);
 			}
 			if (shift < mn.len) {
-				num = gethexword(drow.oadr).prepend("#").toUpper();
+				switch(comp->hw->base) {
+					case 8:
+						num = getoctword(drow.oadr);
+						break;
+					default:
+						num = gethexword(drow.oadr).prepend("#").toUpper();
+						break;
+				}
 				if (shift == 0) {
 					drow.command.replace(num, QString("%0").arg(lab));
 				} else {

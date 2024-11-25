@@ -29,7 +29,7 @@ int bk_fdc_rd(Computer* comp, int adr) {
 }
 
 void bk_fdc_wr(Computer* comp, int adr, int val) {
-	// difOut(comp->dif, (adr & 2) ? 1 : 0, 0, comp->wdata);
+	difOut(comp->dif, (adr & 2) >> 1, 0, val);
 }
 
 // keyboard
@@ -235,13 +235,13 @@ void bk11_sys_wr(Computer* comp, int adr, int val) {
 
 int bk_dbg_rd(Computer* comp, int adr) {
 	comp->wdata = 0xffff;
-	printf("%.4X : rd %.4X\n",comp->cpu->preg[7], adr);
+//	printf("%.4X : rd %.4X\n",comp->cpu->preg[7], adr);
 //	assert(0);
 	return -1;
 }
 
 void bk_dbg_wr(Computer* comp, int adr, int val) {
-	printf("%.4X : wr %.4X, %.4X (nod = %i)\n",comp->cpu->preg[7], adr, val, comp->cpu->nod);
+//	printf("%.4X : wr %.4X, %.4X (nod = %i)\n",comp->cpu->preg[7], adr, val, comp->cpu->nod);
 //	assert(0);
 }
 
@@ -256,7 +256,7 @@ static xPort bk_io_tab[] = {
 	{0xfffe, 0xffca, 2, 2, 2, bk_tfl_rd, bk_tfl_wr},	// 177712
 	{0xfffe, 0xffcc, 2, 2, 2, bk_fcc_rd, NULL},		// 177714: ext (printer / ay / joystick)
 	{0xfffe, 0xffce, 2, 2, 2, bk_sys_rd, bk_sys_wr},	// 177716: system
-//	{0x0000, 0x0000, 2, 2, 2, bk_dbg_rd, bk_dbg_wr}
+	{0x0000, 0x0000, 2, 2, 2, bk_dbg_rd, bk_dbg_wr}
 };
 
 static xPort bk11_io_tab[] = {
@@ -270,7 +270,7 @@ static xPort bk11_io_tab[] = {
 	{0xfffe, 0xffca, 2, 2, 2, bk_tfl_rd, bk_tfl_wr},	// 177712
 	{0xfffe, 0xffcc, 2, 2, 2, bk_fcc_rd, NULL},		// 177714: ext (printer / ay / joystick)
 	{0xfffe, 0xffce, 2, 2, 2, bk11_sys_rd, bk11_sys_wr},	// 177716: system
-//	{0x0000, 0x0000, 2, 2, 2, bk_dbg_rd, bk_dbg_wr}
+	{0x0000, 0x0000, 2, 2, 2, bk_dbg_rd, bk_dbg_wr}
 };
 
 // cpu allways read whole word from even adr

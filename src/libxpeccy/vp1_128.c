@@ -8,42 +8,51 @@ enum {
 	VP1_WR
 };
 
+// NOTE: data rate: 64mks/word
+
 // seek
 void vpseek(FDC* fdc) {
-	fdc->data = flpRd(fdc->flp, fdc->side);
-	if ((fdc->flp->field == 0) && (fdc->data == 0xa1)) {	// catch syncro byte A1
-		fdc->tdata = fdc->data;				// copy to temp register
+	// fdc->data = flpRd(fdc->flp, fdc->side);
+	// if ((fdc->flp->field == 0) && (fdc->data == 0xa1) && !fdc->mr) {	// catch syncro byte A1, and not blocked
+	if (!fdc->mr && flp_check_marker(fdc->flp, fdc->side)) {
+		fdc->tdata = 0;					// temp register
 		fdc->cnt = 0;					// next byte will complete word
 		fdc->drq = 0;					// word is still incomplete
 		fdc->crchi = 0;					// reset 'crc is valid' flag
 		fdc->crc = 0xffff;				// init crc
-		add_crc_16(fdc, 0xa1);				// add 1st byte to crc
+		// add_crc_16(fdc, fdc->data);			// add 1st byte to crc
 		fdc->state = VP1_RD;				// move to reading
 		fdc->pos = 1;
+		fdc->wait = -1;	// doing next step immediately
+//		fdc->xirq(IRQ_BRK, fdc->xptr);
+	} else {
+		flpNext(fdc->flp, fdc->side);
+		fdc->wait += fdc->bytedelay * 2;
 	}
-	flpNext(fdc->flp, fdc->side);
-	fdc->wait += fdc->bytedelay;
 }
 
 void vpread(FDC* fdc) {
 	fdc->tdata <<= 8;		// shift temp register
-	fdc->data = flpRd(fdc->flp, fdc->side);	// read next byte from floppy
+	fdc->data = flpRd(fdc->flp, fdc->side);	// read byte from floppy
 	fdc->tdata |= fdc->data;	// add it to temp register
-	add_crc_16(fdc, fdc->data);	// add it to crc. crc will be 0 after reading crc (hi-low)
-	if (fdc->crc == 0)		// if crc is valid now, set flag
-		fdc->crchi = 1;
-	fdc->cnt++;			// inc byte counter
+	// add_crc_16(fdc, fdc->data);	// add it to crc. crc will be 0 after reading crc (hi-low)
+	//if (fdc->crc == 0)		// if crc is valid now, set flag
+	//	fdc->crchi = 1;
 	if (fdc->cnt & 1) {		// each 2nd byte (starting from 0) - move word from temp register to data register and set drq
 		fdc->wdata = fdc->tdata;
+		add_crc_16(fdc, (fdc->wdata >> 8) & 0xff);	// add whole word
+		add_crc_16(fdc, fdc->wdata & 0xff);
 		fdc->drq = 1;
 	}
+	fdc->cnt++;			// inc byte counter
 	flpNext(fdc->flp, fdc->side);	// move to next byte
-	fdc->wait += fdc->bytedelay;		// set 32mks delay
+	fdc->wait += fdc->bytedelay * 2;
 }
 
+// simulate
 void vpwrite(FDC* fdc) {
 		flpNext(fdc->flp, fdc->side);
-		fdc->wait += fdc->bytedelay;
+		fdc->wait += fdc->bytedelay * 2;
 }
 
 static fdcCall vpSpin[] = {vpseek, vpread, vpwrite, NULL};
@@ -71,11 +80,11 @@ unsigned short vp1_rd(FDC* fdc, int port) {
 		fdc->drq = 0;
 	} else {
 		if (fdc->flp->trk == 0) res |= 1;
-		res |= 2;
+		if (fdc->flp->insert && fdc->flp->door && fdc->flp->motor) res |= 2;
 		if (fdc->flp->protect) res |= 4;
 		if (fdc->drq) res |= 0x80;
-		if (fdc->crchi) res |= 0x4000;
-		if (fdc->flp->index && fdc->flp->insert && fdc->flp->door && fdc->flp->motor)
+		if (!fdc->crc) res |= 0x4000;		// crc==0 is correct
+		if (fdc->flp->index && (res & 2)) /* && fdc->flp->insert && fdc->flp->door && fdc->flp->motor) */
 			res |= 0x8000;
 	}
 	return res;
@@ -86,15 +95,17 @@ unsigned short vp1_rd(FDC* fdc, int port) {
 // 5	0:upper head, 1:bottom head
 // 6	step dir
 // 7	step
-// 8	start reading (1 -> 0: set state to seek)
+// 8	start reading
 // 9	??? write marker
 // 10	???
+
+// TODO: check step bits
+// TODO: check vm->bk->fdc (double writing)
 void vp1_wr(FDC* fdc, int port, unsigned short val) {
 	if (port & 1) {
 		// data
 	} else {
-		// printf("wr %.4X\n",val);
-		fdc->flp->motor = 0;
+		// printf("vp1 wr %.4X\n",val);
 		if (val & 1) {
 			fdc->flp = fdc->flop[0];
 		} else if (val & 2) {
@@ -104,7 +115,7 @@ void vp1_wr(FDC* fdc, int port, unsigned short val) {
 		} else if (val & 8) {
 			fdc->flp = fdc->flop[3];
 		}
-		fdc->flp->motor = (val & 0x10) ? 1 : 0;
+		fdc->flp->motor = !!(val & 0x10);
 		if (fdc->flp->motor) {
 			fdc->plan = vpSpin;
 			fdc->pos = 0;
@@ -113,19 +124,21 @@ void vp1_wr(FDC* fdc, int port, unsigned short val) {
 			fdc->plan = NULL;
 		}
 		fdc->side = (val & 0x20) ? 1 : 0;
-		if (val & 0x80)
+//		printf("vp1 step:%i dir:%i\n",!!(val & 0x80),!!(val & 0x40));
+//		fdc->xirq(IRQ_BRK, fdc->xptr);
+		if (val & 0x80) {
 			flpStep(fdc->flp, (val & 0x40) ? FLP_FORWARD : FLP_BACK);
+		}
+		// NOTE: b8=1:enter seek phase, skip markers (don't start reading); b8=0:enable marker detection
 		if (val & 0x100) {
 			fdc->mr = 1;
+			fdc->state = VP1_SEEK;
+			fdc->pos = 0;
+			fdc->drq = 0;
 		} else {
-			if (fdc->mr) {
-				fdc->state = VP1_SEEK;
-				fdc->pos = 0;
-				fdc->drq = 0;
-			}
-			fdc->mr = 0;
+			fdc->mr = 0;		// unblock marker detection
 		}
-		if (val & 0x200) {
+		if (val & 0x200) {		// in write mode: write next byte as 'marker'
 			// b9
 		}
 	}
