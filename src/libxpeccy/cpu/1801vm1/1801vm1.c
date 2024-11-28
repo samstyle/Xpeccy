@@ -4,6 +4,9 @@
 #include <stdio.h>
 #include <string.h>
 
+void vm1_init(CPU* cpu) {cpu->gen = 0;}
+void vm2_init(CPU* cpu) {cpu->gen = 2;}
+
 // nod: b0:write MSB(1)/LSB(0)
 void pdp_wrb(CPU* cpu, int adr, int val) {	// val is 00..FF
 	if (adr & 1) {
@@ -31,7 +34,7 @@ int pdp_rd(CPU* cpu, int adr) {
 
 // read byte = read word and take high or low byte from there
 int pdp_rdb(CPU* cpu, int adr) {
-	int wrd = pdp_rd(cpu, adr);
+	int wrd = pdp_rd(cpu, adr & ~1);
 	return ((adr & 1) ? (wrd >> 8) : wrd) & 0xff;
 }
 
@@ -47,7 +50,7 @@ void pdp11_reset(CPU* cpu) {
 	cpu->f = 0xe0;
 	cpu->intrq = 0;
 	cpu->inten = 0xff;
-	cpu->wait = 0;
+	//cpu->wait = 0;
 	cpu->halt = 0;
 	cpu->timer.flag = 0x01;
 }
@@ -93,22 +96,22 @@ int pdp11_int(CPU* cpu) {
 		cpu->intrq &= ~PDP_INT_IRQ1;
 		if (!(cpu->fv.f10 | cpu->fv.f11)) {
 			cpu->mcir = 3;
-			pdp_trap(cpu, 0160002);
-			cpu->wait = 0;
+			//pdp_trap(cpu, 0160002);
+			//cpu->wait = 0;
 		}
 	} else if (cpu->intrq & PDP_INT_IRQ2) {
 		cpu->intrq &= ~PDP_INT_IRQ2;
 		if (!(cpu->fv.f10 | cpu->fv.f7)) {
 			cpu->mcir = 5;
-			pdp_trap(cpu, 0100);			// #40 = 100(8)
-			cpu->wait = 0;
+			//pdp_trap(cpu, 0100);			// #40 = 100(8)
+			//cpu->wait = 0;
 		}
 	} else if (cpu->intrq & PDP_INT_IRQ3) {
 		cpu->intrq &= ~PDP_INT_IRQ3;
 		if (!(cpu->fv.f10 | cpu->fv.f7)) {
 			cpu->mcir = 5;
-			pdp_trap(cpu, 0270);			// #b8 = 270(8)
-			cpu->wait = 0;
+			//pdp_trap(cpu, 0270);			// #b8 = 270(8)
+			//cpu->wait = 0;
 		}
 	} else if (cpu->intrq & PDP_INT_VIRQ) {
 		cpu->intrq &= ~PDP_INT_VIRQ;
@@ -119,7 +122,7 @@ int pdp11_int(CPU* cpu) {
 		cpu->intrq &= ~PDP_INT_TIMER;
 		cpu->mcir = 5;
 		//pdp_trap(cpu, 0270);
-		cpu->wait = 0;
+		//cpu->wait = 0;
 	} else {
 		res = 0;
 	}
@@ -236,6 +239,7 @@ static int twres;
 
 void pdp_undef(CPU* cpu) {
 	printf("undef command %.4X : %.4X\n", cpu->preg[7] - 2, cpu->com);
+	cpu->xirq(IRQ_BRK, cpu->xptr);
 //	assert(0);
 	cpu->mcir = 5;
 	cpu->vsel = 2;
@@ -246,17 +250,22 @@ void pdp_undef(CPU* cpu) {
 
 // 0000:halt
 void pdp_halt(CPU* cpu) {
+	/*
 	cpu->mcir = 3;	// 011		// 01x - store pc/f @ 0177674
 	cpu->vsel = 11;	// 1011
 	printf("halt\n");
 	// cpu->halt = 1;
 	pdp_trap(cpu, 0160002);
+	*/
 }
 
 // 0001:wait
 void pdp_wait(CPU* cpu) {
 	// cpu->mcir = 0;
-	cpu->wait = 1;
+	//cpu->wait = 1;
+	if (!(cpu->intrq & cpu->inten)) {
+		cpu->preg[7] = cpu->oldpc;
+	}
 }
 
 // 0002:rti
@@ -270,6 +279,7 @@ void pdp_rti(CPU* cpu) {
 	cpu->preg[6] += 2;
 	cpu->f &= 0xff;
 	if (cpu->fv.t) {
+		cpu->fv.t = 0;		// RTI/RTT clears T-flag
 		cpu->mcir = 5;
 		cpu->vsel = 3;
 		pdp_trap(cpu, 014);
@@ -306,6 +316,7 @@ void pdp_rtt(CPU* cpu) {
 	cpu->f = pdp_rd(cpu, cpu->preg[6]) & 0xffff;
 	cpu->preg[6] += 2;
 	cpu->f &= 0xff;
+	cpu->fv.t = 0;
 }
 
 // 0007..000A : start
@@ -1016,30 +1027,125 @@ void pdp_8xxx(CPU* cpu) {
 
 // 07xxxx
 
+// 070rss	mul ss,Rn	Rn,Rn+1 = Rn * ss
 void pdp_mul(CPU* cpu) {
-	pdp_undef(cpu);
+	if (cpu->gen < 1) {
+		pdp_undef(cpu);
+	} else {
+		signed short src = pdp_src(cpu, cpu->com, 0);
+		int rn = (cpu->com >> 6) & 7;		// reg number
+		signed int res = src * (signed short)cpu->preg[rn];
+		cpu->preg[rn] = (res >> 16) & 0xffff;
+		cpu->preg[rn | 1] = res & 0xffff;
+		cpu->fv.n = !!(res < 0);
+		cpu->fv.z = !res;
+		cpu->fv.v = 0;
+		cpu->fv.c = !!((res < -(2 << 15)) || (res >= ((2 << 15) - 1)));
+	}
 }
 
+// 071rss	div
 void pdp_div(CPU* cpu) {
-	pdp_undef(cpu);
+	if (cpu->gen < 1) {
+		pdp_undef(cpu);
+	} else {
+		int rn = (cpu->com >> 6) & 6;	// & 7 ?
+		signed int src = (cpu->preg[rn] << 16) | cpu->preg[rn | 1];
+		unsigned short dst = pdp_src(cpu, cpu->com, 0);
+		if (dst == 0) {
+			cpu->fv.c = 1;
+		} else {
+			int res = src / dst;
+			int mod = src % dst;
+			cpu->preg[rn] = res & 0xffff;
+			cpu->preg[rn | 1] = mod & 0xffff;
+			cpu->fv.n = !!(res < 0);
+			cpu->fv.z = !res;
+			cpu->fv.v = !!((src == 0) || (res < -(2 << 15)) || (res > (2 << 15) - 1));
+			cpu->fv.c = 0;
+		}
+	}
 }
 
+// 072rss	ash
 void pdp_ash(CPU* cpu) {
-	pdp_undef(cpu);
+	if (cpu->gen < 1) {
+		pdp_undef(cpu);
+	} else {
+		twsrc = pdp_src(cpu, cpu->com, 0) & 0x3f;
+		int rn = (cpu->com >> 6) & 7;
+		twdst = cpu->preg[rn];
+		twres = twdst;
+		if (twsrc & 0x20) {	// shift right
+			twsrc = 0x40 - twsrc;
+			while (twsrc) {
+				cpu->fv.c = twdst & 1;
+				twdst = (twdst & 0x8000) | (twdst >> 1);
+				twsrc--;
+			}
+		} else {		// shift left
+			while (twsrc) {
+				cpu->fv.c = !!(twdst & 0x8000);
+				twdst <<= 1;
+				twsrc--;
+			}
+		}
+		cpu->preg[rn] = twdst;
+		cpu->fv.n = !!(twdst & 0x8000);
+		cpu->fv.z = !twdst;
+		cpu->fv.v = !!((twres ^ twdst) & 0x8000);	// sign changed?
+	}
 }
 
+// 073rss	ashc
 void pdp_ashc(CPU* cpu) {
-	pdp_undef(cpu);
+	if (cpu->gen < 1) {
+		pdp_undef(cpu);
+	} else {
+		twsrc = pdp_src(cpu, cpu->com, 0) & 0x3f;
+		int rn = (cpu->com >> 6) & 7;
+		twres = (cpu->preg[rn] << 16) | (cpu->preg[rn | 1]);
+		twdst = cpu->preg[rn];
+		if (twsrc & 0x20) {
+			twsrc = 0x40 - twsrc;
+			while (twsrc) {
+				cpu->fv.c = twres & 1;
+				twres >>= 1;		// sign?
+				twsrc--;
+			}
+		} else {
+			while (twsrc) {
+				cpu->fv.c = !!(twres & (1 << 31));
+				twres <<= 1;
+				twsrc--;
+			}
+		}
+		cpu->preg[rn] = (twres >> 16) & 0xffff;
+		cpu->preg[rn | 1] = twres & 0xffff;
+		cpu->fv.n = !!(twres & (1 << 31));
+		cpu->fv.z = !twres;
+		cpu->fv.v = !!((cpu->preg[rn] ^ twdst) & 0x8000);	// sign changed?
+	}
 }
 
+// 074rss	xor Rn,ss	ss ^= Rn
 void pdp_xor(CPU* cpu) {
 	twsrc = pdp_src(cpu, cpu->com, 0);
 	twsrc ^= cpu->preg[(cpu->com >> 6) & 7];
-	//cpu->f &= ~(PDP_FV | PDP_FZ | PDP_FN);
 	cpu->fv.v = 0;
 	cpu->fv.z = !twsrc;
 	cpu->fv.n = !!(twsrc & 0x8000);
 	pdp_wres(cpu, cpu->com, twsrc);
+}
+
+// for VM2 only:
+// 07500r	fadd
+// 07501r	fsub
+// 07502r	fmul
+// 07503r	fdiv
+
+void pdp_075x(CPU* cpu) {
+	pdp_undef(cpu);
 }
 
 // 07ruu
@@ -1054,7 +1160,7 @@ void pdp_sob(CPU* cpu) {
 
 static cbcpu pdp_7nxx_tab[8] = {
 	pdp_mul, pdp_div, pdp_ash, pdp_ashc,
-	pdp_xor, pdp_undef, pdp_undef, pdp_sob
+	pdp_xor, pdp_075x, pdp_undef, pdp_sob
 };
 
 void pdp_7xxx(CPU* cpu) {
@@ -1298,8 +1404,10 @@ int pdp11_exec(CPU* cpu) {
 //	printf("%.4X : %.4X\n", cpu->preg[7], pdp_rd(cpu, cpu->preg[7]));
 #endif
 	cpu->preg[7] = cpu->pc;
-	if (cpu->halt) return 4;
-	cpu->t = cpu->wait ? 8 : 0;
+	cpu->oldpc = cpu->pc;
+	//if (cpu->halt) return 4;
+	//cpu->t = cpu->wait ? 8 : 0;
+	cpu->t = 0;
 	if (cpu->inten & cpu->intrq)
 		cpu->t += pdp11_int(cpu);
 	if (cpu->t == 0) {
@@ -1441,8 +1549,10 @@ static xPdpDasm pdp11_dasm_tab[] = {
 	{0xf000, 0x4000, 0, "bic :s, :d"},
 	{0xf000, 0x5000, 0, "bis :s, :d"},
 	{0xf000, 0x6000, 0, "add :s, :d"},
-//	{0xfe00, 0x7000, 0, "mul r:6, :d"},
-//	{0xfe00, 0x7200, 0, "div r:6, :d"},
+	{0xfe00, 0x7000, 0, "* mul :d, r:6"},
+	{0xfe00, 0x7200, 0, "* div :d, r:6"},
+	{0xfe00, 0x7400, 0, "* ash :d, r:6"},
+	{0xfe00, 0x7600, 0, "* ashc :d, r:6"},
 	{0xfe00, 0x7800, 0, "xor r:6, :d"},
 	{0xfe00, 0x7e00, OF_SKIPABLE, "sob r:6, :j"},		// :j = lower 6 bits, back relative adr
 	{0xff00, 0x8000, 0, "bpl :e"},

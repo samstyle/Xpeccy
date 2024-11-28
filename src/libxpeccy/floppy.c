@@ -53,8 +53,8 @@ void flpWr(Floppy* flp, int hd, unsigned char val) {
 unsigned char flpRd(Floppy* flp, int hd) {
 	flp->rd = 1;
 	hd &= 1;
-	if (!(flp->insert && flp->door)) return 0xff;
-	if (hd && !flp->doubleSide) return 0xff;
+	if (!(flp->insert && flp->door)) return 0x00;
+	if (hd && !flp->doubleSide) return 0x00;
 	return flp->data[(flp->trk << 1) | hd].byte[flp->pos];
 }
 
@@ -146,8 +146,8 @@ int flp_format_trk_buf(int trk, int spt, int slen, int trklen, char* data, unsig
 	} else {
 		ptr = buf;
 		slen = t;
-		spc = (trklen - 20) / spt;
-		spc -= (72 + slen);		// space 3 size
+		spc = (trklen - 32) / spt;	// 20
+		spc -= (80 + slen);		// 72 // calc space 3 size
 		spc &= ~1;			// make it even (for BK disk system)
 		if (spc < 10) {
 			res = 0;
@@ -156,6 +156,7 @@ int flp_format_trk_buf(int trk, int spt, int slen, int trklen, char* data, unsig
 			tr = trk >> 1;
 			memset(ptr, 0x4e, trklen);
 			ptr += 12;
+			memset(ptr, 0x00, 12); ptr += 12;
 			memcpy(ptr, trk_mark, 4); ptr += 4;
 			for (sc = 1; sc <= spt; sc++) {
 				ptr += 10;
@@ -169,7 +170,7 @@ int flp_format_trk_buf(int trk, int spt, int slen, int trklen, char* data, unsig
 				crc = getCrc(stp, ptr - stp);
 				*(ptr++) = (crc >> 8) & 0xff;
 				*(ptr++) = crc & 0xff;
-				ptr += 22;
+				ptr += 28;	// 22
 				memset(ptr, 0x00, 12); ptr += 12;
 				stp = ptr;
 				memcpy(ptr, dat_mark, 4); ptr += 4;

@@ -100,7 +100,11 @@ int vgSendByte(FDC* fdc) {
 // get byte Floppy->FDC (rd commands)
 int vgGetByte(FDC* fdc) {
 	int res = 0;
-	if (turbo) {
+	if (!fdc->flp->insert || !fdc->flp->door || !fdc->flp->motor) {		// is flp ready?
+		// fdc->state |= 0x04;		// data lost (TODO:check)
+		fdc->data = 0x00;
+		res = 2;
+	} else if (turbo) {
 		if (fdc->drq) {
 			if (fdc->tns > fdc->bytedelay) {
 				fdc->state |= 0x04;
@@ -332,22 +336,26 @@ void vgrds00(FDC* fdc) {
 
 // seek right sector ADR
 void vgrds01(FDC* fdc) {
-	int res = seekADR(fdc);
-	if (res == 2) {
-		fdc->cnt--;
-		if (fdc->cnt < 1) {
-			fdc->state |= 0x10;							// sector not found
-			vgstp(fdc);
-		}
-	} else if (res == 1) {
-		if ((fdc->buf[0] == fdc->trk) && (fdc->buf[2] == fdc->sec)) {			// check TRK,SEC
-			if ((~fdc->com & 2) || (fdc->buf[1] == ((fdc->com & 8) ? 1 : 0))) {	// check HEAD (s, if c=1)
-				if (fdc->crc != fdc->fcrc) {					// check CRC
-					fdc->state |= 0x08;					// ADR crc error
-					vgstp(fdc);
-				} else {
-					fdc->cnt = 52;						// DATA must be in next (22 + 30) bytes
-					fdc->pos++;						// ADR found, next step
+	if (!(fdc->flp->insert && fdc->flp->door)) {
+		vgstp(fdc);
+	} else {
+		int res = seekADR(fdc);
+		if (res == 2) {
+			fdc->cnt--;
+			if (fdc->cnt < 1) {
+				fdc->state |= 0x10;							// sector not found
+				vgstp(fdc);
+			}
+		} else if (res == 1) {
+			if ((fdc->buf[0] == fdc->trk) && (fdc->buf[2] == fdc->sec)) {			// check TRK,SEC
+				if ((~fdc->com & 2) || (fdc->buf[1] == ((fdc->com & 8) ? 1 : 0))) {	// check HEAD (s, if c=1)
+					if (fdc->crc != fdc->fcrc) {					// check CRC
+						fdc->state |= 0x08;					// ADR crc error
+						vgstp(fdc);
+					} else {
+						fdc->cnt = 52;						// DATA must be in next (22 + 30) bytes
+						fdc->pos++;						// ADR found, next step
+					}
 				}
 			}
 		}

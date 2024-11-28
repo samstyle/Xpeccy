@@ -58,8 +58,9 @@ void bk11_kbd_wr(Computer* comp, int adr, int val) {
 	comp->reg[0xb2] = (val >> 8) & 0xff;
 // b9-12 = palette
 	comp->vid->paln = (val >> 9) & 0x0f;
-// b14: 0=enable 48.5Hz timer with interrupt 100
-// b15: disable 'STOP' key interrupt
+// b14: system timer off
+// b15: 0:scr.page5, 1:scr.page6
+	comp->vid->curscr = !!(val & 0x8000);
 }
 
 // scroller

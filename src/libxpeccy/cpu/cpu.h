@@ -134,7 +134,8 @@ enum {
 	CPU_I80286,		// IBM
 	CPU_LR35902,		// GB, GBC
 	CPU_6502,		// NES, Commodore
-	CPU_VM1			// BK
+	CPU_VM1,		// BK
+	CPU_VM2
 };
 
 struct CPU {
@@ -305,6 +306,7 @@ struct CPU {
 
 struct cpuCore {
 	int type;				// cpu type
+	int gen;				// cpu generation
 	const char* name;			// printable name
 	xRegDsc* rdsctab;			// registers descriptors table
 	void (*init)(CPU*);			// call it when core changed

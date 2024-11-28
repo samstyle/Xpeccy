@@ -96,8 +96,8 @@ unsigned short vp1_rd(FDC* fdc, int port) {
 // 6	step dir
 // 7	step
 // 8	start reading
-// 9	??? write marker
-// 10	???
+// 9	write marker
+// 10	pre-correction (?)
 
 // TODO: check step bits
 // TODO: check vm->bk->fdc (double writing)

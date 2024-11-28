@@ -69,6 +69,9 @@ typedef struct {
 void pdp11_reset(CPU*);
 int pdp11_exec(CPU*);
 
+void vm1_init(CPU*);
+void vm2_init(CPU*);
+
 xMnem pdp11_mnem(CPU*, int, cbdmr, void*);
 xAsmScan pdp11_asm(const char*, char*);
 
