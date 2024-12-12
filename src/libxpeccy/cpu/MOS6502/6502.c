@@ -105,7 +105,7 @@ xMnem m6502_mnem(CPU* cpu, int qadr, cbdmr mrd, void* data) {
 	return mn;
 }
 
-xAsmScan m6502_asm(const char* cbuf, char* buf) {
+xAsmScan m6502_asm(int adr, const char* cbuf, char* buf) {
 	xAsmScan res = scanAsmTab(cbuf, mosTab);
 	res.ptr = buf;
 	if (res.match) {

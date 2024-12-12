@@ -149,7 +149,7 @@ void i286_init(CPU*);
 void i8086_init(CPU*);
 void i286_reset(CPU*);
 int i286_exec(CPU*);
-xAsmScan i286_asm(const char*, char*);
+xAsmScan i286_asm(int, const char*, char*);
 xMnem i286_mnem(CPU*, int, cbdmr, void*);
 void i286_get_regs(CPU*, xRegBunch*);
 void i286_set_regs(CPU*, xRegBunch);

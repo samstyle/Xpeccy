@@ -38,7 +38,7 @@ int i8080_exec(CPU* cpu) {
 	return cpu->t;
 }
 
-xAsmScan i8080_asm(const char* cbuf, char* buf) {
+xAsmScan i8080_asm(int adr, const char* cbuf, char* buf) {
 	xAsmScan res = scanAsmTab(cbuf, i8080_tab);
 	res.ptr = buf;
 	if (res.match)

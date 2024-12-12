@@ -256,7 +256,7 @@ xMnem z80_mnem(CPU* cpu, int qadr, cbdmr mrd, void* data) {
 
 // asm
 
-xAsmScan z80_asm(const char* cbuf, char* buf) {
+xAsmScan z80_asm(int adr, const char* cbuf, char* buf) {
 	xAsmScan res = scanAsmTab(cbuf, npTab);
 	res.ptr = buf;
 	if (!res.match) {

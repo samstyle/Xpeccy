@@ -92,7 +92,7 @@ int lr_exec(CPU* cpu) {
 
 // disasm
 
-xAsmScan lr_asm(const char* cbuf, char* buf) {
+xAsmScan lr_asm(int adr, const char* cbuf, char* buf) {
 	xAsmScan res = scanAsmTab(cbuf, lrTab);
 	res.ptr = buf;
 	if (!res.match) {

@@ -524,7 +524,7 @@ xRegDsc i8086RegTab[] = {
 	{REG_NONE, "", 0, 0}
 };
 
-xAsmScan i286_asm(const char* mnm, char* buf) {
+xAsmScan i286_asm(int adr, const char* mnm, char* buf) {
 	xAsmScan res;
 	res.match = 0;
 	return res;

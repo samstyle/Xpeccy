@@ -35,7 +35,7 @@ void nil_reset(CPU* cpu) {}
 int nil_exec(CPU* cpu) {return 1;}
 int nil_int(CPU* cpu) {return 1;}
 int nil_nmi(CPU* cpu) {return 1;}
-xAsmScan nil_asm(const char* com, char* buf) {
+xAsmScan nil_asm(int adr, const char* com, char* buf) {
 	xAsmScan res;
 	res.match = 0;
 	return res;
@@ -312,7 +312,7 @@ int cpuAsm(CPU* cpu, const char* com, char* buf, unsigned short adr) {
 		ptr++;
 	}
 
-	xAsmScan res = cpu->asmbl(cbuf, buf);
+	xAsmScan res = cpu->asmbl(adr, cbuf, buf);
 	if (res.match) {
 		ptr = res.ptr;
 		zptr = res.op->mnem;

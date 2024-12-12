@@ -61,7 +61,7 @@ enum {
 
 void z80_reset(CPU*);
 int z80_exec(CPU*);
-xAsmScan z80_asm(const char*, char*);
+xAsmScan z80_asm(int, const char*, char*);
 xMnem z80_mnem(CPU*, int, cbdmr, void*);
 
 void z80_get_regs(CPU*, xRegBunch*);

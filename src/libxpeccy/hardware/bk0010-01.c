@@ -495,7 +495,7 @@ sndPair bk_vol(Computer* comp, sndVolume* sv) {
 
 void bk_init(Computer* comp) {
 	fdc_set_hd(comp->dif->fdc, 0);
-	vid_upd_timings(comp->vid, 302);
+	vid_upd_timings(comp->vid, 200);	// 302
 }
 
 // keys

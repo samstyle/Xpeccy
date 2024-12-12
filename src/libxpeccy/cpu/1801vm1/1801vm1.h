@@ -58,6 +58,13 @@ typedef struct {
 } vm1flag_t;
 #endif
 
+typedef struct {
+	unsigned short mask;
+	unsigned short code;
+	int flag;
+	const char* mnem;
+} xPdpDasm;
+
 #define PDP_INT_IRQ1	(1 << 0)
 #define PDP_INT_IRQ2	(1 << 1)
 #define PDP_INT_IRQ3	(1 << 2)
@@ -73,7 +80,7 @@ void vm1_init(CPU*);
 void vm2_init(CPU*);
 
 xMnem pdp11_mnem(CPU*, int, cbdmr, void*);
-xAsmScan pdp11_asm(const char*, char*);
+xAsmScan pdp11_asm(int, const char*, char*);
 
 void pdp11_get_regs(CPU*, xRegBunch*);
 void pdp11_set_regs(CPU*, xRegBunch);

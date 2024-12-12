@@ -50,7 +50,7 @@ void pdp11_reset(CPU* cpu) {
 	cpu->f = 0xe0;
 	cpu->intrq = 0;
 	cpu->inten = 0xff;
-	//cpu->wait = 0;
+	cpu->wait = 0;
 	cpu->halt = 0;
 	cpu->timer.flag = 0x01;
 }
@@ -96,8 +96,10 @@ int pdp11_int(CPU* cpu) {
 		cpu->intrq &= ~PDP_INT_IRQ1;
 		if (!(cpu->fv.f10 | cpu->fv.f11)) {
 			cpu->mcir = 3;
-			//pdp_trap(cpu, 0160002);
-			//cpu->wait = 0;
+			if (cpu->wait) {
+				cpu->preg[7] += 2;
+				cpu->wait = 0;
+			}
 		}
 	} else if (cpu->intrq & PDP_INT_IRQ2) {
 		cpu->intrq &= ~PDP_INT_IRQ2;
@@ -117,7 +119,7 @@ int pdp11_int(CPU* cpu) {
 		cpu->intrq &= ~PDP_INT_VIRQ;
 		cpu->mcir = 5;
 		pdp_trap(cpu, cpu->intvec);
-		cpu->wait = 0;
+		//cpu->wait = 0;
 	} else if (cpu->intrq & PDP_INT_TIMER) {		// timer
 		cpu->intrq &= ~PDP_INT_TIMER;
 		cpu->mcir = 5;
@@ -125,6 +127,10 @@ int pdp11_int(CPU* cpu) {
 		//cpu->wait = 0;
 	} else {
 		res = 0;
+	}
+	if (res && cpu->wait) {			// exit from wait
+		cpu->preg[7] += 2;
+		cpu->wait = 0;
 	}
 	return res;
 }
@@ -239,8 +245,7 @@ static int twres;
 
 void pdp_undef(CPU* cpu) {
 	printf("undef command %.4X : %.4X\n", cpu->preg[7] - 2, cpu->com);
-	cpu->xirq(IRQ_BRK, cpu->xptr);
-//	assert(0);
+//	cpu->xirq(IRQ_BRK, cpu->xptr);
 	cpu->mcir = 5;
 	cpu->vsel = 2;
 	pdp_trap(cpu, 010);
@@ -263,9 +268,8 @@ void pdp_halt(CPU* cpu) {
 void pdp_wait(CPU* cpu) {
 	// cpu->mcir = 0;
 	//cpu->wait = 1;
-	if (!(cpu->intrq & cpu->inten)) {
-		cpu->preg[7] = cpu->oldpc;
-	}
+	cpu->wait = 1;
+	cpu->preg[7] = cpu->oldpc;
 }
 
 // 0002:rti
@@ -1281,13 +1285,13 @@ void pdp_bic(CPU* cpu) {
 
 void pdp_bicb(CPU* cpu) {
 	twsrc = pdp_src(cpu, cpu->com >> 6, 1) & 0xff;
-	twdst = pdp_src(cpu, cpu->com, 1);
+	twdst = pdp_src(cpu, cpu->com, 1) & 0xff;
 	twdst &= ~twsrc;			// src = 00xx; ~src = FFzz; keep high byte of dst
 	//cpu->f &= ~(PDP_FN | PDP_FV | PDP_FZ);
 	cpu->fv.v = 0;
 	cpu->fv.z = !(twdst & 0xff);
 	cpu->fv.n = !!(twdst & 0x80);
-	pdp_wresb(cpu, cpu->com, twdst);
+	pdp_wresb(cpu, cpu->com, twdst & 0xff);
 }
 
 // B5SSDD:bis (or)
@@ -1496,16 +1500,9 @@ void pdp11_set_regs(CPU* cpu, xRegBunch bunch) {
 
 // disasm
 
-typedef struct {
-	unsigned short mask;
-	unsigned short code;
-	int flag;
-	const char* mnem;
-} xPdpDasm;
-
 // TODO: maybe mov Rn,-(sp) -> push Rn | mov (sp)+, Rn -> pop Rn | rts r7 -> ret
 
-static xPdpDasm pdp11_dasm_tab[] = {
+xPdpDasm pdp11_dasm_tab[] = {
 	{0xffff, 0x0000, 0, "halt"},
 	{0xffff, 0x0001, 0, "wait"},
 	{0xffff, 0x0002, 0, "rti"},
@@ -1513,6 +1510,8 @@ static xPdpDasm pdp11_dasm_tab[] = {
 	{0xffff, 0x0004, OF_SKIPABLE, "iot"},
 	{0xffff, 0x0005, 0, "reset"},
 	{0xffff, 0x0006, 0, "rtt"},
+	{0xffff, 0x0007, 0, "start"},
+	{0xffff, 0x0008, 0, "stop"},
 	{0xffc0, 0x0040, 0, "jmp :d"},	// :d lower 6 bits dst(src)
 	{0xffff, 0x0087, 0, "ret"},	// special rts r7 = ret
 	{0xfff8, 0x0080, 0, "rts r:0"},	// :0 bits 0,1,2 number
@@ -1527,7 +1526,7 @@ static xPdpDasm pdp11_dasm_tab[] = {
 	{0xff00, 0x0600, 0, "bgt :e"},
 	{0xff00, 0x0700, 0, "ble :e"},
 	{0xffc0, 0x09c0, OF_SKIPABLE, "call :d"},		// special jsr r7,nn = call nn
-	{0xfe00, 0x0800, OF_SKIPABLE, "jsr r:6, :d"},	// :6 bits 6,7,8 number
+	{0xfe00, 0x0800, OF_SKIPABLE, "jsr r:6,:d"},	// :6 bits 6,7,8 number
 	{0xffc0, 0x0a00, 0, "clr :d"},
 	{0xffc0, 0x0a40, 0, "com :d"},
 	{0xffc0, 0x0a80, 0, "inc :d"},
@@ -1543,18 +1542,18 @@ static xPdpDasm pdp11_dasm_tab[] = {
 	{0xffc0, 0x0d40, 0, "mfpi :d"},
 	{0xffc0, 0x0d80, 0, "mtpi :d"},
 	{0xffc0, 0x0dc0, 0, "sxt :d"},
-	{0xf000, 0x1000, 0, "mov :s, :d"},	// :s = :d from bits 6-11
-	{0xf000, 0x2000, 0, "cmp :s, :d"},
-	{0xf000, 0x3000, 0, "bit :s, :d"},
-	{0xf000, 0x4000, 0, "bic :s, :d"},
-	{0xf000, 0x5000, 0, "bis :s, :d"},
-	{0xf000, 0x6000, 0, "add :s, :d"},
-	{0xfe00, 0x7000, 0, "* mul :d, r:6"},
-	{0xfe00, 0x7200, 0, "* div :d, r:6"},
-	{0xfe00, 0x7400, 0, "* ash :d, r:6"},
-	{0xfe00, 0x7600, 0, "* ashc :d, r:6"},
-	{0xfe00, 0x7800, 0, "xor r:6, :d"},
-	{0xfe00, 0x7e00, OF_SKIPABLE, "sob r:6, :j"},		// :j = lower 6 bits, back relative adr
+	{0xf000, 0x1000, 0, "mov :s,:d"},	// :s = :d from bits 6-11
+	{0xf000, 0x2000, 0, "cmp :s,:d"},
+	{0xf000, 0x3000, 0, "bit :s,:d"},
+	{0xf000, 0x4000, 0, "bic :s,:d"},
+	{0xf000, 0x5000, 0, "bis :s,:d"},
+	{0xf000, 0x6000, 0, "add :s,:d"},
+	{0xfe00, 0x7000, 0, "mul :d,r:6"},	// vm1g+
+	{0xfe00, 0x7200, 0, "div :d,r:6"},	// vm2+
+	{0xfe00, 0x7400, 0, "ash :d,r:6"},	// vm2+
+	{0xfe00, 0x7600, 0, "ashc :d,r:6"},	// vm2+
+	{0xfe00, 0x7800, 0, "xor r:6,:d"},
+	{0xfe00, 0x7e00, OF_SKIPABLE, "sob r:6,:j"},		// :j = lower 6 bits, back relative adr
 	{0xff00, 0x8000, 0, "bpl :e"},
 	{0xff00, 0x8100, 0, "bmi :e"},
 	{0xff00, 0x8200, 0, "bhi :e"},
@@ -1579,12 +1578,12 @@ static xPdpDasm pdp11_dasm_tab[] = {
 	{0xffc0, 0x8cc0, 0, "aslb :d"},
 	{0xffc0, 0x8d00, 0, "mtps :d"},
 	{0xffc0, 0x8dc0, 0, "mfps :d"},
-	{0xf000, 0x9000, 0, "movb :s, :d"},
-	{0xf000, 0xa000, 0, "cmpb :s, :d"},
-	{0xf000, 0xb000, 0, "bitb :s, :d"},
-	{0xf000, 0xc000, 0, "bicb :s, :d"},
-	{0xf000, 0xd000, 0, "bisb :s, :d"},
-	{0xf000, 0xe000, 0, "sub :s, :d"},
+	{0xf000, 0x9000, 0, "movb :s,:d"},
+	{0xf000, 0xa000, 0, "cmpb :s,:d"},
+	{0xf000, 0xb000, 0, "bitb :s,:d"},
+	{0xf000, 0xc000, 0, "bicb :s,:d"},
+	{0xf000, 0xd000, 0, "bisb :s,:d"},
+	{0xf000, 0xe000, 0, "sub :s,:d"},
 	{0x0000, 0x0000, 0, "undef"}
 };
 
@@ -1719,14 +1718,5 @@ xMnem pdp11_mnem(CPU* cpu, int qadr, cbdmr mrd, void* dat) {
 	res.mem = 0;
 	res.mop = 0;
 	res.oadr = 0;
-	return res;
-}
-
-// asm
-
-xAsmScan pdp11_asm(const char* mnm, char* buf) {
-	xAsmScan res;
-	res.match = 0;
-
 	return res;
 }

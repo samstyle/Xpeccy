@@ -85,7 +85,7 @@ typedef int(*cbdmr)(int, void*);
 #define OF_PRT		(1<<7)		// i286:protect mode only
 #define OF_MODRM	(1<<8)		// i286:mod r/m byte present
 #define OF_COMEXT	(1<<9)		// mod r/m contains command extension bits
-#define OF_GEN		(1<<10)		// opcode depends on cpu generation (86/186/286) cpu->tab is sub-table[cpu->gen]
+#define OF_GEN		(1<<10)		// opcode depends on cpu generation (86/186/286 or vm1/vm2) cpu->tab is sub-table[cpu->gen]
 #define OF_MODCOM	(OF_MODRM | OF_COMEXT)
 
 typedef struct CPU CPU;
@@ -286,7 +286,7 @@ struct CPU {
 // polymorph callbacks (depends on type)
 	void (*reset)(CPU*);
 	int (*exec)(CPU*);
-	xAsmScan (*asmbl)(const char*, char*);
+	xAsmScan (*asmbl)(int, const char*, char*);
 	xMnem (*mnem)(CPU*, int, cbdmr, void*);
 	void (*getregs)(CPU*, xRegBunch*);
 	void (*setregs)(CPU*, xRegBunch);
@@ -312,7 +312,7 @@ struct cpuCore {
 	void (*init)(CPU*);			// call it when core changed
 	void (*reset)(CPU*);			// reset
 	int (*exec)(CPU*);			// exec opcode, return T
-	xAsmScan (*asmbl)(const char*, char*);	// compile mnemonic
+	xAsmScan (*asmbl)(int,const char*, char*);	// compile mnemonic (adr,src.text,result.buf)
 	xMnem (*mnem)(CPU*, int, cbdmr, void*);
 	void (*getregs)(CPU*,xRegBunch*);	// get cpu registers: name,id,value
 	void (*setregs)(CPU*,xRegBunch);	// set cpu registers

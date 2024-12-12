@@ -41,7 +41,7 @@ enum {
 void lr_reset(CPU*);
 int lr_exec(CPU*);
 
-xAsmScan lr_asm(const char*, char*);
+xAsmScan lr_asm(int, const char*, char*);
 xMnem lr_mnem(CPU*, int, cbdmr, void*);
 
 void lr_get_regs(CPU*, xRegBunch*);
