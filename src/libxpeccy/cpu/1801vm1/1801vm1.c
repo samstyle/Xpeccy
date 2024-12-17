@@ -47,9 +47,9 @@ void pdp11_reset(CPU* cpu) {
 	cpu->t += 1016;
 	cpu->preg[7] = pdp_rd(cpu, 0xffce) & 0xff00;
 	cpu->pc = cpu->preg[7];
-	cpu->f = 0xe0;
+	cpu->f = 0x300;			// b8,9 = 11, cpu0
 	cpu->intrq = 0;
-	cpu->inten = 0xff;
+	cpu->inten = PDP_INT_IRQ2 | PDP_INT_VIRQ;
 	cpu->wait = 0;
 	cpu->halt = 0;
 	cpu->timer.flag = 0x01;
@@ -92,45 +92,47 @@ void pdp_trap(CPU* cpu, unsigned short adr) {
 
 int pdp11_int(CPU* cpu) {
 	int res = 10;
+	cpu->intrq &= cpu->inten;
+	if (cpu->intrq && cpu->wait) {
+		cpu->wait = 0;
+		cpu->preg[7] += 2;
+	}
 	if (cpu->intrq & PDP_INT_IRQ1) {
 		cpu->intrq &= ~PDP_INT_IRQ1;
-		if (!(cpu->fv.f10 | cpu->fv.f11)) {
+		if (!cpu->fv.f10) {
 			cpu->mcir = 3;
-			if (cpu->wait) {
-				cpu->preg[7] += 2;
-				cpu->wait = 0;
-			}
+			// pdp_trap(cpu, 0160002);
 		}
 	} else if (cpu->intrq & PDP_INT_IRQ2) {
 		cpu->intrq &= ~PDP_INT_IRQ2;
-		if (!(cpu->fv.f10 | cpu->fv.f7)) {
+		if (!cpu->fv.f7) {
 			cpu->mcir = 5;
-			//pdp_trap(cpu, 0100);			// #40 = 100(8)
+			pdp_trap(cpu, 0100);			// #40 = 100(8)
 			//cpu->wait = 0;
 		}
 	} else if (cpu->intrq & PDP_INT_IRQ3) {
 		cpu->intrq &= ~PDP_INT_IRQ3;
-		if (!(cpu->fv.f10 | cpu->fv.f7)) {
+		if (!cpu->fv.f7) {
 			cpu->mcir = 5;
-			//pdp_trap(cpu, 0270);			// #b8 = 270(8)
+			pdp_trap(cpu, 0270);			// #b8 = 270(8)
 			//cpu->wait = 0;
 		}
 	} else if (cpu->intrq & PDP_INT_VIRQ) {
 		cpu->intrq &= ~PDP_INT_VIRQ;
-		cpu->mcir = 5;
-		pdp_trap(cpu, cpu->intvec);
-		//cpu->wait = 0;
+		//if (!cpu->fv.f7) {
+			cpu->mcir = 5;
+			pdp_trap(cpu, cpu->intvec);
+			//cpu->wait = 0;
+		//}
 	} else if (cpu->intrq & PDP_INT_TIMER) {		// timer
 		cpu->intrq &= ~PDP_INT_TIMER;
-		cpu->mcir = 5;
-		//pdp_trap(cpu, 0270);
-		//cpu->wait = 0;
+		if (!cpu->fv.f7) {
+			cpu->mcir = 5;
+			//pdp_trap(cpu, 0270);
+			//cpu->wait = 0;
+		}
 	} else {
 		res = 0;
-	}
-	if (res && cpu->wait) {			// exit from wait
-		cpu->preg[7] += 2;
-		cpu->wait = 0;
 	}
 	return res;
 }
@@ -255,21 +257,19 @@ void pdp_undef(CPU* cpu) {
 
 // 0000:halt
 void pdp_halt(CPU* cpu) {
-	/*
-	cpu->mcir = 3;	// 011		// 01x - store pc/f @ 0177674
-	cpu->vsel = 11;	// 1011
-	printf("halt\n");
+//	cpu->mcir = 3;	// 011		// 01x - store pc/f @ 0177674
+//	cpu->vsel = 11;	// 1011
+//	printf("halt\n");
 	// cpu->halt = 1;
-	pdp_trap(cpu, 0160002);
-	*/
+//	pdp_trap(cpu, 0160002);
 }
 
 // 0001:wait
 void pdp_wait(CPU* cpu) {
 	// cpu->mcir = 0;
-	//cpu->wait = 1;
 	cpu->wait = 1;
-	cpu->preg[7] = cpu->oldpc;
+	cpu->preg[7] -= 2;
+	cpu->pc = cpu->preg[7];
 }
 
 // 0002:rti
@@ -987,7 +987,7 @@ void pdp_8cxx(CPU* cpu) {
 
 void pdp_mtps(CPU* cpu) {
 	twsrc = pdp_src(cpu, cpu->com, 1);
-	twsrc &= 0xef;
+	twsrc &= 0xef;		// T flag, b8..15 is not affected
 	cpu->f &= 0xff10;
 	cpu->f |= twsrc;
 }
@@ -999,7 +999,7 @@ void pdp_mtps(CPU* cpu) {
 // C: not affected
 void pdp_mfps(CPU* cpu) {
 	cpu->mptr = pdp_adr(cpu, cpu->com, 1);
-	twsrc = cpu->f;
+	twsrc = cpu->f & 0xff;
 	if (twsrc & 0x80) twsrc |= 0xff00;
 	if (cpu->com & 0x38) {
 		pdp_wrb(cpu, cpu->mptr, twsrc & 0xff);
@@ -1447,7 +1447,7 @@ xRegDsc pdp11RegTab[] = {
 };
 
 static char* regNames[8] = {"R0","R1","R2","R3","R4","R5","SP","PC"};
-static char* pdpFlags = "---TNZVC";
+static char* pdpFlags = "I--TNZVC";
 
 unsigned short pdp_get_reg(CPU* cpu, int id) {
 	unsigned short res = 0;
@@ -1515,8 +1515,8 @@ xPdpDasm pdp11_dasm_tab[] = {
 	{0xffc0, 0x0040, 0, "jmp :d"},	// :d lower 6 bits dst(src)
 	{0xffff, 0x0087, 0, "ret"},	// special rts r7 = ret
 	{0xfff8, 0x0080, 0, "rts r:0"},	// :0 bits 0,1,2 number
-	{0xfff0, 0x00a0, 0, "cf :f"},	// :f lower 4 bits flags
-	{0xfff0, 0x00b0, 0, "sf :f"},
+	{0xfff0, 0x00a0, 0, "cl :f"},	// :f lower 4 bits flags
+	{0xfff0, 0x00b0, 0, "se :f"},
 	{0xffc0, 0x00c0, 0, "swab :d"},
 	{0xff00, 0x0100, 0, "br :e"},	// :e relative jump
 	{0xff00, 0x0200, 0, "bne :e"},
@@ -1628,13 +1628,11 @@ char* put_addressation(char* dst, unsigned short type) {
 		case 7: *(dst++) = '@';				// @E(Rn)
 		case 6: if ((type & 7) == 7) {			// E(Rn)
 				*(dst++) = '(';
-				// *(dst++) = '#';
 				*(dst++) = ':';			// (E + PC)
-				*(dst++) = '6';
+				*(dst++) = '6';			// :6 will be replaced with adr+imm.word
 				*(dst++) = ')';
 			} else {
-				// *(dst++) = '#';
-				*(dst++) = ':';			// :8 will be replaced with next word
+				*(dst++) = ':';			// :8 will be replaced with imm.word
 				*(dst++) = '8';
 				*(dst++) = '(';
 				strcpy(dst, regNames[type & 7]);

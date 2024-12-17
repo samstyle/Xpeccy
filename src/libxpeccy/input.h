@@ -172,14 +172,19 @@ typedef struct {
 } keyEntry;
 
 typedef struct {
-	unsigned reset:1;		// RES signal to CPU
+//	unsigned reset:1;		// RES signal to CPU
 	unsigned used:1;
 	unsigned caps:1;
 	unsigned shift:1;
 	unsigned lang:1;
+
+	unsigned inten:1;		// interrupt enabled
+	unsigned kpress:1;		// key pressed
+	unsigned drq:1;			// keyboard buffer have data
+
 	unsigned char port;		// high byte of xxFE port
 	int mode;
-	unsigned char flag;
+	int flag;
 	// callbacks
 	cbirq xirq;
 	void* xptr;
@@ -207,7 +212,7 @@ typedef struct {
 	unsigned long outbuf;	// 0 = empty, else key scancode
 	keyEntry kent;
 	int per;
-	int kdel;		// pc:delay after 1st pres
+	int kdel;		// pc:delay after 1st press
 	int kper;		// pc:autorepeat period
 } Keyboard;
 

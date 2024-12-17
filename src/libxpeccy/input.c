@@ -188,7 +188,7 @@ void kbdReleaseAll(Keyboard* kbd) {
 	kbd->keycode = 0;
 	kbd->lastkey = 0;
 	kbd->outbuf = 0;	//kbd->kbuf.pos = 0;
-	kbd->flag = 0;
+//	kbd->flag = 0;
 	if (kbd->per > 0) {
 		xt_release(kbd, kbd->kent);
 	}

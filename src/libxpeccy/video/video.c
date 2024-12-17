@@ -194,6 +194,7 @@ void vid_frame(Video* vid) {
 		vid_fill_black(vid->ray.lptr, lefSkip);
 	vid->ray.ptr = vid->ray.lptr + lefSkip;
 	vid->newFrame = 1;
+	vid->xirq(IRQ_VID_FRAME, vid->xptr);
 }
 
 Video* vidCreate(cbxrd cb, cbirq ci, void* dptr) {

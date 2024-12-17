@@ -34,31 +34,34 @@ void bk_fdc_wr(Computer* comp, int adr, int val) {
 
 // keyboard
 
+// 177660
 int bk_kbf_rd(Computer* comp, int adr) {
-	comp->wdata = comp->keyb->flag & 0xc0;
+	comp->wdata = (comp->keyb->drq << 7) | (!comp->keyb->inten << 6);
 	return 0;
 }
 
 void bk_kbf_wr(Computer* comp, int adr, int val) {
-	if (comp->cpu->nod & 1) {
-		comp->keyb->flag &= ~0x40;
-		comp->keyb->flag |= (val & 0x40);
-	}
+	comp->keyb->inten = !(val & 0x40);
+	printf("%s : %i (val %.2X)\n",__FUNCTION__,comp->keyb->inten,val);
 }
 
-// ffb2 (1777662)
+// ffb2 (177662)
 int bk_kbd_rd(Computer* comp, int adr) {
-	comp->wdata = (comp->reg[0xb2] << 8) | (comp->keyb->keycode & 0x7f);
-//	comp->wdata = comp->keyb->keycode & 0x7f;
-	comp->keyb->flag &= ~0x80;		// reset b7,flag
+	comp->wdata = comp->keyb->keycode & 0x7f;
+	comp->keyb->drq = 0;
 	return 0;
 }
 
 void bk11_kbd_wr(Computer* comp, int adr, int val) {
 	comp->reg[0xb2] = (val >> 8) & 0xff;
-// b9-12 = palette
-	comp->vid->paln = (val >> 9) & 0x0f;
-// b14: system timer off
+// b8-11 = palette
+	comp->vid->paln = ((val >> 6) & 0x3c);	// to bits 2..5
+// b14: system timer off (vblank 50Hz ? ) = reg[0xb2].bit6
+//	if (val & 0x4000) {
+//		comp->cpu->inten &= ~PDP_INT_IRQ2;
+//	} else {
+//		comp->cpu->inten |= PDP_INT_IRQ2;
+//	}
 // b15: 0:scr.page5, 1:scr.page6
 	comp->vid->curscr = !!(val & 0x8000);
 }
@@ -149,7 +152,7 @@ int bk_sys_rd(Computer* comp, int adr) {
 		comp->wdata |= 0x20;
 	}
 	// b6: key pressed
-	if (!(comp->keyb->flag & 0x20)) {
+	if (!comp->keyb->kpress) {
 		comp->wdata |= 0x40;		// = 0 if any key pressed, 1 if not
 	}
 	// b7: TL ready
@@ -178,7 +181,7 @@ void bk_sys_wr(Computer* comp, int adr, int val) {
 
 // system port for 0011
 
-// 177776: system
+// 177716: system
 int bk11_sys_rd(Computer* comp, int adr) {
 	comp->wdata = 0xc000;
 	// comp->wdata |= 0x80;		// TL ready
@@ -191,7 +194,7 @@ int bk11_sys_rd(Computer* comp, int adr) {
 		comp->wdata |= 0x20;
 	}
 	// b6: key pressed
-	if (!(comp->keyb->flag & 0x20)) {
+	if (!comp->keyb->kpress) {
 		comp->wdata |= 0x40;		// = 0 if any key pressed, 1 if not
 	}
 	// b7: TL ready
@@ -203,7 +206,7 @@ int bk11_sys_rd(Computer* comp, int adr) {
 // b6: beeper
 
 void bk11_sys_wr(Computer* comp, int adr, int val) {
-	if (val & 0x800) {			// b11 set
+	if (val & (1 << 11)) {			// b11 set
 		// printf("rom bits: %i.%i.x.%i.%i\n",!!(val & 0x10),!!(val & 8),!!(val & 2), !!(val & 1));
 		if (val & 0x1b) {			// b0,1,3,4: rom 0,1,2,3 @ #8000
 			if (val & 0x01) comp->reg[1] = 0x80;
@@ -214,9 +217,8 @@ void bk11_sys_wr(Computer* comp, int adr, int val) {
 			comp->reg[1] = (val >> 8) & 7;		// ram b8,9,10 @ #8000 (reg[1].b7=0:ram)
 		}
 		comp->reg[2] = (val >> 12) & 7;			// ram b12,13,14 @ #4000
-		comp->vid->curscr = !!(val & 0x04);
 		bk11_mem_map(comp);
-	} else if (comp->cpu->nod & 1) {
+	} else if (comp->cpu->nod == 3) {
 		// b7: tape motor control (1:stop, 0:play)
 		if (!(val & 0x80) && !comp->tape->on) {
 			tapPlay(comp->tape);
@@ -289,10 +291,6 @@ int bk11_io_rd(int adr, void* ptr) {
 	return comp->wdata;
 }
 
-// if cpu->nod = 1, write 1 byte immediately
-// if cpu->nod = 0:
-//	even adr : store low byte in wdata
-//	odd adr : is high byte, add stored low byte, write whole word
 void bk_io_wr(int adr, int val, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 	if (comp->cpu->nod & 1)		// LSB
@@ -350,9 +348,9 @@ void bk_rom_wr(int adr, int val, void* ptr) {
 }
 
 void bk_sync(Computer* comp, int ns) {
-	if ((comp->vid->newFrame) && (comp->iomap[0xffb3] & 0x40)) {
-		comp->cpu->intrq |= PDP_INT_IRQ2;
-	}
+//	if ((comp->vid->newFrame) && (comp->reg[0xb2] & 0x40)) {	// b14,177662 = 50Hz int
+//		comp->cpu->intrq |= PDP_INT_IRQ2;
+//	}
 	tapSync(comp->tape, ns);
 	bcSync(comp->beep, ns);
 	difSync(comp->dif, ns);
@@ -438,11 +436,14 @@ void bk_reset(Computer* comp) {
 	}
 	comp->reg[0] = 1;
 	comp->reg[1] = 0x80;
+	comp->reg[0xb2] = 0x40;
 	comp->cpu->reset(comp->cpu);
 	comp->vid->curscr = 0;
 	comp->vid->paln = 0;
 	vid_set_mode(comp->vid, VID_BK_BW);
-	comp->keyb->flag = 0x40;
+	comp->keyb->kpress = 0;
+	comp->keyb->inten = 0;
+	comp->keyb->drq = 0;
 	comp->keyb->keycode = 0x00;
 	bk_mem_map(comp);
 }
@@ -458,7 +459,9 @@ void bk11_reset(Computer* comp) {
 //	comp->vid->curscr = 0;
 	comp->vid->paln = 0;
 	vid_set_mode(comp->vid, VID_BK_BW);
-	comp->keyb->flag = 0x40;
+	comp->keyb->kpress = 0;
+	comp->keyb->inten = 0;
+	comp->keyb->drq = 0;
 	comp->keyb->keycode = 0x00;
 	bk11_mem_map(comp);
 }
@@ -475,7 +478,13 @@ int bk_mrd(Computer* comp, int adr, int m1) {
 void bk_irq(Computer* comp, int val) {
 	switch (val) {
 		case PDP11_INIT:
-			comp->keyb->flag = 0x00;
+			// comp->keyb->inten = 0;
+			comp->keyb->drq = 0;
+			break;
+		case IRQ_VID_FRAME:
+			if (!(comp->reg[0xb2] & 0x40)) {
+				comp->cpu->intrq |= PDP_INT_IRQ2;
+			}
 			break;
 	}
 }
@@ -588,14 +597,15 @@ static char bkvidcol[] = " color mode ";
 static char bkvidbw[] = " b/w mode ";
 
 void bk_press_keycode(Computer* comp, int code) {
-	comp->keyb->flag |= 0x20;
-	if (!(comp->keyb->flag & 0x80)) {
+	if (!comp->keyb->kpress) {			// only 1 key can be pressed
 		comp->keyb->keycode = code & 0x7f;
-		comp->keyb->flag |= 0x80;
-		if (!(comp->keyb->flag & 0x40)) {		// keyboard interrupt enabled
+		comp->keyb->kpress = 1;
+		comp->keyb->drq = 1;
+		printf("%s 1 : %i\n",__FUNCTION__,comp->keyb->inten);
+		if (comp->keyb->inten) {		// keyboard interrupt enabled
+			printf("kbd int ack\n");
 			comp->cpu->intvec = (code & 0x80) ? 0274 : 060;
 			comp->cpu->intrq |= PDP_INT_VIRQ;
-//				printf("intrq %X\n", comp->cpu->intvec);
 		}
 	}
 }
@@ -658,5 +668,6 @@ void bk_keyr(Computer* comp, keyEntry xkey) {
 //			bk_press_keycode(comp, 0273);
 			break;
 	}
-	comp->keyb->flag &= ~0x20;	// 0x20 | 0x80
+	comp->keyb->kpress = 0;		// key released
+	comp->keyb->drq = 0;
 }

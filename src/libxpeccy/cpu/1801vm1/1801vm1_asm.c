@@ -6,7 +6,6 @@
 // asm
 
 static const char* ptr;
-// static char* out;
 static unsigned short code;
 static int src = -1;
 static int srce = -1;
@@ -23,32 +22,16 @@ typedef struct {
 	int idx;
 } pdpRegNums;
 
-pdpRegNums pdpregs[] = {
-	{"r0",0},{"r1",1},{"r2",2},{"r3",3},{"r4",4},
-	{"r5",5},{"r6",6},{"r7",7},/*{"sp",6},{"pc",7},*/
-	{NULL,-1}
-};
-
 // NOTE: # is already replaced by 0x
 pdpRegNums pdpadrs[] = {
 	{"rN",0},{"@rN",1},{"(rN)+",2},{"@(rN)+",3},
 	{"-(rN)",4},{"@-(rN)",5},{"E(rN)",6},{"@E(rN)",7},
 	{"E",8},{"0xE",8},
+	{"(rN+E)",6},{"(E+rN)",6},		// something special (alternative addressation)
+	{"@(rN+E)",7},{"@(E+rN)",7},
 	{"@E",9},{"@0xE",9},{"(E)",9},
 	{NULL,-1}
 };
-
-int pdpGetRegIdx() {
-	int i = 0;
-	int r = -1;
-	while ((pdpregs[i].name != NULL) && (r < 0)) {
-		if (!strncmp(ptr, pdpregs[i].name, 2)) {
-			r = pdpregs[i].idx;
-		}
-		i++;
-	}
-	return r;
-}
 
 int pdpCheckE(const char** pp) {
 	const char* p = *pp;

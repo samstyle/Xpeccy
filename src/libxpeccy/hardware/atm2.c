@@ -132,7 +132,7 @@ int atm2inFE(Computer* comp, int port) {
 			case 0x0b: comp->keyb->flag1 &= ~KFL_RUS; break;
 			case 0x0c: break;			// TODO: pause
 			case 0x0d:
-				comp->keyb->reset = 1;
+				//comp->keyb->reset = 1;
 				break;
 			case 0x10:
 				switch(hi) {
