@@ -42,7 +42,6 @@ int bk_kbf_rd(Computer* comp, int adr) {
 
 void bk_kbf_wr(Computer* comp, int adr, int val) {
 	comp->keyb->inten = !(val & 0x40);
-	printf("%s : %i (val %.2X)\n",__FUNCTION__,comp->keyb->inten,val);
 }
 
 // ffb2 (177662)
@@ -601,10 +600,9 @@ void bk_press_keycode(Computer* comp, int code) {
 		comp->keyb->keycode = code & 0x7f;
 		comp->keyb->kpress = 1;
 		comp->keyb->drq = 1;
-		printf("%s 1 : %i\n",__FUNCTION__,comp->keyb->inten);
 		if (comp->keyb->inten) {		// keyboard interrupt enabled
-			printf("kbd int ack\n");
-			comp->cpu->intvec = (code & 0x80) ? 0274 : 060;
+			// comp->cpu->intvec = (code & 0x80) ? 0274 : 060;
+			comp->cpu->intvec = comp->keyb->ar2 ? 0274 : 060;
 			comp->cpu->intrq |= PDP_INT_VIRQ;
 		}
 	}
@@ -639,6 +637,9 @@ void bk_keyp(Computer* comp, keyEntry xkey) {
 			code = comp->keyb->lang ? 016 : 017;
 			comp->msg = comp->keyb->lang ? bkkbdrus : bkkbdlat;
 			break;
+		case XKEY_RCTRL:
+			comp->keyb->ar2 = 1;
+			break;
 	}
 	if (code == 0) {
 		if (comp->keyb->caps ^ comp->keyb->shift) {
@@ -666,6 +667,9 @@ void bk_keyr(Computer* comp, keyEntry xkey) {
 		case XKEY_LSHIFT:
 			comp->keyb->shift = 0;
 //			bk_press_keycode(comp, 0273);
+			break;
+		case XKEY_RCTRL:
+			comp->keyb->ar2 = 0;
 			break;
 	}
 	comp->keyb->kpress = 0;		// key released

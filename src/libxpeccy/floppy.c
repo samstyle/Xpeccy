@@ -146,8 +146,8 @@ int flp_format_trk_buf(int trk, int spt, int slen, int trklen, char* data, unsig
 	} else {
 		ptr = buf;
 		slen = t;
-		spc = (trklen - 32) / spt;	// 20
-		spc -= (80 + slen);		// 72 // calc space 3 size
+		spc = (trklen - 60) / spt;	// minus: last gap(var) + 1st gap(12) + 1st sync(12) + track mark(4)
+		spc -= (74 + slen);		// calc gap 3 size - minus: gap(10) + sync(12) + header mark(4) + crc(2) + gap(22 std, 28 for bk) + sync(12) + data mark(4) + sector size(slen) + crc(2)
 		spc &= ~1;			// make it even (for BK disk system)
 		if (spc < 10) {
 			res = 0;
@@ -155,9 +155,9 @@ int flp_format_trk_buf(int trk, int spt, int slen, int trklen, char* data, unsig
 			hd = trk & 1;
 			tr = trk >> 1;
 			memset(ptr, 0x4e, trklen);
-			ptr += 12;
-			memset(ptr, 0x00, 12); ptr += 12;
-			memcpy(ptr, trk_mark, 4); ptr += 4;
+			ptr += 12;				// 1st gap
+			memset(ptr, 0x00, 12); ptr += 12;	// 1st sync
+			memcpy(ptr, trk_mark, 4); ptr += 4;	// track gap
 			for (sc = 1; sc <= spt; sc++) {
 				ptr += 10;
 				memset(ptr, 0x00, 12); ptr += 12;

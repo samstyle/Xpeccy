@@ -176,6 +176,7 @@ typedef struct {
 	unsigned used:1;
 	unsigned caps:1;
 	unsigned shift:1;
+	unsigned ar2:1;
 	unsigned lang:1;
 
 	unsigned inten:1;		// interrupt enabled
