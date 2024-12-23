@@ -6,6 +6,10 @@ extern "C" {
 
 #include "defines.h"
 
+#define TAPTICKNS	100		// ns in one tape tick
+#define TAPTPS		1e9/TAPTICKNS	// ticks per second
+#define TAPCPUNS	284		// ns per cpu tick @ 3.51MHz
+
 // ZX spectrum signal timings
 // 1T ~ 284ns ~ 0.284mks @ 3.51MHz
 // pilot	2168T	615 mks
@@ -14,12 +18,11 @@ extern "C" {
 // 0		855T	242 mks
 // 1		1710T	485 mks
 // sync3	954T	270 mks
-#define	PILOTLEN	615
-#define	SYNC1LEN	189
-#define	SYNC2LEN	208
-#define	SIGN0LEN	242
-#define	SIGN1LEN	485
-// #define	SYNC3LEN	270
+#define	PILOTLEN	2168*TAPCPUNS/TAPTICKNS
+#define	SYNC1LEN	667*TAPCPUNS/TAPTICKNS
+#define	SYNC2LEN	735*TAPCPUNS/TAPTICKNS
+#define	SIGN0LEN	855*TAPCPUNS/TAPTICKNS
+#define	SIGN1LEN	1710*TAPCPUNS/TAPTICKNS
 
 enum {
 	TAPE_HEAD = 0,
@@ -42,7 +45,7 @@ typedef struct {
 } TapeBlockInfo;
 
 typedef struct {
-	int size;		// mks (1e6 = 1sec)
+	unsigned int size;		// tape ticks
 	unsigned char vol;
 } TapeSignal;
 

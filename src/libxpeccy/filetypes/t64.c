@@ -115,9 +115,10 @@ int loadT64(Computer* comp, const char* fname, int drv) {
 	blkClear(&blk);
 
 	// length of half-wave for small,medium,long waves
-	wavs = 0x30 * comp->nsPerTick / 250;
-	wavm = 0x44 * comp->nsPerTick / 250;
-	wavl = 0x56 * comp->nsPerTick / 250;
+	// TODO: recalculate for TAPTICKNS
+	wavs = 0x30 * comp->nsPerTick * 4 / TAPTICKNS;	// / 250;
+	wavm = 0x44 * comp->nsPerTick * 4 / TAPTICKNS;	// / 250;
+	wavl = 0x56 * comp->nsPerTick * 4 / TAPTICKNS;	// / 250;
 
 	int i;
 	long offset;
@@ -162,7 +163,7 @@ int loadT64(Computer* comp, const char* fname, int drv) {
 					buf[4] = (end >> 8) & 0xff;
 					memcpy(buf+5, name, 16);
 					t64_add_192(&blk, buf, 1);
-					blkAddPause(&blk, 1e6);
+					blkAddPause(&blk, TAPTPS);
 					t64_add_pilot(&blk, 2800);		// 2sec pilot
 					while (start <= end) {			// data
 						if (end - start > 192) {
@@ -175,7 +176,7 @@ int loadT64(Computer* comp, const char* fname, int drv) {
 						start += len;
 						t64_add_192(&blk, buf, start > end);
 					}
-					blkAddWave(&blk, 1e6);		// pause (1sec)
+					blkAddWave(&blk, TAPTPS);		// pause (1sec)
 					tap_add_block(comp->tape, blk);
 					blkClear(&blk);
 #endif
@@ -228,8 +229,8 @@ int loadC64RawTap(Computer* comp, const char* name, int dsk) {
 						}
 						// printf("%i\n",per);
 					}
-					per = per * comp->nsPerTick / 125;	// 8 * per * nspt / 1000	mks
-					blkAddPulse(&blk, per/2, 0x50);		// add full wave 0/1
+					per = per * comp->nsPerTick * 8 / TAPTICKNS;	// 8 * per * nspt / 1000	mks
+					blkAddPulse(&blk, per/2, 0x50);			// add full wave 0/1
 					blkAddPulse(&blk, per/2, 0xb0);
 					len--;
 				}

@@ -96,7 +96,7 @@ QVariant xTapeCatModel::data(const QModelIndex& idx, int role) const {
 			//break;
 		case Qt::DisplayRole:
 			switch(col) {
-				case 1: res = QString(getTimeString(inf[row].time / 1e6).c_str());
+				case 1: res = QString(getTimeString(inf[row].time).c_str());
 					break;
 				case 2: if (row == rcur)
 						res = QString(getTimeString(inf[row].curtime).c_str());

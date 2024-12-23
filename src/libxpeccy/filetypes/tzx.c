@@ -17,15 +17,15 @@ typedef struct {
 	void(*callback)(FILE*, Tape*);
 } tzxBCall;
 
-// 1T = 1/3500000 sec
-#define NS_TICK 285
+//#define NS_TICK TAPCPUNS
+//#define NS_TICK 284
 // #define NS_TICK tape->t_ns
 
 static int sigLens[] = {PILOTLEN,SYNC1LEN,SYNC2LEN,SIGN0LEN,SIGN1LEN,0,-1};	// 0->SYNC3LEN
 
 // #10: <pause:2>,<datalen:2>,{data}
 void tzxBlock10(FILE* file, Tape* tape) {
-	int pause = fgetw(file) * 1000;		// ms -> mks
+	int pause = fgetw(file) * 1e6 / TAPTICKNS;		// ms -> ticks
 	int len = fgetw(file);
 	char buf[0x10000];
 	fread(buf, len, 1, file);
@@ -38,15 +38,15 @@ void tzxBlock10(FILE* file, Tape* tape) {
 // #11: <pilot:2>,<sync1:2>,<sync2:2>,<bit0:2>,<bit1:2>,<pilotcnt:2>,<usedbits:1>,<pause:2>,<datalen:3>,{data}
 void tzxBlock11(FILE* file, Tape* tape) {
 	int altLens[7];
-	altLens[0] = fgetw(file) * NS_TICK / 1000;	// pilot
-	altLens[1] = fgetw(file) * NS_TICK / 1000;	// sync1
-	altLens[2] = fgetw(file) * NS_TICK / 1000;	// sync2
-	altLens[3] = fgetw(file) * NS_TICK / 1000;	// 0
-	altLens[4] = fgetw(file) * NS_TICK / 1000;	// 1
+	altLens[0] = fgetw(file) * TAPCPUNS / TAPTICKNS;	// pilot
+	altLens[1] = fgetw(file) * TAPCPUNS / TAPTICKNS;	// sync1
+	altLens[2] = fgetw(file) * TAPCPUNS / TAPTICKNS;	// sync2
+	altLens[3] = fgetw(file) * TAPCPUNS / TAPTICKNS;	// 0
+	altLens[4] = fgetw(file) * TAPCPUNS / TAPTICKNS;	// 1
 	altLens[6] = fgetw(file);			// pilot pulses
 	int bits = fgetc(file);				// TODO: used bits in last byte
 	// printf("bits:%i\n",bits);
-	int pause = fgetw(file) * 1000;
+	int pause = fgetw(file) * 1e6 / TAPTPS;
 	int len = fgett(file);		// freadLen(file, 3);
 	char* buf = (char*)malloc(len);
 	fread(buf, len-1, 1, file);
@@ -67,7 +67,7 @@ void tzxBlock11(FILE* file, Tape* tape) {
 
 // #12: <pulselen:2>,<count:2>
 void tzxBlock12(FILE* file, Tape* tape) {
-	int len = fgetw(file) * NS_TICK / 1000;	// Length of one pulse in T-states -> mks
+	int len = fgetw(file) * TAPCPUNS / TAPTICKNS;	// Length of one pulse in T-states -> mks
 	int count = fgetw(file);		// Number of pulses
 	while (count > 0) {
 		blkAddPulse(&tape->tmpBlock, len, -1);
@@ -81,7 +81,7 @@ void tzxBlock13(FILE* file, Tape* tape) {
 	int len;
 	int count = fgetc(file);
 	while (count > 0) {
-		len = fgetw(file) * NS_TICK / 1000;
+		len = fgetw(file) * TAPCPUNS / TAPTICKNS;
 		blkAddPulse(&tape->tmpBlock, len, -1);
 		count--;
 	}
@@ -90,12 +90,13 @@ void tzxBlock13(FILE* file, Tape* tape) {
 
 // #14: <bit0:2>,<bit1:2>,<usedbits:1>,<pause:2>,<len:3>,{data:len}
 void tzxBlock14(FILE* file, Tape* tape) {
-	int bit0 = fgetw(file) * NS_TICK / 1000;
-	int bit1 = fgetw(file) * NS_TICK / 1000;
+	int bit0 = fgetw(file) * TAPCPUNS / TAPTICKNS;
+	int bit1 = fgetw(file) * TAPCPUNS / TAPTICKNS;
 	int data;
 	int bits = fgetc(file);			// used bits in last byte
 	// printf("%i : %i : last bits %i\n",bit0,bit1,bits);
-	int pause = fgetw(file) * 1000;	// ms -> mks
+	int pausems = fgetw(file);
+	int pause = pausems * 1e6 / TAPTPS;	// ms -> mks
 	int len = fgett(file);
 	while (len > 1) {
 		data = fgetc(file);
@@ -110,7 +111,7 @@ void tzxBlock14(FILE* file, Tape* tape) {
 		bits--;
 		data <<= 1;
 	}
-	if (pause > 1e5) {		// .1 sec will be block separator
+	if (pausems > 100) {		// .1 sec will be block separator
 		blkAddPause(&tape->tmpBlock, pause);
 		tap_add_block(tape, tape->tmpBlock);
 		blkClear(&tape->tmpBlock);
@@ -121,8 +122,9 @@ void tzxBlock14(FILE* file, Tape* tape) {
 // #15,<step:2>,<pause:2>,<last:1>,<len:3>,{data:len}
 // direct recording
 void tzxBlock15(FILE* file, Tape* tape) {
-	int size = fgetw(file) * NS_TICK / 1000;
-	int pause = fgetw(file) * 1000;
+	int size = fgetw(file) * TAPCPUNS / TAPTICKNS;
+	int pausems = fgetw(file);
+	int pause = pausems * 1e6 / TAPTICKNS;
 	int last = fgetc(file) & 7;
 	int len = (fgett(file) - 1) * 8 + last;		// bits
 	int data = 0;
@@ -158,7 +160,7 @@ void tzxBlock15(FILE* file, Tape* tape) {
 
 // #20,<len:2> : pause or stop tape
 void tzxBlock20(FILE* file, Tape* tape) {
-	int len = fgetw(file) * 1000;
+	int len = fgetw(file) * 1000 / TAPTICKNS;
 	if (len) {
 		blkAddPause(&tape->tmpBlock, len);
 	} else {

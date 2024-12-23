@@ -88,6 +88,8 @@ void blkAddByte(TapeBlock* blk, unsigned char data, int b0len, int b1len) {
 	}
 }
 
+// current time in block
+// NOTE: not full time of block
 int tapGetBlockTime(Tape* tape, int blk, int pos) {
 	long totsz = 0;
 	int i;
@@ -97,7 +99,7 @@ int tapGetBlockTime(Tape* tape, int blk, int pos) {
 		pos = tape->blkData[blk].sigCount;
 	for (i = 0; i < tape->blkData[blk].sigCount; i++)
 		totsz += tape->blkData[blk].data[i].size;
-	return (totsz / 1e6);			// mks -> sec
+	return (totsz / TAPTPS);			// mks -> sec
 }
 
 int tapGetBlockSize(TapeBlock* block, int type) {
@@ -350,7 +352,7 @@ int tapPlay(Tape* tap) {
 		tap->rec = 0;
 		tap->on = 1;
 		tap->blkData[tap->block].vol = 0;
-		tap->sigLen = 5e5;
+		tap->sigLen = TAPTPS / 2;	// .5 sec
 		// tap->volPlay = (tap->volPlay & 0x80) ? 0x7f : 0x81;
 	}
 	return tap->on;
@@ -377,9 +379,9 @@ void tapRewind(Tape* tap, int blk) {
 // input : tks is time (ns) to sync
 void tapSync(Tape* tap, int ns) {
 	tap->time += ns;
-	int mks = tap->time / 1000;
+	int mks = tap->time / TAPTICKNS;
 	int sig;
-	tap->time %= 1000;
+	tap->time %= TAPTICKNS;
 	if (tap->on) {
 		if (tap->rec) {
 			if (tap->wait) {
@@ -394,7 +396,7 @@ void tapSync(Tape* tap, int ns) {
 					blkAddPulse(&tap->tmpBlock,mks,-1);
 				} else if (tap->tmpBlock.sigCount > 0) {
 					tap->tmpBlock.data[tap->tmpBlock.sigCount - 1].size += mks;
-					if (tap->tmpBlock.data[tap->tmpBlock.sigCount - 1].size > 2e5) {
+					if (tap->tmpBlock.data[tap->tmpBlock.sigCount - 1].size > TAPTPS / 5) {		// 20000 mks ~ .2sec
 						tap->tmpBlock.sigCount--;
 						tapStoreBlock(tap);
 					}
@@ -427,7 +429,7 @@ void tapSync(Tape* tap, int ns) {
 			while (tap->sigLen < 1) {
 				tap->volPlay = 0x7f;
 				// tap->volPlay = (tap->volPlay & 0x80) ? 0x7f : 0x81;
-				tap->sigLen += 5e5;	// .5 sec
+				tap->sigLen += TAPTPS / 2; // 5e5;	// .5 sec
 			}
 		}
 	} else {
@@ -436,7 +438,7 @@ void tapSync(Tape* tap, int ns) {
 		while (tap->sigLen < 1) {
 			tap->volPlay = 0x81;
 			// tap->volPlay = (tap->volPlay & 0x80) ? 0x7f : 0x81;
-			tap->sigLen += 5e5;	// .5 sec
+			tap->sigLen += TAPTPS / 2; // 5e5;	// .5 sec
 		}
 	}
 }
@@ -532,7 +534,8 @@ void tap_add_block(Tape* tap, TapeBlock block) {
 
 	blk.time = 0;
 	for (int i = 0; i < blk.sigCount; i++)
-		blk.time += blk.data[i].size;		// total time (msk)
+		blk.time += blk.data[i].size;		// total time (ticks)
+	blk.time /= TAPTPS;				// seconds
 
 	tap->blkCount++;
 	tap->blkData = (TapeBlock*)realloc(tap->blkData,tap->blkCount * sizeof(TapeBlock));

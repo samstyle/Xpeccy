@@ -8,8 +8,8 @@
 // 1: 208 mks pulse x 2
 // 0: 104 mks pulse x 2
 
-#define MSX_CAS_0	417
-#define MSX_CAS_1	208
+#define MSX_CAS_0	417 * 1000 / TAPTICKNS
+#define MSX_CAS_1	208 * 1000 / TAPTICKNS
 
 // signature of each block (align by 8 bytes)
 static const unsigned char cas_sgn[8] = {0x1f, 0xa6, 0xde, 0xba, 0xcc, 0x13, 0x7d, 0x74};
@@ -98,7 +98,7 @@ int loadCAS(Computer* comp, const char* name, int drv) {
 						fseek(file, -1, SEEK_CUR);	// header
 						cas_add_pilot(&blk, 0x1e00);
 						cas_add_data(&blk, file, 16);
-						blkAddPause(&blk, 1e6);
+						blkAddPause(&blk, TAPTPS);
 						tap_add_block(comp->tape, blk);
 						blkClear(&blk);
 						cas_align(file);
@@ -109,7 +109,7 @@ int loadCAS(Computer* comp, const char* name, int drv) {
 						} else {
 							res = ERR_CAS_SIGN;
 						}
-						blkAddPause(&blk, 2e6);
+						blkAddPause(&blk, 2 * TAPTPS);
 						tap_add_block(comp->tape, blk);
 						blkClear(&blk);
 						break;
@@ -117,7 +117,7 @@ int loadCAS(Computer* comp, const char* name, int drv) {
 						fseek(file, -1, SEEK_CUR);		// header
 						cas_add_pilot(&blk, 0x1e00);
 						cas_add_data(&blk, file, 16);
-						blkAddPause(&blk, 1e6);
+						blkAddPause(&blk, TAPTPS);
 						tap_add_block(comp->tape, blk);
 						blkClear(&blk);
 						cas_align(file);
@@ -127,7 +127,7 @@ int loadCAS(Computer* comp, const char* name, int drv) {
 							fseek(file, -4, SEEK_CUR);
 							cas_add_pilot(&blk, 0x780);
 							cas_add_data(&blk, file, eadr - sadr + 7);
-							blkAddPause(&blk, 2e6);
+							blkAddPause(&blk, 2 * TAPTPS);
 							tap_add_block(comp->tape, blk);
 							blkClear(&blk);
 						} else {
@@ -138,7 +138,7 @@ int loadCAS(Computer* comp, const char* name, int drv) {
 						fseek(file, -1, SEEK_CUR);		// header
 						cas_add_pilot(&blk, 0x1e00);
 						cas_add_data(&blk, file, 16);
-						blkAddPause(&blk, 1e6);
+						blkAddPause(&blk, TAPTPS);
 						tap_add_block(comp->tape, blk);
 						blkClear(&blk);
 						cas_align(file);
@@ -147,7 +147,7 @@ int loadCAS(Computer* comp, const char* name, int drv) {
 							if (cas_sgn_chk(file)) {
 								cas_add_pilot(&blk, 0x780);
 								cas_add_data(&blk, file, 0x100);
-								blkAddPause(&blk, 1e6);
+								blkAddPause(&blk, TAPTPS);
 								tap_add_block(comp->tape, blk);
 								blkClear(&blk);
 							} else {

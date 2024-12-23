@@ -28,7 +28,7 @@ int loadBIN(Computer* comp, const char* name, int drv) {
 }
 
 // lenght in mks
-#define BKPULSE 100
+#define BKPULSE 100 * 1000 / TAPTICKNS
 #define BKPILOT	2*BKPULSE
 #define BKSYNC	8*BKPULSE
 #define BKONE	4*BKPULSE		// 1 = BKONE + BKZERO  (waves)
@@ -89,7 +89,7 @@ int bkLoadToTape(Computer* comp, const char* name, int drv) {
 		memcpy(buf, nptr, (strlen(nptr) < 16) ? strlen(nptr) : 16);
 		blkClear(&blk);
 
-		blkAddPause(&blk, 1000);
+		blkAddPause(&blk, TAPTPS);
 
 		bk_write_pilot(&blk, 4096);	// long pilot (4096)
 

@@ -15,7 +15,7 @@ int loadWAV(Computer* comp, const char* name, int drv) {
 	} else if ((hd.audioFormat != 1) || (hd.sampleRate == 0) || (hd.bitsPerSample & 7)) {
 		err = ERR_WAV_FORMAT;
 	} else {
-		int tPerSample = (int)1e6 / hd.sampleRate;		// mks per sample
+		int tPerSample = TAPTPS / hd.sampleRate;		// tape-ticks per sample
 //		int mask = 0x80 << (hd.bitsPerSample - 8);
 		int amp;		// cur amp
 		int lev = -1;		// last amp
@@ -36,7 +36,7 @@ int loadWAV(Computer* comp, const char* name, int drv) {
 			} else {
 				lev = amp;
 				blkAddPulse(&blk, dur, (amp >> (hd.bitsPerSample - 8)));
-				if (dur > 2e5) {				// pause is block-breaking signal
+				if (dur > TAPTPS / 5) {				// pause is block-breaking signal
 					tap_add_block(tap, blk);
 					blkClear(&blk);
 				}
@@ -79,7 +79,7 @@ int saveWAV(Computer* comp, const char* name, int drv) {
 			int tm = 0;
 			int sz = 0;
 			unsigned char amp;
-			int tPerSample = (int)1e6 / hd.sampleRate;
+			int tPerSample = TAPTPS / hd.sampleRate;
 			TapeBlock* blk;
 			fwrite((char*)&hd, sizeof(wavHead), 1, file);
 			for (i = 0; i < comp->tape->blkCount; i++) {
