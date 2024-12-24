@@ -154,6 +154,7 @@ class TapeWin : public QDialog {
 		void doRewind();
 		void doDClick(QModelIndex);
 		void doClick(QModelIndex);
+		void setSpeed(int);
 };
 
 // rzx player

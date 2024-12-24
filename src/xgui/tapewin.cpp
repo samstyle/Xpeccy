@@ -18,10 +18,12 @@ TapeWin::TapeWin(QWidget *par):QDialog(par) {
 	connect(ui.tbRewind,SIGNAL(released()),this,SLOT(doRewind()));
 	connect(ui.tapeList,SIGNAL(doubleClicked(QModelIndex)), this, SLOT(doDClick(QModelIndex)));
 	connect(ui.tapeList,SIGNAL(clicked(QModelIndex)), this, SLOT(doClick(QModelIndex)));
+	connect(ui.sldSpeed,SIGNAL(valueChanged(int)),this, SLOT(setSpeed(int)));
 }
 
 void TapeWin::show() {
 	QDialog::show();
+	ui.sldSpeed->setValue(conf.prof.cur->zx->tape->speed);
 	upd(conf.prof.cur->zx->tape);
 	updList(conf.prof.cur->zx->tape);
 }
@@ -117,4 +119,10 @@ void TapeWin::doClick(QModelIndex idx) {
 	conf.prof.cur->zx->tape->blkData[row].breakPoint ^= 1;
 	updList(conf.prof.cur->zx->tape);
 	// ui.tapeList->fill(conf.prof.cur->zx->tape);
+}
+
+void TapeWin::setSpeed(int s) {
+	if (s < 95) return;
+	if (s > 105) return;
+	conf.prof.cur->zx->tape->speed = s;
 }

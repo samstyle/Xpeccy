@@ -6,9 +6,9 @@ extern "C" {
 
 #include "defines.h"
 
-#define TAPTICKNS	100		// ns in one tape tick
+#define TAPCPUNS	284		// ns per cpu tick @ 3.49MHz
+#define TAPTICKNS	TAPCPUNS	// ns in one tape tick
 #define TAPTPS		1e9/TAPTICKNS	// ticks per second
-#define TAPCPUNS	284		// ns per cpu tick @ 3.51MHz
 
 // ZX spectrum signal timings
 // 1T ~ 284ns ~ 0.284mks @ 3.51MHz
@@ -77,6 +77,7 @@ typedef struct {
 	unsigned newBlock:1;
 	int levRec;	// signal to tape
 	unsigned oldRec:1;	// previous rec signal
+	unsigned char speed;	// 95 to 105
 
 	int time;
 	unsigned char volPlay;

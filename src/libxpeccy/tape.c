@@ -16,6 +16,7 @@ Tape* tape_create(cbirq cb, void* p) {
 	tap->xirq = cb;
 	tap->xptr = p;
 	tap->volPlay = 0x80;
+	tap->speed = 100;
 	blkClear(&tap->tmpBlock);
 	return tap;
 }
@@ -376,9 +377,8 @@ void tapRewind(Tape* tap, int blk) {
 	}
 }
 
-// input : tks is time (ns) to sync
 void tapSync(Tape* tap, int ns) {
-	tap->time += ns;
+	tap->time += (ns * tap->speed / 100);
 	int mks = tap->time / TAPTICKNS;
 	int sig;
 	tap->time %= TAPTICKNS;

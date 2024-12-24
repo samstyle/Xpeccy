@@ -407,9 +407,8 @@ int prf_load_conf(xProfile* prf, std::string cfname, int flag) {
 
 					break;
 				case PS_TAPE:
-					if ((pnam == "path") && conf.storePaths) {
-						tape_set_path(comp->tape, pval.c_str());
-					}
+					if ((pnam == "path") && conf.storePaths) tape_set_path(comp->tape, pval.c_str());
+					if ((pnam == "speed") && (arg.i > 94) && (arg.i < 106)) comp->tape->speed = arg.i;
 					break;
 				case PS_DISK:
 					if (pnam == "A") setDiskString(comp,comp->dif->fdc->flop[0],pval);
@@ -667,6 +666,7 @@ int prfSave(std::string nm) {
 
 	fprintf(file, "\n[TAPE]\n\n");
 	fprintf(file, "path = %s\n", comp->tape->path ? comp->tape->path : "");
+	fprintf(file, "speed = %i\n", comp->tape->speed);
 
 	fprintf(file, "\n[DISK]\n\n");
 	fprintf(file, "type = %i\n", comp->dif->type);
