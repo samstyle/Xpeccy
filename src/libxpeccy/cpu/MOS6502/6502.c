@@ -10,7 +10,9 @@ void m6502_reset(CPU* cpu) {
 	cpu->intrq = 0;
 	cpu->inten = MOS6502_INT_IRQ | MOS6502_INT_NMI;	// brk/nmi enabled. irq is allways enabled, controlled by I flag
 	cpu->sp = 0x1fd;				// segment 01xx is stack
-	cpu->f = 0x24; // MF5 | MFI;
+	// cpu->f = MF5 | MFI;
+	cpu->fm.f5 = 1;
+	cpu->fm.i = 1;
 	cpu->a = 0;
 	cpu->lx = 0;
 	cpu->ly = 0;
@@ -36,10 +38,13 @@ int m6502_int(CPU* cpu) {
 		cpu->hpc = cpu->mrd(0xfffb, 0, cpu->xptr);
 	} else if (cpu->intrq & MOS6502_INT_IRQ) {	// IRQ
 		cpu->intrq &= ~MOS6502_INT_IRQ;
-		if (!cpu->fm.i) {			// IRQ enabled, I flag = 0
-			cpu->fm.b = 0;			// reset B flag
+		//if (!(cpu->f & MFI)) {			// IRQ enabled, I flag = 0
+		if (!cpu->fm.i) {
+			//cpu->f &= ~MFB;			// reset B flag
+			cpu->fm.b = 0;
 			m6502_push_int(cpu);
-			cpu->fm.i |= 1;			// disable IRQ
+			//cpu->f |= MFI;			// disable IRQ
+			cpu->fm.i = 1;
 			cpu->lpc = cpu->mrd(0xfffe, 0, cpu->xptr);
 			cpu->hpc = cpu->mrd(0xffff, 0, cpu->xptr);
 		}
@@ -52,6 +57,7 @@ int m6502_exec(CPU* cpu) {
 	if (cpu->lock) return 1;
 	unsigned char com;
 	cpu->intrq &= cpu->inten;
+//	if (cpu->f & MFI)
 	if (cpu->fm.i)
 		cpu->intrq &= ~MOS6502_INT_IRQ;
 	if (cpu->intrq && !cpu->noint) {
@@ -88,13 +94,16 @@ xMnem m6502_mnem(CPU* cpu, int qadr, cbdmr mrd, void* data) {
 	// cond
 	if ((op & 0x1f) == 0x10) {		// all branch ops; b5-7 = condition
 		mn.cond = 1;
-		switch ((op >> 3) & 3) {
+#if 1
+		switch((op >> 6) & 3) {
 			case 0: mn.met = !cpu->fm.n; break;
 			case 1: mn.met = !cpu->fm.v; break;
 			case 2: mn.met = !cpu->fm.c; break;
 			case 3: mn.met = !cpu->fm.z; break;
 		}
-		// mn.met = (cpu->f & m6502_cond[(op >> 6) & 3]) ? 0 : 1;		// true if 0
+#else
+		mn.met = (cpu->f & m6502_cond[(op >> 6) & 3]) ? 0 : 1;		// true if 0
+#endif
 		if (op & 0x20)							// true if 1
 			mn.met ^= 1;
 	} else {
@@ -105,7 +114,7 @@ xMnem m6502_mnem(CPU* cpu, int qadr, cbdmr mrd, void* data) {
 	return mn;
 }
 
-xAsmScan m6502_asm(int adr, const char* cbuf, char* buf) {
+xAsmScan m6502_asm(int a, const char* cbuf, char* buf) {
 	xAsmScan res = scanAsmTab(cbuf, mosTab);
 	res.ptr = buf;
 	if (res.match) {
