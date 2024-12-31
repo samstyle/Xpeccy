@@ -181,6 +181,16 @@ MainWin::MainWin() {
 	leds[led_disk_red].load(":/images/diskRed.png");
 	leds[led_wav].load(":/images/wav.png");
 
+#if USE_QT_GAMEPAD
+	gpadmgr = QGamepadManager::instance();
+	QList<int> gpidlist = gpadmgr->connectedGamepads();
+	if (!gpidlist.isEmpty()) {
+		conf.joy.gpad->setDeviceId(gpidlist.first());
+		qDebug() << "gamepad:" << conf.joy.gpad->deviceId() << conf.joy.gpad->name();
+		connect(conf.joy.gpad, &xGamepad::buttonChanged, this, &MainWin::gpButtonChanged);
+		connect(conf.joy.gpad, &xGamepad::axisChanged, this, &MainWin::gpAxisChanged);
+	}
+#else
 	if (SDL_NumJoysticks() > 0) {
 		conf.joy.joy = SDL_JoystickOpen(0);
 		if (conf.joy.joy) {
@@ -192,6 +202,8 @@ MainWin::MainWin() {
 		printf("Joystick not opened\n");
 		conf.joy.joy = NULL;
 	}
+#endif
+
 	initFileDialog(this);
 	initUserMenu();
 	setFocus();
@@ -346,6 +358,25 @@ void MainWin::mapJoystick(Computer* comp, int type, int num, int st) {
 	}
 }
 
+// for QGamepad
+
+#if USE_QT_GAMEPAD
+
+// A,B,X,Y,L1,L3,R1,R3,Up,Down,Left,Right,Start,Select,Center,Guide
+void MainWin::gpButtonChanged(int n, bool v) {
+	if (conf.emu.pause) return;
+	if (!isActiveWindow()) return;
+	mapJoystick(conf.prof.cur->zx, JOY_BUTTON, n, v);
+}
+// LX,LY,Rx,RY,L2,R2
+void MainWin::gpAxisChanged(int n, double v) {
+	if (conf.emu.pause) return;
+	if (!isActiveWindow()) return;
+	mapJoystick(conf.prof.cur->zx, JOY_AXIS, n, v * 32767);
+}
+
+#endif
+
 // calling on timer every 20ms
 
 static QList<int> fpsmem;
@@ -425,6 +456,7 @@ void MainWin::timerEvent(QTimerEvent* ev) {
 			}
 		}
 // process sdl events (gamepad)
+#if !USE_QT_GAMEPAD
 		int act = conf.joy.joy && !conf.emu.pause && isActiveWindow();
 		SDL_Event ev;
 		if (act)
@@ -464,6 +496,7 @@ void MainWin::timerEvent(QTimerEvent* ev) {
 #endif
 			}
 		}
+#endif
 // process mouse auto move
 		comp->mouse->xpos += comp->mouse->autox;
 		comp->mouse->ypos += comp->mouse->autoy;

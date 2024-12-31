@@ -4,6 +4,8 @@
 #include <QTimer>
 #include <QWidget>
 #include <QString>
+#include <QGamepad>
+#include <QGamepadManager>
 
 #ifdef USENETWORK
 #include <QTcpServer>
@@ -118,7 +120,10 @@ typedef struct {
 		void reset(QAction*);
 		void chLayout(QAction*);
 		void umOpen(QAction*);
-
+#if USE_QT_GAMEPAD
+		void gpButtonChanged(int, bool);
+		void gpAxisChanged(int, double);
+#endif
 		void connected();
 		void disconnected();
 		void socketRead();
@@ -162,6 +167,9 @@ typedef struct {
 		void screenShot();
 		void drawIcons(QPainter&);
 
+#if USE_QT_GAMEPAD
+		QGamepadManager* gpadmgr;
+#endif
 		void mapJoystick(Computer*, int, int, int);
 		void mapPress(Computer*, xJoyMapEntry);
 		void mapRelease(Computer*, xJoyMapEntry);

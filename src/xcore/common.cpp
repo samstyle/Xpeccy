@@ -99,6 +99,10 @@ int getRanged(const char* str, int min, int max) {
 	return toLimits(res, min, max);
 }
 
+double absd(double v) {
+	return (v < 0) ? -v : v;
+}
+
 std::string getTimeString(int tsec) {
 	int tmin = tsec / 60;
 	tsec -= tmin * 60;

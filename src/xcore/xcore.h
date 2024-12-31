@@ -21,9 +21,13 @@
 #include "../libxpeccy/spectrum.h"
 #include "../libxpeccy/filetypes/filetypes.h"
 
+#include <QGamepad>
+
 #ifndef USEMUTEX
 #define USEMUTEX 0
 #endif
+
+#define USE_QT_GAMEPAD 1
 
 #define NEW_SMP_METHOD 1
 // init: smpNeed = 0
@@ -89,6 +93,7 @@ void copyFile(const char*, const char*);
 
 int toPower(int);
 int toLimits(int, int, int);
+double absd(double);
 
 QString getbinbyte(unsigned char);
 QString gethexshift(char);
@@ -407,6 +412,38 @@ typedef struct {
 
 void mapJoystick(Computer*, int, int, int);
 
+class xGamepad : public QGamepad {
+	Q_OBJECT
+	public:
+		xGamepad(int = 0, QObject* = nullptr);
+	signals:
+		void buttonChanged(int, bool);
+		void axisChanged(int, double);
+	private slots:
+		void BAChanged(bool);
+		void BBChanged(bool);
+		void BXChanged(bool);
+		void BYChanged(bool);
+		void BL1Changed(bool);
+		void BL3Changed(bool);
+		void BR1Changed(bool);
+		void BR3Changed(bool);
+		void BUChanged(bool);
+		void BDChanged(bool);
+		void BRChanged(bool);
+		void BLChanged(bool);
+		void BStChanged(bool);
+		void BSeChanged(bool);
+		void BCeChanged(bool);
+		void BGuChanged(bool);
+		void ALXChanged(double);
+		void ALYChanged(double);
+		void ARXChanged(double);
+		void ARYChanged(double);
+		void AL2Changed(double);
+		void AR2Changed(double);
+};
+
 // xmap
 
 void load_xmap(QString);
@@ -464,8 +501,10 @@ struct xConfig {
 		unsigned fast:1;
 	} tape;
 	struct {
+		xGamepad* gpad;
 		SDL_Joystick* joy;
 		int dead;
+		double deadf;
 		QList<xJoyMapEntry> map;	// gamepad map for current profile
 	} joy;
 	struct {

@@ -168,19 +168,20 @@ set(MOCFILES
 	./src/xgui/options/opt_tapecat.h
 	./src/xgui/options/opt_hotkeytab.h
 	./src/vkeyboard.h
+	./src/xcore/xcore.h
 	./src/xgui/xgui.h
 	./src/xgui/classes.h
 	./src/xgui/labelist.h
 )
 
-# Qt4 / Qt5 / Qt6
+# Qt5 / Qt6
 
-if (DEFINED QT4BUILD)
-	if (${QT4BUILD})
-		set(QTVERSION 4)
-	else(${QT4BUILD})
+if (DEFINED QT6BUILD)
+	if (${QT6BUILD})
+		set(QTVERSION 6)
+	else(${QT6BUILD})
 		set(QTVERSION 5)
-	endif(${QT4BUILD})
+	endif(${QT6BUILD})
 elseif(NOT DEFINED QTVERSION)
 	set(QTVERSION 5)
 endif()
@@ -212,8 +213,8 @@ if(${QTVERSION} EQUAL 4)
 
 elseif(${QTVERSION} EQUAL 5)
 
-	find_package(Qt5 COMPONENTS Core Gui Widgets REQUIRED)
-	set(LIBRARIES ${LIBRARIES} Qt5::Widgets)
+	find_package(Qt5 COMPONENTS Core Gui Widgets Gamepad REQUIRED)
+	set(LIBRARIES ${LIBRARIES} Qt5::Widgets Qt5::Gamepad)
 	qt5_add_resources(RESOURCES ${QRCFILES})
 	qt5_wrap_ui(UIHEADERS ${UIFILES})
 	qt5_wrap_cpp(MOCHEADERS ${MOCFILES})
@@ -244,8 +245,8 @@ elseif(${QTVERSION} EQUAL 6)
 	set(CMAKE_CXX_STANDARD 17)
 	set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-	find_package(Qt6 COMPONENTS Core Gui Widgets Core5Compat REQUIRED)
-	set(LIBRARIES ${LIBRARIES} Qt6::Widgets Qt6::Core Qt6::Gui Qt6::Core5Compat)
+	find_package(Qt6 COMPONENTS Core Gui Widgets Core5Compat Gamepad REQUIRED)
+	set(LIBRARIES ${LIBRARIES} Qt6::Widgets Qt6::Core Qt6::Gui Qt6::Core5Compat Qt6::Gamepad)
 	qt6_add_resources(RESOURCES ${QRCFILES})
 	qt6_wrap_ui(UIHEADERS ${UIFILES})
 	qt6_wrap_cpp(MOCHEADERS ${MOCFILES})
@@ -269,7 +270,7 @@ elseif(${QTVERSION} EQUAL 6)
 
 	set(QT_VER ${Qt6Widgets_VERSION})
 else()
-	message(FATAL_ERROR "Unknown Qt version defined")
+	message(FATAL_ERROR "Not supported Qt version defined")
 endif()
 
 # SDL

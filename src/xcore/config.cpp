@@ -96,6 +96,8 @@ void conf_init(char* wpath, char* confdir) {
 	conf.emu.pause = 0;
 	conf.emu.fast = 0;
 	conf.joy.dead = 8192;
+	conf.joy.deadf = conf.joy.dead / 32768.0;
+	conf.joy.gpad = new xGamepad;
 //	conf.prof.changed = 0;
 	addProfile("default","xpeccy.conf");
 }
@@ -370,7 +372,10 @@ void loadConfig() {
 					}
 					break;
 				case SECT_INPUT:
-					if (pnam=="deadzone") conf.joy.dead = strtol(pval.c_str(), NULL, 0);
+					if (pnam=="deadzone") {
+						conf.joy.dead = strtol(pval.c_str(), NULL, 0);
+						conf.joy.deadf = conf.joy.dead / 32768.0;
+					}
 					break;
 				case SECT_VIDEO:
 					if (pnam=="layout") {

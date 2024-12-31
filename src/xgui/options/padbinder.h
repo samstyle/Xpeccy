@@ -37,6 +37,9 @@ class xPadBinder : public QDialog {
 		void setJoyDir();
 		void setMouseDir();
 		void onRepSlider(int);
+
+		void gpButtonChanged(int, bool);
+		void gpAxisChanged(int, double);
 	private:
 		Ui::PadBinder ui;
 		xPadMapModel* model;

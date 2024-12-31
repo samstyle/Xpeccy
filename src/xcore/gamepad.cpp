@@ -1,3 +1,5 @@
+#include <QDebug>
+
 #include <stdio.h>
 
 #include "gamepad.h"
@@ -202,3 +204,55 @@ void padDelete(std::string name) {
 	std::string path = conf.path.confDir + SLASH + name;
 	remove(path.c_str());
 }
+
+// QGamepad
+
+xGamepad::xGamepad(int devid, QObject* p):QGamepad(devid, p) {
+	connect(this, &xGamepad::buttonAChanged, this, &xGamepad::BAChanged);
+	connect(this, &xGamepad::buttonBChanged, this, &xGamepad::BBChanged);
+	connect(this, &xGamepad::buttonXChanged, this, &xGamepad::BXChanged);
+	connect(this, &xGamepad::buttonYChanged, this, &xGamepad::BYChanged);
+	connect(this, &xGamepad::buttonL1Changed, this, &xGamepad::BL1Changed);
+	connect(this, &xGamepad::buttonL3Changed, this, &xGamepad::BL3Changed);
+	connect(this, &xGamepad::buttonR1Changed, this, &xGamepad::BR1Changed);
+	connect(this, &xGamepad::buttonR3Changed, this, &xGamepad::BR3Changed);
+	connect(this, &xGamepad::buttonUpChanged, this, &xGamepad::BUChanged);
+	connect(this, &xGamepad::buttonDownChanged, this, &xGamepad::BDChanged);
+	connect(this, &xGamepad::buttonLeftChanged, this, &xGamepad::BLChanged);
+	connect(this, &xGamepad::buttonRightChanged, this, &xGamepad::BRChanged);
+	connect(this, &xGamepad::buttonStartChanged, this, &xGamepad::BStChanged);
+	connect(this, &xGamepad::buttonSelectChanged, this, &xGamepad::BSeChanged);
+	connect(this, &xGamepad::buttonCenterChanged, this, &xGamepad::BCeChanged);
+	connect(this, &xGamepad::buttonGuideChanged, this, &xGamepad::BGuChanged);
+
+	connect(this, &xGamepad::axisLeftXChanged, this, &xGamepad::ALXChanged);
+	connect(this, &xGamepad::axisLeftYChanged, this, &xGamepad::ALYChanged);
+	connect(this, &xGamepad::axisRightXChanged, this, &xGamepad::ARXChanged);
+	connect(this, &xGamepad::axisRightYChanged, this, &xGamepad::ARYChanged);
+	connect(this, &xGamepad::buttonL2Changed, this, &xGamepad::AL2Changed);
+	connect(this, &xGamepad::buttonR2Changed, this, &xGamepad::AR2Changed);
+}
+
+void xGamepad::BAChanged(bool b) {emit buttonChanged(0, b);}
+void xGamepad::BBChanged(bool b) {emit buttonChanged(1, b);}
+void xGamepad::BXChanged(bool b) {emit buttonChanged(2, b);}
+void xGamepad::BYChanged(bool b) {emit buttonChanged(3, b);}
+void xGamepad::BL1Changed(bool b) {emit buttonChanged(4, b);}
+void xGamepad::BR1Changed(bool b) {emit buttonChanged(5, b);}
+void xGamepad::BSeChanged(bool b) {emit buttonChanged(6, b);}
+void xGamepad::BStChanged(bool b) {emit buttonChanged(7, b);}
+void xGamepad::BCeChanged(bool b) {emit buttonChanged(8, b);}
+void xGamepad::BL3Changed(bool b) {emit buttonChanged(9, b);}
+void xGamepad::BR3Changed(bool b) {emit buttonChanged(10, b);}
+void xGamepad::BGuChanged(bool b) {emit buttonChanged(11, b);}
+void xGamepad::BUChanged(bool b) {emit buttonChanged(12, b);}
+void xGamepad::BDChanged(bool b) {emit buttonChanged(13, b);}
+void xGamepad::BLChanged(bool b) {emit buttonChanged(14, b);}
+void xGamepad::BRChanged(bool b) {emit buttonChanged(15, b);}
+
+void xGamepad::ALXChanged(double v) {emit axisChanged(0, (absd(v) < conf.joy.deadf) ? 0 : v);}
+void xGamepad::ALYChanged(double v) {emit axisChanged(1, (absd(v) < conf.joy.deadf) ? 0 : v);}
+void xGamepad::ARXChanged(double v) {emit axisChanged(2, (absd(v) < conf.joy.deadf) ? 0 : v);}
+void xGamepad::ARYChanged(double v) {emit axisChanged(3, (absd(v) < conf.joy.deadf) ? 0 : v);}
+void xGamepad::AL2Changed(double v) {emit axisChanged(4, (absd(v) < conf.joy.deadf) ? 0 : v);}
+void xGamepad::AR2Changed(double v) {emit axisChanged(5, (absd(v) < conf.joy.deadf) ? 0 : v);}

@@ -1,11 +1,13 @@
+#include <QDebug>
+
 #include <SDL.h>
 
 #include "padbinder.h"
 
 enum {
 	PBMODE_FREE = 0,
-	PBMODE_KEY = 1,
-	PBMODE_PAD = 2
+	PBMODE_KEY,
+	PBMODE_PAD
 };
 
 xPadBinder::xPadBinder(QWidget* p):QDialog(p) {
@@ -46,12 +48,21 @@ void xPadBinder::start(xJoyMapEntry e) {
 	setPadButtonText();
 	setKeyButtonText();
 	ui.pbRepSlider->setValue(ent.rpt);
+#if USE_QT_GAMEPAD
+	connect(conf.joy.gpad, &xGamepad::buttonChanged, this, &xPadBinder::gpButtonChanged);
+	connect(conf.joy.gpad, &xGamepad::axisChanged, this, &xPadBinder::gpAxisChanged);
+#else
 	timer.start(20);
+#endif
 	show();
 }
 
 void xPadBinder::close() {
+#if USE_QT_GAMEPAD
+	disconnect(conf.joy.gpad, nullptr, this, nullptr);	// disconnect all gpad->padbinder connections
+#else
 	timer.stop();
+#endif
 	QDialog::close();
 }
 
@@ -181,7 +192,11 @@ void xPadBinder::okPress() {
 // scan gamepad
 
 void xPadBinder::startBindPad() {
+#if USE_QT_GAMEPAD
+	if (conf.joy.gpad->deviceId() == 0) {
+#else
 	if (!conf.joy.joy) {
+#endif
 		ent.type = JOY_NONE;
 		ent.num = 0;
 		ent.state = 0;
@@ -191,7 +206,28 @@ void xPadBinder::startBindPad() {
 	}
 }
 
+void xPadBinder::gpButtonChanged(int n, bool v) {
+	if (v && (mode == PBMODE_PAD)) {
+		ent.type = JOY_BUTTON;
+		ent.num = n;
+		ent.state = 1;
+		mode = PBMODE_FREE;
+		setPadButtonText();
+	}
+}
+
+void xPadBinder::gpAxisChanged(int n, double v) {
+	if ((v != 0) && (mode == PBMODE_PAD)) {
+		ent.type = JOY_AXIS;
+		ent.num = n;
+		ent.state = (v < 0) ? -1 : 1;
+		mode = PBMODE_FREE;
+		setPadButtonText();
+	}
+}
+
 void xPadBinder::onTimer() {
+#if !USE_QT_GAMEPAD
 	SDL_Event ev;
 	SDL_JoystickUpdate();
 	while(SDL_PollEvent(&ev)) {
@@ -222,6 +258,7 @@ void xPadBinder::onTimer() {
 	if (mode != PBMODE_PAD) {
 		setPadButtonText();
 	}
+#endif
 }
 
 // pad map table model
