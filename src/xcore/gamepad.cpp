@@ -117,9 +117,15 @@ void padLoadConfig(std::string name) {
 					idx = 1;
 					switch (jent.dev) {
 						case JMAP_KEY:		// KUP, KLEFT, KQ, KA
+#if USE_SEQ_BIND
+							jent.seq = QKeySequence::fromString(QString(&ptr[1]));
+							if (jent.seq.isEmpty())
+								jent.dev = JMAP_NONE;
+#else
 							jent.key = getKeyIdByName(&ptr[1]);
 							if (jent.key == ENDKEY)
 								jent.dev = JMAP_NONE;
+#endif
 							break;
 						case JMAP_JOY:		// JU, JD, JF, J2, J4
 							jent.dir = padGetId(ptr[1], kjoyChars);
@@ -164,7 +170,11 @@ void padSaveConfig(std::string name) {
 			fprintf(file, ":%c", padGetChar(jent.dev, devChars));
 			switch(jent.dev) {
 				case JMAP_KEY:
+#if USE_SEQ_BIND
+					fprintf(file, "%s", jent.seq.toString().toUtf8().data());
+#else
 					fprintf(file, "%s", getKeyNameById(jent.key));
+#endif
 					break;
 				case JMAP_JOY:
 					fputc(padGetChar(jent.dir, kjoyChars), file);
@@ -207,6 +217,7 @@ void padDelete(std::string name) {
 
 // QGamepad
 
+#if USE_QT_GAMEPAD
 xGamepad::xGamepad(int devid, QObject* p):QGamepad(devid, p) {
 	connect(this, &xGamepad::buttonAChanged, this, &xGamepad::BAChanged);
 	connect(this, &xGamepad::buttonBChanged, this, &xGamepad::BBChanged);
@@ -256,3 +267,4 @@ void xGamepad::ARXChanged(double v) {emit axisChanged(2, (absd(v) < conf.joy.dea
 void xGamepad::ARYChanged(double v) {emit axisChanged(3, (absd(v) < conf.joy.deadf) ? 0 : v);}
 void xGamepad::AL2Changed(double v) {emit axisChanged(4, (absd(v) < conf.joy.deadf) ? 0 : v);}
 void xGamepad::AR2Changed(double v) {emit axisChanged(5, (absd(v) < conf.joy.deadf) ? 0 : v);}
+#endif

@@ -40,7 +40,8 @@ enum {
 	IRQ_CIA2,
 	IRQ_VIC,
 	IRQ_TAP_0,
-	IRQ_TAP_1
+	IRQ_TAP_1,
+	IRQ_TAP_BLK
 };
 
 typedef void(*cbirq)(int, void*);

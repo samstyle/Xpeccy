@@ -37,6 +37,7 @@ class xPadBinder : public QDialog {
 		void setJoyDir();
 		void setMouseDir();
 		void onRepSlider(int);
+		void seqFinished();
 
 		void gpButtonChanged(int, bool);
 		void gpAxisChanged(int, double);

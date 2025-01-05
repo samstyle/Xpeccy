@@ -1,4 +1,3 @@
-#include <QDebug>
 #include <QMenu>
 #include <QMessageBox>
 #include <QProgressBar>
@@ -8,6 +7,8 @@
 #include <QMimeData>
 #include <QPainter>
 #include <QFileDialog>
+
+#include <QDebug>
 
 // QDesktopWidget removed in Qt6
 #if QT_VERSION < QT_VERSION_CHECK(6,0,0)
@@ -259,10 +260,28 @@ MainWin::~MainWin() {
 // gamepad mapper
 // xJoyMapEntry::key is XKEY_*
 
+// TODO: shift+1 is recognised as 1
+
 void MainWin::mapRelease(Computer* comp, xJoyMapEntry ent) {
+//	QKeyEvent* ev;
+	Qt::Key key;
+	Qt::KeyboardModifier mod;
+	int xkey;
 	switch(ent.dev) {
 		case JMAP_KEY:
+#if !USE_SEQ_BIND
 			xkey_release(ent.key);
+#else
+			for(int i = 0; i < ent.seq.count(); i++) {
+				key = Qt::Key(ent.seq[i] & ~Qt::KeyboardModifierMask);
+				mod = Qt::KeyboardModifier(ent.seq[i] & Qt::KeyboardModifierMask);
+				xkey = qKey2id(key, mod);
+				if (mod & Qt::ShiftModifier) {xkey_release(XKEY_LSHIFT);}
+				if (mod & Qt::ControlModifier) {xkey_release(XKEY_LCTRL);}
+				if (mod & Qt::AltModifier) {xkey_release(XKEY_LALT);}
+				xkey_release(xkey);
+			}
+#endif
 			break;
 		case JMAP_JOY:
 			joyRelease(comp->joy, ent.dir);
@@ -274,9 +293,26 @@ void MainWin::mapRelease(Computer* comp, xJoyMapEntry ent) {
 }
 
 void MainWin::mapPress(Computer* comp, xJoyMapEntry ent) {
+//	QKeyEvent* ev;
+	Qt::Key key;
+	Qt::KeyboardModifier mod;
+	int xkey;
 	switch(ent.dev) {
 		case JMAP_KEY:
+#if !USE_SEQ_BIND
 			xkey_press(ent.key);
+#else
+			for(int i = 0; i < ent.seq.count(); i++) {
+				key = Qt::Key(ent.seq[i] & ~Qt::KeyboardModifierMask);
+				mod = Qt::KeyboardModifier(ent.seq[i] & Qt::KeyboardModifierMask);
+				xkey = qKey2id(key, mod);
+				//qDebug() << ent.seq[i] << key << mod << xkey;
+				if (mod & Qt::ShiftModifier) {xkey_press(XKEY_LSHIFT);}
+				if (mod & Qt::ControlModifier) {xkey_press(XKEY_LCTRL);}
+				if (mod & Qt::AltModifier) {xkey_press(XKEY_LALT);}
+				xkey_press(xkey);
+			}
+#endif
 			break;
 		case JMAP_JOY:
 			joyPress(comp->joy, ent.dir);

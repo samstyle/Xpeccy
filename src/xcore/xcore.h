@@ -21,13 +21,16 @@
 #include "../libxpeccy/spectrum.h"
 #include "../libxpeccy/filetypes/filetypes.h"
 
-#include <QGamepad>
-
 #ifndef USEMUTEX
 #define USEMUTEX 0
 #endif
 
-#define USE_QT_GAMEPAD 1
+// QGamepad -> Qt5.7+
+#define USE_QT_GAMEPAD 1 && (QT_VERSION >= QT_VERSION_CHECK(5,7,0))
+
+#if USE_QT_GAMEPAD
+#include <QGamepad>
+#endif
 
 #define NEW_SMP_METHOD 1
 // init: smpNeed = 0
@@ -384,6 +387,9 @@ xLayout* findLayout(std::string);
 
 // joystick
 
+// use QKeySequence to bind gamepad to pc keyboard, instead of single key
+#define USE_SEQ_BIND 1
+
 enum {
 	JOY_NONE = 0,
 	JOY_AXIS,
@@ -403,14 +409,16 @@ typedef struct {
 	int num;		// number of axis/button
 	int state;		// -x/+x for axis, 0/x for button
 	int dev;		// device for action JMAP_*
+#if USE_SEQ_BIND
+	QKeySequence seq;	// key sequence to activate
+#else
 	int key;		// key XKEY_* for keyboard
+#endif
 	int dir;		// XJ_* for kempston
 	int rps;		// repeat state (0:released, !0:pressed)
 	int rpt;		// repeat period (0 = no repeat)
 	int cnt;		// repeat counter
 } xJoyMapEntry;
-
-void mapJoystick(Computer*, int, int, int);
 
 class xGamepad : public QGamepad {
 	Q_OBJECT

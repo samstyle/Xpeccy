@@ -414,6 +414,7 @@ void tapSync(Tape* tap, int ns) {
 					} else if (tap->blkData[tap->block].breakPoint) {
 						tap->on = 0;
 					}
+					tap->xirq(IRQ_TAP_BLK, tap->xptr);
 				} else {
 					sig = tap->volPlay;
 					tap->sigLen += tap->blkData[tap->block].data[tap->pos].size;
@@ -454,6 +455,7 @@ void tapNextBlock(Tape* tap) {
 		tap->block = 0;
 		tapStop(tap);
 	}
+	tap->xirq(IRQ_TAP_BLK, tap->xptr);
 }
 
 // add file to tape

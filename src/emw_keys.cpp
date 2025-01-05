@@ -63,6 +63,7 @@ void MainWin::keyPressEvent(QKeyEvent* ev) {
 	int keyid;
 	keyEntry kent;
 	Computer* comp = conf.prof.cur->zx;
+//	qDebug() << ev->key();
 	if (comp->debug) {
 		ev->ignore();
 	} else if (pckAct->isChecked()) {
@@ -75,6 +76,7 @@ void MainWin::keyPressEvent(QKeyEvent* ev) {
 			xkey_press(keyid);
 		}
 	} else {
+//		qDebug() << ev->key();
 		keyid = ev_to_keyid(ev, false);
 		kent = getKeyEntry(keyid);
 		if (ev->isAutoRepeat()) {

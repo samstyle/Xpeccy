@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>236</width>
-    <height>212</height>
+    <width>344</width>
+    <height>273</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -28,48 +28,14 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <layout class="QGridLayout" name="gridLayout" columnstretch="0,10">
-     <item row="0" column="1">
-      <widget class="QPushButton" name="pbPadBind">
+    <layout class="QGridLayout" name="gridLayout" columnstretch="0,0,0">
+     <item row="7" column="0">
+      <widget class="QLabel" name="pbRepLabel">
        <property name="text">
-        <string>Push to set</string>
-       </property>
-       <property name="icon">
-        <iconset resource="../xpeccy.qrc">
-         <normaloff>:/images/gamepad.png</normaloff>:/images/gamepad.png</iconset>
-       </property>
-      </widget>
-     </item>
-     <item row="4" column="0">
-      <widget class="QRadioButton" name="rbMouse">
-       <property name="text">
-        <string>K&amp;Mouse</string>
-       </property>
-       <attribute name="buttonGroup">
-        <string notr="true">bgrDevType</string>
-       </attribute>
-      </widget>
-     </item>
-     <item row="4" column="1">
-      <widget class="QComboBox" name="cbMouseList"/>
-     </item>
-     <item row="2" column="0">
-      <widget class="QRadioButton" name="rbKey">
-       <property name="text">
-        <string>&amp;PCKey</string>
-       </property>
-       <attribute name="buttonGroup">
-        <string notr="true">bgrDevType</string>
-       </attribute>
-      </widget>
-     </item>
-     <item row="5" column="1">
-      <widget class="QLabel" name="label_2">
-       <property name="text">
-        <string>Autorepeat</string>
+        <string>0 sec</string>
        </property>
        <property name="alignment">
-        <set>Qt::AlignCenter</set>
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
        </property>
       </widget>
      </item>
@@ -83,24 +49,57 @@
        </property>
       </widget>
      </item>
-     <item row="2" column="1">
-      <widget class="QPushButton" name="pbKeyBind">
+     <item row="7" column="1">
+      <widget class="QSlider" name="pbRepSlider">
+       <property name="maximum">
+        <number>250</number>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="1">
+      <widget class="QComboBox" name="cbMouseList"/>
+     </item>
+     <item row="4" column="1">
+      <widget class="QComboBox" name="cbJoyList"/>
+     </item>
+     <item row="6" column="1">
+      <widget class="QLabel" name="label_2">
+       <property name="text">
+        <string>Autorepeat</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="0">
+      <widget class="QRadioButton" name="rbJoy">
+       <property name="text">
+        <string>&amp;Kempston</string>
+       </property>
+       <attribute name="buttonGroup">
+        <string notr="true">bgrDevType</string>
+       </attribute>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="QPushButton" name="pbPadBind">
        <property name="text">
         <string>Push to set</string>
        </property>
        <property name="icon">
         <iconset resource="../xpeccy.qrc">
-         <normaloff>:/images/keyboard.png</normaloff>:/images/keyboard.png</iconset>
+         <normaloff>:/images/gamepad.png</normaloff>:/images/gamepad.png</iconset>
        </property>
       </widget>
      </item>
-     <item row="3" column="1">
-      <widget class="QComboBox" name="cbJoyList"/>
-     </item>
-     <item row="3" column="0">
-      <widget class="QRadioButton" name="rbJoy">
+     <item row="5" column="0">
+      <widget class="QRadioButton" name="rbMouse">
        <property name="text">
-        <string>&amp;Kempston</string>
+        <string>K&amp;Mouse</string>
        </property>
        <attribute name="buttonGroup">
         <string notr="true">bgrDevType</string>
@@ -114,24 +113,32 @@
        </property>
       </widget>
      </item>
-     <item row="6" column="0">
-      <widget class="QLabel" name="pbRepLabel">
-       <property name="text">
-        <string>0 sec</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-       </property>
-      </widget>
+     <item row="2" column="1">
+      <layout class="QVBoxLayout" name="verticalLayout_3">
+       <item>
+        <widget class="QKeySequenceEdit" name="seqField"/>
+       </item>
+       <item>
+        <widget class="QPushButton" name="pbKeyBind">
+         <property name="text">
+          <string>Push to set</string>
+         </property>
+         <property name="icon">
+          <iconset resource="../xpeccy.qrc">
+           <normaloff>:/images/keyboard.png</normaloff>:/images/keyboard.png</iconset>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </item>
-     <item row="6" column="1">
-      <widget class="QSlider" name="pbRepSlider">
-       <property name="maximum">
-        <number>250</number>
+     <item row="2" column="0">
+      <widget class="QRadioButton" name="rbKey">
+       <property name="text">
+        <string>&amp;PCKey</string>
        </property>
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
+       <attribute name="buttonGroup">
+        <string notr="true">bgrDevType</string>
+       </attribute>
       </widget>
      </item>
     </layout>

@@ -4,8 +4,6 @@
 #include <QTimer>
 #include <QWidget>
 #include <QString>
-#include <QGamepad>
-#include <QGamepadManager>
 
 #ifdef USENETWORK
 #include <QTcpServer>
@@ -20,6 +18,11 @@
 #include "watcher.h"
 #include "vkeyboard.h"
 #include "ethread.h"
+
+#if USE_QT_GAMEPAD
+#include <QGamepad>
+#include <QGamepadManager>
+#endif
 
 // for windows
 #define STICKY_KEY 1

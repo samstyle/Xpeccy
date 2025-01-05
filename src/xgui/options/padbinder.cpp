@@ -41,12 +41,24 @@ xPadBinder::xPadBinder(QWidget* p):QDialog(p) {
 	connect(ui.pbOk, SIGNAL(clicked(bool)), this, SLOT(okPress()));
 	connect(ui.pbRepSlider, SIGNAL(valueChanged(int)), this, SLOT(onRepSlider(int)));
 
+#if USE_SEQ_BIND
+	ui.pbKeyBind->setVisible(false);
+	connect(ui.seqField, &QKeySequenceEdit::editingFinished, this, &xPadBinder::seqFinished);
+#else
+	ui.seqField->setEnabled(false);
+	ui.seqField->setVisible(false);
+#endif
+	resize(minimumSize());
 }
 
 void xPadBinder::start(xJoyMapEntry e) {
 	ent = e;
 	setPadButtonText();
+#if USE_SEQ_BIND
+	ui.seqField->setKeySequence(ent.seq);
+#else
 	setKeyButtonText();
+#endif
 	ui.pbRepSlider->setValue(ent.rpt);
 #if USE_QT_GAMEPAD
 	connect(conf.joy.gpad, &xGamepad::buttonChanged, this, &xPadBinder::gpButtonChanged);
@@ -75,7 +87,9 @@ void xPadBinder::setKeyButtonText() {
 	switch(ent.dev) {
 		case JMAP_KEY:
 			ui.rbKey->setChecked(true);
+#if !USE_SEQ_BIND
 			ui.pbKeyBind->setText(QString("Key %0").arg(getKeyNameById(ent.key)));
+#endif
 			break;
 		case JMAP_JOY:
 			ui.pbKeyBind->setText("Push to bind");
@@ -126,27 +140,34 @@ void xPadBinder::setPadButtonText() {
 void xPadBinder::setJoyDir() {
 	ui.rbJoy->setChecked(true);
 	ent.dev = JMAP_JOY;
+#if !USE_SEQ_BIND
 	ent.key = ENDKEY;
+#endif
 	ent.dir = ui.cbJoyList->itemData(ui.cbJoyList->currentIndex()).toInt();
 }
 
 void xPadBinder::setMouseDir() {
 	ui.rbMouse->setChecked(true);
 	ent.dev = JMAP_MOUSE;
+#if !USE_SEQ_BIND
 	ent.key = ENDKEY;
+#endif
 	ent.dir = ui.cbMouseList->itemData(ui.cbMouseList->currentIndex()).toInt();
 }
 
 // set key bind
 
 void xPadBinder::startBindKey() {
+#if !USE_SEQ_BIND
 	mode = PBMODE_KEY;
 	ui.pbKeyBind->setText("...scan...");
 	ui.rbKey->setChecked(true);
 	grabKeyboard();
+#endif
 }
 
 void xPadBinder::keyPressEvent(QKeyEvent* ev) {
+#if !USE_SEQ_BIND
 	ev->ignore();
 	if (ev->key() == Qt::Key_Escape) {
 		releaseKeyboard();
@@ -167,6 +188,15 @@ void xPadBinder::keyPressEvent(QKeyEvent* ev) {
 		setKeyButtonText();
 		releaseKeyboard();
 	}
+#endif
+}
+
+void xPadBinder::seqFinished() {
+#if USE_SEQ_BIND
+	ent.dev = JMAP_KEY;
+	ent.seq = ui.seqField->keySequence();
+	ent.dir = XJ_NONE;
+#endif
 }
 
 // OK pressed
@@ -177,12 +207,17 @@ void xPadBinder::okPress() {
 	if (ui.rbKey->isChecked()) {
 		ent.dev = JMAP_KEY;
 		ent.dir = XJ_NONE;
+#if USE_SEQ_BIND
+		if (ent.seq.isEmpty()) return;
+#else
 		if (ent.key == ENDKEY) return;
-	}
-	if (ui.rbJoy->isChecked()) {
+#endif
+	} else if (ui.rbJoy->isChecked()) {
 		ent.dev = JMAP_JOY;
 		ent.dir = ui.cbJoyList->itemData(ui.cbJoyList->currentIndex()).toInt();
+#if !USE_SEQ_BIND
 		ent.key = ENDKEY;
+#endif
 		if (ent.dir == XJ_NONE) return;
 	}
 	close();
@@ -207,7 +242,8 @@ void xPadBinder::startBindPad() {
 }
 
 void xPadBinder::gpButtonChanged(int n, bool v) {
-	if (v && (mode == PBMODE_PAD)) {
+//	if (v && (mode == PBMODE_PAD)) {
+	if (v) {
 		ent.type = JOY_BUTTON;
 		ent.num = n;
 		ent.state = 1;
@@ -217,7 +253,8 @@ void xPadBinder::gpButtonChanged(int n, bool v) {
 }
 
 void xPadBinder::gpAxisChanged(int n, double v) {
-	if ((v != 0) && (mode == PBMODE_PAD)) {
+//	if ((v != 0) && (mode == PBMODE_PAD)) {
+	if (absd(v) > conf.joy.deadf) {
 		ent.type = JOY_AXIS;
 		ent.num = n;
 		ent.state = (v < 0) ? -1 : 1;
@@ -323,7 +360,11 @@ QVariant xPadMapModel::data(const QModelIndex& idx, int role) const {
 				case 1:
 					switch(jent.dev) {
 						case JMAP_KEY:
+#if USE_SEQ_BIND
+							str = QString("Key: %0").arg(jent.seq.toString());
+#else
 							str = QString("Key %0").arg(getKeyNameById(jent.key));
+#endif
 							break;
 						case JMAP_JOY:
 							str = "Joystick ";

@@ -1630,7 +1630,11 @@ void SetupWin::addBinding() {
 	xJoyMapEntry jent;
 	jent.dev = JOY_NONE;
 	jent.dev = JMAP_JOY;
+#if USE_SEQ_BIND
+	jent.seq = QKeySequence();
+#else
 	jent.key = ENDKEY;
+#endif
 	jent.dir = XJ_NONE;
 	jent.rpt = 0;
 	padial->start(jent);

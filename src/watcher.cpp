@@ -67,6 +67,7 @@ void xWatcher::fillFields(Computer* comp) {
 	if (!isVisible()) return;
 	if (comp == NULL) return;
 	model->comp = comp;
+// TODO: remake for universal CPU
 	ui.wchAF->setText(gethexword((comp->cpu->a << 8) | (comp->cpu->f & 0xff)));
 	ui.wchBC->setText(gethexword(comp->cpu->bc));
 	ui.wchDE->setText(gethexword(comp->cpu->de));
