@@ -242,14 +242,10 @@ elseif(${QTVERSION} EQUAL 5)
 	endif()
 
 	set(QT_VER ${Qt5Widgets_VERSION})
-	if (NOT Qt5Widgets_VERSION VERSION_LESS 5.7.0)
-		find_package(Qt5 COMPONENTS Gamepad REQUIRED)
-		set(LIBRARIES ${LIBRARIES} Qt5::Gamepad)
-	endif()
 
 elseif(${QTVERSION} EQUAL 6)
 #	message(FATAL_ERROR "Qt6 usage is not implemented yet")
-# Qt6 requires c++17 standart
+# Qt6 requires c++17
 	set(CMAKE_CXX_STANDARD 17)
 	set(CMAKE_CXX_STANDARD_REQUIRED ON)
 

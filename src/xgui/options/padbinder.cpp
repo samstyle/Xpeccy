@@ -4,6 +4,8 @@
 
 #include "padbinder.h"
 
+// TODO: use xKeyEditor for binding to pc key ?
+
 enum {
 	PBMODE_FREE = 0,
 	PBMODE_KEY,
@@ -191,11 +193,42 @@ void xPadBinder::keyPressEvent(QKeyEvent* ev) {
 #endif
 }
 
+static struct {
+	int src;
+	int dst;
+} seqTranTab[] = {
+	{Qt::Key_Exclam, Qt::SHIFT + Qt::Key_1},
+	{Qt::Key_At, Qt::SHIFT + Qt::Key_2},
+	{Qt::Key_NumberSign, Qt::SHIFT + Qt::Key_3},
+	{Qt::Key_Dollar, Qt::SHIFT + Qt::Key_4},
+	{Qt::Key_Percent, Qt::SHIFT + Qt::Key_5},
+	{Qt::Key_AsciiCircum, Qt::SHIFT + Qt::Key_6},
+	{Qt::Key_Ampersand, Qt::SHIFT + Qt::Key_7},
+	{Qt::Key_Asterisk, Qt::SHIFT + Qt::Key_8},
+	{Qt::Key_ParenLeft, Qt::SHIFT + Qt::Key_9},
+	{Qt::Key_ParenRight, Qt::SHIFT + Qt::Key_0},
+	{0, 0}
+};
+
 void xPadBinder::seqFinished() {
 #if USE_SEQ_BIND
 	ent.dev = JMAP_KEY;
 	ent.seq = ui.seqField->keySequence();
 	ent.dir = XJ_NONE;
+	int i,j;
+	uint dseq[4] = {0,0,0,0};
+	for (i = 0; i < ent.seq.count(); i++) {
+		j = 0;
+		dseq[i] = ent.seq[i];
+		while (seqTranTab[j].src != 0) {
+			if (ent.seq[i] == seqTranTab[j].src) {
+				dseq[i] = seqTranTab[j].dst;
+			}
+			j++;
+		}
+	}
+	ent.seq = QKeySequence(dseq[0],dseq[1],dseq[2],dseq[3]);
+	ui.seqField->setKeySequence(ent.seq);
 #endif
 }
 
