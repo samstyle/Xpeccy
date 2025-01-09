@@ -1658,13 +1658,30 @@ void SetupWin::bindAccept(xJoyMapEntry ent) {
 	padModel->update();
 }
 
+extern bool qmidx_greater(const QModelIndex, const QModelIndex);
+
 void SetupWin::delBinding() {
-	int row = ui.tvPadTable->currentIndex().row();
-	if (row < 0) return;
-	if (!areSure("Delete this binding?")) return;
-	conf.joy.map.erase(conf.joy.map.begin() + row);
-	padModel->update();
-	padSaveConfig(getRFSData(ui.cbPadMap).toStdString());
+	QModelIndexList lst = ui.tvPadTable->selectionModel()->selectedRows();
+	if (!lst.isEmpty()) {
+		std::sort(lst.begin(), lst.end(), qmidx_greater);
+		if (areSure("Delete this binding(s)?")) {
+			int row;
+			foreach(QModelIndex idx, lst) {
+				row = idx.row();
+				conf.joy.map.erase(conf.joy.map.begin() + row);
+			}
+			padModel->update();
+			padSaveConfig(getRFSData(ui.cbPadMap).toStdString());
+		}
+	}
+/*
+		int row = ui.tvPadTable->currentIndex().row();
+		if (row < 0) return;
+		if (!areSure("Delete this binding?")) return;
+		conf.joy.map.erase(conf.joy.map.begin() + row);
+		padModel->update();
+		padSaveConfig(getRFSData(ui.cbPadMap).toStdString());
+*/
 }
 
 // tools

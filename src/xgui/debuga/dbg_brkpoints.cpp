@@ -452,7 +452,7 @@ void xBreakWidget::confirmBrk(xBrkPoint obrk, xBrkPoint brk) {
 	ui.bpList->update();
 }
 
-static bool qmidx_greater(const QModelIndex idx1, const QModelIndex idx2) {
+bool qmidx_greater(const QModelIndex idx1, const QModelIndex idx2) {
 	return (idx1.row() > idx2.row());
 }
 
