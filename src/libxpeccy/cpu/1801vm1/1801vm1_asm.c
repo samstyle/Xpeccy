@@ -51,6 +51,35 @@ int pdpCheckE(const char** pp) {
 	return r;
 }
 
+int pdpCheckEShift(const char** pp, int adr) {
+	const char* p = *pp;
+	int r = -1;
+	if (*p == '-') {
+		p++;
+		r = pdpCheckE(&p);
+		if (r < 0) {
+			r = 0x10000;		// overflow
+		} else {
+			r = -r;
+		}
+	} else if (*p == '+') {
+		p++;
+		r = pdpCheckE(&p);
+		if (r < 0) {
+			r = 0x10000;
+		}
+	} else {
+		r = pdpCheckE(&p);
+		if (r < 0) {
+			r = 0x10000;
+		} else {
+			r = r - (adr + 2);
+		}
+	}
+	*pp = p;
+	return r;
+}
+
 int pdpGetAdrIdx() {
 	int i = 0;
 	int r = -1;
@@ -215,7 +244,8 @@ xAsmScan pdp11_asm(int adr, const char* mnm, char* buf) {
 						if ((e < 0) || (e > 0xff)) {
 							work = 0;
 						} else {
-							code |= e;
+							code &= ~0xff;
+							code |= (e & 0xff);
 						}
 						break;
 					case 'f':
@@ -238,29 +268,19 @@ xAsmScan pdp11_asm(int adr, const char* mnm, char* buf) {
 						}
 						break;
 					case 'e':				// b0..7 = shift/2 (-254..+254)
-						e = pdpCheckE(&ptr);	// new adr
-						if ((e >= 0) && (e <= 0xffff)) {
-							e = e - (adr + 2);		// shift (negative - back)
-							if (!(e & 1) && (e > -255) && (e < 255)) {
-								code &= ~0xff;
-								code |= ((e / 2) & 0xff);
-							} else {
-								work = 0;
-							}
+						e = pdpCheckEShift(&ptr, adr);
+						if (!(e & 1) && (e > -255) && (e < 255)) {
+							code &= ~0xff;
+							code |= ((e / 2) & 0xff);
 						} else {
 							work = 0;
 						}
 						break;
 					case 'j':				// b0..6 = shift back/2 (-126..0)
-						e = pdpCheckE(&ptr);
-						if ((e >= 0) && (e <= 0xffff)) {
-							e = e - (adr + 2);
-							if (!(e & 1) && (e > -127) && (e < 1)) {
-								code &= ~0x3f;
-								code |= (((-e) >> 1) & 0x3f);
-							} else {
-								work = 0;
-							}
+						e = pdpCheckEShift(&ptr, adr);
+						if (!(e & 1) && (e > -127) && (e < 1)) {
+							code &= ~0x3f;
+							code |= (((-e) / 2) & 0x3f);
 						} else {
 							work = 0;
 						}
