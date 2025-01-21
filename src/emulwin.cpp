@@ -186,24 +186,15 @@ MainWin::MainWin() {
 	gpadmgr = QGamepadManager::instance();
 	QList<int> gpidlist = gpadmgr->connectedGamepads();
 	if (!gpidlist.isEmpty()) {
-		conf.joy.gpad->setDeviceId(gpidlist.first());
+		conf.joy.gpad->open(gpidlist.first());
 		qDebug() << "gamepad:" << conf.joy.gpad->deviceId() << conf.joy.gpad->name();
-		connect(conf.joy.gpad, &xGamepad::buttonChanged, this, &MainWin::gpButtonChanged);
-		connect(conf.joy.gpad, &xGamepad::axisChanged, this, &MainWin::gpAxisChanged);
 	}
 #else
-	if (SDL_NumJoysticks() > 0) {
-		conf.joy.joy = SDL_JoystickOpen(0);
-		if (conf.joy.joy) {
-			printf("Joystick opened\n");
-			printf("%i axis\n", SDL_JoystickNumAxes(conf.joy.joy));
-			printf("%i buttons\n", SDL_JoystickNumButtons(conf.joy.joy));
-		}
-	} else {
-		printf("Joystick not opened\n");
-		conf.joy.joy = NULL;
-	}
+	conf.joy.gpad->open(0);
+	printf("Gamepad %s\n",conf.joy.gpad->name().toUtf8().data());
 #endif
+	connect(conf.joy.gpad, &xGamepad::buttonChanged, this, &MainWin::gpButtonChanged);
+	connect(conf.joy.gpad, &xGamepad::axisChanged, this, &MainWin::gpAxisChanged);
 
 	initFileDialog(this);
 	initUserMenu();
@@ -394,9 +385,7 @@ void MainWin::mapJoystick(Computer* comp, int type, int num, int st) {
 	}
 }
 
-// for QGamepad
-
-#if USE_QT_GAMEPAD
+// for xGamepad
 
 // A,B,X,Y,L1,L3,R1,R3,Up,Down,Left,Right,Start,Select,Center,Guide
 void MainWin::gpButtonChanged(int n, bool v) {
@@ -410,8 +399,6 @@ void MainWin::gpAxisChanged(int n, double v) {
 	if (!isActiveWindow()) return;
 	mapJoystick(conf.prof.cur->zx, JOY_AXIS, n, v * 32767);
 }
-
-#endif
 
 // calling on timer every 20ms
 
@@ -492,7 +479,7 @@ void MainWin::timerEvent(QTimerEvent* ev) {
 			}
 		}
 // process sdl events (gamepad)
-#if !USE_QT_GAMEPAD
+#if !USE_QT_GAMEPAD && 0
 		int act = conf.joy.joy && !conf.emu.pause && isActiveWindow();
 		SDL_Event ev;
 		if (act)
@@ -885,8 +872,10 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 		sdcCloseFile(comp->sdc);
 		sltEject(comp->slot);		// this must save cartridge ram
 		emit s_keywin_close();
-		if (conf.joy.joy)
-			SDL_JoystickClose(conf.joy.joy);
+//#if !USE_QT_GAMEPAD
+//		if (conf.joy.joy)
+//			SDL_JoystickClose(conf.joy.joy);
+//#endif
 		saveConfig();
 #ifdef USENETWORK
 		closeServer();

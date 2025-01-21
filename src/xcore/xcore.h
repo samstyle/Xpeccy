@@ -420,13 +420,38 @@ typedef struct {
 	int cnt;		// repeat counter
 } xJoyMapEntry;
 
-class xGamepad : public QGamepad {
+enum {
+	GPBACKEND_NONE = 0,
+	GPBACKEND_SDL,
+	GPBACKEND_QT
+};
+
+class xGamepad : public QObject {
 	Q_OBJECT
 	public:
-		xGamepad(int = 0, QObject* = nullptr);
+		xGamepad(int = GPBACKEND_QT,int = 0, QObject* = nullptr);
+		~xGamepad();
+		void open(int);
+		void close();
+		int deviceId();
+		void setType(int);
+		int getType();
+		QString name();
 	signals:
 		void buttonChanged(int, bool);
 		void axisChanged(int, double);
+	private:
+		int type;
+		int id;
+		int lasthat;
+		int stid;
+		union {
+			SDL_Joystick* sjptr;
+#if USE_QT_GAMEPAD
+			QGamepad* qjptr;
+#endif
+		};
+#if USE_QT_GAMEPAD
 	private slots:
 		void BAChanged(bool);
 		void BBChanged(bool);
@@ -450,6 +475,9 @@ class xGamepad : public QGamepad {
 		void ARYChanged(double);
 		void AL2Changed(double);
 		void AR2Changed(double);
+#endif
+	protected:
+		void timerEvent(QTimerEvent*);
 };
 
 // xmap
@@ -510,7 +538,7 @@ struct xConfig {
 	} tape;
 	struct {
 		xGamepad* gpad;
-		SDL_Joystick* joy;
+		// SDL_Joystick* joy;
 		int dead;
 		double deadf;
 		QList<xJoyMapEntry> map;	// gamepad map for current profile

@@ -123,10 +123,8 @@ typedef struct {
 		void reset(QAction*);
 		void chLayout(QAction*);
 		void umOpen(QAction*);
-#if USE_QT_GAMEPAD
-		void gpButtonChanged(int, bool);
+		void gpButtonChanged(int, bool);	// need xGamepad on SDL
 		void gpAxisChanged(int, double);
-#endif
 		void connected();
 		void disconnected();
 		void socketRead();

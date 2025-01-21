@@ -1,5 +1,8 @@
 #include <QDebug>
 
+#include <SDL_events.h>
+#include <SDL_joystick.h>
+
 #include <stdio.h>
 
 #include "gamepad.h"
@@ -217,33 +220,176 @@ void padDelete(std::string name) {
 
 // QGamepad
 
+xGamepad::xGamepad(int t, int devid, QObject* p):QObject(p) {
+	lasthat = 0;
+	id = -1;
 #if USE_QT_GAMEPAD
-xGamepad::xGamepad(int devid, QObject* p):QGamepad(devid, p) {
-	connect(this, &xGamepad::buttonAChanged, this, &xGamepad::BAChanged);
-	connect(this, &xGamepad::buttonBChanged, this, &xGamepad::BBChanged);
-	connect(this, &xGamepad::buttonXChanged, this, &xGamepad::BXChanged);
-	connect(this, &xGamepad::buttonYChanged, this, &xGamepad::BYChanged);
-	connect(this, &xGamepad::buttonL1Changed, this, &xGamepad::BL1Changed);
-	connect(this, &xGamepad::buttonL3Changed, this, &xGamepad::BL3Changed);
-	connect(this, &xGamepad::buttonR1Changed, this, &xGamepad::BR1Changed);
-	connect(this, &xGamepad::buttonR3Changed, this, &xGamepad::BR3Changed);
-	connect(this, &xGamepad::buttonUpChanged, this, &xGamepad::BUChanged);
-	connect(this, &xGamepad::buttonDownChanged, this, &xGamepad::BDChanged);
-	connect(this, &xGamepad::buttonLeftChanged, this, &xGamepad::BLChanged);
-	connect(this, &xGamepad::buttonRightChanged, this, &xGamepad::BRChanged);
-	connect(this, &xGamepad::buttonStartChanged, this, &xGamepad::BStChanged);
-	connect(this, &xGamepad::buttonSelectChanged, this, &xGamepad::BSeChanged);
-	connect(this, &xGamepad::buttonCenterChanged, this, &xGamepad::BCeChanged);
-	connect(this, &xGamepad::buttonGuideChanged, this, &xGamepad::BGuChanged);
-
-	connect(this, &xGamepad::axisLeftXChanged, this, &xGamepad::ALXChanged);
-	connect(this, &xGamepad::axisLeftYChanged, this, &xGamepad::ALYChanged);
-	connect(this, &xGamepad::axisRightXChanged, this, &xGamepad::ARXChanged);
-	connect(this, &xGamepad::axisRightYChanged, this, &xGamepad::ARYChanged);
-	connect(this, &xGamepad::buttonL2Changed, this, &xGamepad::AL2Changed);
-	connect(this, &xGamepad::buttonR2Changed, this, &xGamepad::AR2Changed);
+	qjptr = new QGamepad;
+#endif
+	setType(t);
 }
 
+xGamepad::~xGamepad() {
+	close();
+}
+
+void xGamepad::open(int devid) {
+	close();
+	id = -1;
+	qDebug() << "Opening gamepad...";
+	switch (type) {
+#if USE_QT_GAMEPAD
+		case GPBACKEND_QT:
+			id = devid;
+			qjptr->setDeviceId(devid);
+			break;
+#endif
+		case GPBACKEND_SDL:
+			sjptr = SDL_JoystickOpen(devid);
+			if (sjptr) {
+				id = devid;
+				startTimer(20);
+			}
+			break;
+	}
+}
+
+void xGamepad::close() {
+	if (id < 0) return;
+	switch(type) {
+#if USE_QT_GAMEPAD
+		case GPBACKEND_QT:
+			qjptr->setDeviceId(0);
+			disconnect(qjptr);
+			break;
+#endif
+		case GPBACKEND_SDL:
+			if (sjptr) {
+				killTimer(stid);
+				SDL_JoystickClose(sjptr);
+			}
+			break;
+	}
+	id = -1;
+	type = GPBACKEND_NONE;
+	qDebug() << "Gamepad closed";
+}
+
+// TODO: Axis 4,5 (triggers): Qt: 0->32767; SDL: -32768->32767 (allways catched as negative)
+void xGamepad::timerEvent(QTimerEvent* e) {
+	if (type == GPBACKEND_SDL) {
+		SDL_Event ev;
+		SDL_JoystickUpdate();
+		double v;
+		while(SDL_PollEvent(&ev)) {
+			switch(ev.type) {
+				case SDL_JOYAXISMOTION:
+					v = ev.jaxis.value / 32768.0;
+					if (abs(v) < conf.joy.deadf) v = 0;
+					emit axisChanged(ev.jaxis.axis, v);
+					break;
+				case SDL_JOYBUTTONDOWN:
+					emit buttonChanged(ev.jbutton.button, true);
+					break;
+				case SDL_JOYBUTTONUP:
+					emit buttonChanged(ev.jbutton.button, false);
+					break;
+				case SDL_JOYHATMOTION:
+					lasthat ^= ev.jhat.value;	// bit n = 1 -> changed
+					if (lasthat & SDL_HAT_UP) emit buttonChanged(12, !!(ev.jhat.value & SDL_HAT_UP));
+					if (lasthat & SDL_HAT_DOWN) emit buttonChanged(13, !!(ev.jhat.value & SDL_HAT_DOWN));
+					if (lasthat & SDL_HAT_LEFT) emit buttonChanged(14, !!(ev.jhat.value & SDL_HAT_LEFT));
+					if (lasthat & SDL_HAT_RIGHT) emit buttonChanged(15, !!(ev.jhat.value & SDL_HAT_RIGHT));
+					lasthat = ev.jhat.value;
+					break;
+// SDL: gamepad connect/disconnect events
+#if HAVESDL2
+				// TODO: select device, if there is more than one
+				case SDL_JOYDEVICEREMOVED:
+				case SDL_JOYDEVICEADDED:
+					if (ev.jdevice.which != 0) break;
+					close();
+					if (SDL_NumJoysticks() > 0) {
+						open(0);
+					}
+					break;
+#endif
+			}
+		}
+	}
+}
+
+// TODO: Qt using gamepad id, SDL - list index
+//void xGamepad::setDeviceId(int devid) {
+//	if (id >= 0) close();
+//	id = devid;
+//	if (id >= 0) open(devid);
+//}
+
+int xGamepad::deviceId() {
+	return id;
+}
+
+QString xGamepad::name() {
+	QString nm;
+	switch(type) {
+#if USE_QT_GAMEPAD
+		case GPBACKEND_QT:
+			nm = qjptr->name();
+			break;
+#endif
+		case GPBACKEND_SDL:
+#ifdef HAVESDL2
+			nm = QString(SDL_JoystickName(sjptr));
+#elif HAVESDL1
+			nm = QString(SDL_JoystickName(0));
+#endif
+			break;
+	}
+	return nm;
+}
+
+void xGamepad::setType(int t) {
+	close();
+	switch(t) {
+#if USE_QT_GAMEPAD
+		case GPBACKEND_QT:
+			type = t;
+			connect(qjptr, &QGamepad::buttonAChanged, this, &xGamepad::BAChanged);
+			connect(qjptr, &QGamepad::buttonBChanged, this, &xGamepad::BBChanged);
+			connect(qjptr, &QGamepad::buttonXChanged, this, &xGamepad::BXChanged);
+			connect(qjptr, &QGamepad::buttonYChanged, this, &xGamepad::BYChanged);
+			connect(qjptr, &QGamepad::buttonL1Changed, this, &xGamepad::BL1Changed);
+			connect(qjptr, &QGamepad::buttonL3Changed, this, &xGamepad::BL3Changed);
+			connect(qjptr, &QGamepad::buttonR1Changed, this, &xGamepad::BR1Changed);
+			connect(qjptr, &QGamepad::buttonR3Changed, this, &xGamepad::BR3Changed);
+			connect(qjptr, &QGamepad::buttonUpChanged, this, &xGamepad::BUChanged);
+			connect(qjptr, &QGamepad::buttonDownChanged, this, &xGamepad::BDChanged);
+			connect(qjptr, &QGamepad::buttonLeftChanged, this, &xGamepad::BLChanged);
+			connect(qjptr, &QGamepad::buttonRightChanged, this, &xGamepad::BRChanged);
+			connect(qjptr, &QGamepad::buttonStartChanged, this, &xGamepad::BStChanged);
+			connect(qjptr, &QGamepad::buttonSelectChanged, this, &xGamepad::BSeChanged);
+			connect(qjptr, &QGamepad::buttonCenterChanged, this, &xGamepad::BCeChanged);
+			connect(qjptr, &QGamepad::buttonGuideChanged, this, &xGamepad::BGuChanged);
+			connect(qjptr, &QGamepad::axisLeftXChanged, this, &xGamepad::ALXChanged);
+			connect(qjptr, &QGamepad::axisLeftYChanged, this, &xGamepad::ALYChanged);
+			connect(qjptr, &QGamepad::axisRightXChanged, this, &xGamepad::ARXChanged);
+			connect(qjptr, &QGamepad::axisRightYChanged, this, &xGamepad::ARYChanged);
+			connect(qjptr, &QGamepad::buttonL2Changed, this, &xGamepad::AL2Changed);
+			connect(qjptr, &QGamepad::buttonR2Changed, this, &xGamepad::AR2Changed);
+			break;
+#endif
+		default:		// case GPBACKEND_SDL:
+			type = GPBACKEND_SDL;
+			break;
+	}
+}
+
+int xGamepad::getType() {
+	return type;
+}
+
+#if USE_QT_GAMEPAD
 void xGamepad::BAChanged(bool b) {emit buttonChanged(0, b);}
 void xGamepad::BBChanged(bool b) {emit buttonChanged(1, b);}
 void xGamepad::BXChanged(bool b) {emit buttonChanged(2, b);}

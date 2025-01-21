@@ -62,12 +62,8 @@ void xPadBinder::start(xJoyMapEntry e) {
 	setKeyButtonText();
 #endif
 	ui.pbRepSlider->setValue(ent.rpt);
-#if USE_QT_GAMEPAD
 	connect(conf.joy.gpad, &xGamepad::buttonChanged, this, &xPadBinder::gpButtonChanged);
 	connect(conf.joy.gpad, &xGamepad::axisChanged, this, &xPadBinder::gpAxisChanged);
-#else
-	timer.start(20);
-#endif
 	show();
 }
 
@@ -260,11 +256,8 @@ void xPadBinder::okPress() {
 // scan gamepad
 
 void xPadBinder::startBindPad() {
-#if USE_QT_GAMEPAD
-	if (conf.joy.gpad->deviceId() == 0) {
-#else
-	if (!conf.joy.joy) {
-#endif
+/*
+	if (conf.joy.gpad->getType() == GPBACKEND_NONE) {
 		ent.type = JOY_NONE;
 		ent.num = 0;
 		ent.state = 0;
@@ -272,6 +265,7 @@ void xPadBinder::startBindPad() {
 		ui.pbPadBind->setText("...scan...");
 		mode = PBMODE_PAD;
 	}
+*/
 }
 
 void xPadBinder::gpButtonChanged(int n, bool v) {
@@ -297,7 +291,7 @@ void xPadBinder::gpAxisChanged(int n, double v) {
 }
 
 void xPadBinder::onTimer() {
-#if !USE_QT_GAMEPAD
+#if !USE_QT_GAMEPAD && 0
 	SDL_Event ev;
 	SDL_JoystickUpdate();
 	while(SDL_PollEvent(&ev)) {

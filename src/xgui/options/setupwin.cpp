@@ -402,11 +402,14 @@ void setToolButtonColor(QToolButton* tb, QString nm, QString dc) {
 }
 
 void SetupWin::setPadName() {
+	ui.lePadName->setText(conf.joy.gpad->name());
+/*
 #ifdef HAVESDL2
 	ui.lePadName->setText(conf.joy.joy ? SDL_JoystickName(conf.joy.joy) : "none");
 #elif HAVESDL1
 	ui.lePadName->setText(conf.joy.joy ? SDL_JoystickName(0) : "none");
 #endif
+*/
 }
 
 void SetupWin::start() {
