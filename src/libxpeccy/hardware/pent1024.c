@@ -45,7 +45,7 @@ void p1mOutBFF7(Computer* comp, int port, int val) {
 
 void p1mOutDFF7(Computer* comp, int port, int val) {
 	if (comp->pEFF7 & 0x80)
-		comp->cmos.adr = val & 0xff;
+		cmos_wr(&comp->cmos, CMOS_ADR, val);
 }
 
 void p1mOutEFF7(Computer* comp, int port, int val) {

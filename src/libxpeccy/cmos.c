@@ -91,7 +91,7 @@ void cmos_wr(CMOS* cms, int port, int val) {
 			}
 			break;
 		case CMOS_DATA:
-			cms->data[cms->adr] = val & 0xff;
+			cms->data[cms->adr & 0x7f] = val & 0xff;
 			break;
 	}
 }

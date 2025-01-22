@@ -230,7 +230,7 @@ void tsOutBFF7(Computer* comp, int port, int val) {
 
 void tsOutDFF7(Computer* comp, int port, int val) {
 	if (comp->pEFF7 & 0x80)
-		comp->cmos.adr = val & 0xff;
+		cmos_wr(&comp->cmos, CMOS_ADR, val);
 }
 
 void tsOutEFF7(Computer* comp, int port, int val) {

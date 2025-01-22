@@ -43,7 +43,7 @@ void prfOutFE(Computer* comp, int port, int val) {
 }
 
 void prfOutAS(Computer* comp, int port, int val) {
-	comp->cmos.adr = val & 0xff;
+	cmos_wr(&comp->cmos, CMOS_ADR, val);
 }
 
 void prfOutDS(Computer* comp, int port, int val) {

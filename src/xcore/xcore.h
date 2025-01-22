@@ -436,7 +436,7 @@ class xGamepad : public QObject {
 		int deviceId();
 		void setType(int);
 		int getType();
-		QString name();
+		QString name(int = -1);
 	signals:
 		void buttonChanged(int, bool);
 		void axisChanged(int, double);

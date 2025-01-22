@@ -156,7 +156,7 @@ int evoIn8F(Computer* comp, int port) {
 
 int evoInBEF7(Computer* comp, int port) {	// dos
 	int res = cmsRd(comp);
-	switch (comp->cmos.adr & 0xff) {
+	switch (comp->cmos.adr & 0x7f) {
 		case 0x0c:
 			res = 0x00;
 			// b2: 0 if sdc write only

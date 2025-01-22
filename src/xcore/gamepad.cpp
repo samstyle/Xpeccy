@@ -218,7 +218,8 @@ void padDelete(std::string name) {
 	remove(path.c_str());
 }
 
-// QGamepad
+// xGamepad
+// NOTE: Qt using gamepad id, SDL - list index
 
 xGamepad::xGamepad(int t, int devid, QObject* p):QObject(p) {
 	lasthat = 0;
@@ -319,31 +320,21 @@ void xGamepad::timerEvent(QTimerEvent* e) {
 	}
 }
 
-// TODO: Qt using gamepad id, SDL - list index
-//void xGamepad::setDeviceId(int devid) {
-//	if (id >= 0) close();
-//	id = devid;
-//	if (id >= 0) open(devid);
-//}
-
 int xGamepad::deviceId() {
 	return id;
 }
 
-QString xGamepad::name() {
+QString xGamepad::name(int devid) {
 	QString nm;
+	if (devid < 0) devid = id;
 	switch(type) {
 #if USE_QT_GAMEPAD
 		case GPBACKEND_QT:
-			nm = qjptr->name();
+			nm = QGamepadManager::instance()->gamepadName(devid);
 			break;
 #endif
 		case GPBACKEND_SDL:
-#ifdef HAVESDL2
-			nm = QString(SDL_JoystickName(sjptr));
-#elif HAVESDL1
-			nm = QString(SDL_JoystickName(0));
-#endif
+			nm = QString(SDL_JoystickNameForIndex(devid));
 			break;
 	}
 	return nm;
