@@ -17,7 +17,7 @@ keyWindow::keyWindow(QWidget* p):QDialog(p) {
 	kb = NULL;
 	xent.key = ENDKEY;
 	memset(xent.zxKey, 0, 8);
-	QPixmap pxm(":/images/keymap.png");
+	QPixmap pxm(":/images/keymap_volutar.png");
 	setModal(false);
 	setWindowModality(Qt::NonModal);
 	setFixedSize(pxm.size());
@@ -46,25 +46,30 @@ void keyWindow::rall(Keyboard* k) {
 
 void keyWindow::paintEvent(QPaintEvent*) {
 	QPainter pnt;
-	int wid = width() / 10 + 1;
+//	int wid = width() / 10 + 1;
+//	int hig = (height() - 10) / 4;
+	int wid = (width() - 6) / 10 + 1;
 	int hig = (height() - 10) / 4;
 	unsigned char val;
 	int row, pos;
 	pnt.begin(this);
-	pnt.fillRect(QRectF(0,0,1,1), qRgba(0,0,0,0));
-	for(int i = 0; i < 8; i++) {
-		pos = (i & 4) ? 0 : 9;
-		row = (i & 4) ? (i & 3) : (~i & 3);
-		val = ~kb->map[i] & 0x1f;
-		while(val) {
-			if (val & 1) {
-				pnt.fillRect(pos * wid, 10 + row * hig, wid, hig, qRgb(0, 200, 255));
+	pnt.fillRect(0, 0, width(), height(), qRgba(0,0,0,0));
+	if (kb) {
+		for(int i = 0; i < 8; i++) {
+			pos = (i & 4) ? 0 : 9;
+			row = (i & 4) ? (i & 3) : (~i & 3);
+			val = ~kb->map[i] & 0x1f;
+			while(val) {
+				if (val & 1) {
+					//pnt.fillRect(pos * wid, 10 + row * hig, wid, hig, qRgb(0, 200, 255));
+					pnt.fillRect(3 + pos * wid, 10 + row * hig, wid, hig, qRgb(0, 200, 255));
+				}
+				val >>= 1;
+				pos += (i & 4) ? 1 : -1;
 			}
-			val >>= 1;
-			pos += (i & 4) ? 1 : -1;
 		}
 	}
-	pnt.drawPixmap(0, 0, QPixmap(":/images/keymap.png"));
+	pnt.drawPixmap(0, 0, QPixmap(":/images/keymap_volutar.png"));
 	pnt.end();
 }
 
@@ -72,8 +77,12 @@ void keyWindow::mousePressEvent(QMouseEvent* ev) {
 	if (!kb) return;
 	int row;
 	int col;
-	row = ev->xEventY * 4 / height();
-	col = ev->xEventX * 10 / width();
+	row = (ev->xEventY - 10) * 4 / (height() - 10);
+	if (row < 0) row = 0;
+	if (row > 3) row = 3;
+	col = (ev->xEventX - 3) * 10 / (width() - 3);
+	if (col < 0) col = 0;
+	if (col > 9) col = 9;
 	xent.zxKey[0] = kwMap[row][col];
 	xent.zxKey[1] = 0;
 	switch(ev->button()) {
