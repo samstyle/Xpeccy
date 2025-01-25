@@ -182,17 +182,9 @@ MainWin::MainWin() {
 	leds[led_disk_red].load(":/images/diskRed.png");
 	leds[led_wav].load(":/images/wav.png");
 
-#if USE_QT_GAMEPAD
-	gpadmgr = QGamepadManager::instance();
-	QList<int> gpidlist = gpadmgr->connectedGamepads();
-	if (!gpidlist.isEmpty()) {
-		conf.joy.gpad->open(gpidlist.first());
-		qDebug() << "gamepad:" << conf.joy.gpad->deviceId() << conf.joy.gpad->name();
-	}
-#else
-	conf.joy.gpad->open(0);
-	printf("Gamepad %s\n",conf.joy.gpad->name().toUtf8().data());
-#endif
+	conf.joy.gpad->gpopen(0);
+	// qDebug() << "Gamepad" << conf.joy.gpad->name();
+
 	connect(conf.joy.gpad, &xGamepad::buttonChanged, this, &MainWin::gpButtonChanged);
 	connect(conf.joy.gpad, &xGamepad::axisChanged, this, &MainWin::gpAxisChanged);
 
@@ -478,48 +470,6 @@ void MainWin::timerEvent(QTimerEvent* ev) {
 				}
 			}
 		}
-// process sdl events (gamepad)
-#if !USE_QT_GAMEPAD && 0
-		int act = conf.joy.joy && !conf.emu.pause && isActiveWindow();
-		SDL_Event ev;
-		if (act)
-			SDL_JoystickUpdate();
-		while(SDL_PollEvent(&ev)) {
-			switch(ev.type) {
-				case SDL_JOYAXISMOTION:
-					if (abs(ev.jaxis.value) < conf.joy.dead) {
-						mapJoystick(comp, JOY_AXIS, ev.jaxis.axis, 0);
-					} else {
-						mapJoystick(comp, JOY_AXIS, ev.jaxis.axis, ev.jaxis.value);
-					}
-					break;
-				case SDL_JOYBUTTONDOWN:
-					mapJoystick(comp, JOY_BUTTON, ev.jbutton.button, 32768);
-					break;
-				case SDL_JOYBUTTONUP:
-					mapJoystick(comp, JOY_BUTTON, ev.jbutton.button, 0);
-					break;
-				case SDL_JOYHATMOTION:
-					mapJoystick(comp, JOY_HAT, ev.jhat.hat, ev.jhat.value);
-					break;
-#if HAVESDL2
-				// TODO: select device, if there is more than one
-				case SDL_JOYDEVICEREMOVED:
-				case SDL_JOYDEVICEADDED:
-					if (ev.jdevice.which != 0) break;
-					if (conf.joy.joy) {
-						SDL_JoystickClose(conf.joy.joy);
-						conf.joy.joy = NULL;
-					}
-					if (SDL_NumJoysticks() > 0) {
-						conf.joy.joy = SDL_JoystickOpen(0);
-					}
-					emit s_gamepad_plug();
-					break;
-#endif
-			}
-		}
-#endif
 // process mouse auto move
 		comp->mouse->xpos += comp->mouse->autox;
 		comp->mouse->ypos += comp->mouse->autoy;
@@ -872,10 +822,6 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 		sdcCloseFile(comp->sdc);
 		sltEject(comp->slot);		// this must save cartridge ram
 		emit s_keywin_close();
-//#if !USE_QT_GAMEPAD
-//		if (conf.joy.joy)
-//			SDL_JoystickClose(conf.joy.joy);
-//#endif
 		saveConfig();
 #ifdef USENETWORK
 		closeServer();

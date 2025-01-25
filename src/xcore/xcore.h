@@ -429,11 +429,11 @@ enum {
 class xGamepad : public QObject {
 	Q_OBJECT
 	public:
-		xGamepad(int = GPBACKEND_QT,int = 0, QObject* = nullptr);
+		xGamepad(int = GPBACKEND_QT, QObject* = nullptr);
 		~xGamepad();
-		void open(int);
+		void gpopen(int);
 		void close();
-		int deviceId();
+//		int deviceId();
 		void setType(int);
 		int getType();
 		QString name(int = -1);

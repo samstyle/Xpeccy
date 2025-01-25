@@ -79,11 +79,7 @@ bool xApp::event(QEvent* ev) {
 int main(int ac,char** av) {
 	tClock = clock();
 // NOTE:SDL_INIT_VIDEO must be here for SDL_Joystick event processing. Joystick doesn't works without video init
-#if USE_QT_GAMEPAD && 0
-	SDL_Init(SDL_INIT_AUDIO | SDL_INIT_TIMER);
-#else
 	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK | SDL_INIT_TIMER);
-#endif
 	atexit(SDL_Quit);
 	SDL_version sdlver;
 	SDL_VERSION(&sdlver)

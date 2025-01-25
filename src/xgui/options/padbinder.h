@@ -30,9 +30,8 @@ class xPadBinder : public QDialog {
 	signals:
 		void bindReady(xJoyMapEntry);
 	private slots:
-		void onTimer();
 		void okPress();
-		void startBindPad();
+//		void startBindPad();
 		void startBindKey();
 		void setJoyDir();
 		void setMouseDir();
@@ -44,9 +43,8 @@ class xPadBinder : public QDialog {
 	private:
 		Ui::PadBinder ui;
 		xPadMapModel* model;
-		QTimer timer;
 		int mode;
-		void close();
+//		void close();
 		void setPadButtonText();
 		void setKeyButtonText();
 		void keyPressEvent(QKeyEvent*);

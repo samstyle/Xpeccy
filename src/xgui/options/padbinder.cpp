@@ -35,8 +35,8 @@ xPadBinder::xPadBinder(QWidget* p):QDialog(p) {
 	ui.cbMouseList->addItem("Wheel up", XM_WHEELUP);
 	ui.cbMouseList->addItem("Wheel down", XM_WHEELDN);
 
-	connect(&timer, SIGNAL(timeout()), this, SLOT(onTimer()));
-	connect(ui.pbPadBind, SIGNAL(clicked(bool)), this, SLOT(startBindPad()));
+	// connect(&timer, SIGNAL(timeout()), this, SLOT(onTimer()));
+	// connect(ui.pbPadBind, SIGNAL(clicked(bool)), this, SLOT(startBindPad()));
 	connect(ui.pbKeyBind, SIGNAL(clicked(bool)), this, SLOT(startBindKey()));
 	connect(ui.cbJoyList, SIGNAL(currentIndexChanged(int)), this, SLOT(setJoyDir()));
 	connect(ui.cbMouseList, SIGNAL(currentIndexChanged(int)), this, SLOT(setMouseDir()));
@@ -65,15 +65,6 @@ void xPadBinder::start(xJoyMapEntry e) {
 	connect(conf.joy.gpad, &xGamepad::buttonChanged, this, &xPadBinder::gpButtonChanged);
 	connect(conf.joy.gpad, &xGamepad::axisChanged, this, &xPadBinder::gpAxisChanged);
 	show();
-}
-
-void xPadBinder::close() {
-#if USE_QT_GAMEPAD
-	disconnect(conf.joy.gpad, nullptr, this, nullptr);	// disconnect all gpad->padbinder connections
-#else
-	timer.stop();
-#endif
-	QDialog::close();
 }
 
 void xPadBinder::onRepSlider(int val) {
@@ -255,22 +246,8 @@ void xPadBinder::okPress() {
 
 // scan gamepad
 
-void xPadBinder::startBindPad() {
-/*
-	if (conf.joy.gpad->getType() == GPBACKEND_NONE) {
-		ent.type = JOY_NONE;
-		ent.num = 0;
-		ent.state = 0;
-	} else {
-		ui.pbPadBind->setText("...scan...");
-		mode = PBMODE_PAD;
-	}
-*/
-}
-
 void xPadBinder::gpButtonChanged(int n, bool v) {
-//	if (v && (mode == PBMODE_PAD)) {
-	if (v) {
+	if (v && isActiveWindow()) {
 		ent.type = JOY_BUTTON;
 		ent.num = n;
 		ent.state = 1;
@@ -280,8 +257,7 @@ void xPadBinder::gpButtonChanged(int n, bool v) {
 }
 
 void xPadBinder::gpAxisChanged(int n, double v) {
-//	if ((v != 0) && (mode == PBMODE_PAD)) {
-	if (absd(v) > conf.joy.deadf) {
+	if ((absd(v) > conf.joy.deadf) && isActiveWindow()) {
 		ent.type = JOY_AXIS;
 		ent.num = n;
 		ent.state = (v < 0) ? -1 : 1;
@@ -289,43 +265,6 @@ void xPadBinder::gpAxisChanged(int n, double v) {
 		setPadButtonText();
 	}
 }
-
-void xPadBinder::onTimer() {
-#if !USE_QT_GAMEPAD && 0
-	SDL_Event ev;
-	SDL_JoystickUpdate();
-	while(SDL_PollEvent(&ev)) {
-		if (mode == PBMODE_PAD) {
-			switch(ev.type) {
-				case SDL_JOYAXISMOTION:
-					if (abs(ev.jaxis.value) < conf.joy.dead) break;
-					ent.type = JOY_AXIS;
-					ent.num = ev.jaxis.axis;
-					ent.state = (ev.jaxis.value < 0) ? -1 : +1;
-					mode = PBMODE_FREE;
-					break;
-				case SDL_JOYBUTTONDOWN:
-					ent.type = JOY_BUTTON;
-					ent.num = ev.jbutton.button;
-					ent.state = 1;
-					mode = PBMODE_FREE;
-					break;
-				case SDL_JOYHATMOTION:
-					ent.type = JOY_HAT;
-					ent.num = ev.jhat.hat;
-					ent.state = ev.jhat.value;
-					mode = PBMODE_FREE;
-					break;
-			}
-		}
-	}
-	if (mode != PBMODE_PAD) {
-		setPadButtonText();
-	}
-#endif
-}
-
-// pad map table model
 
 // PAD MAP MODEL
 

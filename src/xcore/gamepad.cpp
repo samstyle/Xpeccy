@@ -1,5 +1,7 @@
 #include <QDebug>
 
+#include <QGamepadManager>
+
 #include <SDL_events.h>
 #include <SDL_joystick.h>
 
@@ -219,9 +221,7 @@ void padDelete(std::string name) {
 }
 
 // xGamepad
-// NOTE: Qt using gamepad id, SDL - list index
-
-xGamepad::xGamepad(int t, int devid, QObject* p):QObject(p) {
+xGamepad::xGamepad(int t, QObject* p):QObject(p) {
 	lasthat = 0;
 	id = -1;
 #if USE_QT_GAMEPAD
@@ -234,15 +234,19 @@ xGamepad::~xGamepad() {
 	close();
 }
 
-void xGamepad::open(int devid) {
+void xGamepad::gpopen(int devid) {
 	close();
 	id = -1;
-	qDebug() << "Opening gamepad...";
+	QList<int> gpidlist;
 	switch (type) {
 #if USE_QT_GAMEPAD
 		case GPBACKEND_QT:
-			id = devid;
-			qjptr->setDeviceId(devid);
+			gpidlist = QGamepadManager::instance()->connectedGamepads();
+			if (gpidlist.size() > devid) {
+				id = devid;
+				qjptr->setDeviceId(gpidlist.at(devid));
+			}
+			qDebug() << "Qt :" << conf.joy.gpad->name();
 			break;
 #endif
 		case GPBACKEND_SDL:
@@ -251,6 +255,7 @@ void xGamepad::open(int devid) {
 				id = devid;
 				startTimer(20);
 			}
+			qDebug() << "SDL :" << conf.joy.gpad->name();
 			break;
 	}
 }
@@ -260,8 +265,8 @@ void xGamepad::close() {
 	switch(type) {
 #if USE_QT_GAMEPAD
 		case GPBACKEND_QT:
-			qjptr->setDeviceId(0);
 			disconnect(qjptr);
+			qjptr->setDeviceId(0);
 			break;
 #endif
 		case GPBACKEND_SDL:
@@ -272,13 +277,12 @@ void xGamepad::close() {
 			break;
 	}
 	id = -1;
-	type = GPBACKEND_NONE;
 	qDebug() << "Gamepad closed";
 }
 
 // TODO: Axis 4,5 (triggers): Qt: 0->32767; SDL: -32768->32767 (allways catched as negative)
 void xGamepad::timerEvent(QTimerEvent* e) {
-	if (type == GPBACKEND_SDL) {
+	if ((type == GPBACKEND_SDL) && (id > -1)) {
 		SDL_Event ev;
 		SDL_JoystickUpdate();
 		double v;
@@ -311,7 +315,7 @@ void xGamepad::timerEvent(QTimerEvent* e) {
 					if (ev.jdevice.which != 0) break;
 					close();
 					if (SDL_NumJoysticks() > 0) {
-						open(0);
+						gpopen(id);
 					}
 					break;
 #endif
@@ -320,17 +324,23 @@ void xGamepad::timerEvent(QTimerEvent* e) {
 	}
 }
 
+/*
 int xGamepad::deviceId() {
 	return id;
 }
+*/
 
 QString xGamepad::name(int devid) {
 	QString nm;
 	if (devid < 0) devid = id;
+	QList<int> devlst;
 	switch(type) {
 #if USE_QT_GAMEPAD
 		case GPBACKEND_QT:
-			nm = QGamepadManager::instance()->gamepadName(devid);
+			devlst = QGamepadManager::instance()->connectedGamepads();
+			if (devlst.size() > devid) {
+				nm = QGamepadManager::instance()->gamepadName(devlst.at(devid));
+			}
 			break;
 #endif
 		case GPBACKEND_SDL:
