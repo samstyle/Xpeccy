@@ -234,10 +234,12 @@ xGamepad::~xGamepad() {
 	close();
 }
 
-void xGamepad::gpopen(int devid) {
+void xGamepad::open(int devid) {
 	close();
 	id = -1;
+#if USE_QT_GAMEPAD
 	QList<int> gpidlist;
+#endif
 	switch (type) {
 #if USE_QT_GAMEPAD
 		case GPBACKEND_QT:
@@ -315,7 +317,7 @@ void xGamepad::timerEvent(QTimerEvent* e) {
 					if (ev.jdevice.which != 0) break;
 					close();
 					if (SDL_NumJoysticks() > 0) {
-						gpopen(id);
+						open(id);
 					}
 					break;
 #endif
@@ -323,12 +325,6 @@ void xGamepad::timerEvent(QTimerEvent* e) {
 		}
 	}
 }
-
-/*
-int xGamepad::deviceId() {
-	return id;
-}
-*/
 
 QString xGamepad::name(int devid) {
 	QString nm;
@@ -348,6 +344,29 @@ QString xGamepad::name(int devid) {
 			break;
 	}
 	return nm;
+}
+
+QStringList xGamepad::getList() {
+	QStringList lst;
+	int id, cnt;
+	QList<int> devlist;
+	switch(type) {
+#if USE_QT_GAMEPAD
+		case GPBACKEND_QT:
+			devlist = QGamepadManager::instance()->connectedGamepads();
+			foreach(int id, devlist) {
+				lst << QGamepadManager::instance()->gamepadName(id);
+			}
+			break;
+#endif
+		case GPBACKEND_SDL:
+			cnt = SDL_NumJoysticks();
+			for(id = 0; id < cnt; id++) {
+				lst << SDL_JoystickNameForIndex(id);
+			}
+			break;
+	}
+	return lst;
 }
 
 void xGamepad::setType(int t) {

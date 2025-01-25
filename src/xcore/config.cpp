@@ -185,6 +185,7 @@ void saveConfig() {
 	fprintf(cfile, "fast = %s\n", YESNO(conf.tape.fast));
 
 	fprintf(cfile, "\n[INPUT]\n\n");
+	fprintf(cfile, "gamepadidx = %i\n", conf.joy.idx);
 	fprintf(cfile, "deadzone = %i\n", conf.joy.dead);
 
 	fprintf(cfile, "\n[LEDS]\n\n");
@@ -312,12 +313,18 @@ void loadConfig() {
 	conf.pal["dbg.sel.bg"] = "#98ff98";
 	conf.pal["dbg.sel.txt"] = "#000000";
 
+	xArg arg;
+
 	while (!file.eof()) {
 		file.getline(buf,2048);
 		line = std::string(buf);
 		spl = splitline(line);
 		pnam = spl.first;
 		pval = spl.second;
+		arg.b = str2bool(pval);
+		arg.s = pval.c_str();
+		arg.i = strtol(arg.s, NULL, 0);
+		arg.d = strtod(arg.s, NULL);
 		if (pval=="") {
 			if (pnam=="[BOOKMARKS]") section = SECT_BOOKMARK;
 			if (pnam=="[PROFILES]") section = SECT_PROFILES;
@@ -335,18 +342,18 @@ void loadConfig() {
 		} else {
 			switch (section) {
 				case SECT_KEYS:
-					set_shortcut_name(pnam.c_str(), QKeySequence(pval.c_str()));
+					set_shortcut_name(pnam.c_str(), QKeySequence(arg.s));
 					break;
 				case SECT_PALETTE:
-					col = QColor(pval.c_str());
+					col = QColor(arg.s);
 					if (col.isValid())
 						conf.pal[QString(pnam.c_str())] = col;
 					break;
 				case SECT_DEBUGA:
-					if (pnam == "dbsize") conf.dbg.dbsize = atoi(pval.c_str());
-					if (pnam == "dwsize") conf.dbg.dwsize = atoi(pval.c_str());
-					if (pnam == "dmsize") conf.dbg.dmsize = atoi(pval.c_str());
-					if (pnam == "font") conf.dbg.font.fromString(QString(pval.c_str()));
+					if (pnam == "dbsize") conf.dbg.dbsize = arg.i;
+					if (pnam == "dwsize") conf.dbg.dwsize = arg.i;
+					if (pnam == "dmsize") conf.dbg.dmsize = arg.i;
+					if (pnam == "font") conf.dbg.font.fromString(QString(arg.s));
 					if (pnam == "window") {
 						vect = splitstr(pval,":");
 						if (vect.size() < 4) {
@@ -362,20 +369,21 @@ void loadConfig() {
 					}
 					break;
 				case SECT_BOOKMARK:
-					addBookmark(pnam,pval);
+					addBookmark(pnam, pval);
 					break;
 				case SECT_PROFILES:
 					if (pnam == "current") {
 						pnm = pval;
 					} else {
-						addProfile(pnam,pval);
+						addProfile(pnam, pval);
 					}
 					break;
 				case SECT_INPUT:
 					if (pnam=="deadzone") {
-						conf.joy.dead = strtol(pval.c_str(), NULL, 0);
+						conf.joy.dead = arg.i;
 						conf.joy.deadf = conf.joy.dead / 32768.0;
 					}
+					if (pnam=="gamepadidx") conf.joy.idx = arg.i;
 					break;
 				case SECT_VIDEO:
 					if (pnam=="layout") {
@@ -399,23 +407,23 @@ void loadConfig() {
 					}
 					if (pnam=="scrDir") conf.scrShot.dir = pval;
 					if (pnam=="scrFormat") conf.scrShot.format = pval;
-					if (pnam=="scrCount") conf.scrShot.count = atoi(pval.c_str());
-					if (pnam=="scrInterval") conf.scrShot.interval = atoi(pval.c_str());
-					if (pnam=="scrNoLeds") conf.scrShot.noLeds = str2bool(pval) ? 1 : 0;
-					if (pnam=="scrNoBord") conf.scrShot.noBorder = str2bool(pval) ? 1 : 0;
-					if (pnam=="fullscreen") conf.vid.fullScreen = str2bool(pval) ? 1 : 0;
-					if (pnam=="keepratio") conf.vid.keepRatio = str2bool(pval) ? 1 : 0;
-					if (pnam=="bordersize") conf.brdsize = getRanged(pval.c_str(), 0, 100) / 100.0;
-					if (pnam=="doublesize") conf.vid.scale = str2bool(pval) ? 2 : 1;
+					if (pnam=="scrCount") conf.scrShot.count = arg.i;
+					if (pnam=="scrInterval") conf.scrShot.interval = arg.i;
+					if (pnam=="scrNoLeds") conf.scrShot.noLeds = arg.b;
+					if (pnam=="scrNoBord") conf.scrShot.noBorder = arg.b;
+					if (pnam=="fullscreen") conf.vid.fullScreen = arg.b;
+					if (pnam=="keepratio") conf.vid.keepRatio = arg.b;
+					if (pnam=="bordersize") conf.brdsize = getRanged(arg.s, 0, 100) / 100.0;
+					if (pnam=="doublesize") conf.vid.scale = arg.b ? 2 : 1;
 					if (pnam=="scale") {
-						conf.vid.scale = atoi(pval.c_str());
+						conf.vid.scale = arg.i;
 						if (conf.vid.scale < 1) conf.vid.scale = 1;
 						if (conf.vid.scale > 6) conf.vid.scale = 6;
 					}
-					if (pnam=="noflic") noflic = str2bool(pval) ? 50 : 25;		// old parameter
-					if (pnam=="noflick") noflic = getRanged(pval.c_str(), 0, 50);	// new parameter
-					if (pnam=="greyscale") vid_set_grey(str2bool(pval) ? 1 : 0);
-					if (pnam=="scanlines") scanlines = str2bool(pval) ? 1 : 0;
+					if (pnam=="noflic") noflic = arg.b ? 50 : 25;		// old parameter
+					if (pnam=="noflick") noflic = getRanged(arg.s, 0, 50);	// new parameter
+					if (pnam=="greyscale") vid_set_grey(arg.b);
+					if (pnam=="scanlines") scanlines = arg.b;
 					if (pnam=="shader") conf.vid.shader = pval;
 					break;
 				case SECT_ROMSETS:
@@ -484,24 +492,24 @@ void loadConfig() {
 					}
 					break;
 				case SECT_SOUND:
-					if (pnam=="enabled") conf.snd.enabled = str2bool(pval) ? 1 : 0;
+					if (pnam=="enabled") conf.snd.enabled = arg.b;
 					if (pnam=="soundsys") soutnam = pval;
-					if (pnam=="rate") conf.snd.rate = strtol(pval.c_str(), NULL, 10);
-					if (pnam=="volume.master") conf.snd.vol.master = getRanged(pval.c_str(), 0, 100);
-					if (pnam=="volume.beep") conf.snd.vol.beep = getRanged(pval.c_str(), 0, 100);
-					if (pnam=="volume.tape") conf.snd.vol.tape = getRanged(pval.c_str(), 0, 100);
-					if (pnam=="volume.ay") conf.snd.vol.ay = getRanged(pval.c_str(), 0, 100);
-					if (pnam=="volume.gs") conf.snd.vol.gs = getRanged(pval.c_str(), 0, 100);
-					if (pnam=="volume.sdrv") conf.snd.vol.sdrv = getRanged(pval.c_str(), 0, 100);
-					if (pnam=="volume.saa") conf.snd.vol.saa = getRanged(pval.c_str(), 0, 100);
+					if (pnam=="rate") conf.snd.rate = arg.i;
+					if (pnam=="volume.master") conf.snd.vol.master = getRanged(arg.s, 0, 100);
+					if (pnam=="volume.beep") conf.snd.vol.beep = getRanged(arg.s, 0, 100);
+					if (pnam=="volume.tape") conf.snd.vol.tape = getRanged(arg.s, 0, 100);
+					if (pnam=="volume.ay") conf.snd.vol.ay = getRanged(arg.s, 0, 100);
+					if (pnam=="volume.gs") conf.snd.vol.gs = getRanged(arg.s, 0, 100);
+					if (pnam=="volume.sdrv") conf.snd.vol.sdrv = getRanged(arg.s, 0, 100);
+					if (pnam=="volume.saa") conf.snd.vol.saa = getRanged(arg.s, 0, 100);
 					break;
 				case SECT_TOOLS:
 					break;
 				case SECT_GENERAL:
-					if (pnam=="startdefault") conf.defProfile = str2bool(pval) ? 1 : 0;
-					if (pnam=="savepaths") conf.storePaths = str2bool(pval) ? 1 : 0;
-					if (pnam == "fdcturbo") setFlagBit(str2bool(pval),&fdcFlag,FDC_FAST);
-					if (pnam == "port") conf.port = strtol(pval.c_str(), NULL, 10) & 0xffff;
+					if (pnam=="startdefault") conf.defProfile = arg.b;
+					if (pnam=="savepaths") conf.storePaths = arg.b;
+					if (pnam == "fdcturbo") setFlagBit(arg.b, &fdcFlag, FDC_FAST);
+					if (pnam == "port") conf.port = arg.i & 0xffff;
 					if (pnam == "winpos") {
 						vect = splitstr(pval, ",");
 						if (vect.size() > 1) {
@@ -509,22 +517,22 @@ void loadConfig() {
 							conf.ypos = strtol(vect[1].c_str(), NULL, 10);
 						}
 					}
-					if (pnam == "addboot") conf.boot = str2bool(pval.c_str()) ? 1 : 0;
-					if (pnam == "exit.confirm") conf.confexit = str2bool(pval.c_str()) ? 1 : 0;
+					if (pnam == "addboot") conf.boot = arg.b;
+					if (pnam == "exit.confirm") conf.confexit = arg.b;
 					break;
 				case SECT_TAPE:
-					if (pnam=="autoplay") conf.tape.autostart = str2bool(pval) ? 1 : 0;
-					if (pnam=="fast") conf.tape.fast = str2bool(pval) ? 1 : 0;
+					if (pnam=="autoplay") conf.tape.autostart = arg.b;
+					if (pnam=="fast") conf.tape.fast = arg.b;
 					break;
 				case SECT_LEDS:
-					if (pnam=="mouse") conf.led.mouse = str2bool(pval) ? 1 : 0;
-					if (pnam=="joystick") conf.led.joy = str2bool(pval) ? 1 : 0;
-					if (pnam=="keyscan") conf.led.keys = str2bool(pval) ? 1 : 0;
-					if (pnam=="tape") conf.led.tape = str2bool(pval) ? 1 : 0;
-					if (pnam=="disk") conf.led.disk = str2bool(pval) ? 1 : 0;
-					if (pnam=="message") conf.led.message = str2bool(pval) ? 1 : 0;
-					if (pnam=="fps") conf.led.fps = str2bool(pval) ? 1 : 0;
-					if (pnam=="halt") conf.led.halt = str2bool(pval) ? 1 : 0;
+					if (pnam=="mouse") conf.led.mouse = arg.b;
+					if (pnam=="joystick") conf.led.joy = arg.b;
+					if (pnam=="keyscan") conf.led.keys = arg.b;
+					if (pnam=="tape") conf.led.tape = arg.b;
+					if (pnam=="disk") conf.led.disk = arg.b;
+					if (pnam=="message") conf.led.message = arg.b;
+					if (pnam=="fps") conf.led.fps = arg.b;
+					if (pnam=="halt") conf.led.halt = arg.b;
 					break;
 			}
 		}

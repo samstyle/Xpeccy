@@ -429,20 +429,20 @@ enum {
 class xGamepad : public QObject {
 	Q_OBJECT
 	public:
-		xGamepad(int = GPBACKEND_QT, QObject* = nullptr);
+		xGamepad(int = GPBACKEND_SDL, QObject* = nullptr);
 		~xGamepad();
-		void gpopen(int);
+		void open(int);
 		void close();
-//		int deviceId();
 		void setType(int);
 		int getType();
 		QString name(int = -1);
+		QStringList getList();
 	signals:
 		void buttonChanged(int, bool);
 		void axisChanged(int, double);
 	private:
-		int type;
 		int id;
+		int type;
 		int lasthat;
 		int stid;
 		union {
@@ -509,7 +509,6 @@ struct xConfig {
 		int pause;
 	} emu;
 	struct {
-//		unsigned changed:1;
 		QList<xProfile*> list;
 		xProfile* cur;
 	} prof;
@@ -538,7 +537,7 @@ struct xConfig {
 	} tape;
 	struct {
 		xGamepad* gpad;
-		// SDL_Joystick* joy;
+		int idx;
 		int dead;
 		double deadf;
 		QList<xJoyMapEntry> map;	// gamepad map for current profile

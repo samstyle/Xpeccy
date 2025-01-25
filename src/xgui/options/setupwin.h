@@ -108,6 +108,7 @@ class SetupWin : public QDialog {
 		void editBinding();
 		void delBinding();
 		void bindAccept(xJoyMapEntry);
+		void setCurrentGamepad(int);
 
 		void fillDiskCat();
 		void copyToTape();

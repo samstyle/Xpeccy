@@ -351,6 +351,7 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	connect(ui.tvPadTable,SIGNAL(doubleClicked(QModelIndex)),this,SLOT(editBinding()));
 	connect(ui.actDelBinding,SIGNAL(triggered()),this,SLOT(delBinding()));
 	connect(padial, SIGNAL(bindReady(xJoyMapEntry)), this, SLOT(bindAccept(xJoyMapEntry)));
+	connect(ui.cbGamepad, SIGNAL(currentIndexChanged(int)),this,SLOT(setCurrentGamepad(int)));
 //tools
 	connect(ui.umlist,SIGNAL(doubleClicked(QModelIndex)),this,SLOT(umedit(QModelIndex)));
 	connect(ui.umaddtb,SIGNAL(released()),this,SLOT(umadd()));
@@ -402,7 +403,7 @@ void setToolButtonColor(QToolButton* tb, QString nm, QString dc) {
 }
 
 void SetupWin::setPadName() {
-	ui.lePadName->setText(conf.joy.gpad->name());
+//	ui.lePadName->setText(conf.joy.gpad->name());
 }
 
 void SetupWin::start() {
@@ -489,7 +490,9 @@ void SetupWin::start() {
 	ui.sldSensitivity->setValue(comp->mouse->sensitivity * 1000.0f);
 	ui.cbKbuttons->setChecked(comp->joy->extbuttons);
 	ui.sldDeadZone->setValue(conf.joy.dead);
-	setPadName();
+	//setPadName();
+	ui.cbGamepad->clear();
+	ui.cbGamepad->addItems(conf.joy.gpad->getList());
 	padModel->update();
 // dos
 	ui.diskTypeBox->setCurrentIndex(ui.diskTypeBox->findData(comp->dif->type));
@@ -1586,6 +1589,10 @@ void SetupWin::ejectSlot() {
 }
 
 // input
+
+void SetupWin::setCurrentGamepad(int idx) {
+	conf.joy.gpad->open(idx);
+}
 
 void SetupWin::newPadMap() {
 	QString nam = QInputDialog::getText(this,"Enter...","New gamepad map name");
