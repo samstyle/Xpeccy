@@ -112,7 +112,14 @@ void padLoadConfig(std::string name) {
 					case JOY_BUTTON:
 						break;
 					case JOY_HAT:		// HU HD HR HL
-						jent.state = padGetId(ptr[idx], hatChars);
+						jent.type = JOY_BUTTON;				// convert hat->button for xGamepad
+						switch(ptr[idx]) {
+							case 'U': jent.num = 12; break;
+							case 'D': jent.num = 13; break;
+							case 'L': jent.num = 14; break;
+							case 'R': jent.num = 15; break;
+							default: jent.type = JOY_HAT; jent.state = padGetId(ptr[idx], hatChars); break;
+						}
 						idx++;
 						break;
 				}
@@ -132,7 +139,7 @@ void padLoadConfig(std::string name) {
 								jent.dev = JMAP_NONE;
 #endif
 							break;
-						case JMAP_JOY:		// JU, JD, JF, J2, J4
+						case JMAP_JOY:		// JU, JD, JL, JR, JF, J2, J3, J4
 							jent.dir = padGetId(ptr[1], kjoyChars);
 							break;
 						case JMAP_MOUSE:	// MD, ML, M[ M| M] M^ Mv
@@ -236,7 +243,6 @@ xGamepad::~xGamepad() {
 
 void xGamepad::open(int devid) {
 	close();
-	id = -1;
 #if USE_QT_GAMEPAD
 	QList<int> gpidlist;
 #endif
@@ -287,6 +293,7 @@ void xGamepad::timerEvent(QTimerEvent* e) {
 	if ((type == GPBACKEND_SDL) && (id > -1)) {
 		SDL_Event ev;
 		SDL_JoystickUpdate();
+		int oldid;
 		double v;
 		while(SDL_PollEvent(&ev)) {
 			switch(ev.type) {
@@ -303,10 +310,10 @@ void xGamepad::timerEvent(QTimerEvent* e) {
 					break;
 				case SDL_JOYHATMOTION:
 					lasthat ^= ev.jhat.value;	// bit n = 1 -> changed
-					if (lasthat & SDL_HAT_UP) emit buttonChanged(12, !!(ev.jhat.value & SDL_HAT_UP));
-					if (lasthat & SDL_HAT_DOWN) emit buttonChanged(13, !!(ev.jhat.value & SDL_HAT_DOWN));
-					if (lasthat & SDL_HAT_LEFT) emit buttonChanged(14, !!(ev.jhat.value & SDL_HAT_LEFT));
-					if (lasthat & SDL_HAT_RIGHT) emit buttonChanged(15, !!(ev.jhat.value & SDL_HAT_RIGHT));
+					if (lasthat & SDL_HAT_UP) emit buttonChanged(12 + ev.jhat.hat * 4, !!(ev.jhat.value & SDL_HAT_UP));
+					if (lasthat & SDL_HAT_DOWN) emit buttonChanged(13 + ev.jhat.hat * 4, !!(ev.jhat.value & SDL_HAT_DOWN));
+					if (lasthat & SDL_HAT_LEFT) emit buttonChanged(14 + ev.jhat.hat * 4, !!(ev.jhat.value & SDL_HAT_LEFT));
+					if (lasthat & SDL_HAT_RIGHT) emit buttonChanged(15 + ev.jhat.hat * 4, !!(ev.jhat.value & SDL_HAT_RIGHT));
 					lasthat = ev.jhat.value;
 					break;
 // SDL: gamepad connect/disconnect events
@@ -315,9 +322,11 @@ void xGamepad::timerEvent(QTimerEvent* e) {
 				case SDL_JOYDEVICEREMOVED:
 				case SDL_JOYDEVICEADDED:
 					if (ev.jdevice.which != 0) break;
+					oldid = id;
 					close();
 					if (SDL_NumJoysticks() > 0) {
-						open(id);
+						if (oldid >= SDL_NumJoysticks()) oldid = 0;
+						open(oldid);
 					}
 					break;
 #endif
@@ -340,7 +349,11 @@ QString xGamepad::name(int devid) {
 			break;
 #endif
 		case GPBACKEND_SDL:
+#if HAVESDL2
 			nm = QString(SDL_JoystickNameForIndex(devid));
+#else
+			nm = QString(SDL_JoystickName(devid));
+#endif
 			break;
 	}
 	return nm;

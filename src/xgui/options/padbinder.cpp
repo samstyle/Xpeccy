@@ -289,6 +289,8 @@ int xPadMapModel::columnCount(const QModelIndex& par) const {
 	return 3;
 }
 
+static QString hatDirs[4] = {"Up","Down","Left","Right"};
+
 QVariant xPadMapModel::data(const QModelIndex& idx, int role) const {
 	QVariant res;
 	if (!idx.isValid()) return res;
@@ -320,6 +322,9 @@ QVariant xPadMapModel::data(const QModelIndex& idx, int role) const {
 								default: str.append(" ??"); break;
 							}
 							break;
+					}
+					if ((jent.type == JOY_BUTTON) && (jent.num > 11)) {
+						str = QString("Hat ") + hatDirs[jent.num & 3];
 					}
 					res = str;
 					break;
