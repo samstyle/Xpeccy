@@ -691,6 +691,7 @@ void SetupWin::apply() {
 	comp->joy->extbuttons = ui.cbKbuttons->isChecked() ? 1 : 0;
 	conf.joy.dead = ui.sldDeadZone->value();
 	conf.joy.deadf = conf.joy.dead / 32768.0;
+	conf.joy.idx = ui.cbGamepad->currentIndex();
 	std::string kmname = getRFText(ui.keyMapBox);
 	if (kmname == "none") kmname = "default";
 	prof->kmapName = kmname;
