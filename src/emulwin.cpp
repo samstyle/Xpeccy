@@ -182,8 +182,7 @@ MainWin::MainWin() {
 	leds[led_disk_red].load(":/images/diskRed.png");
 	leds[led_wav].load(":/images/wav.png");
 
-	conf.joy.gpad->open(conf.joy.idx);
-	// qDebug() << "Gamepad" << conf.joy.gpad->name();
+	conf.joy.gpad->open(conf.joy.curName);
 
 	connect(conf.joy.gpad, &xGamepad::buttonChanged, this, &MainWin::gpButtonChanged);
 	connect(conf.joy.gpad, &xGamepad::axisChanged, this, &MainWin::gpAxisChanged);

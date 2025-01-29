@@ -432,6 +432,7 @@ class xGamepad : public QObject {
 		xGamepad(int = GPBACKEND_SDL, QObject* = nullptr);
 		~xGamepad();
 		void open(int);
+		void open(QString);
 		void close();
 		void setType(int);
 		int getType();
@@ -475,6 +476,7 @@ class xGamepad : public QObject {
 		void ARYChanged(double);
 		void AL2Changed(double);
 		void AR2Changed(double);
+		void gpListChanged();
 #endif
 	protected:
 		void timerEvent(QTimerEvent*);
@@ -537,7 +539,8 @@ struct xConfig {
 	} tape;
 	struct {
 		xGamepad* gpad;
-		int idx;
+		// int idx;
+		QString curName;
 		int dead;
 		double deadf;
 		QList<xJoyMapEntry> map;	// gamepad map for current profile

@@ -185,7 +185,7 @@ void saveConfig() {
 	fprintf(cfile, "fast = %s\n", YESNO(conf.tape.fast));
 
 	fprintf(cfile, "\n[INPUT]\n\n");
-	fprintf(cfile, "gamepadidx = %i\n", conf.joy.idx);
+	fprintf(cfile, "gamepad = %s\n", conf.joy.curName.toLocal8Bit().data());
 	fprintf(cfile, "deadzone = %i\n", conf.joy.dead);
 
 	fprintf(cfile, "\n[LEDS]\n\n");
@@ -383,7 +383,7 @@ void loadConfig() {
 						conf.joy.dead = arg.i;
 						conf.joy.deadf = conf.joy.dead / 32768.0;
 					}
-					if (pnam=="gamepadidx") conf.joy.idx = arg.i;
+					if (pnam=="gamepad") conf.joy.curName = arg.s;
 					break;
 				case SECT_VIDEO:
 					if (pnam=="layout") {

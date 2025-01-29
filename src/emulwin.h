@@ -154,10 +154,10 @@ typedef struct {
 		QImage alphabet;
 		void drawText(QPainter*, int, int, const char*);
 
-		#ifdef USENETWORK
+#ifdef USENETWORK
 		QTcpServer srv;
 		QList<QTcpSocket*> clients;
-		#endif
+#endif
 
 		int msgTimer;
 		QString msg;

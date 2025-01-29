@@ -253,8 +253,9 @@ void xGamepad::open(int devid) {
 			if (gpidlist.size() > devid) {
 				id = devid;
 				qjptr->setDeviceId(gpidlist.at(devid));
+				conf.joy.curName = name();
 			}
-			qDebug() << "Qt :" << conf.joy.gpad->name();
+			qDebug() << "Qt :" << conf.joy.curName;
 			break;
 #endif
 		case GPBACKEND_SDL:
@@ -262,10 +263,17 @@ void xGamepad::open(int devid) {
 			if (sjptr) {
 				id = devid;
 				startTimer(20);
+				conf.joy.curName = name();
 			}
-			qDebug() << "SDL :" << conf.joy.gpad->name();
+			qDebug() << "SDL :" << conf.joy.curName;
 			break;
 	}
+}
+
+void xGamepad::open(QString name) {
+	QStringList lst = getList();
+	int idx = lst.indexOf(name);
+	if (idx >= 0) open(idx);
 }
 
 void xGamepad::close() {
@@ -293,7 +301,7 @@ void xGamepad::timerEvent(QTimerEvent* e) {
 	if ((type == GPBACKEND_SDL) && (id > -1)) {
 		SDL_Event ev;
 		SDL_JoystickUpdate();
-		int oldid;
+//		int oldid;
 		double v;
 		while(SDL_PollEvent(&ev)) {
 			switch(ev.type) {
@@ -320,13 +328,13 @@ void xGamepad::timerEvent(QTimerEvent* e) {
 #if HAVESDL2
 				// TODO: select device, if there is more than one
 				case SDL_JOYDEVICEREMOVED:
+					if (ev.jdevice.which == id) {	// current removed, close it. Current name doesn't changed
+						close();
+					}
+					break;
 				case SDL_JOYDEVICEADDED:
-					if (ev.jdevice.which != 0) break;
-					oldid = id;
-					close();
-					if (SDL_NumJoysticks() > 0) {
-						if (oldid >= SDL_NumJoysticks()) oldid = 0;
-						open(oldid);
+					if (id < 0) {			// if no gamepad opened, try to open last one by name
+						open(conf.joy.curName);
 					}
 					break;
 #endif
@@ -338,7 +346,9 @@ void xGamepad::timerEvent(QTimerEvent* e) {
 QString xGamepad::name(int devid) {
 	QString nm;
 	if (devid < 0) devid = id;
+#if USE_QT_GAMEPAD
 	QList<int> devlst;
+#endif
 	switch(type) {
 #if USE_QT_GAMEPAD
 		case GPBACKEND_QT:
@@ -352,7 +362,7 @@ QString xGamepad::name(int devid) {
 #if HAVESDL2
 			nm = QString(SDL_JoystickNameForIndex(devid));
 #else
-			nm = QString(SDL_JoystickName(devid));
+			nm = QString(SDL_JoystickName(sjptr));
 #endif
 			break;
 	}
@@ -410,6 +420,7 @@ void xGamepad::setType(int t) {
 			connect(qjptr, &QGamepad::axisRightYChanged, this, &xGamepad::ARYChanged);
 			connect(qjptr, &QGamepad::buttonL2Changed, this, &xGamepad::AL2Changed);
 			connect(qjptr, &QGamepad::buttonR2Changed, this, &xGamepad::AR2Changed);
+			connect(QGamepadManager::instance(), &QGamepadManager::connectedGamepadsChanged, this, &xGamepad::gpListChanged);
 			break;
 #endif
 		default:		// case GPBACKEND_SDL:
@@ -446,4 +457,8 @@ void xGamepad::ARXChanged(double v) {emit axisChanged(2, (absd(v) < conf.joy.dea
 void xGamepad::ARYChanged(double v) {emit axisChanged(3, (absd(v) < conf.joy.deadf) ? 0 : v);}
 void xGamepad::AL2Changed(double v) {emit axisChanged(4, (absd(v) < conf.joy.deadf) ? 0 : v);}
 void xGamepad::AR2Changed(double v) {emit axisChanged(5, (absd(v) < conf.joy.deadf) ? 0 : v);}
+
+void xGamepad::gpListChanged() {
+	open(conf.joy.curName);
+}
 #endif

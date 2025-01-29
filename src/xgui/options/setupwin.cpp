@@ -490,9 +490,10 @@ void SetupWin::start() {
 	ui.sldSensitivity->setValue(comp->mouse->sensitivity * 1000.0f);
 	ui.cbKbuttons->setChecked(comp->joy->extbuttons);
 	ui.sldDeadZone->setValue(conf.joy.dead);
-	//setPadName();
-	ui.cbGamepad->clear();
-	ui.cbGamepad->addItems(conf.joy.gpad->getList());
+	ui.cbGamepad->blockSignals(true);
+	fillRFBox(ui.cbGamepad, conf.joy.gpad->getList());
+	setRFIndex(ui.cbGamepad, conf.joy.curName);
+	ui.cbGamepad->blockSignals(false);
 	padModel->update();
 // dos
 	ui.diskTypeBox->setCurrentIndex(ui.diskTypeBox->findData(comp->dif->type));
@@ -691,7 +692,8 @@ void SetupWin::apply() {
 	comp->joy->extbuttons = ui.cbKbuttons->isChecked() ? 1 : 0;
 	conf.joy.dead = ui.sldDeadZone->value();
 	conf.joy.deadf = conf.joy.dead / 32768.0;
-	conf.joy.idx = ui.cbGamepad->currentIndex();
+	// conf.joy.idx = ui.cbGamepad->currentIndex();
+	conf.joy.curName = getRFSData(ui.cbGamepad);
 	std::string kmname = getRFText(ui.keyMapBox);
 	if (kmname == "none") kmname = "default";
 	prof->kmapName = kmname;
@@ -1592,7 +1594,11 @@ void SetupWin::ejectSlot() {
 // input
 
 void SetupWin::setCurrentGamepad(int idx) {
-	conf.joy.gpad->open(idx);
+	if (idx > 0) {			// 0 is 'none'
+		conf.joy.gpad->open(idx-1);
+	} else {
+		conf.joy.gpad->close();
+	}
 }
 
 void SetupWin::newPadMap() {
