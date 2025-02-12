@@ -385,6 +385,43 @@ xRegBunch cpuGetRegs(CPU* cpu) {
 	return bunch;
 }
 
+int reg_get_value(CPU* cpu, xRegDsc* dsc) {
+	int res = -1;
+	if (dsc->type & REG_SEG) {
+		res = ((xSegPtr*)((cpu + dsc->offset)))->idx & 0xffff;
+	} else {
+		void* ptr = ((void*)cpu) + dsc->offset;
+		switch(dsc->type & REG_TMASK) {
+			// case REG_BIT: res = (*(unsigned char*)ptr) & 1; break;
+			case REG_BYTE: res = (*(unsigned char*)ptr) & 0xff; break;
+			case REG_WORD: res = (*(unsigned short*)ptr) & 0xffff; break;
+			case REG_24: res = (*(int*)ptr) & 0xffffff; break;
+			case REG_32: res = (*(int*)ptr) & 0xffffffff; break;
+		}
+	}
+	return res;
+}
+
+xRegister cpuGetReg(CPU* cpu, int id) {
+	xRegister reg;
+	reg.type = REG_NONE;
+	xRegDsc* rt = cpu->core->rdsctab;
+	int i = 0;
+	int work = 1;
+	while (work && (rt[i].id != REG_NONE)) {
+		if (rt[i].id == id) {
+			reg.id = id;
+			reg.type = rt[i].type;
+			reg.name = rt[i].name;
+			reg.value = reg_get_value(cpu, &rt[i]);		// TODO: for segments - value=selector, base=address
+			reg.base = 0;
+			work = !(reg.value < 0);
+		}
+		i++;
+	}
+	return reg;
+}
+
 // f is pointer to bool variable: false if register doesn't exists
 int cpu_get_reg(CPU* cpu, const char* name, bool* f) {
 	int res = -1;
@@ -392,23 +429,10 @@ int cpu_get_reg(CPU* cpu, const char* name, bool* f) {
 	xRegDsc* rt = cpu->core->rdsctab;
 	int i = 0;
 	int work = 1;
-	void* ptr;
 	while (work && (rt[i].id != REG_NONE)) {
 		if (!strcmp(name, rt[i].name) && (rt[i].offset != 0)) {
-			work = 0;
-			if (rt[i].type & REG_SEG) {
-				res = ((xSegPtr*)((cpu + rt[i].offset)))->idx & 0xffff;
-			} else {
-				ptr = ((void*)cpu) + rt[i].offset;
-				switch(rt[i].type & REG_TMASK) {
-					// case REG_BIT: res = (*(unsigned char*)ptr) & 1; break;
-					case REG_BYTE: res = (*(unsigned char*)ptr) & 0xff; break;
-					case REG_WORD: res = (*(unsigned short*)ptr) & 0xffff; break;
-					case REG_24: res = (*(int*)ptr) & 0xffffff; break;
-					case REG_32: res = (*(int*)ptr) & 0xffffffff; break;
-					default: work = 1; break;
-				}
-			}
+			res = reg_get_value(cpu, &rt[i]);
+			work = !(res < 0);
 		}
 		i++;
 	}

@@ -124,7 +124,7 @@ xAsmScan m6502_asm(int a, const char* cbuf, char* buf) {
 }
 
 xRegDsc m6502RegTab[] = {
-	{M6502_REG_PC, "PC", REG_WORD, offsetof(CPU, pc)},
+	{M6502_REG_PC, "PC", REG_WORD | REG_RDMP, offsetof(CPU, pc)},
 	{M6502_REG_A, "A", REG_BYTE, offsetof(CPU, a)},
 	{M6502_REG_X, "X", REG_BYTE, offsetof(CPU, lx)},
 	{M6502_REG_Y, "Y", REG_BYTE, offsetof(CPU, ly)},

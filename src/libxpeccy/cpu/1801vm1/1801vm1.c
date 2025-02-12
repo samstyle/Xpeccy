@@ -1434,14 +1434,14 @@ int pdp11_exec(CPU* cpu) {
 // registers
 
 xRegDsc pdp11RegTab[] = {
-	{PDP11_REG0, "R0", REG_WORD, offsetof(CPU, preg[0])},
-	{PDP11_REG1, "R1", REG_WORD, offsetof(CPU, preg[1])},
-	{PDP11_REG2, "R2", REG_WORD, offsetof(CPU, preg[2])},
-	{PDP11_REG3, "R3", REG_WORD, offsetof(CPU, preg[3])},
-	{PDP11_REG4, "R4", REG_WORD, offsetof(CPU, preg[4])},
-	{PDP11_REG5, "R5", REG_WORD, offsetof(CPU, preg[5])},
-	{PDP11_REG6, "SP", REG_WORD, offsetof(CPU, preg[6])},
-	{PDP11_REG7, "PC", REG_WORD, offsetof(CPU, preg[7])},
+	{PDP11_REG0, "R0", REG_WORD | REG_RDMP, offsetof(CPU, preg[0])},
+	{PDP11_REG1, "R1", REG_WORD | REG_RDMP, offsetof(CPU, preg[1])},
+	{PDP11_REG2, "R2", REG_WORD | REG_RDMP, offsetof(CPU, preg[2])},
+	{PDP11_REG3, "R3", REG_WORD | REG_RDMP, offsetof(CPU, preg[3])},
+	{PDP11_REG4, "R4", REG_WORD | REG_RDMP, offsetof(CPU, preg[4])},
+	{PDP11_REG5, "R5", REG_WORD | REG_RDMP, offsetof(CPU, preg[5])},
+	{PDP11_REG6, "SP", REG_WORD | REG_RDMP, offsetof(CPU, preg[6])},
+	{PDP11_REG7, "PC", REG_WORD | REG_RDMP, offsetof(CPU, preg[7])},
 	{PDP11_REGF, "PSW", REG_32, offsetof(CPU, f)},
 	{REG_NONE, "", 0, 0}
 };

@@ -10,22 +10,27 @@ xWatcher::xWatcher(QWidget* p):QDialog(p) {
 	nui.cbType->addItem("Memory cell", wchCell);
 	nui.cbMemType->addItem("RAM", MEM_RAM);
 	nui.cbMemType->addItem("ROM", MEM_ROM);
-	nui.cbSrcReg->addItem("Absolute", wchAbsolute);
-	nui.cbSrcReg->addItem("BC", wchBC);
-	nui.cbSrcReg->addItem("DE", wchDE);
-	nui.cbSrcReg->addItem("HL", wchHL);
-	nui.cbSrcReg->addItem("BC'", wchBCa);
-	nui.cbSrcReg->addItem("DE'", wchDEa);
-	nui.cbSrcReg->addItem("HL'", wchHLa);
-	nui.cbSrcReg->addItem("SP", wchSP);
-	nui.cbSrcReg->addItem("IX", wchIX);
-	nui.cbSrcReg->addItem("IY", wchIY);
+// fill registers
+	fillRegs();
 
 	ui.setupUi(this);
 	model = new xWatchModel;
 	ui.wchMemTab->setModel(model);
 	ui.wchMemTab->addAction(ui.actAddWatcher);
 	ui.wchMemTab->addAction(ui.actDelWatcher);
+
+// like in deBUGa: pairs regName/regValue
+	QLabel* lp;
+	xHexSpin* hp;
+	for(int i = 0; i < 32; i++) {
+		lp = new QLabel;
+		hp = new xHexSpin;
+		regLabels.append(lp);
+		regValues.append(hp);
+		ui.regGrid->addWidget(lp, i, 0);
+		ui.regGrid->addWidget(hp, i, 1);
+	}
+	ui.regGrid->setRowStretch(32, 10);
 
 	listwin = new xLabeList(addial);
 
@@ -39,6 +44,32 @@ xWatcher::xWatcher(QWidget* p):QDialog(p) {
 	connect(nui.pbOK, SIGNAL(clicked(bool)),this,SLOT(addWatcher()));
 
 	connect(listwin, SIGNAL(labSelected(QString)), this, SLOT(setLabel(QString)));
+}
+
+void xWatcher::show() {
+	fillRegs();
+
+	xRegBunch regs = cpuGetRegs(conf.prof.cur->zx->cpu);
+	int work = 1;
+	for(int i = 0; i < 32; i++) {
+		if (work) {
+			if (regs.regs[i].id == REG_NONE) {
+				work = 0;
+				regLabels[i]->setVisible(false);
+				regValues[i]->setVisible(false);
+			} else {
+				regLabels[i]->setVisible(true);
+				regValues[i]->setVisible(true);
+				regLabels[i]->setText(regs.regs[i].name);
+				regValues[i]->setValue(regs.regs[i].value);
+			}
+		} else {
+			regLabels[i]->setVisible(false);
+			regValues[i]->setVisible(false);
+		}
+	}
+
+	QDialog::show();
 }
 
 void xWatcher::setLabel(QString str) {
@@ -68,20 +99,13 @@ void xWatcher::fillFields(Computer* comp) {
 	if (comp == NULL) return;
 	model->comp = comp;
 // TODO: remake for universal CPU
-	ui.wchAF->setText(gethexword((comp->cpu->a << 8) | (comp->cpu->f & 0xff)));
-	ui.wchBC->setText(gethexword(comp->cpu->bc));
-	ui.wchDE->setText(gethexword(comp->cpu->de));
-	ui.wchHL->setText(gethexword(comp->cpu->hl));
-	ui.wchAFa->setText(gethexword((comp->cpu->a_ << 8) | (comp->cpu->f_ & 0xffff)));
-	ui.wchBCa->setText(gethexword(comp->cpu->bc_));
-	ui.wchDEa->setText(gethexword(comp->cpu->de_));
-	ui.wchHLa->setText(gethexword(comp->cpu->hl_));
-	ui.wchPC->setText(gethexword(comp->cpu->pc));
-	ui.wchSP->setText(gethexword(comp->cpu->sp));
-	ui.wchIX->setText(gethexword(comp->cpu->ix));
-	ui.wchIY->setText(gethexword(comp->cpu->iy));
-	ui.wchIR->setText(gethexbyte(comp->cpu->i));
-
+	xRegBunch regs = cpuGetRegs(comp->cpu);
+	int i = 0;
+	while ((i < 32) && (regs.regs[i].id != REG_NONE)) {
+		// regLabels[i]->setText(regs.regs[i].name);
+		regValues[i]->setValue(regs.regs[i].value);
+		i++;
+	}
 	ui.wchBank0->setText(getBankName(comp->mem->map[0x00]));
 	ui.wchBank1->setText(getBankName(comp->mem->map[0x40]));
 	ui.wchBank2->setText(getBankName(comp->mem->map[0x80]));
@@ -90,10 +114,23 @@ void xWatcher::fillFields(Computer* comp) {
 	model->update();
 }
 
+void xWatcher::fillRegs() {
+	nui.cbSrcReg->clear();
+	nui.cbSrcReg->addItem("Absolute", wchAbsolute);
+	xRegBunch regs = cpuGetRegs(conf.prof.cur->zx->cpu);
+	int i = 0;
+	while (regs.regs[i].type != REG_NONE) {
+		if (regs.regs[i].type & REG_RDMP) {
+			nui.cbSrcReg->addItem(regs.regs[i].name, regs.regs[i].id);
+		}
+		i++;
+	}
+}
+
 void xWatcher::addWatcher() {
 	addial->hide();
 	int type = nui.cbType->itemData(nui.cbType->currentIndex()).toInt();
-    xAdr xadr = {MEM_ROM, 0, 0, 0};
+	xAdr xadr = {MEM_ROM, 0, 0, 0};
 	switch (type) {
 		case wchAddress:
 			xadr.type = -1;
@@ -314,41 +351,10 @@ QVariant xWatchModel::data(const QModelIndex& idx, int role) const {
 							adrs = gethexword(adr);
 						}
 						break;
-					case wchBC:
-						adr = comp->cpu->bc + xadr.adr;
-						adrs = "BC";
-						break;
-					case wchBCa:
-						adr = comp->cpu->bc_ + xadr.adr;
-						adrs = "BC'";
-						break;
-					case wchDE:
-						adr = comp->cpu->de + xadr.adr;
-						adrs = "DE";
-						break;
-					case wchDEa:
-						adr = comp->cpu->de_ + xadr.adr;
-						adrs = "DE'";
-						break;
-					case wchHL:
-						adr = comp->cpu->hl + xadr.adr;
-						adrs = "HL";
-						break;
-					case wchHLa:
-						adr = comp->cpu->hl_ + xadr.adr;
-						adrs = "HL'";
-						break;
-					case wchSP:
-						adr = comp->cpu->sp + xadr.adr;
-						adrs = "SP";
-						break;
-					case wchIX:
-						adr = comp->cpu->ix + xadr.adr;
-						adrs = "IX";
-						break;
-					case wchIY:
-						adr = comp->cpu->iy + xadr.adr;
-						adrs = "IY";
+					default:
+						xRegister reg = cpuGetReg(comp->cpu, xadr.abs);
+						adr = reg.value + xadr.adr;
+						adrs = QString(reg.name).toUpper();
 						break;
 				}
 				if (xadr.abs != wchAbsolute) {

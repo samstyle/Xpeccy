@@ -11,19 +11,10 @@
 
 enum {
 	// addressation type
-	wchAddress = 0,
+	wchAddress = 0x100,
 	wchCell,
 	// address source
 	wchAbsolute,
-	wchBC,
-	wchDE,
-	wchHL,
-	wchBCa,
-	wchDEa,
-	wchHLa,
-	wchSP,
-	wchIX,
-	wchIY
 };
 
 class xWatchModel : public QAbstractItemModel {
@@ -47,7 +38,6 @@ class xWatchModel : public QAbstractItemModel {
 		QVariant headerData(int, Qt::Orientation, int = Qt::DisplayRole) const;
 		void insertRow(int, const QModelIndex& = QModelIndex());
 		void removeRow(int, const QModelIndex& = QModelIndex());
-
 };
 
 class xWatcher : public QDialog {
@@ -56,6 +46,7 @@ class xWatcher : public QDialog {
 		xWatcher(QWidget* = NULL);
 	public slots:
 		void fillFields(Computer*);
+		void show();
 	private:
 		int curwch;
 		Ui::Watcher ui;
@@ -63,8 +54,11 @@ class xWatcher : public QDialog {
 		QDialog* addial;
 		xWatchModel* model;
 		xLabeList* listwin;
+		QList<QLabel*> regLabels;
+		QList<xHexSpin*> regValues;
 		int getCurRow();
 		void fillDial();
+		void fillRegs();
 	private slots:
 		void addWatcher();
 		void newWatcher();

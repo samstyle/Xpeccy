@@ -333,6 +333,7 @@ int cpuAsm(CPU*, const char*, char*, unsigned short);
 xAsmScan scanAsmTab(const char*, opCode*);
 
 xRegBunch cpuGetRegs(CPU*);
+xRegister cpuGetReg(CPU*, int);
 void cpuSetRegs(CPU*, xRegBunch);
 int cpu_get_reg(CPU*, const char*, bool*);
 bool cpu_set_reg(CPU*, const char*, int);
