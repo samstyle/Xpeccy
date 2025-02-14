@@ -27,8 +27,8 @@ xWatcher::xWatcher(QWidget* p):QDialog(p) {
 		hp = new xHexSpin;
 		regLabels.append(lp);
 		regValues.append(hp);
-		ui.regGrid->addWidget(lp, i, 0);
-		ui.regGrid->addWidget(hp, i, 1);
+		ui.regGrid->addWidget(lp, i >> 1, (i & 1) << 1);
+		ui.regGrid->addWidget(hp, i >> 1, ((i & 1) << 1) | 1);
 	}
 	ui.regGrid->setRowStretch(32, 10);
 
