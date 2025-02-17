@@ -3,6 +3,232 @@
 
 #include <QDebug>
 
+// expression evaluation
+// current problem: operation priority. 2+2*2=8, but 2+(2*2)=6
+
+typedef struct {
+	int err;
+	int value;
+	const char* ptr;
+} xResult;
+
+bool isDigit(char c, int base) {
+	if (c < '0') return 0;
+	if (c <= '9') {
+		return ((c - '0') < base);
+	} else if (c < 'A') {
+		return 0;
+	} else if (c - 'A' + 10 < base) {
+		return 1;
+	} else if (c < 'a') {
+		return 0;
+	} else {
+		return (c - 'a' + 10 < base);
+	}
+}
+
+bool isLetter(char c) {
+	if (c < 'A') return 0;
+	if (c <= 'Z') return 1;
+	if (c < 'a') return 0;
+	return (c <= 'z');
+}
+
+xResult xEval(const char*, int);
+
+// return:
+//	res.value = value of number/register/label
+//	res.err = 1 if error
+//	res.ptr = next char pointer
+xResult getOperand(const char* ptr) {
+	xResult res;
+	res.err = 0;
+	res.value = 0;
+	while (*ptr == ' ') ptr++;		// skip leading spaces
+	res.ptr = ptr;
+	char c = *ptr;
+	char* buf = (char*)malloc(strlen(ptr) + 1);
+	char* bptr;
+	bool err;
+	memset(buf, 0, strlen(ptr) + 1);
+	int val;
+	int base = conf.prof.cur->zx->hw->base;
+
+	if (isDigit(c, base)) {	// number
+		if ((c == '0') && (*(res.ptr + 1) == 'x')) {		// 0x... - hex
+			res.ptr += 2;
+			base = 16;
+			c = *res.ptr;
+		}
+		do {
+			res.value *= base;
+			if (base > 10) {
+				if ((c >= 'A') && (c < 'A' + base - 10)) {
+					res.value += 10 + (c - 'A');
+				} else if ((c >= 'a') && (c < 'a' + base - 10)) {
+					res.value += 10 + (c - 'a');
+				} else {
+					res.value += (c - '0');
+				}
+			} else if (c - '0' < base) {
+				res.value += (c - '0');
+			} else {
+				res.err = 1;
+			}
+			res.ptr++;
+			c = *res.ptr;
+		} while (isDigit(c, base));
+	} else if (isLetter(c)) {	// label: collect letters|digits|_|. in buf, search label
+		bptr = buf;
+		do {
+			*bptr = c;
+			bptr++;
+			res.ptr++;
+			c = *res.ptr;
+		} while (isLetter(c) || isDigit(c, base) || (c == '_') || (c == '.'));
+		*bptr = 0;
+		if (conf.prof.cur->labels.contains(buf)) {
+			res.value = conf.prof.cur->labels[buf].adr;
+		} else {
+			res.err = 1;
+		}
+	} else {
+		switch(c) {
+			case '(':		// sub-expression (...)
+				res = xEval(res.ptr + 1, 1);	// stop on )
+				break;
+			case '[':		// [exp] = word(L-H) on address exp
+				res = xEval(res.ptr + 1, 2);	// stop on ]
+				if (!res.err) {
+					val = memRd(conf.prof.cur->zx->mem, res.value);
+					val |= (memRd(conf.prof.cur->zx->mem, res.value + 1) << 8);
+					res.value = val;
+				}
+				break;
+			case '.':		// register: collect letters in buf, ask cpu for value
+				res.ptr++;
+				c = *res.ptr;
+				bptr = buf;
+				while (isLetter(c)) {
+					if ((c >= 'a') && (c <= 'z')) c = c - 'a' + 'A';		// to capital
+					*bptr = c;
+					bptr++;
+					res.ptr++;
+					c = *res.ptr;
+				}
+				*bptr = 0;
+				qDebug() << buf;
+				res.value = cpu_get_reg(conf.prof.cur->zx->cpu, buf, &err);
+				res.err = err;			// 1 if 'no such reg'
+				break;
+		}
+	}
+	free(buf);
+	return res;
+}
+
+// flag:
+// b0: stop on )
+// b1: stop on ]
+
+xResult xEval(const char* ptr, int f = 0) {
+	xResult res = getOperand(ptr);
+	xResult op;
+	int exit = 0;
+	while (!res.err && *res.ptr && !exit) {
+		switch(*res.ptr) {
+			case ' ':			// skip spaces
+				res.ptr++;
+				break;
+			case ')':
+				if (f & 1) {
+					res.ptr++;
+					exit = 1;
+				} else {
+					res.err = 1;	// ) without (
+				}
+				break;
+			case ']':
+				if (f & 2) {
+					res.ptr++;
+					exit = 1;
+				} else {
+					res.err = 1;	// ] without [
+				}
+				break;
+			case '+':
+				op = getOperand(res.ptr + 1);
+				if (!op.err) {
+					res.value += op.value;
+					res.ptr = op.ptr;
+				} else {
+					res.err = 1;
+				}
+				break;
+			case '-':
+				op = getOperand(res.ptr + 1);
+				if (!op.err) {
+					res.value -= op.value;
+					res.ptr = op.ptr;
+				} else {
+					res.err = 1;
+				}
+				break;
+			case '*':
+				op = getOperand(res.ptr + 1);
+				if (!op.err) {
+					res.value *= op.value;
+					res.ptr = op.ptr;
+				} else {
+					res.err = 1;
+				}
+				break;
+			case '/':
+				op = getOperand(res.ptr + 1);
+				if (!op.err && op.value) {
+					res.value /= op.value;
+					res.ptr = op.ptr;
+				} else {
+					res.err = 1;
+				}
+				break;
+			case '&':
+				op = getOperand(res.ptr + 1);
+				if (!op.err) {
+					res.value &= op.value;
+					res.ptr = op.ptr;
+				} else {
+					res.err = 1;
+				}
+				break;
+			case '|':
+				op = getOperand(res.ptr + 1);
+				if (!op.err) {
+					res.value |= op.value;
+					res.ptr = op.ptr;
+				} else {
+					res.err = 1;
+				}
+				break;
+			case '^':
+				op = getOperand(res.ptr + 1);
+				if (!op.err) {
+					res.value ^= op.value;
+					res.ptr = op.ptr;
+				} else {
+					res.err = 1;
+				}
+				break;
+			default:
+				res.err = 1;
+				break;
+		}
+	}
+	return res;
+}
+
+// wutcha
+
 xWatcher::xWatcher(QWidget* p):QDialog(p) {
 	addial = new QDialog(this);
 	nui.setupUi(addial);
