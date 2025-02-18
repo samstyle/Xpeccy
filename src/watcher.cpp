@@ -1,10 +1,10 @@
 #include "watcher.h"
 #include "xcore/xcore.h"
 
+#include <QInputDialog>
 #include <QDebug>
 
 // expression evaluation
-// current problem: operation priority. 2+2*2=8, but 2+(2*2)=6
 
 typedef struct {
 	int err;
@@ -109,7 +109,7 @@ xResult getOperand(const char* ptr) {
 				res.ptr++;
 				c = *res.ptr;
 				bptr = buf;
-				while (isLetter(c)) {
+				while (isLetter(c) || (c == 0x27)) {			// 0x27 = '
 					if ((c >= 'a') && (c <= 'z')) c = c - 'a' + 'A';		// to capital
 					*bptr = c;
 					bptr++;
@@ -117,7 +117,6 @@ xResult getOperand(const char* ptr) {
 					c = *res.ptr;
 				}
 				*bptr = 0;
-				qDebug() << buf;
 				res.value = cpu_get_reg(conf.prof.cur->zx->cpu, buf, &err);
 				res.err = err;			// 1 if 'no such reg'
 				break;
@@ -130,6 +129,7 @@ xResult getOperand(const char* ptr) {
 // flag:
 // b0: stop on )
 // b1: stop on ]
+// b4: stop on ),],+,-
 
 xResult xEval(const char* ptr, int f = 0) {
 	xResult res = getOperand(ptr);
@@ -144,6 +144,8 @@ xResult xEval(const char* ptr, int f = 0) {
 				if (f & 1) {
 					res.ptr++;
 					exit = 1;
+				} else if (f & 4) {
+					exit = 1;
 				} else {
 					res.err = 1;	// ) without (
 				}
@@ -152,26 +154,38 @@ xResult xEval(const char* ptr, int f = 0) {
 				if (f & 2) {
 					res.ptr++;
 					exit = 1;
+				} else if (f & 4) {
+					exit = 1;
 				} else {
 					res.err = 1;	// ] without [
 				}
 				break;
 			case '+':
-				op = getOperand(res.ptr + 1);
-				if (!op.err) {
-					res.value += op.value;
-					res.ptr = op.ptr;
+				if (f & 4) {
+					exit = 1;
 				} else {
-					res.err = 1;
+					// op = getOperand(res.ptr + 1);
+					op = xEval(res.ptr + 1, 4);
+					if (!op.err) {
+						res.value += op.value;
+						res.ptr = op.ptr;
+					} else {
+						res.err = 1;
+					}
 				}
 				break;
 			case '-':
-				op = getOperand(res.ptr + 1);
-				if (!op.err) {
-					res.value -= op.value;
-					res.ptr = op.ptr;
+				if (f & 4) {
+					exit = 1;
 				} else {
-					res.err = 1;
+					// op = getOperand(res.ptr + 1);
+					op = xEval(res.ptr + 1, 4);
+					if (!op.err) {
+						res.value -= op.value;
+						res.ptr = op.ptr;
+					} else {
+						res.err = 1;
+					}
 				}
 				break;
 			case '*':
@@ -230,21 +244,12 @@ xResult xEval(const char* ptr, int f = 0) {
 // wutcha
 
 xWatcher::xWatcher(QWidget* p):QDialog(p) {
-	addial = new QDialog(this);
-	nui.setupUi(addial);
-	nui.cbType->addItem("Address", wchAddress);
-	nui.cbType->addItem("Memory cell", wchCell);
-	nui.cbMemType->addItem("RAM", MEM_RAM);
-	nui.cbMemType->addItem("ROM", MEM_ROM);
-// fill registers
-	fillRegs();
 
 	ui.setupUi(this);
 	model = new xWatchModel;
 	ui.wchMemTab->setModel(model);
 	ui.wchMemTab->addAction(ui.actAddWatcher);
 	ui.wchMemTab->addAction(ui.actDelWatcher);
-
 // like in deBUGa: pairs regName/regValue
 	QLabel* lp;
 	xHexSpin* hp;
@@ -258,22 +263,14 @@ xWatcher::xWatcher(QWidget* p):QDialog(p) {
 	}
 	ui.regGrid->setRowStretch(32, 10);
 
-	listwin = new xLabeList(addial);
-
 	connect(ui.actAddWatcher, SIGNAL(triggered(bool)), this, SLOT(newWatcher()));
 	connect(ui.actDelWatcher, SIGNAL(triggered(bool)), this, SLOT(delWatcher()));
 	connect(ui.wchMemTab, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(edtWatcher()));
 
-	connect(nui.tbLabel, SIGNAL(clicked()), listwin, SLOT(show()));
-	connect(nui.cbType, SIGNAL(currentIndexChanged(int)), this, SLOT(dialChanged()));
-	connect(nui.cbSrcReg, SIGNAL(currentIndexChanged(int)), this, SLOT(dialChanged()));
-	connect(nui.pbOK, SIGNAL(clicked(bool)),this,SLOT(addWatcher()));
-
-	connect(listwin, SIGNAL(labSelected(QString)), this, SLOT(setLabel(QString)));
+//	connect(listwin, SIGNAL(labSelected(QString)), this, SLOT(setLabel(QString)));
 }
 
 void xWatcher::show() {
-	fillRegs();
 
 	xRegBunch regs = cpuGetRegs(conf.prof.cur->zx->cpu);
 	int work = 1;
@@ -298,13 +295,6 @@ void xWatcher::show() {
 	QDialog::show();
 }
 
-void xWatcher::setLabel(QString str) {
-	if (conf.prof.cur->labels.contains(str)) {
-		xAdr xadr = conf.prof.cur->labels[str];
-		nui.leAdrHex->setValue(xadr.adr);
-	}
-}
-
 QString getBankType(int type) {
 	QString res;
 	switch(type) {
@@ -324,7 +314,7 @@ void xWatcher::fillFields(Computer* comp) {
 	if (!isVisible()) return;
 	if (comp == NULL) return;
 	model->comp = comp;
-// TODO: remake for universal CPU
+
 	xRegBunch regs = cpuGetRegs(comp->cpu);
 	int i = 0;
 	while ((i < 32) && (regs.regs[i].id != REG_NONE)) {
@@ -340,49 +330,6 @@ void xWatcher::fillFields(Computer* comp) {
 	model->update();
 }
 
-void xWatcher::fillRegs() {
-	nui.cbSrcReg->clear();
-	nui.cbSrcReg->addItem("Absolute", wchAbsolute);
-	xRegBunch regs = cpuGetRegs(conf.prof.cur->zx->cpu);
-	int i = 0;
-	while (regs.regs[i].type != REG_NONE) {
-		if (regs.regs[i].type & REG_RDMP) {
-			nui.cbSrcReg->addItem(regs.regs[i].name, regs.regs[i].id);
-		}
-		i++;
-	}
-}
-
-void xWatcher::addWatcher() {
-	addial->hide();
-	int type = nui.cbType->itemData(nui.cbType->currentIndex()).toInt();
-	xAdr xadr = {MEM_ROM, 0, 0, 0};
-	switch (type) {
-		case wchAddress:
-			xadr.type = -1;
-			xadr.bank = -1;
-			xadr.adr = 0;
-			xadr.abs = nui.cbSrcReg->itemData(nui.cbSrcReg->currentIndex()).toInt();	// addressation type
-			if (xadr.abs == wchAbsolute) {
-				xadr.adr = nui.leAdrHex->getValue();
-			} else {
-				xadr.adr = nui.sbShift->value();
-			}
-			break;
-		case wchCell:
-			xadr.type = nui.cbMemType->itemData(nui.cbMemType->currentIndex()).toInt();	// ram/rom
-			xadr.bank = nui.sbMemPage->value();
-			xadr.adr = nui.leAdrHex->getValue();
-			xadr.abs = wchCell;
-			break;
-	}
-	if (curwch < 0) {
-		model->addItem(xadr);
-	} else {
-		model->updItem(curwch, xadr);
-	}
-}
-
 int xWatcher::getCurRow() {
 	int res = -1;
 	QModelIndexList lst = ui.wchMemTab->selectionModel()->selectedRows();
@@ -392,9 +339,12 @@ int xWatcher::getCurRow() {
 }
 
 void xWatcher::newWatcher() {
-	curwch = -1;
-	fillDial();
-	addial->show();
+	QString str = QInputDialog::getText(this, "Enter expression", "Expression");
+	if (str.isEmpty()) return;
+	xResult res = xEval(str.toLocal8Bit().data());		// check syntax
+	if (!res.err) {
+		model->addItem(str);
+	}
 }
 
 void xWatcher::delWatcher() {
@@ -406,54 +356,11 @@ void xWatcher::delWatcher() {
 void xWatcher::edtWatcher() {
 	int row = getCurRow();
 	if (row < 0) return;
-	curwch = row;
-	fillDial();
-	addial->show();
-}
-
-void xWatcher::fillDial() {
-	if (curwch < 0) {
-		nui.cbMemType->setCurrentIndex(0);
-		nui.cbSrcReg->setCurrentIndex(0);
-		nui.cbType->setCurrentIndex(0);
-		nui.leAdrHex->setValue(0);
-		nui.sbMemPage->setValue(0);
-		nui.sbShift->setValue(0);
-	} else {
-		xAdr xadr = model->getItem(curwch);
-		if (xadr.abs == wchCell) {
-			nui.cbType->setCurrentIndex(nui.cbType->findData(wchCell));
-			nui.cbMemType->setCurrentIndex(nui.cbMemType->findData(xadr.type));
-			nui.sbMemPage->setValue(xadr.bank);
-			nui.leAdrHex->setValue(xadr.adr);
-		} else {
-			nui.cbType->setCurrentIndex(nui.cbType->findData(wchAddress));
-			nui.cbSrcReg->setCurrentIndex(nui.cbSrcReg->findData(xadr.abs));
-			if (xadr.abs == wchAbsolute) {
-				nui.leAdrHex->setValue(xadr.adr);
-			} else {
-				nui.sbShift->setValue(xadr.adr);
-			}
-		}
-	}
-}
-
-void xWatcher::dialChanged() {
-	int type = nui.cbType->itemData(nui.cbType->currentIndex()).toInt();
-	if (type == wchCell) {
-		nui.cbMemType->setEnabled(true);
-		nui.sbMemPage->setEnabled(true);
-//		nui.sbAdrDec->setEnabled(true);
-		nui.leAdrHex->setEnabled(true);
-		nui.cbSrcReg->setEnabled(false);
-		nui.sbShift->setEnabled(false);
-	} else {
-		nui.cbMemType->setEnabled(false);
-		nui.sbMemPage->setEnabled(false);
-		nui.cbSrcReg->setEnabled(true);
-		type = nui.cbSrcReg->itemData(nui.cbSrcReg->currentIndex()).toInt();
-		nui.sbShift->setDisabled(type == wchAbsolute);
-		nui.leAdrHex->setEnabled(type == wchAbsolute);
+	QString str = model->getItem(row);
+	bool ok = false;
+	str = QInputDialog::getText(this, "Edit expression", "Expression", QLineEdit::Normal, str, &ok);
+	if (ok && !str.isEmpty()) {
+		model->setItem(row, str);
 	}
 }
 
@@ -464,7 +371,7 @@ xWatchModel::xWatchModel() {
 
 void xWatchModel::update() {
 	QModelIndex sti = index(0, 2);
-	QModelIndex ste = index(list.size() - 1, 3);
+	QModelIndex ste = index(explist.size() - 1, 3);
 	emit QAbstractItemModel::dataChanged(sti, ste);
 }
 
@@ -478,7 +385,7 @@ QModelIndex xWatchModel::parent(const QModelIndex&) const {
 }
 
 int xWatchModel::rowCount(const QModelIndex&) const {
-	return list.size();
+	return explist.size();
 }
 
 int xWatchModel::columnCount(const QModelIndex&) const {
@@ -495,31 +402,29 @@ void xWatchModel::removeRow(int row, const QModelIndex& idx) {
 	emit endRemoveRows();
 }
 
-xAdr xWatchModel::getItem(int idx) {
-	xAdr xadr = {MEM_ROM, 0, 0, 0};
-	if (idx < 0) return xadr;
-	if (idx >= list.size()) return xadr;
-	return list[idx];
+QString xWatchModel::getItem(int row) {
+	return explist.at(row);
 }
 
-void xWatchModel::addItem(xAdr xadr) {
-	list.append(xadr);
-	insertRow(list.size() - 1);
+void xWatchModel::addItem(QString exp) {
+	explist.append(exp);
+	insertRow(explist.size() - 1);
 }
 
-void xWatchModel::updItem(int idx, xAdr xadr) {
+
+void xWatchModel::setItem(int idx, QString exp) {
 	if (idx < 0) return;
-	if (idx >= list.size()) return;
-	list[idx] = xadr;
-	QModelIndex sti = index(idx, 0);
-	QModelIndex ste = index(idx, 3);
-	emit QAbstractItemModel::dataChanged(sti, ste);
+	if (idx >= explist.size()) return;
+	explist[idx] = exp;
+	emit QAbstractItemModel::dataChanged(index(idx, 0), index(idx, 3));
 }
 
 void xWatchModel::delItem(int idx) {
-	if (idx >= list.size()) return;
-	list.removeAt(idx);
-	removeRow(idx);
+	if (idx < explist.size()) {
+		explist.removeAt(idx);
+		removeRow(idx);
+	}
+
 }
 
 QVariant xWatchModel::data(const QModelIndex& idx, int role) const {
@@ -533,64 +438,17 @@ QVariant xWatchModel::data(const QModelIndex& idx, int role) const {
 	QString bytz;
 	int i;
 	switch (role) {
-		/*
-		case Qt::BackgroundColorRole:
-			if (row == currow) {
-				res = QColor(32,200,32);
-			} else {
-				res = QColor(255,255,255);
-			}
-			break;
-		*/
 		case Qt::DisplayRole:
-			xAdr xadr = list[row];
-			int adr;
-			int msk = 0x3fffff;
-			unsigned char* dat = NULL;
-			if (xadr.abs == wchCell) {
-				adr = (xadr.bank << 14) | (xadr.adr & 0x3fff);
-				switch(xadr.type) {
-					case MEM_ROM:
-						msk = comp->mem->romMask;
-						dat = comp->mem->romData;
-						adrs = QString("ROM:%0:%1").arg(gethexbyte(xadr.bank)).arg(gethexword(xadr.adr & 0x3fff));
-						break;
-					case MEM_RAM:
-						msk = comp->mem->ramMask;
-						dat = comp->mem->ramData;
-						adrs = QString("RAM:%0:%1").arg(gethexbyte(xadr.bank)).arg(gethexword(xadr.adr & 0x3fff));
-						break;
-				}
-				bytz.clear();
-				for (i = 0; i < 8; i++) {
-					if (!bytz.isEmpty())
-						bytz.append(":");
-					bytz.append(gethexbyte(dat ? dat[(adr + i) & msk] : 0xff));
-				}
+			adrs = explist.at(row);
+			xResult xr = xEval(adrs.toLocal8Bit().data());
+			bytz.clear();
+			if (xr.err) {
+				bytz = "Syntax error";
 			} else {
-				adr = -1;
-				switch(xadr.abs) {
-					case wchAbsolute:
-						adr = xadr.adr;
-						adrs = find_label(xadr);
-						if (adrs.isEmpty()) {
-							adrs = gethexword(adr);
-						}
-						break;
-					default:
-						xRegister reg = cpuGetReg(comp->cpu, xadr.abs);
-						adr = reg.value + xadr.adr;
-						adrs = QString(reg.name).toUpper();
-						break;
-				}
-				if (xadr.abs != wchAbsolute) {
-					adrs.append(getdecshift(xadr.adr & 0xff));
-				}
-				bytz.clear();
 				for (i = 0; i < 8; i++) {
 					if (!bytz.isEmpty())
 						bytz.append(":");
-					bytz.append(gethexbyte(memRd(comp->mem, (adr + i) & 0xffff)));
+					bytz.append(gethexbyte(memRd(comp->mem, (xr.value + i) & 0xffff)));
 				}
 			}
 			switch (col) {

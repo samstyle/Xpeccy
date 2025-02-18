@@ -5,7 +5,7 @@
 #include "xgui/labelist.h"
 
 #include "ui_watcher.h"
-#include "ui_wch_new.h"
+// #include "ui_wch_new.h"
 
 #include <QDialog>
 
@@ -23,13 +23,13 @@ class xWatchModel : public QAbstractItemModel {
 		xWatchModel();
 		Computer* comp;
 		void update();
-		xAdr getItem(int);
-		void addItem(xAdr);
-		void updItem(int, xAdr);
+		QString getItem(int);
+		void addItem(QString);
+		void setItem(int, QString);
 		void delItem(int);
-//		int currow;
 	private:
-		QList<xAdr> list;
+		// QList<xAdr> list;
+		QStringList explist;
 		QModelIndex index(int, int, const QModelIndex& = QModelIndex()) const;
 		QModelIndex parent(const QModelIndex&) const;
 		int rowCount(const QModelIndex& = QModelIndex()) const;
@@ -50,20 +50,13 @@ class xWatcher : public QDialog {
 	private:
 		int curwch;
 		Ui::Watcher ui;
-		Ui::WatcherAdd nui;
-		QDialog* addial;
 		xWatchModel* model;
 		xLabeList* listwin;
 		QList<QLabel*> regLabels;
 		QList<xHexSpin*> regValues;
 		int getCurRow();
-		void fillDial();
-		void fillRegs();
 	private slots:
-		void addWatcher();
 		void newWatcher();
 		void delWatcher();
 		void edtWatcher();
-		void dialChanged();
-		void setLabel(QString);
 };
