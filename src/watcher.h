@@ -5,17 +5,20 @@
 #include "xgui/labelist.h"
 
 #include "ui_watcher.h"
-// #include "ui_wch_new.h"
+#include "ui_wch_new.h"
 
 #include <QDialog>
 
 enum {
-	// addressation type
-	wchAddress = 0x100,
-	wchCell,
-	// address source
-	wchAbsolute,
+	WUT_CPU = 0,
+	WUT_RAM,
+	WUT_ROM
 };
+
+typedef struct {
+	int type;
+	QString exp;
+} xWatchItem;
 
 class xWatchModel : public QAbstractItemModel {
 	Q_OBJECT
@@ -23,13 +26,13 @@ class xWatchModel : public QAbstractItemModel {
 		xWatchModel();
 		Computer* comp;
 		void update();
-		QString getItem(int);
-		void addItem(QString);
-		void setItem(int, QString);
+		xWatchItem getItem(int);
+		void addItem(int, QString);
+		void setItem(int, int, QString);
 		void delItem(int);
 	private:
 		// QList<xAdr> list;
-		QStringList explist;
+		QList<xWatchItem> explist;
 		QModelIndex index(int, int, const QModelIndex& = QModelIndex()) const;
 		QModelIndex parent(const QModelIndex&) const;
 		int rowCount(const QModelIndex& = QModelIndex()) const;
@@ -55,8 +58,12 @@ class xWatcher : public QDialog {
 		QList<QLabel*> regLabels;
 		QList<xHexSpin*> regValues;
 		int getCurRow();
+
+		QDialog* newWch;
+		Ui::WatcherAdd nui;
 	private slots:
 		void newWatcher();
 		void delWatcher();
 		void edtWatcher();
+		void confirmNew();
 };
