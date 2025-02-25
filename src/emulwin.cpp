@@ -1095,6 +1095,7 @@ void MainWin::optApply() {
 	Computer* comp = conf.prof.cur->zx;
 	fillUserMenu();
 	updateWindow();
+	loadPalette(comp, true);
 #ifdef USENETWORK
 	if (srv.serverPort() != conf.port) {
 		closeServer();
@@ -1130,6 +1131,7 @@ void MainWin::bookmarkSelected(QAction* act) {
 void MainWin::onPrfChange() {
 	Computer* comp = conf.prof.cur->zx;
 	if (comp->firstRun) {
+		loadPalette(comp);
 		compReset(comp, RES_DEFAULT);
 		comp->firstRun = 0;
 	}

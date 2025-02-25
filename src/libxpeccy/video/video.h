@@ -153,6 +153,7 @@ struct Video {
 	unsigned char paln;	// high bits = palete number
 	uint32_t pal[256];	// ABGR inside int, R = LSB, A = FF
 	uint32_t gpal[256];	// greyscale copy of pal
+	uint32_t bpal[256];	// base palette (loaded preset)
 
 	int vmode;
 	cbvid cbDot;		// call every dot
@@ -366,6 +367,8 @@ void vid_get_screen(Video*, unsigned char*, int, int, int);
 void vid_set_grey(int);
 xColor vid_get_col(Video*, int);
 void vid_set_col(Video*, int, xColor);
+void vid_set_bcol(Video*, int, xColor);
+void vid_reset_col(Video*, int);
 
 void tslUpdatePorts(Video*);
 

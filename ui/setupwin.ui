@@ -523,6 +523,16 @@
               <item row="4" column="1">
                <widget class="QComboBox" name="cbShader"/>
               </item>
+              <item row="5" column="0">
+               <widget class="QLabel" name="labPalPreset">
+                <property name="text">
+                 <string>Palette</string>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="1">
+               <widget class="QComboBox" name="cbPalPreset"/>
+              </item>
              </layout>
             </widget>
            </item>

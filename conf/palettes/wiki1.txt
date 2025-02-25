@@ -1,0 +1,19 @@
+﻿; Wiki-Palette #1
+; https://en.wikipedia.org/wiki/ZX_Spectrum_graphic_modes#Colour_palette
+
+#000000	; Black
+#0100ce	; Blue
+#cf0100	; Red
+#cf01ce	; Magenta
+#00cf15	; Green
+#01cfcf	; Cyan
+#cfcf15	; Yellow
+#cfcfcf	; White
+#000000	; Bright Black
+#0200fd	; Bright Blue
+#ff0201	; Bright Red
+#ff02fd	; Bright Magenta
+#00ff1c	; Bright Green
+#02ffff	; Bright Cyan
+#ffff1d	; Bright Yellow
+#ffffff	; Bright White

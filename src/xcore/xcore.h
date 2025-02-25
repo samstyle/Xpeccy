@@ -249,6 +249,7 @@ int prfSave(std::string);
 #define	SCR_DISK	6
 
 void conf_init(char*, char* confdir = NULL);
+void loadPalette(Computer*, bool updateCurrentPalette = false);
 void loadConfig();
 void saveConfig();
 
@@ -522,6 +523,7 @@ struct xConfig {
 		int curfps;
 		std::string shader;
 		int shd_support;
+		std::string palette;
 	} vid;
 	struct {
 		unsigned enabled:1;
@@ -569,6 +571,7 @@ struct xConfig {
 		std::string romDir;
 		std::string prfDir;
 		std::string shdDir;
+		std::string palDir;
 		std::string font;
 		std::string boot;
 	} path;

@@ -485,6 +485,17 @@ void vid_set_col(Video* vid, int i, xColor xcol) {
 	vid->gpal[i & 0xff] = outcol | (outcol << 8) | (outcol << 16) | (0xff << 24);
 }
 
+// set base color palette (used for preset loading)
+void vid_set_bcol(Video* vid, int i, xColor xcol) {
+	vid->bpal[i & 0xff] = xcol.r | (xcol.g << 8) | (xcol.b << 16) | (0xff << 24);
+}
+
+// set current palette color from preloaded preset
+void vid_reset_col(Video* vid, int i) {
+	vid->pal[i & 0xff] = vid->bpal[i & 0xff];
+}
+
+
 // video drawing
 
 void vidDrawBorder(Video* vid) {

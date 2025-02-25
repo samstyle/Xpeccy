@@ -1,0 +1,18 @@
+﻿; Palette used by Spectaculator emulator
+
+#000000	; Black
+#0000ce	; Blue
+#ce0000	; Red
+#ce00ce	; Magenta
+#00cb00	; Green
+#00cbce	; Cyan
+#cecb00	; Yellow
+#cecbce	; White
+#000000	; Bright Black
+#0000ff	; Bright Blue
+#ff0000	; Bright Red
+#ff00ff	; Bright Magenta
+#00fb00	; Bright Green
+#00fbff	; Bright Cyan
+#fffb00	; Bright Yellow
+#fffbff	; Bright White
