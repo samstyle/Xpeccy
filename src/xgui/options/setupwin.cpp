@@ -464,7 +464,7 @@ void SetupWin::start() {
 	ui.cbDDp->setChecked(comp->ddpal);
 	fill_shader_list(ui.cbShader);
 	fill_palette_list(ui.cbPalPreset);
-	// sound
+// sound
 	ui.cbGS->setChecked(comp->gs->enable);
 	ui.gsrbox->setChecked(comp->gs->reset);
 

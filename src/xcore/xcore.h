@@ -249,7 +249,7 @@ int prfSave(std::string);
 #define	SCR_DISK	6
 
 void conf_init(char*, char* confdir = NULL);
-void loadPalette(Computer*, bool updateCurrentPalette = false);
+void loadPalette(Computer*);
 void loadConfig();
 void saveConfig();
 

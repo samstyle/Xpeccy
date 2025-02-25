@@ -34,7 +34,6 @@ int topSkip = 0;
 int botSkip = 0;
 
 unsigned char pscr[SCRBUF_SIZE];		// previous screen (raw)
-static xColor xcol;
 
 #if !defined(USEOPENGL)
 static int xpos = 0;
@@ -249,10 +248,7 @@ void vid_upd_timings(Video* vid, int nspd) {
 void vid_reset(Video* vid) {
 	int i;
 	for (i = 0; i<16; i++) {
-		xcol.b = (i & 1) ? ((i & 8) ? 0xff : 0xa0) : 0x00;
-		xcol.r = (i & 2) ? ((i & 8) ? 0xff : 0xa0) : 0x00;
-		xcol.g = (i & 4) ? ((i & 8) ? 0xff : 0xa0) : 0x00;
-		vid_set_col(vid, i, xcol);
+		vid_reset_col(vid, i);
 	}
 	vid->ula->active = 0;
 	vid->curscr = 5;

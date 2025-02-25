@@ -243,9 +243,10 @@ void copyFile(const char* src, const char* dst) {
 }
 
 // load preset colors for zx palette
-void loadPalette(Computer* comp, bool updateCurrentPallete) {
+void loadPalette(Computer* comp) {
 	printf("Loading palette: %s\n", conf.vid.palette.c_str());
 
+	bool updateCurrentPallete = comp->vid->vmode == VID_NORMAL ? true : false;
 	int i = 0;
 	xColor xcol;
 	QFile file((conf.path.palDir + SLASH + conf.vid.palette).c_str());

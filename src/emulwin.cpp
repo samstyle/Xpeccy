@@ -1095,7 +1095,7 @@ void MainWin::optApply() {
 	Computer* comp = conf.prof.cur->zx;
 	fillUserMenu();
 	updateWindow();
-	loadPalette(comp, true);
+	loadPalette(comp);
 #ifdef USENETWORK
 	if (srv.serverPort() != conf.port) {
 		closeServer();
