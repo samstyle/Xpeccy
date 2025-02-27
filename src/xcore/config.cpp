@@ -157,7 +157,6 @@ void saveConfig() {
 	fprintf(cfile, "bordersize = %i\n", int(conf.brdsize * 100));
 	fprintf(cfile, "noflick = %i\n", noflic);
 	fprintf(cfile, "shader = %s\n", conf.vid.shader.c_str());
-	fprintf(cfile, "palette = %s\n", conf.vid.palette.c_str());
 
 	fprintf(cfile, "\n[ROMSETS]\n");
 	foreach(xRomset rms, conf.rsList) {
@@ -239,60 +238,6 @@ void copyFile(const char* src, const char* dst) {
 	if (fle.open(QFile::WriteOnly)) {
 		fle.write(fdata);
 		fle.close();
-	}
-}
-
-// load preset colors for zx palette
-void loadPalette(Computer* comp) {
-	printf("Loading palette: %s\n", conf.vid.palette.c_str());
-
-	bool updateCurrentPallete = comp->vid->vmode == VID_NORMAL ? true : false;
-	int i = 0;
-	xColor xcol;
-	QFile file((conf.path.palDir + SLASH + conf.vid.palette).c_str());
-	QString line;
-	QString hexPart;
-	int pos;
-	bool ok;
-
-	printf("Fullpath: %s\n", (conf.path.palDir + SLASH + conf.vid.palette).c_str());
-
-	if (file.open(QFile::ReadOnly)) {
-		while(!file.atEnd() && (i < 16)) {
-			line = file.readLine();
-			// #RRGGBB string can be at any position
-			pos = line.indexOf('#');
-			if ((pos >= 0) && ((pos + 6) < line.size())) {
-				// extracting 6-chars as for RRGGBB data format
-				hexPart = line.mid(pos + 1, 6);
-				// converting Hex-data into an integer
-				uint rgb = hexPart.toUInt(&ok, 16);
-				if (ok) {
-					xcol.r = (rgb >> 16) & 0xff;
-					xcol.g = (rgb >> 8)  & 0xff;
-					xcol.b = rgb & 0xff;
-					vid_set_bcol(comp->vid, i, xcol);
-					if (updateCurrentPallete)
-						vid_set_col(comp->vid, i, xcol);
-					printf("Color %2d = #%s\n", i, hexPart.toStdString().c_str());
-					i++;
-				}
-			}
-		}
-		file.close();
-	}
-	// In case of reading colors data failed - fallback to default palette
-	if (i != 16) {
-		printf("Wrong number of colors: %d, falling back to default palette\n", i);
-		for (i = 0; i < 16; i++) {
-			// TODO: review default color component value (0xaa), consider globaly defined value instead
-			xcol.b = (i & 1) ? ((i & 8) ? 0xff : 0xaa) : 0x00;
-			xcol.r = (i & 2) ? ((i & 8) ? 0xff : 0xaa) : 0x00;
-			xcol.g = (i & 4) ? ((i & 8) ? 0xff : 0xaa) : 0x00;
-			vid_set_bcol(comp->vid, i, xcol);
-			if (updateCurrentPallete)
-				vid_set_col(comp->vid, i, xcol);
-		}
 	}
 }
 
@@ -484,7 +429,7 @@ void loadConfig() {
 					if (pnam=="greyscale") vid_set_grey(arg.b);
 					if (pnam=="scanlines") scanlines = arg.b;
 					if (pnam=="shader") conf.vid.shader = pval;
-					if (pnam=="palette") conf.vid.palette = pval;
+					// if (pnam=="palette") conf.vid.palette = pval;
 					break;
 				case SECT_ROMSETS:
 					pos = pval.find_last_of(":");

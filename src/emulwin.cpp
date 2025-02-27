@@ -978,9 +978,10 @@ void MainWin::initUserMenu() {
 	bookmarkMenu = userMenu->addMenu(QIcon(":/images/star.png"),"Bookmarks");
 	profileMenu = userMenu->addMenu(QIcon(":/images/profile.png"),"Profiles");
 	layoutMenu = userMenu->addMenu(QIcon(":/images/display.png"),"Layout");
-	keyMenu = userMenu->addMenu(QIcon(":/images/keyboardzx.png"), "Keymap...");
-	resMenu = userMenu->addMenu(QIcon(":/images/shutdown.png"),"Reset...");
+	keyMenu = userMenu->addMenu(QIcon(":/images/keyboardzx.png"), "Keymap");
+	resMenu = userMenu->addMenu(QIcon(":/images/shutdown.png"),"Reset");
 	shdMenu = userMenu->addMenu(QIcon(":/images/shader.png"), "Shaders");
+	palMenu = userMenu->addMenu(QIcon(":/images/palette.png"), "ZX palette");
 
 	userMenu->addSeparator();
 	userMenu->addAction(QIcon(":/images/tape.png"), "Tape player", this, SIGNAL(s_tape_show()));
@@ -1000,6 +1001,7 @@ void MainWin::initUserMenu() {
 	connect(fileMenu,SIGNAL(triggered(QAction*)),this,SLOT(umOpen(QAction*)));
 	connect(shdMenu,SIGNAL(triggered(QAction*)),this,SLOT(shdSelected(QAction*)));
 	connect(keyMenu,SIGNAL(triggered(QAction*)),this,SLOT(keySelected(QAction*)));
+	connect(palMenu,SIGNAL(triggered(QAction*)),this,SLOT(palSelected(QAction*)));
 
 	fileMenu->addAction(QIcon(":/images/memory.png"),"Snapshot")->setData(FG_SNAPSHOT);
 	fileMenu->addAction(QIcon(":/images/tape.png"),"Tape")->setData(FG_TAPE);
@@ -1080,6 +1082,20 @@ void MainWin::fillUserMenu() {
 		}
 	}
 #endif
+	// fill palette menu
+	palMenu->clear();
+	act = palMenu->addAction("default");
+	act->setData("");
+	act->setCheckable(true);
+	if (conf.prof.cur->palette.empty()) act->setChecked(true);
+	QDir dir(conf.path.palDir.c_str());
+	QFileInfoList lst = dir.entryInfoList(QStringList() << "*.txt", QDir::Files, QDir::Name);
+	foreach(QFileInfo inf, lst) {
+		act = palMenu->addAction(inf.fileName());
+		act->setData(inf.fileName());
+		act->setCheckable(true);
+		act->setChecked(inf.fileName() == conf.prof.cur->palette.c_str());
+	}
 }
 
 // SLOTS
@@ -1095,7 +1111,7 @@ void MainWin::optApply() {
 	Computer* comp = conf.prof.cur->zx;
 	fillUserMenu();
 	updateWindow();
-	loadPalette(comp);
+	loadPalette(conf.prof.cur);
 #ifdef USENETWORK
 	if (srv.serverPort() != conf.port) {
 		closeServer();
@@ -1131,7 +1147,7 @@ void MainWin::bookmarkSelected(QAction* act) {
 void MainWin::onPrfChange() {
 	Computer* comp = conf.prof.cur->zx;
 	if (comp->firstRun) {
-		loadPalette(comp);
+		// loadPalette(conf.prof.cur);		// already loaded for each profile
 		compReset(comp, RES_DEFAULT);
 		comp->firstRun = 0;
 	}
@@ -1158,7 +1174,7 @@ void MainWin::reset(QAction* act) {
 void MainWin::chLayout(QAction* act) {
 	std::string str = QString(act->data().toByteArray()).toStdString();
 	prfSetLayout(NULL, str);
-	prfSave("");
+	prfSave();
 	updateWindow();
 }
 
@@ -1176,7 +1192,19 @@ void MainWin::keySelected(QAction* act) {
 	} else {
 		conf.prof.cur->kmapName = std::string(str.toUtf8().data());
 	}
+	prfSave();
 	loadKeys();
+}
+
+void MainWin::palSelected(QAction* act) {
+	QString str = act->data().toString();
+	if (str.isEmpty()) {
+		conf.prof.cur->palette.clear();
+	} else {
+		conf.prof.cur->palette = std::string(str.toUtf8().data());
+	}
+	prfSave();
+	loadPalette(conf.prof.cur);
 }
 
 // debug stufffff

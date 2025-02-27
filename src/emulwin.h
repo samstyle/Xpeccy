@@ -120,6 +120,7 @@ typedef struct {
 		void profileSelected(QAction*);
 		void shdSelected(QAction*);
 		void keySelected(QAction*);
+		void palSelected(QAction*);
 		void reset(QAction*);
 		void chLayout(QAction*);
 		void umOpen(QAction*);
@@ -186,6 +187,7 @@ typedef struct {
 		QMenu* fileMenu;
 		QMenu* shdMenu;
 		QMenu* keyMenu;
+		QMenu* palMenu;
 #ifdef ISDEBUG
 		QMenu* dbgMenu;
 #endif

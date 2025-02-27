@@ -186,6 +186,7 @@ typedef struct {
 	std::string jmapName;
 	std::string kmapName;
 	std::string lastDir;
+	std::string palette;
 
 	std::vector<xBrkPoint> brkList;
 	std::map<int, xBrkPoint*> brkMapCpu;
@@ -238,7 +239,7 @@ int prfLoad(std::string);
 #define	PSAVE_NF	PLOAD_NF
 #define	PSAVE_OF	PLOAD_OF
 
-int prfSave(std::string);
+int prfSave(std::string = "");
 
 //screenshot format
 #define	SCR_BMP		1
@@ -249,7 +250,7 @@ int prfSave(std::string);
 #define	SCR_DISK	6
 
 void conf_init(char*, char* confdir = NULL);
-void loadPalette(Computer*);
+void loadPalette(xProfile*);
 void loadConfig();
 void saveConfig();
 
@@ -523,7 +524,6 @@ struct xConfig {
 		int curfps;
 		std::string shader;
 		int shd_support;
-		std::string palette;
 	} vid;
 	struct {
 		unsigned enabled:1;

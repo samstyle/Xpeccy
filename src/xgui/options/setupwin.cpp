@@ -92,12 +92,11 @@ void fill_palette_list(QComboBox* box) {
 	QFileInfoList lst = dir.entryInfoList(QStringList() << "*.txt", QDir::Files, QDir::Name);
 	QFileInfo inf;
 	box->clear();
-	box->addItem("default", 0);
-
+	box->addItem("default");					// empty data (no filename = default pal)
 	foreach(inf, lst) {
-		box->addItem(inf.fileName(), 1);
+		box->addItem(inf.fileName(), inf.fileName());		// need data=text, cuz setRFIndex using data, not text
 	}
-	box->setCurrentIndex(box->findText(conf.vid.palette.c_str()));
+	setRFIndex(box, conf.prof.cur->palette.c_str());
 	if (box->currentIndex() < 0)
 		box->setCurrentIndex(0);
 }
@@ -665,9 +664,11 @@ void SetupWin::apply() {
 		conf.vid.shader = std::string(ui.cbShader->currentText().toLocal8Bit().data());
 	}
 	if (getRFIData(ui.cbPalPreset) == 0) {
-		conf.vid.palette.clear();
+		//conf.vid.palette.clear();
+		prof->palette.clear();
 	} else {
-		conf.vid.palette = std::string(ui.cbPalPreset->currentText().toLocal8Bit().data());
+		//conf.vid.palette = std::string(ui.cbPalPreset->currentText().toLocal8Bit().data());
+		prof->palette = getRFText(ui.cbPalPreset);
 	}
 // sound
 	conf.snd.enabled = ui.senbox->isChecked() ? 1 : 0;
@@ -789,7 +790,7 @@ void SetupWin::apply() {
 	emit s_apply();
 
 	saveConfig();
-	prfSave("");
+	prfSave();
 }
 
 void SetupWin::reject() {
