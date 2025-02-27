@@ -1,0 +1,18 @@
+﻿; ATM-Turbo palette?
+
+#000000	; Black
+#0000aa	; Blue
+#aa0000	; Red
+#aa00aa	; Magenta
+#00aa00	; Green
+#00aaaa	; Cyan
+#aaaa00	; Yellow
+#aaaaaa	; White
+#000000	; Bright Black
+#0000ff	; Bright Blue
+#ff0000	; Bright Red
+#ff00ff	; Bright Magenta
+#00ff00	; Bright Green
+#00ffff	; Bright Cyan
+#ffff00	; Bright Yellow
+#ffffff	; Bright White

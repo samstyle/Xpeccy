@@ -1,0 +1,19 @@
+﻿; Wiki-Palette #2
+; https://en.wikipedia.org/wiki/List_of_8-bit_computer_hardware_graphics#ZX_Spectrum
+
+#000000	; Black
+#001dc8	; Blue
+#d8240f	; Red
+#d530c9	; Magenta
+#00c721	; Green
+#00c9cb	; Cyan
+#ceca27	; Yellow
+#cbcbcb	; White
+#000000	; Bright Black
+#0027fb	; Bright Blue
+#ff3016	; Bright Red
+#ff3ffc	; Bright Magenta
+#00f92c	; Bright Green
+#00fcfe	; Bright Cyan
+#fffd33	; Bright Yellow
+#ffffff	; Bright White

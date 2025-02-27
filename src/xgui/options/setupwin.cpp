@@ -87,6 +87,21 @@ void fill_shader_list(QComboBox* box) {
 #endif
 }
 
+void fill_palette_list(QComboBox* box) {
+	QDir dir(conf.path.palDir.c_str());
+	QFileInfoList lst = dir.entryInfoList(QStringList() << "*.txt", QDir::Files, QDir::Name);
+	QFileInfo inf;
+	box->clear();
+	box->addItem("default", 0);
+
+	foreach(inf, lst) {
+		box->addItem(inf.fileName(), 1);
+	}
+	box->setCurrentIndex(box->findText(conf.vid.palette.c_str()));
+	if (box->currentIndex() < 0)
+		box->setCurrentIndex(0);
+}
+
 // OBJECT
 
 void dbg_fill_chip_boxes(QComboBox* cbtype, QComboBox* cbstereo) {
@@ -161,6 +176,7 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	ui.labShader->setVisible(false);
 	ui.cbShader->setVisible(false);
 #endif
+	fill_palette_list(ui.cbPalPreset);
 // sound
 	i = 0;
 	while (sndTab[i].name) {
@@ -447,6 +463,7 @@ void SetupWin::start() {
 	ui.ulaPlus->setChecked(comp->vid->ula->enabled);
 	ui.cbDDp->setChecked(comp->ddpal);
 	fill_shader_list(ui.cbShader);
+	fill_palette_list(ui.cbPalPreset);
 // sound
 	ui.cbGS->setChecked(comp->gs->enable);
 	ui.gsrbox->setChecked(comp->gs->reset);
@@ -646,6 +663,11 @@ void SetupWin::apply() {
 		conf.vid.shader.clear();
 	} else {
 		conf.vid.shader = std::string(ui.cbShader->currentText().toLocal8Bit().data());
+	}
+	if (getRFIData(ui.cbPalPreset) == 0) {
+		conf.vid.palette.clear();
+	} else {
+		conf.vid.palette = std::string(ui.cbPalPreset->currentText().toLocal8Bit().data());
 	}
 // sound
 	conf.snd.enabled = ui.senbox->isChecked() ? 1 : 0;

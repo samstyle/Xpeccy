@@ -1,0 +1,18 @@
+﻿; Art-palette by Schafft
+
+#000000	; Black
+#1c0077	; Blue
+#a2232a	; Red
+#8417a8	; Magenta
+#7b8707	; Green
+#2d91c3	; Cyan
+#daa73e	; Yellow
+#bababa	; White
+#000000	; Bright Black
+#2100a5	; Bright Blue
+#e02c35	; Bright Red
+#b71be8	; Bright Magenta
+#a7ba08	; Bright Green
+#42c2ff	; Bright Cyan
+#ffd66d	; Bright Yellow
+#fcfcfc	; Bright White

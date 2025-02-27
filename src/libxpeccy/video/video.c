@@ -34,7 +34,6 @@ int topSkip = 0;
 int botSkip = 0;
 
 unsigned char pscr[SCRBUF_SIZE];		// previous screen (raw)
-static xColor xcol;
 
 #if !defined(USEOPENGL)
 static int xpos = 0;
@@ -249,10 +248,7 @@ void vid_upd_timings(Video* vid, int nspd) {
 void vid_reset(Video* vid) {
 	int i;
 	for (i = 0; i<16; i++) {
-		xcol.b = (i & 1) ? ((i & 8) ? 0xff : 0xa0) : 0x00;
-		xcol.r = (i & 2) ? ((i & 8) ? 0xff : 0xa0) : 0x00;
-		xcol.g = (i & 4) ? ((i & 8) ? 0xff : 0xa0) : 0x00;
-		vid_set_col(vid, i, xcol);
+		vid_reset_col(vid, i);
 	}
 	vid->ula->active = 0;
 	vid->curscr = 5;
@@ -484,6 +480,17 @@ void vid_set_col(Video* vid, int i, xColor xcol) {
 	outcol = (xcol.b * 30 + xcol.r * 76 + xcol.g * 148) >> 8;
 	vid->gpal[i & 0xff] = outcol | (outcol << 8) | (outcol << 16) | (0xff << 24);
 }
+
+// set base color palette (used for preset loading)
+void vid_set_bcol(Video* vid, int i, xColor xcol) {
+	vid->bpal[i & 0xff] = xcol.r | (xcol.g << 8) | (xcol.b << 16) | (0xff << 24);
+}
+
+// set current palette color from preloaded preset
+void vid_reset_col(Video* vid, int i) {
+	vid->pal[i & 0xff] = vid->bpal[i & 0xff];
+}
+
 
 // video drawing
 

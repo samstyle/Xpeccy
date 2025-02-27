@@ -1,0 +1,18 @@
+﻿; ZX Spectrum Next FPGA core HDMI palette
+
+#000000	; Black
+#0000b0	; Blue
+#b00000	; Red
+#b000b0	; Magenta
+#00b000	; Green
+#00b0b0	; Cyan
+#b0b000	; Yellow
+#b0b0b0	; White
+#000000	; Bright Black
+#0000ff	; Bright Blue
+#ff0000	; Bright Red
+#ff00ff	; Bright Magenta
+#00ff00	; Bright Green
+#00ffff	; Bright Cyan
+#ffff00	; Bright Yellow
+#ffffff	; Bright White
