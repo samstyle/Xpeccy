@@ -181,7 +181,7 @@ sndPair zx_vol(Computer* comp, sndVolume* sv) {
 
 void zx_set_pal(Computer* comp) {
 	int i;
-	xColor xcol;
+//	xColor xcol;
 	for (i = 0; i < 16; i++) {
 		vid_reset_col(comp->vid, i);
 	}

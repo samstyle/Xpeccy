@@ -63,7 +63,7 @@ void conf_init(char* wpath, char* confdir) {
 	conf.path.shdDir = conf.path.confDir + "/shaders";
 	mkdir(conf.path.shdDir.c_str() ,0777);
 	conf.path.palDir = conf.path.confDir + "/palettes";
-	mkdir(conf.pat0h.palDir.c_str() ,0777);
+	mkdir(conf.path.palDir.c_str() ,0777);
 	conf.path.confFile = conf.path.confDir + "/config.conf";
 	conf.path.boot = conf.path.confDir + "/boot.$B";
 #elif defined(__WIN32)
@@ -250,40 +250,37 @@ void loadPalette(Computer* comp) {
 	int i = 0;
 	xColor xcol;
 	QFile file((conf.path.palDir + SLASH + conf.vid.palette).c_str());
+	QString line;
+	QString hexPart;
+	int pos;
+	bool ok;
 
 	printf("Fullpath: %s\n", (conf.path.palDir + SLASH + conf.vid.palette).c_str());
 
 	if (file.open(QFile::ReadOnly)) {
-		while(!file.atEnd() && i<16) {
-			QString line = file.readLine();
-
+		while(!file.atEnd() && (i < 16)) {
+			line = file.readLine();
 			// #RRGGBB string can be at any position
-			int pos = line.indexOf('#');
-			if(pos == -1 || (pos + 7) > line.size()) 
-				continue;
-
-			// extracting 6-chars as for RRGGBB data format
-			QString hexPart = line.mid(pos + 1, 6);
-
-			// converting Hex-data into an integer
-			bool ok;
-			uint rgb = hexPart.toUInt(&ok, 16);
-			if(!ok) 
-			    continue;
-
-			xcol.r = (rgb >> 16) & 0xFF;
-			xcol.g = (rgb >> 8)  & 0xFF;
-				xcol.b = rgb         & 0xFF;
-			vid_set_bcol(comp->vid, i, xcol);
-			if (updateCurrentPallete)
-				vid_set_col(comp->vid, i, xcol);
-
-			printf("Color %2d = #%s\n", i, hexPart.toStdString().c_str());
-			i++;
+			pos = line.indexOf('#');
+			if ((pos >= 0) && ((pos + 6) < line.size())) {
+				// extracting 6-chars as for RRGGBB data format
+				hexPart = line.mid(pos + 1, 6);
+				// converting Hex-data into an integer
+				uint rgb = hexPart.toUInt(&ok, 16);
+				if (ok) {
+					xcol.r = (rgb >> 16) & 0xff;
+					xcol.g = (rgb >> 8)  & 0xff;
+					xcol.b = rgb & 0xff;
+					vid_set_bcol(comp->vid, i, xcol);
+					if (updateCurrentPallete)
+						vid_set_col(comp->vid, i, xcol);
+					printf("Color %2d = #%s\n", i, hexPart.toStdString().c_str());
+					i++;
+				}
+			}
 		}
 		file.close();
 	}
-
 	// In case of reading colors data failed - fallback to default palette
 	if (i != 16) {
 		printf("Wrong number of colors: %d, falling back to default palette\n", i);

@@ -122,7 +122,7 @@ void setFlagBit(bool cond, int* val, int mask) {
 }
 
 bool str2bool(std::string v) {
-	return !(v=="n" || v=="N" || v=="0" || v=="no" || v=="NO" || v=="false" || v=="FALSE");
+	return !(v=="n" || v=="N" || v=="0" || v=="no" || v=="NO" || v=="false" || v=="FALSE" || v=="off" || v=="OFF");
 }
 
 std::vector<std::string> splitstr(std::string str,const char* spl) {
