@@ -167,6 +167,7 @@ set(MOCFILES
 	./src/xgui/options/opt_diskcat.h
 	./src/xgui/options/opt_tapecat.h
 	./src/xgui/options/opt_hotkeytab.h
+	./src/xgui/options/opt_paledit.h
 	./src/vkeyboard.h
 	./src/xcore/xcore.h
 	./src/xgui/xgui.h

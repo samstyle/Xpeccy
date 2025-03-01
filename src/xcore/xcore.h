@@ -250,6 +250,8 @@ int prfSave(std::string = "");
 #define	SCR_DISK	6
 
 void conf_init(char*, char* confdir = NULL);
+QList<QColor> loadColors(std::string);
+int saveColors(std::string, QList<QColor>);
 void loadPalette(xProfile*);
 void loadConfig();
 void saveConfig();

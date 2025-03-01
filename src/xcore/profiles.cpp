@@ -72,20 +72,6 @@ xProfile* addProfile(std::string nm, std::string fp) {
 #endif
 	prf_load_cmos(nprof, conf.path.prfDir + SLASH + nprof->name + SLASH + nprof->name + ".cmos");
 	prf_load_nvram(nprof, conf.path.prfDir + SLASH + nprof->name + SLASH + nprof->name + ".nvram");
-	/*
-	fname = conf.path.prfDir + SLASH + nprof->name + SLASH + nprof->name + ".cmos";
-	FILE* file = fopen(fname.c_str(), "rb");
-	if (file) {
-		fread((char*)nprof->zx->cmos.data,256,1,file);
-		fclose(file);
-	}
-	fname = conf.path.confDir + SLASH + nprof->name + SLASH + nprof->name + ".nvram";
-	file = fopen(fname.c_str(), "rb");
-	if (file) {
-		fread((char*)nprof->zx->ide->smuc.nv->mem,0x800,1,file);
-		fclose(file);
-	}
-	*/
 	compSetHardware(nprof->zx,"Dummy");
 	conf.prof.list.push_back(nprof);
 	return nprof;
@@ -302,66 +288,6 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 				fclose(file);
 				prf->zx->vid->vga.cga = 0;
 			}
-		}
-	}
-}
-
-// load preset colors for zx palette
-void loadPalette(xProfile* prf) {
-//	printf("Loading palette: %s\n", prf->palette.c_str());
-
-	Computer* comp = prf->zx;
-	bool updateCurrentPallete = comp->vid->vmode == VID_NORMAL ? true : false;		// not necessary (VID_ALCO, VID_HWMC)
-	int i = 0;
-	xColor xcol;
-	QString line;
-	QString hexPart;
-	int pos;
-	bool ok;
-	uint rgb;
-	QFile file;
-	std::string path = conf.path.palDir + SLASH + prf->palette;
-
-//	printf("Fullpath: %s\n", (prf->palette.c_str());
-
-	if (prf->palette != "") {
-		file.setFileName(path.c_str());
-		if (file.open(QFile::ReadOnly)) {
-			while(!file.atEnd() && (i < 16)) {
-				line = file.readLine();
-				// #RRGGBB string can be at any position
-				pos = line.indexOf('#');
-				if ((pos >= 0) && ((pos + 6) < line.size())) {
-					// extracting 6-chars as for RRGGBB data format
-					hexPart = line.mid(pos + 1, 6);
-					// converting Hex-data into an integer
-					rgb = hexPart.toUInt(&ok, 16);
-					if (ok) {
-						xcol.r = (rgb >> 16) & 0xff;
-						xcol.g = (rgb >> 8)  & 0xff;
-						xcol.b = rgb & 0xff;
-						vid_set_bcol(comp->vid, i, xcol);
-						if (updateCurrentPallete)
-							vid_set_col(comp->vid, i, xcol);
-						//					printf("Color %2d = #%s\n", i, hexPart.toStdString().c_str());
-						i++;
-					}
-				}
-			}
-			file.close();
-		}
-	}
-	// In case of reading colors data failed - fallback to default palette
-	if (i != 16) {
-//		printf("Wrong number of colors: %d, falling back to default palette\n", i);
-		for (i = 0; i < 16; i++) {
-			// TODO: review default color component value (0xaa), consider globaly defined value instead
-			xcol.b = (i & 1) ? ((i & 8) ? 0xff : 0xaa) : 0x00;
-			xcol.r = (i & 2) ? ((i & 8) ? 0xff : 0xaa) : 0x00;
-			xcol.g = (i & 4) ? ((i & 8) ? 0xff : 0xaa) : 0x00;
-			vid_set_bcol(comp->vid, i, xcol);
-			if (updateCurrentPallete)
-				vid_set_col(comp->vid, i, xcol);
 		}
 	}
 }

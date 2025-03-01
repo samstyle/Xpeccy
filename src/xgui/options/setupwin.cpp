@@ -176,6 +176,7 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	ui.cbShader->setVisible(false);
 #endif
 	fill_palette_list(ui.cbPalPreset);
+	paleditor = new xPalEditor(this);
 // sound
 	i = 0;
 	while (sndTab[i].name) {
@@ -275,6 +276,9 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	connect(ui.layEdit,SIGNAL(released()),this,SLOT(edLayout()));
 	connect(ui.layAdd,SIGNAL(released()),this,SLOT(addNewLayout()));
 	connect(ui.layDel,SIGNAL(released()),this,SLOT(delLayout()));
+
+	connect(ui.tbPalEdit,SIGNAL(released()),this,SLOT(paledit()));
+	connect(paleditor, SIGNAL(ready()), this, SLOT(palstore()));
 
 	connect(layUi.layName,SIGNAL(textChanged(QString)),this,SLOT(layNameCheck(QString)));
 	connect(layUi.lineBox,SIGNAL(valueChanged(int)),this,SLOT(layEditorChanged()));
@@ -663,12 +667,13 @@ void SetupWin::apply() {
 	} else {
 		conf.vid.shader = std::string(ui.cbShader->currentText().toLocal8Bit().data());
 	}
-	if (getRFIData(ui.cbPalPreset) == 0) {
+	QString str = getRFSData(ui.cbPalPreset);
+	if (str.isEmpty()) {
 		//conf.vid.palette.clear();
 		prof->palette.clear();
 	} else {
 		//conf.vid.palette = std::string(ui.cbPalPreset->currentText().toLocal8Bit().data());
-		prof->palette = getRFText(ui.cbPalPreset);
+		prof->palette = str.toStdString();
 	}
 // sound
 	conf.snd.enabled = ui.senbox->isChecked() ? 1 : 0;
@@ -1417,16 +1422,34 @@ void SetupWin::selsspath() {
 	if (fpath!="") ui.pathle->setText(fpath);
 }
 
-// sound
-
-/*
-void SetupWin::updvolumes() {
-	ui.bvlab->setText(QString::number(ui.bvsld->value()));
-	ui.tvlab->setText(QString::number(ui.tvsld->value()));
-	ui.avlab->setText(QString::number(ui.avsld->value()));
-	ui.gslab->setText(QString::number(ui.gvsld->value()));
+void SetupWin::paledit() {
+	QString str = getRFSData(ui.cbPalPreset);
+	if (str.isEmpty()) return;			// is default
+	editpal = loadColors(str.toStdString());	// load colors from file
+	while (editpal.size() < 16) editpal.append(Qt::black);
+	paleditor->edit(&editpal);
 }
-*/
+
+void SetupWin::palchoosecol(QPoint p) {
+}
+
+void SetupWin::palstore() {
+	int i;
+	xColor xcol;
+	bool upd = !!(conf.prof.cur->zx->vid->vmode == VID_NORMAL);
+	upd |= !!(conf.prof.cur->zx->vid->vmode == VID_ALCO);
+	upd |= !!(conf.prof.cur->zx->vid->vmode == VID_HWMC);
+	for (i = 0; (i < editpal.size()) && (i < 16); i++) {
+		qDebug() << editpal[i];
+		xcol.r = editpal[i].red();
+		xcol.g = editpal[i].green();
+		xcol.b = editpal[i].blue();
+		vid_set_bcol(conf.prof.cur->zx->vid, i, xcol);
+		if (upd) vid_set_col(conf.prof.cur->zx->vid, i, xcol);
+	}
+	// TODO:save palette to file, cuz Settings OK will reload palette from file
+	saveColors(getRFSData(ui.cbPalPreset).toStdString(), editpal);
+}
 
 // disk
 

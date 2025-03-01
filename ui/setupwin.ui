@@ -394,30 +394,10 @@
            <item>
             <widget class="QGroupBox" name="vidViewGBox">
              <layout class="QGridLayout" name="gridLayout_2">
-              <item row="1" column="0">
-               <widget class="QLabel" name="label_8">
-                <property name="text">
-                 <string>Layout</string>
-                </property>
-               </widget>
-              </item>
               <item row="3" column="0">
                <widget class="QLabel" name="label_12">
                 <property name="text">
                  <string>Noflick</string>
-                </property>
-               </widget>
-              </item>
-              <item row="2" column="2">
-               <widget class="QLabel" name="bszlab">
-                <property name="minimumSize">
-                 <size>
-                  <width>30</width>
-                  <height>0</height>
-                 </size>
-                </property>
-                <property name="text">
-                 <string>%</string>
                 </property>
                </widget>
               </item>
@@ -437,17 +417,10 @@
                 </property>
                </widget>
               </item>
-              <item row="2" column="0">
-               <widget class="QLabel" name="label_3">
+              <item row="1" column="0">
+               <widget class="QLabel" name="label_8">
                 <property name="text">
-                 <string>BorderSize</string>
-                </property>
-               </widget>
-              </item>
-              <item row="3" column="2">
-               <widget class="QLabel" name="labNoflic">
-                <property name="text">
-                 <string>%</string>
+                 <string>Layout</string>
                 </property>
                </widget>
               </item>
@@ -470,6 +443,36 @@
                 </property>
                 <property name="tickInterval">
                  <number>10</number>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QComboBox" name="geombox"/>
+              </item>
+              <item row="2" column="0">
+               <widget class="QLabel" name="label_3">
+                <property name="text">
+                 <string>BorderSize</string>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="0">
+               <widget class="QLabel" name="labShader">
+                <property name="text">
+                 <string>Shader</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="2">
+               <widget class="QLabel" name="bszlab">
+                <property name="minimumSize">
+                 <size>
+                  <width>30</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>%</string>
                 </property>
                </widget>
               </item>
@@ -510,18 +513,33 @@
                 </item>
                </layout>
               </item>
-              <item row="1" column="1">
-               <widget class="QComboBox" name="geombox"/>
-              </item>
-              <item row="4" column="0">
-               <widget class="QLabel" name="labShader">
-                <property name="text">
-                 <string>Shader</string>
-                </property>
-               </widget>
-              </item>
               <item row="4" column="1">
                <widget class="QComboBox" name="cbShader"/>
+              </item>
+              <item row="5" column="1">
+               <layout class="QHBoxLayout" name="horizontalLayout_40">
+                <item>
+                 <widget class="QComboBox" name="cbPalPreset"/>
+                </item>
+                <item>
+                 <widget class="QToolButton" name="tbPalEdit">
+                  <property name="text">
+                   <string>...</string>
+                  </property>
+                  <property name="icon">
+                   <iconset resource="../xpeccy.qrc">
+                    <normaloff>:/images/edit.png</normaloff>:/images/edit.png</iconset>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <item row="3" column="2">
+               <widget class="QLabel" name="labNoflic">
+                <property name="text">
+                 <string>%</string>
+                </property>
+               </widget>
               </item>
               <item row="5" column="0">
                <widget class="QLabel" name="labPalPreset">
@@ -529,9 +547,6 @@
                  <string>Palette</string>
                 </property>
                </widget>
-              </item>
-              <item row="5" column="1">
-               <widget class="QComboBox" name="cbPalPreset"/>
               </item>
              </layout>
             </widget>

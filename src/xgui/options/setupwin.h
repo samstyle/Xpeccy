@@ -12,6 +12,7 @@
 #include "opt_diskcat.h"
 #include "opt_tapecat.h"
 #include "opt_hotkeytab.h"
+#include "opt_paledit.h"
 
 #include "ui_rsedit.h"
 #include "ui_setupwin.h"
@@ -21,18 +22,11 @@
 class SetupWin : public QDialog {
 	Q_OBJECT
 	public:
-		//unsigned block:1;
-		//unsigned prfChanged:1;
-
 		SetupWin(QWidget*);
-
 	public slots:
 		void start();
 		void setPadName();
 	private:
-//		xProfile* prof;
-//		Computer* comp;
-
 		Ui::SetupWin ui;
 		Ui::UmaDial uia;
 		Ui::LayEditor layUi;
@@ -41,10 +35,13 @@ class SetupWin : public QDialog {
 		xRomsetModel* rsmodel;
 
 		QDialog* layeditor;
-		QDialog *umadial;
+		QDialog* umadial;
 		xPadMapModel* padModel;
 		xPadBinder* padial;
 		xKeyEditor* kedit;
+		xPalEditor* paleditor;
+
+		QList<QColor> editpal;
 
 		int eidx;
 
@@ -87,6 +84,10 @@ class SetupWin : public QDialog {
 		void umaselp(); void umaconf();
 		void chablock(QModelIndex);
 		void tlistclick(QModelIndex);
+
+		void paledit();
+		void palchoosecol(QPoint);
+		void palstore();
 
 		void selSDCimg();
 
