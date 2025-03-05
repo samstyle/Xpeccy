@@ -344,7 +344,7 @@ int xWatcher::getCurRow() {
 	int res = -1;
 	QModelIndexList lst = ui.wchMemTab->selectionModel()->selectedRows();
 	if (lst.size() == 1)
-		res = lst.first().row();
+		res = lst.first().row() / 2;
 	return res;
 }
 
