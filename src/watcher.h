@@ -26,6 +26,7 @@ class xWatchModel : public QAbstractItemModel {
 		xWatchModel();
 		Computer* comp;
 		void update();
+		int getItemCount();
 		xWatchItem getItem(int);
 		void addItem(int, QString);
 		void setItem(int, int, QString);
@@ -38,7 +39,7 @@ class xWatchModel : public QAbstractItemModel {
 		int rowCount(const QModelIndex& = QModelIndex()) const;
 		int columnCount(const QModelIndex& = QModelIndex()) const;
 		QVariant data(const QModelIndex&, int = Qt::DisplayRole) const;
-		QVariant headerData(int, Qt::Orientation, int = Qt::DisplayRole) const;
+//		QVariant headerData(int, Qt::Orientation, int = Qt::DisplayRole) const;
 		void insertRow(int, const QModelIndex& = QModelIndex());
 		void removeRow(int, const QModelIndex& = QModelIndex());
 };

@@ -127,9 +127,9 @@ xResult getOperand(const char* ptr) {
 }
 
 // flag:
-// b0: stop on )
-// b1: stop on ]
-// b4: stop on ),],+,-
+// b0: stop on ) with pointer increment
+// b1: stop on ] with pointer increment
+// b2: stop on ),],+,- and don't increment pointer
 
 xResult xEval(const char* ptr, int f = 0) {
 	xResult res = getOperand(ptr);
@@ -244,24 +244,26 @@ xResult xEval(const char* ptr, int f = 0) {
 // wutcha
 
 xWatcher::xWatcher(QWidget* p):QDialog(p) {
-
+	int i;
 	ui.setupUi(this);
 	model = new xWatchModel;
 	ui.wchMemTab->setModel(model);
 	ui.wchMemTab->addAction(ui.actAddWatcher);
 	ui.wchMemTab->addAction(ui.actDelWatcher);
+
 // like in deBUGa: pairs regName/regValue
 	QLabel* lp;
 	xHexSpin* hp;
-	for(int i = 0; i < 32; i++) {
+	for(i = 0; i < 32; i++) {
 		lp = new QLabel;
 		hp = new xHexSpin;
+		hp->setMaximumWidth(50);
 		regLabels.append(lp);
 		regValues.append(hp);
 		ui.regGrid->addWidget(lp, i >> 1, (i & 1) << 1);
 		ui.regGrid->addWidget(hp, i >> 1, ((i & 1) << 1) | 1);
 	}
-	ui.regGrid->setRowStretch(32, 10);
+//	ui.regGrid->setRowStretch(32, 10);
 
 	newWch = new QDialog(this);
 	nui.setupUi(newWch);
@@ -269,13 +271,13 @@ xWatcher::xWatcher(QWidget* p):QDialog(p) {
 	nui.cbType->addItem("RAM addr", WUT_RAM);
 	nui.cbType->addItem("ROM addr", WUT_ROM);
 
+	for(i = 0; i < 14; i++) ui.wchMemTab->setColumnWidth(i, 30);
+
 	connect(ui.actAddWatcher, SIGNAL(triggered(bool)), this, SLOT(newWatcher()));
 	connect(ui.actDelWatcher, SIGNAL(triggered(bool)), this, SLOT(delWatcher()));
 	connect(ui.wchMemTab, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(edtWatcher()));
 
 	connect(nui.pbOK, SIGNAL(released()), this, SLOT(confirmNew()));
-
-//	connect(listwin, SIGNAL(labSelected(QString)), this, SLOT(setLabel(QString)));
 }
 
 void xWatcher::show() {
@@ -360,6 +362,7 @@ void xWatcher::confirmNew() {
 	newWch->close();
 	if (curwch < 0) {
 		model->addItem(type, str);
+		ui.wchMemTab->setSpan((model->getItemCount() - 1) * 2, 0, 1, 14);
 	} else {
 		model->setItem(curwch, type, str);
 	}
@@ -399,11 +402,11 @@ QModelIndex xWatchModel::parent(const QModelIndex&) const {
 }
 
 int xWatchModel::rowCount(const QModelIndex&) const {
-	return explist.size();
+	return explist.size() << 1;
 }
 
 int xWatchModel::columnCount(const QModelIndex&) const {
-	return 2;
+	return 13;
 }
 
 void xWatchModel::insertRow(int row, const QModelIndex& idx) {
@@ -416,6 +419,10 @@ void xWatchModel::removeRow(int row, const QModelIndex& idx) {
 	emit endRemoveRows();
 }
 
+int xWatchModel::getItemCount() {
+	return explist.size();
+}
+
 xWatchItem xWatchModel::getItem(int row) {
 	return explist.at(row);
 }
@@ -426,6 +433,7 @@ void xWatchModel::addItem(int type, QString exp) {
 	itm.exp = exp;
 	explist.append(itm);
 	insertRow(explist.size() - 1);
+	insertRow(explist.size() - 1);
 }
 
 void xWatchModel::setItem(int idx, int type, QString exp) {
@@ -435,13 +443,14 @@ void xWatchModel::setItem(int idx, int type, QString exp) {
 	itm.type = type;
 	itm.exp = exp;
 	explist[idx] = itm;
-	emit QAbstractItemModel::dataChanged(index(idx, 0), index(idx, 3));
+	emit QAbstractItemModel::dataChanged(index(idx, 0), index(idx, columnCount()));
 }
 
 void xWatchModel::delItem(int idx) {
 	if (idx < explist.size()) {
 		explist.removeAt(idx);
-		removeRow(idx);
+		removeRow(idx * 2);
+		removeRow(idx * 2 + 1);
 	}
 }
 
@@ -453,52 +462,30 @@ QVariant xWatchModel::data(const QModelIndex& idx, int role) const {
 	if ((row < 0) || (row >= rowCount(idx))) return res;
 	if ((col < 0) || (col >= columnCount(idx))) return res;
 	xWatchItem itm;
-	QString adrs;
-	QString bytz;
-	int i;
 	switch (role) {
 		case Qt::DisplayRole:
-			itm = explist.at(row);
-			xResult xr = xEval(itm.exp.toLocal8Bit().data());
-			bytz.clear();
-			if (xr.err) {
-				bytz = "Syntax error";
-			} else {
-				switch (itm.type) {
-					case WUT_CPU:
-						adrs = "CPU: "+itm.exp;
-						for (i = 0; i < 8; i++) {
-							if (!bytz.isEmpty())
-								bytz.append(".");
-							bytz.append(gethexbyte(memRd(comp->mem, (xr.value + i) & comp->mem->busmask)));
-						}
-						break;
-					case WUT_RAM:
-						adrs = "RAM: "+itm.exp;
-						for (i = 0; i < 8; i++) {
-							if (!bytz.isEmpty())
-								bytz.append(".");
-							bytz.append(gethexbyte(comp->mem->ramData[(xr.value + i) & comp->mem->ramMask]));
-						}
-						break;
-					case WUT_ROM:
-						adrs = "ROM: "+itm.exp;
-						for (i = 0; i < 8; i++) {
-							if (!bytz.isEmpty())
-								bytz.append(".");
-							bytz.append(gethexbyte(comp->mem->romData[(xr.value + i) & comp->mem->romMask]));
-						}
-						break;
+			if (row & 1) {
+				itm = explist.at(row >> 1);
+				xResult xr = xEval(itm.exp.toLocal8Bit().data());
+				if (xr.err) {
+					res = "??";
+				} else {
+					res = gethexbyte(memRd(comp->mem, (xr.value + col) & comp->mem->busmask));
 				}
-			}
-			switch (col) {
-				case 0:	res = adrs.toUpper(); break;
-				case 1: res = bytz; break;
+			} else if (col == 0) {
+				itm = explist.at(row >> 1);
+				switch(itm.type) {
+					case WUT_CPU: res = "CPU: "+itm.exp; break;
+					case WUT_RAM: res = "RAM: "+itm.exp; break;
+					case WUT_ROM: res = "ROM: "+itm.exp; break;
+					default: res = "Error"; break;
+				}
 			}
 	}
 	return res;
 }
 
+/*
 QString xwhdname[5] = {"Addr","Bytes"};
 
 QVariant xWatchModel::headerData(int col, Qt::Orientation orien, int role) const {
@@ -516,3 +503,4 @@ QVariant xWatchModel::headerData(int col, Qt::Orientation orien, int role) const
 	}
 	return res;
 }
+*/

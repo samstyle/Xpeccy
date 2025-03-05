@@ -15,7 +15,7 @@
   </property>
   <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="0,10">
    <item>
-    <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0">
+    <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0,0">
      <item>
       <widget class="QLabel" name="label_15">
        <property name="styleSheet">
@@ -31,6 +31,19 @@
      </item>
      <item>
       <layout class="QGridLayout" name="regGrid"/>
+     </item>
+     <item>
+      <spacer name="verticalSpacer_2">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>20</width>
+         <height>40</height>
+        </size>
+       </property>
+      </spacer>
      </item>
     </layout>
    </item>
@@ -55,7 +68,7 @@
         <widget class="QTableView" name="wchMemTab">
          <property name="minimumSize">
           <size>
-           <width>255</width>
+           <width>400</width>
            <height>0</height>
           </size>
          </property>
@@ -71,11 +84,8 @@
          <property name="gridStyle">
           <enum>Qt::DotLine</enum>
          </property>
-         <attribute name="horizontalHeaderMinimumSectionSize">
-          <number>100</number>
-         </attribute>
-         <attribute name="horizontalHeaderDefaultSectionSize">
-          <number>100</number>
+         <attribute name="horizontalHeaderVisible">
+          <bool>false</bool>
          </attribute>
          <attribute name="horizontalHeaderStretchLastSection">
           <bool>true</bool>
