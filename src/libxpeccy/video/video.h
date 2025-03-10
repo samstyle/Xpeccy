@@ -353,7 +353,7 @@ void vid_set_mode(Video*,int);
 void vid_reset_ray(Video*);
 void vid_set_ray(Video*, int);
 
-int vid_wait(Video*);
+int vid_wait(Video*, int);
 void vid_dark_tail(Video*);
 
 void vid_set_layout(Video*, vLayout*);

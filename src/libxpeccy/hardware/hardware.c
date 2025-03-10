@@ -114,7 +114,7 @@ void zx_cont_mem(Computer* comp) {
 	if ((pg->type == MEM_RAM) && (pg->num & 0x40)) {
 		vid_sync(comp->vid, comp->nsPerTick * (comp->cpu->t - res4));	// before
 		res4 = comp->cpu->t;
-		wns = vid_wait(comp->vid);
+		wns = vid_wait(comp->vid, 5 << 14);
 		while (wns > 0) {
 			comp->cpu->t++;
 			wns -= comp->nsPerTick;
@@ -136,15 +136,19 @@ int stdMRd(Computer* comp, int adr, int m1) {
 			comp->hw->mapMem(comp);
 		}
 	}
+#if !Z80_NEW_RW_CYCLE
 	if (comp->contMem)
 		zx_cont_mem(comp);
+#endif
 	return memRd(comp->mem, adr & 0xffff) & 0xff;
 }
 
 void stdMWr(Computer *comp, int adr, int val) {
 	pg = mem_get_page(comp->mem, adr);	// = &comp->mem->map[(adr >> 8) & 0xff];
+#if !Z80_NEW_RW_CYCLE
 	if (comp->contMem)
 		zx_cont_mem(comp);
+#endif
 	memWr(comp->mem,adr,val);
 }
 

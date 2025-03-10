@@ -42,21 +42,6 @@ void zx_sync(Computer* comp, int ns) {
 		comp->rom = 1;
 		comp->hw->mapMem(comp);
 	}
-	// int
-//	if (comp->vid->intFRAME) {
-//		comp->intVector = 0xff;
-//		comp->cpu->intrq |= Z80_INT;
-//	} else if (comp->vid->intLINE) {
-//		comp->intVector = 0xfd;
-//		comp->cpu->intrq |= Z80_INT;
-//		comp->vid->intLINE = 0;
-//	} else if (comp->vid->intDMA) {
-//		comp->intVector = 0xfb;
-//		comp->cpu->intrq |= Z80_INT;
-//		comp->vid->intDMA = 0;
-//	} else if (comp->cpu->intrq & Z80_INT) {
-//		comp->cpu->intrq &= ~Z80_INT;
-//	}
 }
 
 extern int res4;
@@ -110,7 +95,11 @@ void zx_irq(Computer* comp, int t) {
 		case IRQ_CPU_SYNC:			// sync cpu-vid
 			vid_sync(comp->vid, comp->cpu->t - res4);
 			res4 = comp->cpu->t;
-			// comp->cpu->wait = vid_wait(comp->vid) ? 1 : 0;
+			if (comp->contMem) {
+				comp->cpu->wait = !!vid_wait(comp->vid, mem_get_phys_adr(comp->mem, comp->cpu->adr));
+			} else {
+				comp->cpu->wait = 0;
+			}
 			break;
 	}
 }

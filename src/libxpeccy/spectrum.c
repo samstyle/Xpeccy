@@ -131,7 +131,7 @@ void memwr(int adr, int val, void* ptr) {
 }
 
 void zx_cont_delay(Computer* comp) {
-	int wns = vid_wait(comp->vid);	// video is already at end of wait cycle
+	int wns = vid_wait(comp->vid, 5 << 14);	// video is already at end of wait cycle
 	int tns = 0;
 	while (wns > 0) {
 		comp->cpu->t++;
@@ -284,11 +284,15 @@ int intrq(void* ptr) {
 
 void comp_irq(int t, void* ptr) {
 	Computer* comp = (Computer*)ptr;
-	if (t == IRQ_BRK) {
-		comp->brk = 1;
-		comp->brkt = -1;
+	switch (t) {
+		case IRQ_BRK:
+			comp->brk = 1;
+			comp->brkt = -1;
+			break;
+		default:
+			if (comp->hw->irq) comp->hw->irq(comp, t);
+			break;
 	}
-	if (comp->hw->irq) comp->hw->irq(comp, t);
 }
 
 // new (for future use)

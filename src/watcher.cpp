@@ -48,11 +48,14 @@ xResult getOperand(const char* ptr) {
 	res.ptr = ptr;
 	char c = *ptr;
 	char* buf = (char*)malloc(strlen(ptr) + 1);
+	char* rbuf = (char*)malloc(strlen(ptr) + 1);
 	char* bptr;
+	char* rptr;
 	bool err;
 	memset(buf, 0, strlen(ptr) + 1);
 	int val;
 	int base = conf.prof.cur->zx->hw->base;
+	QString str;
 
 	if (isDigit(c, base)) {	// number
 		if ((c == '0') && (*(res.ptr + 1) == 'x')) {		// 0x... - hex
@@ -80,17 +83,28 @@ xResult getOperand(const char* ptr) {
 		} while (isDigit(c, base));
 	} else if (isLetter(c)) {	// label: collect letters|digits|_|. in buf, search label
 		bptr = buf;
+		rptr = rbuf;
 		do {
 			*bptr = c;
+			if ((c >= 'a') && (c <= 'z')) c = c - 'a' + 'A';
+			*rptr = c;
 			bptr++;
+			rptr++;
 			res.ptr++;
 			c = *res.ptr;
-		} while (isLetter(c) || isDigit(c, base) || (c == '_') || (c == '.'));
+		} while (isLetter(c) || isDigit(c, base) || (c == '_') || (c == '.') || (c == 0x27));
 		*bptr = 0;
-		if (conf.prof.cur->labels.contains(buf)) {
-			res.value = conf.prof.cur->labels[buf].adr;
+		*rptr = 0;
+		val = cpu_get_reg(conf.prof.cur->zx->cpu, rbuf, &err);
+		if (err) {
+			str = QString(buf);
+			if (conf.prof.cur->labels.contains(str)) {
+				res.value = conf.prof.cur->labels[str].adr;
+			} else {
+				res.err = 1;
+			}
 		} else {
-			res.err = 1;
+			res.value = val;
 		}
 	} else {
 		switch(c) {
@@ -123,6 +137,7 @@ xResult getOperand(const char* ptr) {
 		}
 	}
 	free(buf);
+	free(rbuf);
 	return res;
 }
 
@@ -362,7 +377,10 @@ void xWatcher::confirmNew() {
 	newWch->close();
 	if (curwch < 0) {
 		model->addItem(type, str);
-		ui.wchMemTab->setSpan((model->getItemCount() - 1) * 2, 0, 1, 14);
+		for (int i = 0; i < model->getItemCount() * 2; i += 2) {
+			ui.wchMemTab->setSpan(i, 0, 1, 11);
+			ui.wchMemTab->setSpan(i, 11, 1, 2);
+		}
 	} else {
 		model->setItem(curwch, type, str);
 	}
@@ -389,7 +407,7 @@ xWatchModel::xWatchModel() {
 }
 
 void xWatchModel::update() {
-	emit QAbstractItemModel::dataChanged(index(0, 2), index(explist.size() - 1, 3));
+	emit QAbstractItemModel::dataChanged(index(0, 0), index(rowCount(), columnCount()));
 }
 
 QModelIndex xWatchModel::index(int row, int col, const QModelIndex&) const {
@@ -402,7 +420,7 @@ QModelIndex xWatchModel::parent(const QModelIndex&) const {
 }
 
 int xWatchModel::rowCount(const QModelIndex&) const {
-	return explist.size() << 1;
+	return explist.size() * 2;
 }
 
 int xWatchModel::columnCount(const QModelIndex&) const {
@@ -462,23 +480,29 @@ QVariant xWatchModel::data(const QModelIndex& idx, int role) const {
 	if ((row < 0) || (row >= rowCount(idx))) return res;
 	if ((col < 0) || (col >= columnCount(idx))) return res;
 	xWatchItem itm;
+	xResult xr;
 	switch (role) {
 		case Qt::DisplayRole:
+			itm = explist.at(row >> 1);
+			xr = xEval(itm.exp.toLocal8Bit().data());
 			if (row & 1) {
-				itm = explist.at(row >> 1);
-				xResult xr = xEval(itm.exp.toLocal8Bit().data());
 				if (xr.err) {
 					res = "??";
 				} else {
 					res = gethexbyte(memRd(comp->mem, (xr.value + col) & comp->mem->busmask));
 				}
 			} else if (col == 0) {
-				itm = explist.at(row >> 1);
 				switch(itm.type) {
 					case WUT_CPU: res = "CPU: "+itm.exp; break;
 					case WUT_RAM: res = "RAM: "+itm.exp; break;
 					case WUT_ROM: res = "ROM: "+itm.exp; break;
 					default: res = "Error"; break;
+				}
+			} else if (col == 11) {
+				if (xr.err) {
+					res = "????";
+				} else {
+					res = gethexword(xr.value);
 				}
 			}
 	}

@@ -162,6 +162,7 @@ struct CPU {
 	unsigned short intvec;
 	int errcod;			// 80286: interrupt error code (-1 if not present)
 
+	int adr;
 // z80, lr35902, i8080, 6502 registers
 	PAIR(pc,hpc,lpc);
 	PAIR(sp,hsp,lsp);

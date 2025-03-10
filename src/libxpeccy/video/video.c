@@ -451,9 +451,10 @@ void vid_get_screen(Video* vid, unsigned char* dst, int bank, int shift, int fla
 static int contTabA[] = {12,11,10,9,8,7,6,5,4,3,2,1,0,0,0,0};		// 48K 128K +2 (bank 1,3,5,7)
 // static int contTabB[] = {2,1,0,0,14,13,12,11,10,9,8,7,6,5,4,3};	// +2A +3 (bank 4,5,6,7)
 
-int vid_wait(Video* vid) {
-	if (vid->ray.y < vid->bord.y) return 0;
-	if (vid->ray.y >= (vid->bord.y + vid->scrn.y)) return 0;
+int vid_wait(Video* vid, int adr) {
+	if (!(adr & 0x4000)) return 0;					// even pages (TODO: & 0x10000 for +2A/+3)
+	if (vid->ray.y < vid->bord.y) return 0;				// above screen
+	if (vid->ray.y >= (vid->bord.y + vid->scrn.y)) return 0;	// below screen
 	xscr = vid->ray.x - vid->bord.x + 8;
 	if (xscr < 0) return 0;
 	if (xscr >= vid->scrn.x) return 0;
@@ -491,14 +492,13 @@ void vid_reset_col(Video* vid, int i) {
 	vid->pal[i & 0xff] = vid->bpal[i & 0xff];
 }
 
-
 // video drawing
 
 void vidDrawBorder(Video* vid) {
 	vid_dot_full(vid, vid->brdcol);
 }
 
-// common 256 x 192
+// ZX Screen 256 x 192
 void vidDrawNormal(Video* vid) {
 	if (vid->vbrd) {
 		col = vid->brdcol;

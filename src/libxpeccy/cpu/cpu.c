@@ -426,17 +426,21 @@ xRegister cpuGetReg(CPU* cpu, int id) {
 int cpu_get_reg(CPU* cpu, const char* name, bool* f) {
 	int res = -1;
 #if 1
+	bool err = true;
 	xRegDsc* rt = cpu->core->rdsctab;
 	int i = 0;
 	int work = 1;
 	while (work && (rt[i].id != REG_NONE)) {
 		if (!strcmp(name, rt[i].name) && (rt[i].offset != 0)) {
 			res = reg_get_value(cpu, &rt[i]);
-			work = !(res < 0);
+			if (res >= 0) {
+				work = 0;
+				err = false;
+			}
 		}
 		i++;
 	}
-	if (f != NULL) {*f = work ? false : true;}
+	if (f != NULL) {*f = err;}
 #else
 	xRegBunch bunch = cpuGetRegs(cpu);
 	for (int i = 0; (i < 32) && (res == -1); i++) {
