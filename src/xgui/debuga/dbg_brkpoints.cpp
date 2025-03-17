@@ -538,9 +538,9 @@ void xBreakWidget::openBrk() {
 				} else {
 					b0 = false;
 				}
-				if (list.at(4) == "SCR") {
+				if (list.at(4).startsWith("SCR")) {
 					brk.action = BRK_ACT_SCR;
-				} else if (list.at(4) == "CNT") {
+				} else if (list.at(4).startsWith("CNT")) {
 					brk.action = BRK_ACT_COUNT;
 				} else {
 					brk.action = BRK_ACT_DBG;
