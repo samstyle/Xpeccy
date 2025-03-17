@@ -27,7 +27,7 @@ int askYNC(const char*);
 void showInfo(const char*);
 
 int getRFIData(QComboBox*);
-void setRFIndex(QComboBox* box, QVariant data);
+void setRFIndex(QComboBox*, QVariant, int = 0);
 
 // subclasses
 

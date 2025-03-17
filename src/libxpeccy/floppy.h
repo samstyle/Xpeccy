@@ -81,7 +81,8 @@ void flpPrev(Floppy*,int);
 void flpStep(Floppy*,int);
 
 int flp_format_trk(Floppy* flp, int trk, int spt, int slen, char* data);
-// int flp_format_trk_buf(int trk, int spt, int slen, int trklen, char* data, unsigned char* buf);
+void flp_set_interleave(int);
+int flp_get_interleave();
 
 void flpFillFields(Floppy*,int,int);
 int flp_check_marker(Floppy*, int);

@@ -102,7 +102,6 @@ void conf_init(char* wpath, char* confdir) {
 	conf.joy.dead = 8192;
 	conf.joy.deadf = conf.joy.dead / 32768.0;
 	conf.joy.gpad = new xGamepad;
-//	conf.prof.changed = 0;
 	addProfile("default","xpeccy.conf");
 }
 
@@ -121,6 +120,7 @@ void saveConfig() {
 	fprintf(cfile, "exit.confirm = %s\n",YESNO(conf.confexit));
 	fprintf(cfile, "port = %i\n", conf.port);
 	fprintf(cfile, "winpos = %i,%i\n",conf.xpos,conf.ypos);
+	fprintf(cfile, "flpinterleave = %i\n", flp_get_interleave());
 
 	fprintf(cfile, "\n[BOOKMARKS]\n\n");
 	foreach(xBookmark bkm, conf.bookmarkList) {
@@ -524,6 +524,7 @@ void loadConfig() {
 					}
 					if (pnam == "addboot") conf.boot = arg.b;
 					if (pnam == "exit.confirm") conf.confexit = arg.b;
+					if (pnam == "flpinterleave") flp_set_interleave(arg.i);
 					break;
 				case SECT_TAPE:
 					if (pnam=="autoplay") conf.tape.autostart = arg.b;
