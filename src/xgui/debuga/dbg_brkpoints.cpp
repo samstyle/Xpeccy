@@ -495,7 +495,7 @@ void xBreakWidget::openBrk() {
 			if (!line.startsWith(";")) {
 				b0 = true;
 				b1 = true;
-				list = line.split(":", X_KeepEmptyParts);
+				list = line.trimmed().split(":", X_KeepEmptyParts);
 				while(list.size() < 5)
 					list.append(QString());
 				brk.fetch = list.at(3).contains("F") ? 1 : 0;
@@ -538,9 +538,9 @@ void xBreakWidget::openBrk() {
 				} else {
 					b0 = false;
 				}
-				if (list.at(4).startsWith("SCR")) {
+				if (list.at(4) == "SCR") {
 					brk.action = BRK_ACT_SCR;
-				} else if (list.at(4).startsWith("CNT")) {
+				} else if (list.at(4) == "CNT") {
 					brk.action = BRK_ACT_COUNT;
 				} else {
 					brk.action = BRK_ACT_DBG;
