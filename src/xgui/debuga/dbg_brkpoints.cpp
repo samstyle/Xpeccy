@@ -495,7 +495,7 @@ void xBreakWidget::openBrk() {
 			if (!line.startsWith(";")) {
 				b0 = true;
 				b1 = true;
-				list = line.split(":", X_KeepEmptyParts);
+				list = line.trimmed().split(":", X_KeepEmptyParts);
 				while(list.size() < 5)
 					list.append(QString());
 				brk.fetch = list.at(3).contains("F") ? 1 : 0;

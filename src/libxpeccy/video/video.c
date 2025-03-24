@@ -1050,11 +1050,13 @@ void vid_tick(Video* vid) {
 	if (vid->intf > 0) vid->intf--;
 }
 
+// normal contention: stop CPU clk while contention (suitable ray position & address)
 void vid_sync(Video* vid, int ns) {
 	vid->nsDraw += ns;
 	while (vid->nsDraw >= vid->nsPerDot) {
 		vid->nsDraw -= vid->nsPerDot;
 		vid->time += vid->nsPerDot;
+		// TODO: get vid_wait (dots?) and do vid_tick several times = skip contended zone
 		vid_tick(vid);
 	}
 }

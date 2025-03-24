@@ -95,11 +95,8 @@ void zx_irq(Computer* comp, int t) {
 		case IRQ_CPU_SYNC:			// sync cpu-vid
 			vid_sync(comp->vid, comp->cpu->t - res4);
 			res4 = comp->cpu->t;
-			if (comp->contMem) {
-				comp->cpu->wait = !!vid_wait(comp->vid, mem_get_phys_adr(comp->mem, comp->cpu->adr));
-			} else {
-				comp->cpu->wait = 0;
-			}
+			// TODO: collect wait from devices
+			comp->cpu->wait = 0;
 			break;
 	}
 }
