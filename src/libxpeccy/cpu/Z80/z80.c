@@ -135,9 +135,7 @@ int z80_int(CPU* cpu) {
 
 int z80_exec(CPU* cpu) {
 	int res = 0;
-	if (cpu->wait) {
-		res = 1;
-	} else if (cpu->intrq & cpu->inten) {
+	if (cpu->intrq & cpu->inten) {
 		res = z80_int(cpu);
 	}
 	cpu->resPV = 0;

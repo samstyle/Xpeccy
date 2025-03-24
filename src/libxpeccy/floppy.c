@@ -4,6 +4,8 @@
 
 #include "floppy.h"
 
+static int interleave = 3;
+
 Floppy* flpCreate(int id, cbflpirq cb, void* p) {
 	Floppy* flp = (Floppy*)malloc(sizeof(Floppy));
 	memset(flp,0x00,sizeof(Floppy));
@@ -38,6 +40,16 @@ void flp_set_path(Floppy* flp, const char* path) {
 
 void flp_set_hd(Floppy* flp, int hd) {
 	flp->trklen = hd ? TRKLEN_HD : TRKLEN_DD;
+}
+
+void flp_set_interleave(int iv) {
+	if ((iv > 0) && (iv < 9)) {
+		interleave = iv;
+	}
+}
+
+int flp_get_interleave() {
+	return interleave;
 }
 
 void flpWr(Floppy* flp, int hd, unsigned char val) {
@@ -126,6 +138,38 @@ static unsigned char trk_mark[4] = {0xc1,0xc1,0xc1,0xfc};
 static unsigned char hd_mark[4] = {0xa1,0xa1,0xa1,0xfe};
 static unsigned char dat_mark[4] = {0xa1,0xa1,0xa1,0xfb};
 
+unsigned char* flp_format_sec(int tr, int hd, int sc, int n, int slen, int spc, char* data, unsigned char* ptr) {
+	unsigned short crc;
+	memset(ptr, 0x4e, 10); ptr += 10;
+	memset(ptr, 0x00, 12); ptr += 12;
+	unsigned char* stp = ptr;
+	memcpy(ptr, hd_mark, 4); ptr += 4;
+	*(ptr++) = tr & 0xff;
+	*(ptr++) = hd & 1;
+	*(ptr++) = sc & 0xff;
+	*(ptr++) = n & 0xff;
+	crc = getCrc(stp, ptr - stp);
+	*(ptr++) = (crc >> 8) & 0xff;
+	*(ptr++) = crc & 0xff;
+	memset(ptr, 0x4e, 28); ptr += 28;	// 22
+	memset(ptr, 0x00, 12); ptr += 12;
+	stp = ptr;
+	memcpy(ptr, dat_mark, 4); ptr += 4;
+	if (data) {
+		memcpy(ptr, data, slen);
+		ptr += slen;
+//		data += slen;
+	} else {
+		memset(ptr, 0x00, slen);
+		ptr += slen;
+	}
+	crc = getCrc(stp, ptr - stp);
+	*(ptr++) = (crc >> 8) & 0xff;
+	*(ptr++) = crc & 0xff;
+	ptr += spc;
+	return ptr;
+}
+
 int flp_format_trk_buf(int trk, int spt, int slen, int trklen, char* data, unsigned char* buf) {
 	int res = 1;
 	int t = 128;
@@ -135,8 +179,7 @@ int flp_format_trk_buf(int trk, int spt, int slen, int trklen, char* data, unsig
 	int sc;
 	int hd;
 	unsigned char* ptr;
-	unsigned char* stp;
-	unsigned short crc;
+	char* dptr;
 	while (t < slen) {
 		t <<= 1;
 		n++;
@@ -158,34 +201,12 @@ int flp_format_trk_buf(int trk, int spt, int slen, int trklen, char* data, unsig
 			ptr += 12;				// 1st gap
 			memset(ptr, 0x00, 12); ptr += 12;	// 1st sync
 			memcpy(ptr, trk_mark, 4); ptr += 4;	// track gap
-			for (sc = 1; sc <= spt; sc++) {
-				ptr += 10;
-				memset(ptr, 0x00, 12); ptr += 12;
-				stp = ptr;
-				memcpy(ptr, hd_mark, 4); ptr += 4;
-				*(ptr++) = tr & 0xff;
-				*(ptr++) = hd & 1;
-				*(ptr++) = sc & 0xff;
-				*(ptr++) = n & 0xff;
-				crc = getCrc(stp, ptr - stp);
-				*(ptr++) = (crc >> 8) & 0xff;
-				*(ptr++) = crc & 0xff;
-				ptr += 28;	// 22
-				memset(ptr, 0x00, 12); ptr += 12;
-				stp = ptr;
-				memcpy(ptr, dat_mark, 4); ptr += 4;
-				if (data) {
-					memcpy(ptr, data, slen);
-					ptr += slen;
-					data += slen;
-				} else {
-					memset(ptr, 0x00, slen);
-					ptr += slen;
+			for(t = 0; t < interleave; t++) {
+				dptr = data + slen * t;		// start of 1st sector in group
+				for (sc = t + 1; sc <= spt; sc += interleave) {		// sector numeration starts from 1
+					ptr = flp_format_sec(tr, hd, sc, n, slen, spc, dptr, ptr);
+					dptr += slen * interleave;
 				}
-				crc = getCrc(stp, ptr - stp);
-				*(ptr++) = (crc >> 8) & 0xff;
-				*(ptr++) = crc & 0xff;
-				ptr += spc;
 			}
 		}
 	}

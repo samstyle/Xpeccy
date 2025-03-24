@@ -7,6 +7,7 @@ ulaPlus* ula_create() {
 	ulaPlus* ula = (ulaPlus*)malloc(sizeof(ulaPlus));
 	if (ula) {
 		memset(ula,0x00,sizeof(ulaPlus));
+		ula->conttype = CONT_PATA;
 	}
 	return ula;
 }

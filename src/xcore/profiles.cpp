@@ -368,6 +368,7 @@ int prf_load_conf(xProfile* prf, std::string cfname, int flag) {
 					if (pnam == "geometry") prf->layName = pval;
 					if (pnam == "4t-border") comp->vid->brdstep = arg.b ? 7 : 1;
 					if (pnam == "ULAplus") comp->vid->ula->enabled = arg.b;
+					if (pnam == "contPattern") comp->vid->ula->conttype = arg.i;
 					if (pnam == "DDpal") comp->ddpal = arg.b;
 					if (pnam == "palette") prf->palette = pval;
 					break;
@@ -616,6 +617,7 @@ int prfSave(std::string nm) {
 	fprintf(file, "geometry = %s\n", prf->layName.c_str());
 	fprintf(file, "4t-border = %s\n", YESNO(comp->vid->brdstep & 0x06));
 	fprintf(file, "ULAplus = %s\n", YESNO(comp->vid->ula->enabled));
+	fprintf(file, "contPattern = %i\n", comp->vid->ula->conttype);
 	fprintf(file, "DDpal = %s\n", YESNO(comp->ddpal));
 	fprintf(file, "palette = %s\n", prf->palette.c_str());
 

@@ -29,8 +29,10 @@ void fillRFBox(QComboBox* box, QStringList lst) {
 	}
 }
 
-void setRFIndex(QComboBox* box, QVariant data) {
-	box->setCurrentIndex(box->findData(data));
+void setRFIndex(QComboBox* box, QVariant data, int defidx) {
+	int idx = box->findData(data);
+	if (idx < 0) idx = defidx;
+	box->setCurrentIndex(idx);
 }
 
 int getRFIData(QComboBox* box) {
@@ -168,6 +170,10 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	for (it = shotFormat.begin(); it != shotFormat.end(); it++) {
 		ui.ssfbox->addItem(QString(it->first.c_str()),it->second);
 	}
+	ui.cbContPattern->addItem("No contention", CONT_NONE);
+	ui.cbContPattern->addItem("ULA type A", CONT_PATA);
+	ui.cbContPattern->addItem("ULA type B", CONT_PATB);
+
 #if defined(USEOPENGL)
 	ui.cbScanlines->setVisible(false);
 	fill_shader_list(ui.cbShader);
@@ -197,7 +203,6 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	ui.sdrvBox->addItem("Covox only",SDRV_COVOX);
 	ui.sdrvBox->addItem("Soundrive 1.05 mode 1",SDRV_105_1);
 	ui.sdrvBox->addItem("Soundrive 1.05 mode 2",SDRV_105_2);
-
 #if QT_VERSION < QT_VERSION_CHECK(6,0,0)
 	QRegExpValidator* vld = new QRegExpValidator(QRegExp("^[0-9]\\.\\d{0,6}$"));
 #else
@@ -206,7 +211,7 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	ui.psg1frq->setValidator(vld);
 	ui.psg2frq->setValidator(vld);
 	ui.psg3frq->setValidator(vld);
-// bdi
+// flp
 	ui.disklist->horizontalHeader()->setVisible(true);
 	ui.diskTypeBox->addItem("None",DIF_NONE);
 	ui.diskTypeBox->addItem("Beta disk (VG93)",DIF_BDI);
@@ -216,6 +221,14 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	ui.disklist->addAction(ui.actCopyToTape);
 	ui.disklist->addAction(ui.actSaveHobeta);
 	ui.disklist->addAction(ui.actSaveRaw);
+	ui.cbFlpInterleave->addItem("1:1", 1);
+	ui.cbFlpInterleave->addItem("1:2", 2);
+	ui.cbFlpInterleave->addItem("1:3", 3);
+	ui.cbFlpInterleave->addItem("1:4", 4);
+	ui.cbFlpInterleave->addItem("1:5", 5);
+	ui.cbFlpInterleave->addItem("1:6", 6);
+	ui.cbFlpInterleave->addItem("1:7", 7);
+	ui.cbFlpInterleave->addItem("1:8", 8);
 // tape
 	ui.tapelist->setColumnWidth(0,25);
 	ui.tapelist->setColumnWidth(1,25);
@@ -451,6 +464,7 @@ void SetupWin::start() {
 	ui.border4T->setChecked(comp->vid->brdstep & 0x06);
 	ui.contMem->setChecked(comp->contMem);
 	ui.contIO->setChecked(comp->contIO);
+	setRFIndex(ui.cbContPattern, comp->vid->ula->conttype);
 	ui.bszsld->setValue(static_cast<int>(conf.brdsize * 100));
 	ui.pathle->setText(QString::fromLocal8Bit(conf.scrShot.dir.c_str()));
 	ui.ssfbox->setCurrentIndex(ui.ssfbox->findText(conf.scrShot.format.c_str()));
@@ -515,11 +529,12 @@ void SetupWin::start() {
 	setRFIndex(ui.cbGamepad, conf.joy.curName);
 	ui.cbGamepad->blockSignals(false);
 	padModel->update();
-// dos
+// flp
 	ui.diskTypeBox->setCurrentIndex(ui.diskTypeBox->findData(comp->dif->type));
 	ui.bdtbox->setChecked(fdcFlag & FDC_FAST);
 	ui.mempaths->setChecked(conf.storePaths);
 	ui.cbAddBoot->setChecked(conf.boot);
+	setRFIndex(ui.cbFlpInterleave, flp_get_interleave());
 	Floppy* flp = comp->dif->fdc->flop[0];
 	ui.apathle->setText(QString::fromLocal8Bit(flp->path));
 		ui.a80box->setChecked(flp->trk80);
@@ -565,8 +580,6 @@ void SetupWin::start() {
 	ui.hs_capacity->setValue(comp->ide->slave->maxlba >> 11);
 // external
 	ui.sdPath->setText(QString::fromLocal8Bit(comp->sdc->image));
-//	ui.sdcapbox->setCurrentIndex(ui.sdcapbox->findData(comp->sdc->capacity));
-//	if (ui.sdcapbox->currentIndex() < 0) ui.sdcapbox->setCurrentIndex(2);	// 128M
 	ui.sdlock->setChecked(comp->sdc->lock);
 
 	ui.cSlotName->setText(comp->slot->name);
@@ -659,6 +672,7 @@ void SetupWin::apply() {
 	comp->vid->brdstep = ui.border4T->isChecked() ? 7 : 1;
 	comp->contMem = ui.contMem->isChecked() ? 1 : 0;
 	comp->contIO = ui.contIO->isChecked() ? 1 : 0;
+	comp->vid->ula->conttype = getRFIData(ui.cbContPattern);
 	comp->vid->ula->enabled = ui.ulaPlus->isChecked() ? 1 : 0;
 	comp->ddpal = ui.cbDDp->isChecked() ? 1 : 0;
 	prfSetLayout(NULL, getRFText(ui.geombox));
@@ -726,11 +740,12 @@ void SetupWin::apply() {
 	if (kmname == "none") kmname = "default";
 	prof->kmapName = kmname;
 	loadKeys();
-// bdi
+// flp
 	difSetHW(comp->dif, getRFIData(ui.diskTypeBox));
 	setFlagBit(ui.bdtbox->isChecked(),&fdcFlag,FDC_FAST);
 	conf.boot = ui.cbAddBoot->isChecked() ? 1 : 0;
 	conf.storePaths = ui.mempaths->isChecked() ? 1 : 0;
+	flp_set_interleave(getRFIData(ui.cbFlpInterleave));
 
 	Floppy* flp = comp->dif->fdc->flop[0];
 	flp->trk80 = ui.a80box->isChecked() ? 1 : 0;
