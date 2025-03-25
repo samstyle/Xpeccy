@@ -115,6 +115,7 @@ void zx_cont_mem(Computer* comp) {
 		vid_sync(comp->vid, comp->nsPerTick * (comp->cpu->t - res4));	// before
 		res4 = comp->cpu->t;
 		wns = vid_wait(comp->vid, 5 << 14);
+		comp->cpu->t += wns / comp->nsPerTick;
 		while (wns > 0) {
 			comp->cpu->t++;
 			wns -= comp->nsPerTick;

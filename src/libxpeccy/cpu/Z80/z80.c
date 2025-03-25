@@ -38,6 +38,64 @@ void z80_reset(CPU* cpu) {
 	cpu->blkio = 0;
 }
 
+// https://sinclair.wiki.zxnet.co.uk/wiki/Contended_memory
+// > For memory access, this happens on the first tstate (T1) of any instruction fetch, memory read or memory write operation
+
+#if Z80_NEW_RW_CYCLE
+
+int z80_mrdx(CPU* cpu, int adr, int m1) {
+	cpu->adr = adr;
+	cpu->t++;		// T1
+	cpu->xirq(IRQ_CPU_CONT, cpu->xptr);
+	do {
+		cpu->t++;	// T2 while wait
+		cpu->xirq(IRQ_CPU_SYNC, cpu->xptr);
+	} while (cpu->wait);
+	cpu->t++;		// T3
+	return cpu->mrd(adr, m1, cpu->xptr) & 0xff;
+}
+
+int z80_fetch(CPU* cpu) {
+	return z80_mrdx(cpu, cpu->pc++, 1) & 0xff;
+}
+
+int z80_mrd(CPU* cpu, int adr) {
+	return z80_mrdx(cpu, adr, 0) & 0xff;
+}
+
+void z80_mwr(CPU *cpu, int adr, int data) {
+	cpu->adr = adr;
+	cpu->t++;		// T1
+	cpu->xirq(IRQ_CPU_CONT, cpu->xptr);
+	do {
+		cpu->t++;	// T2 while wait
+		cpu->xirq(IRQ_CPU_SYNC, cpu->xptr);
+	} while (cpu->wait);
+	cpu->t++;		// T3
+	cpu->mwr(adr, data, cpu->xptr);
+}
+
+#else
+
+int z80_fetch(CPU* cpu) {
+	int v = cpu->mrd(cpu->pc++, 1, cpu->xptr);
+	cpu->t += 3;
+	return v & 0xff;
+}
+
+int z80_mrd(CPU* cpu, int a) {
+	int v = cpu->mrd(a, 0, cpu->xptr);
+	cpu->t += 3;
+	return v & 0xff;
+}
+
+void z80_mwr(CPU* cpu, int a, int v) {
+	cpu->mwr(a, v, cpu->xptr);
+	cpu->t += 3;
+}
+
+#endif
+
 // if block opcode is interrupted, flags will be like this:
 
 void z80_blkio_interrupt(CPU* cpu) {
@@ -92,9 +150,9 @@ int z80_int(CPU* cpu) {
 					cpu->t += cpu->op->t;		// +5 (RST38 fetch)
 					cpu->op->exec(cpu);		// +3 +3 execution. 13 total
 					while (cpu->op->flag & OF_PREFIX) {
-						cpu->op = &cpu->opTab[cpu->mrd(cpu->pc++,1,cpu->xptr)];
+						cpu->op = &cpu->opTab[z80_fetch(cpu)]; // cpu->mrd(cpu->pc++,1,cpu->xptr)];
 						cpu->r++;
-						cpu->t += cpu->op->t;
+						cpu->t += cpu->op->t - 3;
 						cpu->op->exec(cpu);
 					}
 					break;
@@ -110,7 +168,7 @@ int z80_int(CPU* cpu) {
 					cpu->lptr = cpu->xack(cpu->xptr);	// int vector (FF)
 					cpu->hptr = cpu->i;
 					cpu->lpc = z80_mrd(cpu, cpu->mptr++);	// +3 (16)
-					cpu->hpc = z80_mrd(cpu, cpu->mptr);		// +3 (19)
+					cpu->hpc = z80_mrd(cpu, cpu->mptr);	// +3 (19)
 					cpu->mptr = cpu->pc;
 					break;
 			}
@@ -144,10 +202,10 @@ int z80_exec(CPU* cpu) {
 		cpu->t = 0;
 		cpu->opTab = npTab;
 		do {
-			cpu->com = cpu->mrd(cpu->pc++,1,cpu->xptr);
+			cpu->com = z80_fetch(cpu); // cpu->mrd(cpu->pc++,1,cpu->xptr);
 			cpu->op = &cpu->opTab[cpu->com];
 			cpu->r++;
-			cpu->t += cpu->op->t;
+			cpu->t += cpu->op->t - 3;
 			cpu->op->exec(cpu);
 		} while (cpu->op->flag & OF_PREFIX);
 		res = cpu->t;

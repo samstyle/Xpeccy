@@ -46,6 +46,19 @@ void zx_sync(Computer* comp, int ns) {
 
 extern int res4;
 
+void zx_cont_tick(Computer* comp, int adr) {
+	// sync video before this moment
+	vid_sync(comp->vid, (comp->cpu->t - res4) * comp->nsPerTick);
+	res4 = comp->cpu->t;
+	int wns = vid_wait(comp->vid, adr);			// high memory addr
+	if (wns) {					// if there is contention zone, wait for it ends
+		comp->cpu->t += wns / comp->nsPerTick;	// add 'empty' ticks. in fact, there is no ticks at all, cpu stopped
+		vid_sync(comp->vid, (comp->cpu->t - res4) * comp->nsPerTick);
+		res4 = comp->cpu->t;
+	}
+	// comp->cpu->t++;		// free tick
+}
+
 void zx_irq(Computer* comp, int t) {
 	switch(t) {
 		case IRQ_VID_INT:			// frame int start
@@ -92,8 +105,14 @@ void zx_irq(Computer* comp, int t) {
 			comp->intVector = 0xfb;
 			comp->cpu->intrq |= Z80_INT;
 			break;
+		case IRQ_CPU_CONT:
+			if (!comp->contMem) break;
+			MemPage* pg = mem_get_page(comp->mem, comp->cpu->adr);
+			if (pg->type != MEM_RAM) break;
+			zx_cont_tick(comp, pg->num << 8);
+			break;
 		case IRQ_CPU_SYNC:			// sync cpu-vid
-			vid_sync(comp->vid, comp->cpu->t - res4);
+			vid_sync(comp->vid, (comp->cpu->t - res4) * comp->nsPerTick);
 			res4 = comp->cpu->t;
 			// TODO: collect wait from devices
 			comp->cpu->wait = 0;

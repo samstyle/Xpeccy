@@ -16,6 +16,7 @@ enum {
 	IRQ_RZX_INT,
 	IRQ_DMA,
 	IRQ_CPU_SYNC,	// sync cpu ticks
+	IRQ_CPU_CONT,	// contention sync
 	IRQ_FDC,	// ibm
 	IRQ_FDC_RD,
 	IRQ_FDC_WR,

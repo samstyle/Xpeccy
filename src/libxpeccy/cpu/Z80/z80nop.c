@@ -18,41 +18,8 @@ int z80_iord(CPU* cpu, int adr) {
 	return v & 0xff;
 }
 
-#if !Z80_NEW_RW_CYCLE
-int z80_mrd(CPU* cpu, int a) {
-	int v = cpu->mrd(a, 0, cpu->xptr);
-	cpu->t += 3;
-	return v & 0xff;
-}
-
-void z80_mwr(CPU* cpu, int a, int v) {
-	cpu->mwr(a, v, cpu->xptr);
-	cpu->t += 3;
-}
-#else
-// TODO: use this (somehow...)
-int z80_mrd(CPU* cpu, int adr) {
-	cpu->adr = adr;
-	cpu->t++;		// T1
-	do {
-		cpu->t++;	// T2 while wait
-		cpu->xirq(IRQ_CPU_SYNC, cpu->xptr);
-	} while (cpu->wait);
-	cpu->t++;		// T3
-	return cpu->mrd(adr, 0, cpu->xptr);
-}
-
-void z80_mwr(CPU *cpu, int adr, int data) {
-	cpu->adr = adr;
-	cpu->t++;		// T1
-	do {
-		cpu->t++;	// T2 while wait
-		cpu->xirq(IRQ_CPU_SYNC, cpu->xptr);
-	} while (cpu->wait);
-	cpu->mwr(adr, data, cpu->xptr);
-	cpu->t++;		// T3
-}
-#endif
+int z80_mrd(CPU*, int);
+void z80_mwr(CPU*, int, int);
 
 // push/pop
 

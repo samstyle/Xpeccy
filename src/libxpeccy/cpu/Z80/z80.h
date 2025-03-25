@@ -46,7 +46,7 @@ enum {
 	Z80_REG_R
 };
 
-#define Z80_NEW_RW_CYCLE 0
+#define Z80_NEW_RW_CYCLE 1
 
 #define Z80_INT	1
 #define Z80_NMI	(1<<1)

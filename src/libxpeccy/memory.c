@@ -159,11 +159,13 @@ xAdr mem_get_xadr(Memory* mem, int adr) {
 	return xadr;
 }
 
+// convert cpu adr to full memory adr
 int mem_get_phys_adr(Memory* mem, int adr) {
 	MemPage* pg = mem_get_page(mem, adr);	// = &mem->map[(adr >> mem->pgshift) & 0xff];
 	return (pg->num << mem->pgshift) | (adr & mem->pgmask);
 }
 
+// convert full memory type/adr to cpu adr, if its visible for cpu. return -1 if not visible
 int memFindAdr(Memory* mem, int type, int fadr) {
 	int i;
 	int adr = -1;
