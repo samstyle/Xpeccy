@@ -449,7 +449,7 @@ void vid_get_screen(Video* vid, unsigned char* dst, int bank, int shift, int fla
 // ^ repeat 16 times each 16 dots in each of 192 screen rows
 
 static int contTabA[] = {12,11,10,9,8,7,6,5,4,3,2,1,0,0,0,0};		// 48K 128K +2 (bank 1,3,5,7)
-static int contTabB[] = {2,1,0,0,14,13,12,11,10,9,8,7,6,5,4,3};	// +2A +3 (bank 4,5,6,7)
+static int contTabB[] = {2,1,0,0,14,13,12,11,10,9,8,7,6,5,4,3};		// +2A +3 (bank 4,5,6,7)
 
 int vid_wait(Video* vid, int adr) {
 	int* contTab = NULL;
@@ -464,10 +464,9 @@ int vid_wait(Video* vid, int adr) {
 			break;
 	}
 	if (!contTab) return 0;				// unknown patern
-	if (!adr) return 0;
-	if (vid->ray.y < vid->bord.y) return 0;				// above screen
-	if (vid->ray.y >= (vid->bord.y + vid->scrn.y)) return 0;	// below screen
-	xscr = vid->ray.x - vid->bord.x + 8;
+	if (!adr) return 0;				// address not in contention limits
+	if (vid->vbrd) return 0;			// border (vertical)
+	xscr = vid->ray.x - vid->bord.x + 8;		// 8 for starting @14336, 10 for @14335
 	if (xscr < 0) return 0;						// line before contention
 	if (xscr >= vid->scrn.x) return 0;				// line after contention
 	return contTab[xscr & 0x0f] * vid->nsPerDot;			// return time (ns)

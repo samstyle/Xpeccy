@@ -111,15 +111,11 @@ extern int res4;
 static int wns;
 
 void zx_cont_mem(Computer* comp) {
-	if ((pg->type == MEM_RAM) && (pg->num & 0x40)) {
+	if (pg->type == MEM_RAM) {
 		vid_sync(comp->vid, comp->nsPerTick * (comp->cpu->t - res4));	// before
 		res4 = comp->cpu->t;
-		wns = vid_wait(comp->vid, 5 << 14);
+		wns = vid_wait(comp->vid, pg->num << 8);
 		comp->cpu->t += wns / comp->nsPerTick;
-		while (wns > 0) {
-			comp->cpu->t++;
-			wns -= comp->nsPerTick;
-		}
 		vid_sync(comp->vid, (comp->cpu->t - res4) * comp->nsPerTick);
 		res4 = comp->cpu->t;
 	}
