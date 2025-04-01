@@ -142,6 +142,7 @@ class DebugWin : public QMainWindow {
 		void fillFlags(const char*);
 		void fillMem();
 		void fillStack();
+		void fillPorts();
 //		void fillFDC();
 //		void fillAY();
 //		void fillTape();

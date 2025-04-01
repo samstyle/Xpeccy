@@ -74,6 +74,7 @@ void DebugWin::updateStyle() {
 	ui_misc.labHeadMem->setStyleSheet(str);
 	ui_misc.labHeadRay->setStyleSheet(str);
 	ui_misc.labHeadStack->setStyleSheet(str);
+	ui_misc.labHeadPorts->setStyleSheet(str);
 	ui_misc.labHeadSignal->setStyleSheet(str);
 	xDockWidget* dw;
 	void* ptr;
@@ -868,6 +869,7 @@ void DebugWin::fillNotCPU() {
 	if (memViewer->isVisible())
 		memViewer->fillImage();
 	fillStack();
+	fillPorts();
 }
 
 bool DebugWin::fillAll() {
@@ -1244,6 +1246,37 @@ void DebugWin::fillStack() {
 	ui_misc.labSP4->setText(str.mid(12,4));
 	ui_misc.labSP6->setText(str.mid(16,4));
 	ui_misc.labSP8->setText(str.mid(20,4));
+}
+
+// ports
+
+void DebugWin::fillPorts() {
+	Computer* comp = conf.prof.cur->zx;
+
+	// Current memory layout (0x7FFD)
+	ui_misc.labelPortValue7FFD->setText(QString("%1").arg(comp->p7FFD, 2, 16, QChar('0')).toUpper());
+
+	// Kempston Joystick
+	int v = comp->hw->in(comp, 0x1f);
+	ui_misc.labelPortValue1F->setText(QString("%1").arg(v, 2, 16, QChar('0')).toUpper());
+
+	// Keyboard state
+	v = comp->hw->in(comp, 0x7FFE);
+	ui_misc.labelPortValue7FFE->setText(QString("%1").arg(v, 2, 16, QChar('0')).toUpper());
+	v = comp->hw->in(comp, 0xBFFE);
+	ui_misc.labelPortValueBFFE->setText(QString("%1").arg(v, 2, 16, QChar('0')).toUpper());
+	v = comp->hw->in(comp, 0xDFFE);
+	ui_misc.labelPortValueDFFE->setText(QString("%1").arg(v, 2, 16, QChar('0')).toUpper());
+	v = comp->hw->in(comp, 0xEFFE);
+	ui_misc.labelPortValueEFFE->setText(QString("%1").arg(v, 2, 16, QChar('0')).toUpper());
+	v = comp->hw->in(comp, 0xF7FE);
+	ui_misc.labelPortValueF7FE->setText(QString("%1").arg(v, 2, 16, QChar('0')).toUpper());
+	v = comp->hw->in(comp, 0xFBFE);
+	ui_misc.labelPortValueFBFE->setText(QString("%1").arg(v, 2, 16, QChar('0')).toUpper());
+	v = comp->hw->in(comp, 0xFDFE);
+	ui_misc.labelPortValueFDFE->setText(QString("%1").arg(v, 2, 16, QChar('0')).toUpper());
+	v = comp->hw->in(comp, 0xFEFE);
+	ui_misc.labelPortValueFEFE->setText(QString("%1").arg(v, 2, 16, QChar('0')).toUpper());
 }
 
 // breakpoint
