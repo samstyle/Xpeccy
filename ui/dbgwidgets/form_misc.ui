@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>84</width>
-    <height>480</height>
+    <height>511</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -63,6 +63,23 @@
       <set>Qt::AlignCenter</set>
      </property>
     </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="labPorts">
+     <property name="text">
+      <string>PORTS</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QFormLayout" name="formPort">
+     <property name="verticalSpacing">
+      <number>1</number>
+     </property>
+    </layout>
    </item>
    <item>
     <widget class="QLabel" name="labHeadStack">

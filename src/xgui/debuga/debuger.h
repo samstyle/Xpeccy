@@ -23,7 +23,7 @@
 
 #include "ui_dumpdial.h"
 #include "ui_openDump.h"
-#include "ui_debuger.h"
+// #include "ui_debuger.h"
 
 #include "ui_form_cpu.h"
 #include "ui_form_disasm.h"
@@ -128,7 +128,6 @@ class DebugWin : public QMainWindow {
 		xLabeList* labswin;
 
 		QMenu* cellMenu;
-//		unsigned short bpAdr;
 		void doBreakPoint(unsigned short);
 		int getAdr();
 
@@ -142,9 +141,7 @@ class DebugWin : public QMainWindow {
 		void fillFlags(const char*);
 		void fillMem();
 		void fillStack();
-//		void fillFDC();
-//		void fillAY();
-//		void fillTape();
+		void fillPorts();
 
 		void setFlagNames(const char*);
 		void chLayout();
@@ -153,17 +150,13 @@ class DebugWin : public QMainWindow {
 		void setShowLabels(bool);
 		void setShowSegment(bool);
 		void setRomWriteable(bool);
-//		void chDumpView();
-//		void setDumpCP();
 		void resetTCount();
 
 		bool fillAll();
 		void fillNotCPU();
-//		void fillTabs();
 		void doStep();
 
 		void saveDasm();
-//		void remapMem();
 		void d_remap(int, int, int);
 		void save_mem_map();
 		void rest_mem_map();
@@ -178,24 +171,11 @@ class DebugWin : public QMainWindow {
 		void mapAuto();
 
 		int fillDisasm();
-//		void fillDump();
-//		void fillGBoy();
-//		void drawNes();
 		void regClick(QMouseEvent*);
 		void reload();
 
 		void setCPU();
 		void setFlags();
-//		void updateScreen();
-//		void dumpChadr(int);
-
-//		void addBrk();
-//		void editBrk();
-//		void delBrk();
-//		void confirmBrk(xBrkPoint, xBrkPoint);
-//		void goToBrk(QModelIndex);
-//		void openBrk();
-//		void saveBrk(QString = QString());
 
 		void brkRequest(int, int, int);
 		void putBreakPoint();

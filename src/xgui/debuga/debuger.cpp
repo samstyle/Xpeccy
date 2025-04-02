@@ -75,6 +75,7 @@ void DebugWin::updateStyle() {
 	ui_misc.labHeadRay->setStyleSheet(str);
 	ui_misc.labHeadStack->setStyleSheet(str);
 	ui_misc.labHeadSignal->setStyleSheet(str);
+	ui_misc.labPorts->setStyleSheet(str);
 	xDockWidget* dw;
 	void* ptr;
 	foreach(ptr, dockWidgets) {
@@ -337,6 +338,13 @@ DebugWin::DebugWin(QWidget* par):QMainWindow(par) {
 		ui_cpu.formRegs->insertRow(i, lab, xhs);
 		connect(lab, &xLabel::clicked, this, &DebugWin::regClick);
 		connect(xhs, &xHexSpin::textChanged, this, &DebugWin::setCPU);
+	}
+// create ports group
+	ui_misc.formPort->setVerticalSpacing(0);
+	for (i = 0; i < 32; i++) {
+		ui_misc.formPort->insertRow(i, new QLabel, new QLabel);
+		ui_misc.formPort->itemAt(i, QFormLayout::LabelRole)->widget()->setVisible(false);
+		ui_misc.formPort->itemAt(i, QFormLayout::FieldRole)->widget()->setVisible(false);
 	}
 // create flags group (for cpu->f, 16 bit max)
 	flagrp = new QButtonGroup;
@@ -868,6 +876,7 @@ void DebugWin::fillNotCPU() {
 	if (memViewer->isVisible())
 		memViewer->fillImage();
 	fillStack();
+	fillPorts();
 }
 
 bool DebugWin::fillAll() {
@@ -1244,6 +1253,31 @@ void DebugWin::fillStack() {
 	ui_misc.labSP4->setText(str.mid(12,4));
 	ui_misc.labSP6->setText(str.mid(16,4));
 	ui_misc.labSP8->setText(str.mid(20,4));
+}
+
+// ports
+
+void DebugWin::fillPorts() {
+	Computer* comp = conf.prof.cur->zx;
+	xPortValue* tab = hwGetPorts(comp);
+	int i = 0;
+	if (tab) {
+		QLabel* wid;
+		while ((tab[i].port > 0) && (i < 32)) {
+			wid = (QLabel*)(ui_misc.formPort->itemAt(i, QFormLayout::LabelRole)->widget());
+			wid->setVisible(true);
+			wid->setText(gethexword(tab[i].port));
+			wid = (QLabel*)(ui_misc.formPort->itemAt(i, QFormLayout::FieldRole)->widget());
+			wid->setVisible(true);
+			wid->setText(gethexbyte(tab[i].value));
+			i++;
+		}
+	}
+	while (i < 32) {
+		ui_misc.formPort->itemAt(i, QFormLayout::LabelRole)->widget()->setVisible(false);
+		ui_misc.formPort->itemAt(i, QFormLayout::FieldRole)->widget()->setVisible(false);
+		i++;
+	}
 }
 
 // breakpoint
