@@ -32,10 +32,33 @@ xPortDsc zx_port_tab_s[] = {
 	{-1, 0, 0}
 };
 
+// phoenix
+
+xPortDsc zx_port_tab_px[] = {
+	{0x7ffd, REG_BYTE, offsetof(Computer, p7FFD)},
+	{0xeff7, REG_BYTE, offsetof(Computer, pEFF7)},
+	{0x1ffd, REG_BYTE, offsetof(Computer, p1FFD)},
+	{-1, 0, 0}
+};
+
 // profi
 xPortDsc zx_port_tab_p[] = {
 	{0x7ffd, REG_BYTE, offsetof(Computer, p7FFD)},
 	{0xdffd, REG_BYTE, offsetof(Computer, pDFFD)},
+	{-1, 0, 0}
+};
+
+// tsconf
+
+xPortDsc zx_port_tab_ts[] = {
+	{0x7ffd, REG_BYTE, offsetof(Computer, p7FFD)},
+	{0xeff7, REG_BYTE, offsetof(Computer, pEFF7)},
+	{0x01af, REG_BYTE, offsetof(Computer, tsconf.p01af)},
+	{0x02af, REG_BYTE, offsetof(Computer, tsconf.p02af)},
+	{0x03af, REG_BYTE, offsetof(Computer, tsconf.p03af)},
+	{0x04af, REG_BYTE, offsetof(Computer, tsconf.p04af)},
+	{0x05af, REG_BYTE, offsetof(Computer, tsconf.p05af)},
+	{0x21af, REG_BYTE, offsetof(Computer, tsconf.p21af)},
 	{-1, 0, 0}
 };
 
@@ -62,13 +85,13 @@ HardWare hwTab[] = {
 		HW_PROFI,HWG_ZX,"Profi","Profi",16,MEM_512K | MEM_1M,1.0,NULL,16,zx_port_tab_p,
 		zx_init,prfMapMem,prfOut,prfIn,stdMRd,stdMWr,zx_irq,zx_ack,prfReset,zx_sync,prf_keyp,prf_keyr,zx_vol
 	},{
-		HW_PHOENIX,HWG_ZX,"Phoenix","ZXM Phoenix",16,MEM_2M,1.0,NULL,16,zx_port_tab_a,
+		HW_PHOENIX,HWG_ZX,"Phoenix","ZXM Phoenix",16,MEM_2M,1.0,NULL,16,zx_port_tab_px,
 		zx_init,phxMapMem,phxOut,phxIn,stdMRd,stdMWr,zx_irq,zx_ack,phxReset,zx_sync,zx_keyp,zx_keyr,zx_vol
 	},{
 		HW_PENTEVO,HWG_ZX,"PentEvo","Evo Baseconf",16,MEM_4M,1.0,NULL,16,zx_port_tab_b,
 		zx_init,evoMapMem,evoOut,evoIn,evoMRd,evoMWr,zx_irq,zx_ack,evoReset,zx_sync,zx_keyp,zx_keyr,zx_vol
 	},{
-		HW_TSLAB,HWG_ZX,"TSLab","Evo TSConf",16,MEM_4M,1.0,NULL,16,zx_port_tab_b,
+		HW_TSLAB,HWG_ZX,"TSLab","Evo TSConf",16,MEM_4M,1.0,NULL,16,zx_port_tab_ts,
 		zx_init,tslMapMem,tslOut,tslIn,tslMRd,tslMWr,zx_irq,zx_ack,tslReset,zx_sync,zx_keyp,zx_keyr,zx_vol
 	},{
 		HW_NULL,HWG_NULL,"","",16,0,1.0,NULL,16,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL		// separator

@@ -1262,16 +1262,23 @@ void DebugWin::fillPorts() {
 	xPortValue* tab = hwGetPorts(comp);
 	int i = 0;
 	if (tab) {
-		QLabel* wid;
-		while ((tab[i].port > 0) && (i < 32)) {
-			wid = (QLabel*)(ui_misc.formPort->itemAt(i, QFormLayout::LabelRole)->widget());
-			wid->setVisible(true);
-			wid->setText(gethexword(tab[i].port));
-			wid = (QLabel*)(ui_misc.formPort->itemAt(i, QFormLayout::FieldRole)->widget());
-			wid->setVisible(true);
-			wid->setText(gethexbyte(tab[i].value));
-			i++;
+		if (tab[0].port > 0) {
+			QLabel* wid;
+			while ((tab[i].port > 0) && (i < 32)) {
+				wid = (QLabel*)(ui_misc.formPort->itemAt(i, QFormLayout::LabelRole)->widget());
+				wid->setVisible(true);
+				wid->setText(gethexword(tab[i].port));
+				wid = (QLabel*)(ui_misc.formPort->itemAt(i, QFormLayout::FieldRole)->widget());
+				wid->setVisible(true);
+				wid->setText(gethexbyte(tab[i].value));
+				i++;
+			}
+			ui_misc.labPorts->setVisible(true);
+		} else {
+			ui_misc.labPorts->setVisible(false);
 		}
+	} else {
+		ui_misc.labPorts->setVisible(false);
 	}
 	while (i < 32) {
 		ui_misc.formPort->itemAt(i, QFormLayout::LabelRole)->widget()->setVisible(false);
