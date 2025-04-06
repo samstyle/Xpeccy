@@ -24,6 +24,7 @@ TapeBlock tapDataToBlock(char* data,int len,int* sigLens) {
 	blk.breakPoint = 0;
 	blk.hasBytes = 1;
 	blk.isHeader = (tmp == 0) ? 1 : 0;
+	blk.vol = 1;				// initial volume
 	for (i = 0; i < (int)blk.pdur; i++)
 		blkAddPulse(&blk, blk.plen,-1);
 	if (blk.s1len)
