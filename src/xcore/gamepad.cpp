@@ -1,6 +1,8 @@
 #include <QDebug>
 
+#if USE_QT_GAMEPAD
 #include <QGamepadManager>
+#endif
 
 #include <SDL_events.h>
 #include <SDL_joystick.h>

@@ -339,13 +339,6 @@ DebugWin::DebugWin(QWidget* par):QMainWindow(par) {
 		connect(lab, &xLabel::clicked, this, &DebugWin::regClick);
 		connect(xhs, &xHexSpin::textChanged, this, &DebugWin::setCPU);
 	}
-// create ports group
-	ui_misc.formPort->setVerticalSpacing(0);
-	for (i = 0; i < 32; i++) {
-		ui_misc.formPort->insertRow(i, new QLabel, new QLabel);
-		ui_misc.formPort->itemAt(i, QFormLayout::LabelRole)->widget()->setVisible(false);
-		ui_misc.formPort->itemAt(i, QFormLayout::FieldRole)->widget()->setVisible(false);
-	}
 // create flags group (for cpu->f, 16 bit max)
 	flagrp = new QButtonGroup;
 	flagrp->setExclusive(false);
@@ -1261,10 +1254,15 @@ void DebugWin::fillPorts() {
 	Computer* comp = conf.prof.cur->zx;
 	xPortValue* tab = hwGetPorts(comp);
 	int i = 0;
+	int cnt = ui_misc.formPort->rowCount();
 	if (tab) {
 		if (tab[0].port > 0) {
 			QLabel* wid;
-			while ((tab[i].port > 0) && (i < 32)) {
+			while (tab[i].port > 0) {
+				if (i >= cnt) {
+					ui_misc.formPort->addRow(new QLabel, new QLabel);
+					cnt++;
+				}
 				wid = (QLabel*)(ui_misc.formPort->itemAt(i, QFormLayout::LabelRole)->widget());
 				wid->setVisible(true);
 				wid->setText(gethexword(tab[i].port));
@@ -1280,10 +1278,9 @@ void DebugWin::fillPorts() {
 	} else {
 		ui_misc.labPorts->setVisible(false);
 	}
-	while (i < 32) {
-		ui_misc.formPort->itemAt(i, QFormLayout::LabelRole)->widget()->setVisible(false);
-		ui_misc.formPort->itemAt(i, QFormLayout::FieldRole)->widget()->setVisible(false);
-		i++;
+	while (i < cnt) {
+		ui_misc.formPort->removeRow(i);
+		cnt--;
 	}
 }
 
