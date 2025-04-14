@@ -26,7 +26,7 @@
 #endif
 
 // QGamepad -> Qt5.7+
-#define USE_QT_GAMEPAD 0 && (QT_VERSION >= QT_VERSION_CHECK(5,7,0))
+#define USE_QT_GAMEPAD 0 && (QT_VERSION >= QT_VERSION_CHECK(5,7,0)) && (QT_VERSION <= QT_VERSION_CHECK(6,0,0))
 
 #if USE_QT_GAMEPAD
 #include <QGamepad>

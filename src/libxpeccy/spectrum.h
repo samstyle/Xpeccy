@@ -68,6 +68,13 @@ typedef struct {
 	unsigned char* ptr;
 } bpChecker;
 
+#define p7FFD	iomap[0]
+#define p1FFD	iomap[1]
+#define pEFF7	iomap[2]
+#define pDFFD	iomap[3]
+#define p77hi	iomap[4]
+#define prt2	iomap[5]
+
 typedef struct {
 	unsigned brk:1;			// breakpoint
 	unsigned debug:1;		// dont' do breakpoints
@@ -155,12 +162,12 @@ typedef struct {
 	int fCount;		// T in last frame
 	int nsPerTick;
 
-	unsigned char p7FFD;		// stored port out
-	unsigned char p1FFD;
-	unsigned char pEFF7;
-	unsigned char pDFFD;
-	unsigned char p77hi;
-	unsigned char prt2;		// scorpion ProfROM layer (0..3)
+//	unsigned char p7FFD;		// stored port out
+//	unsigned char p1FFD;
+//	unsigned char pEFF7;
+//	unsigned char pDFFD;
+//	unsigned char p77hi;
+//	unsigned char prt2;		// scorpion ProfROM layer (0..3)
 	unsigned char reg[256];		// internal registers
 	unsigned char iomap[0x10000];
 	unsigned short wdata;
