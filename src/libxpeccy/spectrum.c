@@ -421,6 +421,7 @@ Computer* compCreate() {
 	comp->cmos.data[17] = 0xaa;	// 0a?
 	comp->frqMul = 1;
 	compSetBaseFrq(comp, 3.5);
+//	compReset(comp, RES_DEFAULT);		// Can't reset here, cuz comp->resbank not defined yet
 	return comp;
 }
 

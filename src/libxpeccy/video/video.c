@@ -466,7 +466,7 @@ int vid_wait(Video* vid, int adr) {
 	if (!contTab) return 0;				// unknown patern
 	if (!adr) return 0;				// address not in contention limits
 	if (vid->vbrd) return 0;			// border (vertical)
-	xscr = vid->ray.x - vid->bord.x + 8;		// 8 for starting @14336, 10 for @14335
+	xscr = vid->ray.x - vid->bord.x + 6;		// 4 for starting @14336, 6 for @14335 (late/early timing?)
 	if (xscr < 0) return 0;						// line before contention
 	if (xscr >= vid->scrn.x) return 0;				// line after contention
 	return contTab[xscr & 0x0f] * vid->nsPerDot;			// return time (ns)

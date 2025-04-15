@@ -45,19 +45,20 @@ void z80_reset(CPU* cpu) {
 
 int z80_mrdx(CPU* cpu, int adr, int m1) {
 	cpu->adr = adr;
-	cpu->xirq(IRQ_CPU_CONT, cpu->xptr);
+//	cpu->xirq(IRQ_CPU_CONT, cpu->xptr);
 	cpu->t++;		// T1
 	do {
 		cpu->t++;	// T2 while wait
 		cpu->xirq(IRQ_CPU_SYNC, cpu->xptr);
 	} while (cpu->wait);
+	int r = cpu->mrd(adr, m1, cpu->xptr) & 0xff;
 	cpu->t++;		// T3
-	return cpu->mrd(adr, m1, cpu->xptr) & 0xff;
+	return r;
 }
 
 int z80_fetch(CPU* cpu) {
 	return z80_mrdx(cpu, cpu->pc++, 1) & 0xff;
-	// TODO: IR on adr bus + MREQ = ULA snow effect, if video read data at same time
+	// TODO: @T4 IR on adr bus + MREQ = ULA snow effect, if video read data at same time
 }
 
 int z80_mrd(CPU* cpu, int adr) {
@@ -66,14 +67,14 @@ int z80_mrd(CPU* cpu, int adr) {
 
 void z80_mwr(CPU *cpu, int adr, int data) {
 	cpu->adr = adr;
-	cpu->xirq(IRQ_CPU_CONT, cpu->xptr);
+//	cpu->xirq(IRQ_CPU_CONT, cpu->xptr);
 	cpu->t++;		// T1
 	do {
 		cpu->t++;	// T2 while wait
 		cpu->xirq(IRQ_CPU_SYNC, cpu->xptr);
 	} while (cpu->wait);
-	cpu->t++;		// T3
 	cpu->mwr(adr, data, cpu->xptr);
+	cpu->t++;		// T3
 }
 
 #else

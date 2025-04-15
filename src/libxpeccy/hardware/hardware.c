@@ -183,7 +183,7 @@ int stdMRd(Computer* comp, int adr, int m1) {
 			comp->hw->mapMem(comp);
 		}
 	}
-#if !Z80_NEW_RW_CYCLE
+#if 1 || !Z80_NEW_RW_CYCLE
 	if (comp->contMem)
 		zx_cont_mem(comp);
 #endif
@@ -192,7 +192,7 @@ int stdMRd(Computer* comp, int adr, int m1) {
 
 void stdMWr(Computer *comp, int adr, int val) {
 	pg = mem_get_page(comp->mem, adr);	// = &comp->mem->map[(adr >> 8) & 0xff];
-#if !Z80_NEW_RW_CYCLE
+#if 1 || !Z80_NEW_RW_CYCLE
 	if (comp->contMem)
 		zx_cont_mem(comp);
 #endif

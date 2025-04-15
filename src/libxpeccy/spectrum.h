@@ -91,7 +91,7 @@ typedef struct {
 	unsigned dos:1;			// BDI dos
 	unsigned cpm:1;
 	unsigned ext:1;
-	unsigned bdiz:1;		// BDI port accessible
+	unsigned bdiz:1;		// BDI ports accessible
 
 	unsigned evenM1:1;		// scorpion wait mode
 	unsigned contMem:1;		// contended mem
