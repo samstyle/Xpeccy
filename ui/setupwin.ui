@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>572</width>
-    <height>513</height>
+    <width>568</width>
+    <height>542</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -748,13 +748,6 @@
              </widget>
             </item>
             <item>
-             <widget class="QCheckBox" name="cbScanlines">
-              <property name="text">
-               <string>TV scanlines</string>
-              </property>
-             </widget>
-            </item>
-            <item>
              <widget class="Line" name="line">
               <property name="orientation">
                <enum>Qt::Horizontal</enum>
@@ -820,6 +813,13 @@
              <widget class="QComboBox" name="cbContPattern">
               <property name="toolTip">
                <string>ULA type A for 48K,128K,+2; type B for +2A,+3</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="cbEarlyTiming">
+              <property name="text">
+               <string>Early timing</string>
               </property>
              </widget>
             </item>

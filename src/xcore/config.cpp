@@ -153,7 +153,7 @@ void saveConfig() {
 	fprintf(cfile, "keepratio = %s\n", YESNO(conf.vid.keepRatio));
 	fprintf(cfile, "scale = %i\n", conf.vid.scale);
 	fprintf(cfile, "greyscale = %s\n", YESNO(greyScale));
-	fprintf(cfile, "scanlines = %s\n", YESNO(scanlines));
+//	fprintf(cfile, "scanlines = %s\n", YESNO(scanlines));
 	fprintf(cfile, "bordersize = %i\n", int(conf.brdsize * 100));
 	fprintf(cfile, "noflick = %i\n", noflic);
 	fprintf(cfile, "shader = %s\n", conf.vid.shader.c_str());
@@ -427,7 +427,7 @@ void loadConfig() {
 					if (pnam=="noflic") noflic = arg.b ? 50 : 25;		// old parameter
 					if (pnam=="noflick") noflic = getRanged(arg.s, 0, 50);	// new parameter
 					if (pnam=="greyscale") vid_set_grey(arg.b);
-					if (pnam=="scanlines") scanlines = arg.b;
+//					if (pnam=="scanlines") scanlines = arg.b;
 					if (pnam=="shader") conf.vid.shader = pval;
 					// if (pnam=="palette") conf.vid.palette = pval;
 					break;

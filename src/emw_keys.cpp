@@ -211,10 +211,10 @@ void MainWin::xkey_press(int xkey) {
 				saveConfig();
 				setMessage(QString(" noflick %0% ").arg(noflic * 2));
 				break;
-			case XCUT_TVLINES:
-				scanlines = !scanlines;
-				setMessage(scanlines ? " scanlines on " : " scanlines off ");
-				saveConfig();
+//			case XCUT_TVLINES:
+//				scanlines = !scanlines;
+//				setMessage(scanlines ? " scanlines on " : " scanlines off ");
+//				saveConfig();
 				break;
 			case XCUT_RELOAD_SHD:
 				loadShader();

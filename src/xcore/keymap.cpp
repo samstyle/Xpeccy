@@ -433,7 +433,7 @@ static xShortcut short_tab[] = {
 	{SCG_MAIN | SCG_DEBUGA, XCUT_RESET, "key.reset", "Reset", QKeySequence(), QKeySequence(Qt::Key_F12)},
 	{SCG_MAIN, XCUT_RES_DOS, "key.reset.dos", "Reset to DOS", QKeySequence(), QKeySequence(Qt::ALT | Qt::Key_F12)},
 	{SCG_MAIN, XCUT_TURBO, "key.turbo", "Switch turbo", QKeySequence(), QKeySequence(Qt::ALT | Qt::Key_T)},
-	{SCG_MAIN, XCUT_TVLINES, "key.scanlines", "Switch scanlines", QKeySequence(), QKeySequence()},
+//	{SCG_MAIN, XCUT_TVLINES, "key.scanlines", "Switch scanlines", QKeySequence(), QKeySequence()},
 	{SCG_MAIN, XCUT_WAV_OUT, "key.write.wav", "Start/stop wav output", QKeySequence(), QKeySequence()},
 	{SCG_MAIN, XCUT_RELOAD_SHD, "key.reload.shader", "Reload shader", QKeySequence(), QKeySequence()},
 

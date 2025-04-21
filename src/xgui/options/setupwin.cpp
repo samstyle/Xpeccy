@@ -175,7 +175,7 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	ui.cbContPattern->addItem("ULA type B", CONT_PATB);
 
 #if defined(USEOPENGL)
-	ui.cbScanlines->setVisible(false);
+//	ui.cbScanlines->setVisible(false);
 	fill_shader_list(ui.cbShader);
 #else
 	ui.labShader->setVisible(false);
@@ -460,11 +460,12 @@ void SetupWin::start() {
 	ui.sbScale->setValue(conf.vid.scale);
 	ui.sldNoflic->setValue(noflic); chaflc();
 	ui.grayscale->setChecked(greyScale);
-	ui.cbScanlines->setChecked(scanlines);
+//	ui.cbScanlines->setChecked(scanlines);
 	ui.border4T->setChecked(comp->vid->brdstep & 0x06);
 	ui.contMem->setChecked(comp->contMem);
 	ui.contIO->setChecked(comp->contIO);
 	setRFIndex(ui.cbContPattern, comp->vid->ula->conttype);
+	ui.cbEarlyTiming->setChecked(comp->vid->ula->early);
 	ui.bszsld->setValue(static_cast<int>(conf.brdsize * 100));
 	ui.pathle->setText(QString::fromLocal8Bit(conf.scrShot.dir.c_str()));
 	ui.ssfbox->setCurrentIndex(ui.ssfbox->findText(conf.scrShot.format.c_str()));
@@ -661,7 +662,7 @@ void SetupWin::apply() {
 	conf.vid.scale = ui.sbScale->value();
 	noflic = ui.sldNoflic->value();
 	vid_set_grey(ui.grayscale->isChecked() ? 1 : 0);
-	scanlines = ui.cbScanlines->isChecked() ? 1 : 0;
+//	scanlines = ui.cbScanlines->isChecked() ? 1 : 0;
 	conf.scrShot.dir = std::string(ui.pathle->text().toLocal8Bit().data());
 	conf.scrShot.format = getRFText(ui.ssfbox);
 	conf.scrShot.count = ui.scntbox->value();
@@ -673,6 +674,7 @@ void SetupWin::apply() {
 	comp->contMem = ui.contMem->isChecked() ? 1 : 0;
 	comp->contIO = ui.contIO->isChecked() ? 1 : 0;
 	comp->vid->ula->conttype = getRFIData(ui.cbContPattern);
+	comp->vid->ula->early = ui.cbEarlyTiming->isChecked();
 	comp->vid->ula->enabled = ui.ulaPlus->isChecked() ? 1 : 0;
 	comp->ddpal = ui.cbDDp->isChecked() ? 1 : 0;
 	prfSetLayout(NULL, getRFText(ui.geombox));

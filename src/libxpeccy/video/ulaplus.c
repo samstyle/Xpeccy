@@ -8,6 +8,7 @@ ulaPlus* ula_create() {
 	if (ula) {
 		memset(ula,0x00,sizeof(ulaPlus));
 		ula->conttype = CONT_PATA;
+		ula->early = 0;
 	}
 	return ula;
 }

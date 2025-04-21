@@ -79,7 +79,7 @@ enum {
 extern int bufSize;
 extern int bytesPerLine;
 extern int greyScale;
-extern int scanlines;
+//extern int scanlines;
 extern int noflic;
 
 extern unsigned char* scrimg;
