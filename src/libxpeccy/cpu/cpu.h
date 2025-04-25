@@ -144,8 +144,6 @@ struct CPU {
 	unsigned noint:1;		// Z80: don't handle INT after EI
 	unsigned wait:1;		// ALL: WAIT signal (dummy 1T)
 	unsigned ack:1;			// Z80: acknowledge INT after execution (prevent last-1T INT)
-	unsigned blk:1;			// Z80: 1 during ldxr/cpxr
-	unsigned blkio:1;		// Z80: 1 during inxr/otxr
 	unsigned lock:1;		// LR35902: CPU locked
 	unsigned stop:1;		// LR35902: CPU stoped, unlock on keypress
 	unsigned speed:1;		// LR35902: double speed mode (TODO)

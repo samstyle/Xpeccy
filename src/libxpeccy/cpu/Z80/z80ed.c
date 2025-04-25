@@ -513,16 +513,20 @@ void edAB(CPU* cpu) {
 	cpu->fz.pv = parity((cpu->tmpw & 7) ^ cpu->b);
 }
 
+// for ldxr/cpxr: f3,f5 from hpc (TODO: or from hi.mptr=pc+1?)
+void blkRepeat(CPU* cpu) {
+	cpu->pc -= 2;
+	cpu->t += 5;
+	cpu->mptr = cpu->pc + 1;
+	cpu->fz.f5 = !!(cpu->hpc & 0x20);
+	cpu->fz.f3 = !!(cpu->hpc & 0x08);
+}
+
 // b0	ldir	= ldi until bc!=0	[+5T, mptr = pc+1]
 void edB0(CPU* cpu) {
 	edA0(cpu);
 	if (cpu->bc) {
-		cpu->pc -= 2;
-		cpu->t += 5;
-		cpu->mptr = cpu->pc + 1;
-		cpu->blk = 1;
-	} else {
-		cpu->blk = 0;
+		blkRepeat(cpu);
 	}
 }
 
@@ -530,12 +534,32 @@ void edB0(CPU* cpu) {
 void edB1(CPU* cpu) {
 	edA1(cpu);
 	if (cpu->fz.pv && !cpu->fz.z) {
-		cpu->pc -= 2;
-		cpu->t += 5;
-		cpu->mptr = cpu->pc + 1;
-		cpu->blk = 1;
-	} else {
-		cpu->blk = 0;
+		blkRepeat(cpu);
+	}
+}
+
+void blkioRepeat(CPU* cpu) {
+	cpu->pc -= 2;
+	cpu->t += 5;
+	cpu->mptr = cpu->pc + 1;
+	cpu->fz.f5 = !!(cpu->hpc & 0x20);
+	cpu->fz.f3 = !!(cpu->hpc & 0x08);
+	if (cpu->fz.c) {
+		cpu->fz.h = 0;
+		// NOTE: act like inc/dec b (look at N flag), H is half-carry, PV changed if
+		if (cpu->fz.n) {
+			if (!parity((cpu->b - 1) & 7))
+				cpu->fz.pv ^= 1;
+			if ((cpu->b & 15) == 0)
+				cpu->fz.h = 1;
+		} else {
+			if (!parity((cpu->b + 1) & 7))
+				cpu->fz.pv ^= 1;
+			if ((cpu->b & 15) == 15)
+				cpu->fz.h = 1;
+		}
+	} else if (!parity(cpu->b & 7)) {
+		cpu->fz.pv ^= 1;
 	}
 }
 
@@ -543,12 +567,7 @@ void edB1(CPU* cpu) {
 void edB2(CPU* cpu) {
 	edA2(cpu);
 	if (cpu->b) {
-		cpu->pc -= 2;
-		cpu->t += 5;
-		cpu->mptr = cpu->pc + 1;
-		cpu->blkio = 1;
-	} else {
-		cpu->blkio = 0;
+		blkioRepeat(cpu);
 	}
 }
 
@@ -556,12 +575,7 @@ void edB2(CPU* cpu) {
 void edB3(CPU* cpu) {
 	edA3(cpu);
 	if (cpu->b) {
-		cpu->pc -= 2;
-		cpu->t += 5;
-		cpu->mptr = cpu->pc + 1;
-		cpu->blkio = 1;
-	} else {
-		cpu->blkio = 0;
+		blkioRepeat(cpu);
 	}
 }
 
@@ -569,25 +583,15 @@ void edB3(CPU* cpu) {
 void edB8(CPU* cpu) {
 	edA8(cpu);
 	if (cpu->bc) {
-		cpu->pc -= 2;
-		cpu->t += 5;
-		cpu->mptr = cpu->pc + 1;
-		cpu->blk = 1;
-	} else {
-		cpu->blk = 0;
+		blkRepeat(cpu);
 	}
 }
 
 // b9	cpdr	= cpd until (FV & !FZ)
 void edB9(CPU* cpu) {
 	edA9(cpu);
-	if (cpu->fz.pv && !cpu->fz.z) { // (cpu->f & (Z80_FV | Z80_FZ)) == Z80_FV) {
-		cpu->pc -= 2;
-		cpu->t += 5;
-		cpu->mptr = cpu->pc + 1;
-		cpu->blk = 1;
-	} else {
-		cpu->blk = 0;
+	if (cpu->fz.pv && !cpu->fz.z) {
+		blkRepeat(cpu);
 	}
 }
 
@@ -595,12 +599,7 @@ void edB9(CPU* cpu) {
 void edBA(CPU* cpu) {
 	edAA(cpu);
 	if (cpu->b) {
-		cpu->pc -= 2;
-		cpu->t += 5;
-		cpu->mptr = cpu->pc + 1;
-		cpu->blkio = 1;
-	} else {
-		cpu->blkio = 0;
+		blkioRepeat(cpu);
 	}
 }
 
@@ -608,12 +607,7 @@ void edBA(CPU* cpu) {
 void edBB(CPU* cpu) {
 	edAB(cpu);
 	if (cpu->b) {
-		cpu->pc -= 2;
-		cpu->t += 5;
-		cpu->mptr = cpu->pc + 1;
-		cpu->blkio = 1;
-	} else {
-		cpu->blkio = 0;
+		blkioRepeat(cpu);
 	}
 }
 

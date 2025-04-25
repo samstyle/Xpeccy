@@ -13,8 +13,8 @@ extern opCode edTab[256];
 extern opCode ddcbTab[256];
 extern opCode fdcbTab[256];
 
-void lr_call(CPU*, unsigned short);
-void lr_push(CPU*, unsigned short);
+void z80_call(CPU*, unsigned short);
+//void lr_push(CPU*, unsigned short);
 
 void z80_reset(CPU* cpu) {
 	cpu->pc = 0;
@@ -34,14 +34,10 @@ void z80_reset(CPU* cpu) {
 	cpu->intrq = 0;
 	cpu->inten = Z80_NMI;	// NMI allways enabled, INT is controlled by ei/di
 	cpu->wait = 0;
-	cpu->blk = 0;
-	cpu->blkio = 0;
 }
 
 // https://sinclair.wiki.zxnet.co.uk/wiki/Contended_memory
 // > For memory access, this happens on the first tstate (T1) of any instruction fetch, memory read or memory write operation
-
-#if Z80_NEW_RW_CYCLE
 
 int z80_mrdx(CPU* cpu, int adr, int m1) {
 	cpu->adr = adr;
@@ -75,51 +71,7 @@ void z80_mwr(CPU *cpu, int adr, int data) {
 	cpu->t++;		// T3
 }
 
-#else
-
-int z80_fetch(CPU* cpu) {
-	int v = cpu->mrd(cpu->pc++, 1, cpu->xptr);
-	cpu->t += 3;
-	return v & 0xff;
-}
-
-int z80_mrd(CPU* cpu, int a) {
-	int v = cpu->mrd(a, 0, cpu->xptr);
-	cpu->t += 3;
-	return v & 0xff;
-}
-
-void z80_mwr(CPU* cpu, int a, int v) {
-	cpu->mwr(a, v, cpu->xptr);
-	cpu->t += 3;
-}
-
-#endif
-
 // if block opcode is interrupted, flags will be like this:
-
-void z80_blkio_interrupt(CPU* cpu) {
-//	cpu->f &= ~(Z80_F3 | Z80_F5);
-//	cpu->f |= cpu->hpc & (Z80_F3 | Z80_F5);
-	cpu->fz.f5 = !!(cpu->hpc & 0x20);
-	cpu->fz.f3 = !!(cpu->hpc & 0x08);
-	if (cpu->fz.c) {
-		cpu->fz.h = 0;
-		if (cpu->tmp & 0x80) {
-			if (parity((cpu->b - 1) & 7) ^ 1)
-				cpu->fz.pv ^= 1;
-			if ((cpu->b & 15) == 0)
-				cpu->fz.h = 1;
-		} else {
-			if (parity((cpu->b + 1) & 7) ^ 1)
-				cpu->fz.pv ^= 1;
-			if ((cpu->b & 15) == 15)
-				cpu->fz.h = 1;
-		}
-	} else if (parity(cpu->b & 7) ^ 1) {
-		cpu->fz.pv ^= 1;
-	}
-}
 
 int z80_int(CPU* cpu) {
 	int res = 0;
@@ -133,13 +85,6 @@ int z80_int(CPU* cpu) {
 				cpu->halt = 0;
 			} else if (cpu->resPV) {
 				cpu->fz.pv = 0;
-			} else if (cpu->blk) {
-				//cpu->f &= ~(Z80_F3 | Z80_F5);
-				//cpu->f |= cpu->hpc & (Z80_F3 | Z80_F5);
-				cpu->fz.f5 = !!(cpu->hpc & 0x20);
-				cpu->fz.f3 = !!(cpu->hpc & 0x08);
-			} else if (cpu->blkio) {
-				z80_blkio_interrupt(cpu);
 			}
 			cpu->opTab = npTab;
 			switch(cpu->imode) {
@@ -159,12 +104,12 @@ int z80_int(CPU* cpu) {
 				case 1:
 					cpu->r++;
 					cpu->t = 2 + 5;	// 2 extra + 5 on RST38 fetch
-					lr_call(cpu, 0x38);	// +3 +3 execution. 13 total
+					z80_call(cpu, 0x38);	// +3 +3 execution. 13 total
 					break;
 				case 2:
 					cpu->r++;
 					cpu->t = 7;
-					lr_push(cpu, cpu->pc);			// +3 (10) +3 (13)
+					z80_push(cpu, cpu->pc);			// +3 (10) +3 (13)
 					cpu->lptr = cpu->xack(cpu->xptr);	// int vector (FF)
 					cpu->hptr = cpu->i;
 					cpu->lpc = z80_mrd(cpu, cpu->mptr++);	// +3 (16)
@@ -181,7 +126,7 @@ int z80_int(CPU* cpu) {
 			cpu->iff2 = cpu->iff1;
 			cpu->iff1 = 0;
 			cpu->t = 5;
-			lr_push(cpu, cpu->pc);
+			z80_push(cpu, cpu->pc);
 			cpu->pc = 0x0066;
 			cpu->mptr = cpu->pc;
 			res = cpu->t;		// always 11
