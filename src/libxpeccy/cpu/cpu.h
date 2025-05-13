@@ -152,6 +152,9 @@ struct CPU {
 	unsigned sta:1;			// MOS6502: don't add 1T on (ABSX,ABSY,INDY)
 	unsigned nod:2;			// MOS6502: ignore flag D in ADC/SBC; PDP11: write flags
 
+	unsigned lib:1;			// cpu core from exernal lib
+	void* libhnd;			// lib handler (dlopen)
+
 	int type;			// cpu type id
 	int gen;			// cpu generation (for x86: 0-8086, 1-80186, 2-80286 etc)
 

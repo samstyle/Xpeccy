@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <string.h>
+#include <dlfcn.h>
 
 #include "cpu.h"
 
@@ -92,22 +93,56 @@ const char* getCoreName(int type) {
 	return core->name;
 }
 
+void cpuSetCore(CPU* cpu, cpuCore* core) {
+	cpu->core = core;
+	cpu->type = core->type;
+	cpu->gen = core->gen;
+	cpu->reset = core->reset;
+	cpu->exec = core->exec;
+	cpu->asmbl = core->asmbl;
+	cpu->mnem = core->mnem;
+	cpu->getregs = core->getregs;
+	cpu->setregs = core->setregs;
+	if (core->init) {
+		core->init(cpu);
+	}
+}
+
 void cpuSetType(CPU* cpu, int type) {
 	cpuCore* core = findCore(type);
 	if (core != NULL) {
-		cpu->core = core;
-		cpu->type = core->type;
-		cpu->gen = core->gen;
-		cpu->reset = core->reset;
-		cpu->exec = core->exec;
-		cpu->asmbl = core->asmbl;
-		cpu->mnem = core->mnem;
-		cpu->getregs = core->getregs;
-		cpu->setregs = core->setregs;
-		if (core->init) {
-			core->init(cpu);
+		if (cpu->lib) {
+			dlclose(cpu->libhnd);
+			cpu->lib = 0;
 		}
+		cpuSetCore(cpu, core);
 	}
+}
+
+// for future: CPU from external so/dll
+int cpuSetLib(CPU* cpu, const char* name) {
+	void* hnd = dlopen(name, RTLD_LAZY | RTLD_GLOBAL);
+	int res = 0;
+	if (hnd) {
+		cpuCore*(*getCore)();
+		getCore = dlsym(hnd, "getCore");
+		if (!getCore) {
+			printf("%s\n",dlerror());
+			dlclose(hnd);
+		} else {
+			if (cpu->lib) {
+				dlclose(cpu->libhnd);
+			}
+			cpu->lib = 1;
+			cpu->libhnd = hnd;
+			cpuCore* core = getCore();
+			cpuSetCore(cpu, core);
+			res = 1;
+		}
+	} else {
+		printf("%s\n",dlerror());
+	}
+	return res;
 }
 
 CPU* cpuCreate(int type, cbmr fmr, cbmw fmw, cbir fir, cbiw fiw, cbiack frq, cbirq xirq, void* dt) {

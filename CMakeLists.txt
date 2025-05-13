@@ -52,7 +52,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 	set(INC_PATHS local/include include)
 	set(LIB_PATHS lib lib64 local/lib local/lib64)
 
-
 	if ("${PACK}" STREQUAL "rpm")
 
 	# RPM package
