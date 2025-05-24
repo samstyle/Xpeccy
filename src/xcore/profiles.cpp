@@ -298,7 +298,7 @@ int prf_load_conf(xProfile* prf, std::string cfname, int flag) {
 	int i;
 	std::ifstream file(cfname);
 	std::pair<std::string,std::string> spl;
-	std::string line,pnam,pval;
+	std::string line,pnam,pval,str;
 //	std::vector<std::string> vect;
 	size_t pos;
 	char buf[0x4000];
@@ -408,7 +408,14 @@ int prf_load_conf(xProfile* prf, std::string cfname, int flag) {
 					break;
 				case PS_MACHINE:
 					if (pnam == "current") prf->hwName = pval;
-					if (pnam == "cpu.type") cpuSetType(comp->cpu, getCoreID(arg.s));
+					if (pnam == "cpu.type") {
+						if (arg.s[0] == '@') {			// @library.so = from library
+							str = conf.path.plgDir+SLASH+"cpu";
+							cpuSetLib(comp->cpu, str.c_str(), arg.s + 1);
+						} else {
+							cpuSetType(comp->cpu, getCoreID(arg.s));
+						}
+					}
 					if (pnam == "cpu.frq") {
 						tmp2 = arg.i;
 						if ((tmp2 > 1) && (tmp2 < 58)) tmp2 *= 5e5;	// old 2..28 -> 500000..14000000
@@ -597,7 +604,11 @@ int prfSave(std::string nm) {
 	fprintf(file, "\n[MACHINE]\n\n");
 	fprintf(file, "current = %s\n", prf->hwName.c_str());
 	fprintf(file, "memory = %i\n", comp->mem->ramSize >> 10);		// bytes to KB
-	fprintf(file, "cpu.type = %s\n", getCoreName(comp->cpu->type));
+	if (comp->cpu->lib) {
+		fprintf(file, "cpu.type = @%s\n", comp->cpu->libname);
+	} else {
+		fprintf(file, "cpu.type = %s\n", getCoreName(comp->cpu->type));
+	}
 	fprintf(file, "cpu.frq = %i\n", int(comp->cpuFrq * 1e6));
 	fprintf(file, "frq.mul = %f\n", comp->frqMul);
 	fprintf(file, "scrp.wait = %s\n", YESNO(comp->evenM1));

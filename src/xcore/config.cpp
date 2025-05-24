@@ -64,6 +64,8 @@ void conf_init(char* wpath, char* confdir) {
 	mkdir(conf.path.shdDir.c_str() ,0777);
 	conf.path.palDir = conf.path.confDir + "/palettes";
 	mkdir(conf.path.palDir.c_str() ,0777);
+	conf.path.plgDir = conf.path.confDir + "/plugins";
+	mkdir(conf.path.plgDir.c_str() ,0777);
 	conf.path.confFile = conf.path.confDir + "/config.conf";
 	conf.path.boot = conf.path.confDir + "/boot.$B";
 #elif defined(__WIN32)
@@ -81,6 +83,7 @@ void conf_init(char* wpath, char* confdir) {
 	conf.path.prfDir = conf.path.confDir + "\\profiles";
 	conf.path.shdDir = conf.path.confDir + "\\shaders";
 	conf.path.palDir = conf.path.confDir + "\\palettes";
+	conf.path.plgDir = conf.path.confDir + "\\plugins";
 	conf.path.confFile = conf.path.confDir + "\\config.conf";
 	conf.path.boot = conf.path.confDir + "\\boot.$B";
 	mkdir(conf.path.confDir.c_str());
@@ -88,6 +91,7 @@ void conf_init(char* wpath, char* confdir) {
 	mkdir(conf.path.prfDir.c_str());
 	mkdir(conf.path.shdDir.c_str());
 	mkdir(conf.path.palDir.c_str());
+	mkdir(conf.path.plgDir.c_str());
 #endif
 	conf.scrShot.format = "png";
 // Pentagon geometry:

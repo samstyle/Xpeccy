@@ -574,6 +574,7 @@ struct xConfig {
 		std::string prfDir;
 		std::string shdDir;
 		std::string palDir;
+		std::string plgDir;
 		std::string font;
 		std::string boot;
 	} path;

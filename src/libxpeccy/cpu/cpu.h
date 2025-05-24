@@ -153,6 +153,7 @@ struct CPU {
 	unsigned nod:2;			// MOS6502: ignore flag D in ADC/SBC; PDP11: write flags
 
 	unsigned lib:1;			// cpu core from exernal lib
+	const char* libname;
 	void* libhnd;			// lib handler (dlopen)
 
 	int type;			// cpu type id
@@ -323,7 +324,8 @@ typedef struct cpuCore cpuCore;
 
 CPU* cpuCreate(int,cbmr,cbmw,cbir,cbiw,cbiack,cbirq,void*);
 void cpuDestroy(CPU*);
-void cpuSetType(CPU*, int);
+int cpuSetType(CPU*, int);
+int cpuSetLib(CPU*, const char*, const char*);
 
 int getCoreID(const char*);
 const char* getCoreName(int);

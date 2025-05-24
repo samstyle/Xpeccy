@@ -108,7 +108,7 @@ void cpuSetCore(CPU* cpu, cpuCore* core) {
 	}
 }
 
-void cpuSetType(CPU* cpu, int type) {
+int cpuSetType(CPU* cpu, int type) {
 	cpuCore* core = findCore(type);
 	if (core != NULL) {
 		if (cpu->lib) {
@@ -117,11 +117,16 @@ void cpuSetType(CPU* cpu, int type) {
 		}
 		cpuSetCore(cpu, core);
 	}
+	return core ? 1 : 0;
 }
 
 // for future: CPU from external so/dll
-int cpuSetLib(CPU* cpu, const char* name) {
-	void* hnd = dlopen(name, RTLD_LAZY | RTLD_GLOBAL);
+int cpuSetLib(CPU* cpu, const char* dir, const char* fname) {
+	char* buf = (char*)malloc(strlen(dir) + 2 + strlen(fname));
+	strcpy(buf, dir);
+	strcat(buf, "/");
+	strcat(buf, fname);
+	void* hnd = dlopen(buf, RTLD_LAZY | RTLD_GLOBAL);
 	int res = 0;
 	if (hnd) {
 		cpuCore*(*getCore)();
@@ -133,10 +138,12 @@ int cpuSetLib(CPU* cpu, const char* name) {
 			if (cpu->lib) {
 				dlclose(cpu->libhnd);
 			}
-			cpu->lib = 1;
-			cpu->libhnd = hnd;
 			cpuCore* core = getCore();
 			cpuSetCore(cpu, core);
+			cpu->libname = realloc(cpu->libname, strlen(fname) + 1);
+			strcpy(cpu->libname, fname);
+			cpu->libhnd = hnd;
+			cpu->lib = 1;
 			res = 1;
 		}
 	} else {

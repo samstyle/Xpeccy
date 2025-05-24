@@ -5,6 +5,7 @@
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QVector3D>
+#include <QLibrary>
 #include <QPainter>
 #include <QDebug>
 #include <stdlib.h>
@@ -36,7 +37,9 @@ void setRFIndex(QComboBox* box, QVariant data, int defidx) {
 }
 
 int getRFIData(QComboBox* box) {
-	return box->itemData(box->currentIndex()).toInt();
+	bool isok = false;
+	int res = box->itemData(box->currentIndex()).toInt(&isok);
+	return isok ? res : -1;
 }
 
 QString getRFSData(QComboBox* box) {
@@ -141,6 +144,7 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 
 	int i;
 // machine
+	// fill hardware (motherboard) list
 	i = 0;
 	while (hwTab[i].name) {
 		if (hwTab[i].id != HW_NULL) {
@@ -150,11 +154,38 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 		}
 		i++;
 	}
+	// fill cpu list
 	i = 0;
 	while (cpuTab[i].type != CPU_NONE) {
 		ui.cbCpu->addItem(cpuTab[i].name, cpuTab[i].type);
 		i++;
 	}
+	// add modules to ui.cbCpu, type=filename (not number) -> all files (so/dll/dylib) from ${plgDir}/cpu
+	QDir dir(QString(conf.path.plgDir.c_str())+SLASH+"cpu");
+	QStringList fnlst = dir.entryList(QStringList() << "*.*", QDir::Files, QDir::Name);
+	QLibrary lib;
+	//typedef cpuCore*(*cblib)();
+	//cblib foo;
+	cpuCore* core;
+	cpuCore*(*foo)();
+	QString cn;
+	foreach(QString fn, fnlst) {
+		if (QLibrary::isLibrary(fn)) {
+			lib.setFileName(dir.absoluteFilePath(fn));
+			if (lib.load()) {
+				foo = (cpuCore*(*)())(lib.resolve("getCore"));
+				if (foo) {
+					core = foo();
+					cn = QString("%0 (%1)").arg(core->name).arg(fn);
+					ui.cbCpu->addItem(cn, fn);
+				}
+				lib.unload();
+			} else {
+				qDebug() << lib.errorString();
+			}
+		}
+	}
+
 	ui.resbox->addItem("BASIC 48",RES_48);
 	ui.resbox->addItem("BASIC 128",RES_128);
 	ui.resbox->addItem("DOS",RES_DOS);
@@ -450,7 +481,12 @@ void SetupWin::start() {
 	setmszbox(ui.machbox->currentIndex());
 	ui.mszbox->setCurrentIndex(ui.mszbox->findData(comp->mem->ramSize));
 	if (ui.mszbox->currentIndex() < 0) ui.mszbox->setCurrentIndex(ui.mszbox->count() - 1);
-	ui.cbCpu->setCurrentIndex(ui.cbCpu->findData(comp->cpu->type));
+	// TODO: correct for external libs
+	if (comp->cpu->lib) {
+		ui.cbCpu->setCurrentIndex(ui.cbCpu->findData(QString(comp->cpu->libname)));
+	} else {
+		ui.cbCpu->setCurrentIndex(ui.cbCpu->findData(comp->cpu->type));
+	}
 	ui.sbFreq->setValue(comp->cpuFrq);
 	ui.sbMult->setValue(comp->frqMul);
 	ui.scrpwait->setChecked(comp->evenM1);
@@ -650,7 +686,18 @@ void SetupWin::apply() {
 	prfSetRomset(prof, prof->rsName);
 	comp->resbank = getRFIData(ui.resbox);
 	memSetSize(comp->mem, getRFIData(ui.mszbox), -1);
-	cpuSetType(comp->cpu, getRFIData(ui.cbCpu));
+
+	int res = getRFIData(ui.cbCpu);
+	if (res < 0) {
+		std::string fpath = conf.path.plgDir + SLASH + "cpu";
+		res = cpuSetLib(comp->cpu, fpath.c_str(), getRFSData(ui.cbCpu).toLocal8Bit().data());
+		if (res < 0) {
+			shitHappens("Can't set CPU from library");
+		}
+	} else {
+		cpuSetType(comp->cpu, getRFIData(ui.cbCpu));
+	}
+
 	compSetBaseFrq(comp, ui.sbFreq->value());
 	compSetTurbo(comp, ui.sbMult->value());
 	comp->evenM1 = ui.scrpwait->isChecked() ? 1 : 0;
@@ -1464,7 +1511,7 @@ void SetupWin::palstore() {
 		vid_set_bcol(conf.prof.cur->zx->vid, i, xcol);
 		if (upd) vid_set_col(conf.prof.cur->zx->vid, i, xcol);
 	}
-	// TODO:save palette to file, cuz Settings OK will reload palette from file
+	// save palette to file, cuz Settings OK will reload palette from file
 	saveColors(getRFSData(ui.cbPalPreset).toStdString(), editpal);
 }
 

@@ -3,6 +3,12 @@
 #include <stdint.h>
 #include <time.h>
 
+#ifdef __WIN32
+#define EXPORTDLL __declspec(dllimport)
+#else
+#define EXPORTDLL
+#endif
+
 // compilation flags
 #define USE_HOST_KEYBOARD	1
 
