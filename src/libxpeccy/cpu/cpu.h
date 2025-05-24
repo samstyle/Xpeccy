@@ -153,7 +153,7 @@ struct CPU {
 	unsigned nod:2;			// MOS6502: ignore flag D in ADC/SBC; PDP11: write flags
 
 	unsigned lib:1;			// cpu core from exernal lib
-	const char* libname;
+	char* libname;
 	void* libhnd;			// lib handler (dlopen)
 
 	int type;			// cpu type id

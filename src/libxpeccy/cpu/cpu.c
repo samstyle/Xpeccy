@@ -149,6 +149,7 @@ int cpuSetLib(CPU* cpu, const char* dir, const char* fname) {
 	} else {
 		printf("%s\n",dlerror());
 	}
+	free(buf);
 	return res;
 }
 
