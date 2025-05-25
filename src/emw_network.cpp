@@ -77,7 +77,8 @@ void MainWin::socketRead() {
 	} else if (com == "reset") {
 		compReset(comp, RES_DEFAULT);
 	} else if (com == "cpu") {
-		sock->write(getCoreName(comp->cpu->type));
+		//sock->write(getCoreName(comp->cpu->type));
+		sock->write(comp->cpu->core->name);
 		sock->write("\n");
 	} else if (com == "getreg") {
 		if (prm.size() > 1) {

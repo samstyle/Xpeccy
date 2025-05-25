@@ -297,7 +297,7 @@ int prf_load_conf(xProfile* prf, std::string cfname, int flag) {
 	Floppy* flp;
 	int i;
 	std::ifstream file(cfname);
-	std::pair<std::string,std::string> spl;
+	std::pair<std::string,std::string> spl, pspl;
 	std::string line,pnam,pval,str;
 //	std::vector<std::string> vect;
 	size_t pos;
@@ -409,12 +409,21 @@ int prf_load_conf(xProfile* prf, std::string cfname, int flag) {
 				case PS_MACHINE:
 					if (pnam == "current") prf->hwName = pval;
 					if (pnam == "cpu.type") {
+						pspl = splitline(pval, '@');
+						if (pspl.second.empty()) {		// no @, use built-in
+							cpu_set_type(comp->cpu, pval.c_str(), NULL, NULL);
+						} else {
+							str = conf.path.plgDir + SLASH + "cpu";
+							cpu_set_type(comp->cpu, pspl.first.c_str(), str.c_str(), pspl.second.c_str());
+						}
+						/*
 						if (arg.s[0] == '@') {			// @library.so = from library
 							str = conf.path.plgDir+SLASH+"cpu";
 							cpuSetLib(comp->cpu, str.c_str(), arg.s + 1);
 						} else {
 							cpuSetType(comp->cpu, getCoreID(arg.s));
 						}
+						*/
 					}
 					if (pnam == "cpu.frq") {
 						tmp2 = arg.i;
@@ -605,9 +614,9 @@ int prfSave(std::string nm) {
 	fprintf(file, "current = %s\n", prf->hwName.c_str());
 	fprintf(file, "memory = %i\n", comp->mem->ramSize >> 10);		// bytes to KB
 	if (comp->cpu->lib) {
-		fprintf(file, "cpu.type = @%s\n", comp->cpu->libname);
+		fprintf(file, "cpu.type = %s@%s\n", comp->cpu->core->name, comp->cpu->libname);
 	} else {
-		fprintf(file, "cpu.type = %s\n", getCoreName(comp->cpu->type));
+		fprintf(file, "cpu.type = %s\n", comp->cpu->core->name);
 	}
 	fprintf(file, "cpu.frq = %i\n", int(comp->cpuFrq * 1e6));
 	fprintf(file, "frq.mul = %f\n", comp->frqMul);

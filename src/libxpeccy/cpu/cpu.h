@@ -324,12 +324,10 @@ typedef struct cpuCore cpuCore;
 
 CPU* cpuCreate(int,cbmr,cbmw,cbir,cbiw,cbiack,cbirq,void*);
 void cpuDestroy(CPU*);
-int cpuSetType(CPU*, int);
-int cpuSetLib(CPU*, const char*, const char*);
+int cpu_set_type(CPU*, const char*, const char*, const char*);
+//int cpuSetType(CPU*, int);
 
-int getCoreID(const char*);
-const char* getCoreName(int);
-
+// built-in cores tab
 extern cpuCore cpuTab[];
 
 xMnem cpuDisasm(CPU*, int, char*, cbdmr, void*);

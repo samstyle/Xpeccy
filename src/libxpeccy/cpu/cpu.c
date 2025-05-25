@@ -80,19 +80,6 @@ cpuCore* findCore(int type) {
 	return &cpuTab[idx];
 }
 
-int getCoreID(const char* name) {
-	int idx = 0;
-	while ((cpuTab[idx].type != CPU_NONE) && strcmp(name, cpuTab[idx].name)) {
-		idx++;
-	}
-	return cpuTab[idx].type;
-}
-
-const char* getCoreName(int type) {
-	cpuCore* core = findCore(type);
-	return core->name;
-}
-
 void cpuSetCore(CPU* cpu, cpuCore* core) {
 	cpu->core = core;
 	cpu->type = core->type;
@@ -108,6 +95,75 @@ void cpuSetCore(CPU* cpu, cpuCore* core) {
 	}
 }
 
+// new
+int cpu_open_lib(CPU* cpu, const char* dir, const char* fname) {
+	int res = 0;
+	if (cpu->lib) {					// some library opened
+		if (!strcmp(cpu->libname, fname)) {	// same lib
+			res = 1;
+		} else {
+			dlclose(cpu->libhnd);
+			cpu->lib = 0;
+		}
+	}
+	if (!res) {
+		char* buf = (char*)malloc(strlen(dir) + strlen(fname) + 2);
+		strcpy(buf, dir);
+		strcat(buf, "/");
+		strcat(buf, fname);
+		void* hnd = dlopen(buf, RTLD_LAZY | RTLD_GLOBAL);	// load library
+		if (hnd) {
+			cpuCore*(*getCore)();				// check callback
+			getCore = dlsym(hnd, "getCore");
+			if (getCore) {					// success
+				cpu->lib = 1;
+				cpu->libhnd = hnd;
+				cpu->libname = realloc(cpu->libname, strlen(fname) + 1);
+				strcpy(cpu->libname, fname);
+				res = 1;
+			}
+		}
+		free(buf);
+	}
+	return res;
+}
+
+void cpu_close_lib(CPU* cpu) {
+	if (cpu->lib) {
+		dlclose(cpu->libhnd);
+		cpu->lib = 0;
+	}
+}
+
+// if fname==NULL take it from built-in table
+// e.g	cpu_set_type(cpu, "name", NULL, NULL) = built-in
+//	cpu_set_type(cpu, "name", dir, file) = from library
+int cpu_set_type(CPU* cpu, const char* name, const char* dir, const char* fname) {
+	cpuCore* tab;
+	int res = 0;
+	if (fname) {
+		if (cpu_open_lib(cpu, dir, fname)) {
+			cpuCore*(*foo)();
+			foo = dlsym(cpu->libhnd, "getCore");
+			tab = foo();
+		} else {
+			tab = cpuTab;
+		}
+	} else {
+		tab = cpuTab;
+		cpu_close_lib(cpu);
+	}
+	int i = 0;
+	while ((tab[i].type != CPU_NONE) && strcmp(tab[i].name, name)) {
+		i++;
+	}
+	if (tab[i].type != CPU_NONE) {		// found?
+		cpuSetCore(cpu, &tab[i]);
+		res = 1;
+	}
+	return res;
+}
+
 int cpuSetType(CPU* cpu, int type) {
 	cpuCore* core = findCore(type);
 	if (core != NULL) {
@@ -120,38 +176,21 @@ int cpuSetType(CPU* cpu, int type) {
 	return core ? 1 : 0;
 }
 
-// for future: CPU from external so/dll
+/*
 int cpuSetLib(CPU* cpu, const char* dir, const char* fname) {
-	char* buf = (char*)malloc(strlen(dir) + 2 + strlen(fname));
-	strcpy(buf, dir);
-	strcat(buf, "/");
-	strcat(buf, fname);
-	void* hnd = dlopen(buf, RTLD_LAZY | RTLD_GLOBAL);
 	int res = 0;
-	if (hnd) {
-		cpuCore*(*getCore)();
-		getCore = dlsym(hnd, "getCore");
-		if (!getCore) {
-			printf("%s\n",dlerror());
-			dlclose(hnd);
-		} else {
-			if (cpu->lib) {
-				dlclose(cpu->libhnd);
-			}
-			cpuCore* core = getCore();
-			cpuSetCore(cpu, core);
-			cpu->libname = realloc(cpu->libname, strlen(fname) + 1);
-			strcpy(cpu->libname, fname);
-			cpu->libhnd = hnd;
-			cpu->lib = 1;
-			res = 1;
-		}
+	if (cpu_open_lib(cpu, dir, fname)) {
+		cpuCore*(*foo)();
+		foo = dlsym(cpu->libhnd, "getCore");
+		cpuCore* tab = foo();
+		cpuSetCore(cpu, &tab[0]);
+		res = 1;
 	} else {
 		printf("%s\n",dlerror());
 	}
-	free(buf);
 	return res;
 }
+*/
 
 CPU* cpuCreate(int type, cbmr fmr, cbmw fmw, cbir fir, cbiw fiw, cbiack frq, cbirq xirq, void* dt) {
 	CPU* cpu = (CPU*)malloc(sizeof(CPU));
@@ -468,7 +507,6 @@ xRegister cpuGetReg(CPU* cpu, int id) {
 // f is pointer to bool variable: false if register doesn't exists
 int cpu_get_reg(CPU* cpu, const char* name, bool* f) {
 	int res = -1;
-#if 1
 	bool err = true;
 	xRegDsc* rt = cpu->core->rdsctab;
 	int i = 0;
@@ -484,16 +522,6 @@ int cpu_get_reg(CPU* cpu, const char* name, bool* f) {
 		i++;
 	}
 	if (f != NULL) {*f = err;}
-#else
-	xRegBunch bunch = cpuGetRegs(cpu);
-	for (int i = 0; (i < 32) && (res == -1); i++) {
-		if (bunch.regs[i].id != REG_NONE) {
-			if (!strcmp(name, bunch.regs[i].name)) {
-				res = bunch.regs[i].value;
-			}
-		}
-	}
-#endif
 	return res;
 }
 

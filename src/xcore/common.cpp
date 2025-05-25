@@ -157,14 +157,14 @@ void trim(std::string& str) {
 	rtrim(str);
 }
 
-std::pair<std::string,std::string> splitline(std::string line) {
+std::pair<std::string,std::string> splitline(std::string line, char delim) {
 	size_t pos;
 	std::pair<std::string,std::string> res;
 	do {pos = line.find("\r"); if (pos!=std::string::npos) line.erase(pos);} while (pos!=std::string::npos);
 	do {pos = line.find("\n"); if (pos!=std::string::npos) line.erase(pos);} while (pos!=std::string::npos);
 	res.first = "";
 	res.second = "";
-	pos = line.find("=");
+	pos = line.find(delim);
 	if (pos!=std::string::npos) {
 		res.first = std::string(line,0,pos);
 		res.second = std::string(line,pos+1);

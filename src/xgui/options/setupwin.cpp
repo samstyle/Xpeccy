@@ -123,6 +123,55 @@ void dbg_fill_chip_boxes(QComboBox* cbtype, QComboBox* cbstereo) {
 	cbstereo->addItem("CBA",AY_CBA);
 }
 
+enum {
+	roleName = Qt::UserRole,
+	roleLib
+};
+
+void opt_fill_cpu_add(QComboBox* box, cpuCore* tab, QString libname) {
+	int i = 0;
+	int cnt = box->count();
+	QString name;
+	while (tab[i].type != CPU_NONE) {
+		name = QString(tab[i].name);
+		if (!libname.isEmpty()) {
+			name.append(" (").append(libname).append(")");
+		}
+		box->addItem(name);
+		box->setItemData(cnt, QString(tab[i].name), roleName);		// name of cpu
+		box->setItemData(cnt, libname, roleLib);			// name of library, empty for built-in
+		cnt++;
+		i++;
+	}
+}
+
+void opt_fill_cpu(QComboBox* box) {
+	box->clear();
+	opt_fill_cpu_add(box, cpuTab, "");	// buit-in
+	// add modules to ui.cbCpu, type=filename (not number) -> all files (so/dll/dylib) from ${plgDir}/cpu
+	QDir dir(QString(conf.path.plgDir.c_str()) + SLASH + "cpu");
+	QStringList fnlst = dir.entryList(QStringList() << "*.*", QDir::Files, QDir::Name);
+	QLibrary lib;
+	cpuCore* tab;
+	cpuCore*(*foo)();
+	QString cn;
+	foreach(QString fn, fnlst) {
+		if (QLibrary::isLibrary(fn)) {
+			lib.setFileName(dir.absoluteFilePath(fn));
+			if (lib.load()) {
+				foo = (cpuCore*(*)())(lib.resolve("getCore"));
+				if (foo) {
+					tab = foo();
+					opt_fill_cpu_add(box, tab, fn);
+				}
+				lib.unload();
+			} else {
+				qDebug() << lib.errorString();
+			}
+		}
+	}
+}
+
 SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	setModal(true);
 	ui.setupUi(this);
@@ -153,37 +202,6 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 			ui.machbox->insertSeparator(i);
 		}
 		i++;
-	}
-	// fill cpu list
-	i = 0;
-	while (cpuTab[i].type != CPU_NONE) {
-		ui.cbCpu->addItem(cpuTab[i].name, cpuTab[i].type);
-		i++;
-	}
-	// add modules to ui.cbCpu, type=filename (not number) -> all files (so/dll/dylib) from ${plgDir}/cpu
-	QDir dir(QString(conf.path.plgDir.c_str())+SLASH+"cpu");
-	QStringList fnlst = dir.entryList(QStringList() << "*.*", QDir::Files, QDir::Name);
-	QLibrary lib;
-	//typedef cpuCore*(*cblib)();
-	//cblib foo;
-	cpuCore* core;
-	cpuCore*(*foo)();
-	QString cn;
-	foreach(QString fn, fnlst) {
-		if (QLibrary::isLibrary(fn)) {
-			lib.setFileName(dir.absoluteFilePath(fn));
-			if (lib.load()) {
-				foo = (cpuCore*(*)())(lib.resolve("getCore"));
-				if (foo) {
-					core = foo();
-					cn = QString("%0 (%1)").arg(core->name).arg(fn);
-					ui.cbCpu->addItem(cn, fn);
-				}
-				lib.unload();
-			} else {
-				qDebug() << lib.errorString();
-			}
-		}
 	}
 
 	ui.resbox->addItem("BASIC 48",RES_48);
@@ -481,12 +499,21 @@ void SetupWin::start() {
 	setmszbox(ui.machbox->currentIndex());
 	ui.mszbox->setCurrentIndex(ui.mszbox->findData(comp->mem->ramSize));
 	if (ui.mszbox->currentIndex() < 0) ui.mszbox->setCurrentIndex(ui.mszbox->count() - 1);
+	// fill cpu list
 	// TODO: correct for external libs
+	opt_fill_cpu(ui.cbCpu);
+	QString str = QString(comp->cpu->core->name);
+	if (comp->cpu->lib) {
+		str.append(" (").append(comp->cpu->libname).append(")");
+	}
+	ui.cbCpu->setCurrentIndex(ui.cbCpu->findText(str));
+/*
 	if (comp->cpu->lib) {
 		ui.cbCpu->setCurrentIndex(ui.cbCpu->findData(QString(comp->cpu->libname)));
 	} else {
 		ui.cbCpu->setCurrentIndex(ui.cbCpu->findData(comp->cpu->type));
 	}
+*/
 	ui.sbFreq->setValue(comp->cpuFrq);
 	ui.sbMult->setValue(comp->frqMul);
 	ui.scrpwait->setChecked(comp->evenM1);
@@ -686,7 +713,16 @@ void SetupWin::apply() {
 	prfSetRomset(prof, prof->rsName);
 	comp->resbank = getRFIData(ui.resbox);
 	memSetSize(comp->mem, getRFIData(ui.mszbox), -1);
-
+	// cpu
+	QString name = ui.cbCpu->itemData(ui.cbCpu->currentIndex(), roleName).toString();
+	QString libn = ui.cbCpu->itemData(ui.cbCpu->currentIndex(), roleLib).toString();
+	if (libn.isEmpty()) {	// built-in
+		cpu_set_type(comp->cpu, name.toLocal8Bit().data(), NULL, NULL);
+	} else {
+		std::string cpdir = conf.path.plgDir + SLASH + "cpu";
+		cpu_set_type(comp->cpu, name.toLocal8Bit().data(), cpdir.c_str(), libn.toLocal8Bit().data());
+	}
+/*
 	int res = getRFIData(ui.cbCpu);
 	if (res < 0) {
 		std::string fpath = conf.path.plgDir + SLASH + "cpu";
@@ -697,7 +733,7 @@ void SetupWin::apply() {
 	} else {
 		cpuSetType(comp->cpu, getRFIData(ui.cbCpu));
 	}
-
+*/
 	compSetBaseFrq(comp, ui.sbFreq->value());
 	compSetTurbo(comp, ui.sbMult->value());
 	comp->evenM1 = ui.scrpwait->isChecked() ? 1 : 0;
