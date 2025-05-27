@@ -166,11 +166,11 @@ struct CPU {
 
 	int adr;
 // z80, lr35902, i8080, 6502 registers
-	PAIR(pc,hpc,lpc);
-	PAIR(sp,hsp,lsp);
-	PAIR(ix,hx,lx);
-	PAIR(iy,hy,ly);
-	PAIR(mptr,hptr,lptr);
+	reg16(pc,hpc,lpc);
+	reg16(sp,hsp,lsp);
+	reg16(ix,hx,lx);
+	reg16(iy,hy,ly);
+	reg16(mptr,hptr,lptr);
 	unsigned char i;
 	unsigned char r;
 	unsigned char r7;
@@ -217,25 +217,25 @@ struct CPU {
 		unsigned f11:1;
 	} f;
 #endif
-	PAIR(bc,b,c);
-	PAIR(de,d,e);
-	PAIR(hl,h,l);
+	reg16(bc,b,c);
+	reg16(de,d,e);
+	reg16(hl,h,l);
 
 	unsigned char a_;
 	unsigned int f_;
-	PAIR(bc_,b_,c_);
-	PAIR(de_,d_,e_);
-	PAIR(hl_,h_,l_);
+	reg16(bc_,b_,c_);
+	reg16(de_,d_,e_);
+	reg16(hl_,h_,l_);
 
 // 80286 registers
 	unsigned wrd:1;		// i/o: out word
-	PAIR(ax,ah,al);
-	PAIR(dx,dh,dl);
-	PAIR(cx,ch,cl);
-	PAIR(bx,bh,bl);
-	unsigned short bp;
-	unsigned short si;
-	unsigned short di;
+	reg32(eax,ax,ah,al);
+	reg32(edx,dx,dh,dl);
+	reg32(ecx,cx,ch,cl);
+	reg32(ebx,bx,bh,bl);
+	reg32(ebp,bp,bph,bpl);
+	reg32(esi,si,sih,sil);
+	reg32(edi,di,dih,dil);
 	// unsigned short sp;	// use sp above
 	// unsigned short flag;	// use f above
 	// unsigned short ip;	// use pc above
@@ -295,7 +295,9 @@ struct CPU {
 	void (*setregs)(CPU*, xRegBunch);
 
 	struct cpuCore* core;
-
+// common registers block (for future)
+	xreg32 regs[64];
+	// NOTE: find da wae to aliases like 'cpu->bc => cpu->regs[1].w' without #define
 // temp
 	int t;			// ticks counter
 	unsigned short oldpc;

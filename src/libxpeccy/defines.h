@@ -4,9 +4,14 @@
 #include <time.h>
 
 #ifdef __WIN32
-#define EXPORTDLL __declspec(dllimport)
+	#define EXPORTDLL __declspec(dllimport)
+	#include <windows.h>
+	#define dlopen(d1,d2) LoadLibrary(d1)
+	#define dlclose FreeLibrary
+	#define dlsym GetProcAddress#else
 #else
-#define EXPORTDLL
+	#include <dlfcn.h>
+	#define EXPORTDLL
 #endif
 
 // compilation flags
@@ -75,15 +80,17 @@ enum {
 
 #ifdef WORDS_BIG_ENDIAN
 	#define PAIR(p,h,l) union{uint16_t p; struct {uint8_t h; uint8_t l;};}
-	typedef union{uint16_t w; struct{uint8_t h; uint8_t l;};} reg16;
-	typedef union{uint32_t i; struct{uint16_t wh; reg16 wl;};} reg32;
+	#define reg16(_w,_h,_l) union{uint16_t _w; struct{uint8_t h; uint8_t l;};}
+	#define reg32(_i,_w,_h,_l) union{uint32_t _i; struct{uint16_t _i##h; PAIR(_w,_h,_l);};}
 #else
 	#define PAIR(p,h,l) union{uint16_t p; struct {uint8_t l; uint8_t h;};}
-	typedef union{uint16_t w; struct{uint8_t l; uint8_t h;};} reg16;
-	typedef union{uint32_t i; struct{reg16 wl; uint16_t wh;};} reg32;
+	#define reg16(_w,_h,_l) union{uint16_t _w; struct{uint8_t _l; uint8_t _h;};}
+	#define reg32(_i,_w,_h,_l) union{uint32_t _i; struct{reg16(_w,_h,_l); uint16_t _i##h;};}
 #endif
 
 typedef PAIR(w,h,l) xpair;
+typedef reg32(i,w,h,l) xreg32;
+typedef reg16(w,h,l) xreg16;
 
 // time
 extern clock_t tClock;

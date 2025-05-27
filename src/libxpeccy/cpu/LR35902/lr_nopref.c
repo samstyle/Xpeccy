@@ -4,6 +4,7 @@
 #include "lr_macro.h"
 
 extern opCode lrcbTab[256];
+extern const unsigned char daaTab[0x1000];
 
 void lr_mwr(CPU* cpu, int a, int v) {
 	cpu->mwr(a, v, cpu->xptr);
