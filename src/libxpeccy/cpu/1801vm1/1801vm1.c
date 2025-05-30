@@ -46,7 +46,7 @@ void pdp11_reset(CPU* cpu) {
 		cpu->preg[i] = 0;
 	cpu->t += 1016;
 	cpu->preg[7] = pdp_rd(cpu, 0xffce) & 0xff00;
-	cpu->pc = cpu->preg[7];
+	cpu->regPC = cpu->preg[7];
 	cpu->f = 0x300;			// b8,9 = 11, cpu0
 	cpu->intrq = 0;
 	cpu->inten = PDP_INT_IRQ2 | PDP_INT_VIRQ;
@@ -202,20 +202,20 @@ unsigned short pdp_src(CPU* cpu, int type, int b) {
 		res = cpu->preg[type & 7];
 		if (b) res &= 0xff;
 	} else {
-		cpu->mptr = adr & 0xffff;
+		cpu->regWZ = adr & 0xffff;
 		if (b) {
-			res = pdp_rdb(cpu, cpu->mptr);
+			res = pdp_rdb(cpu, cpu->regWZ);
 		} else {
-			res = pdp_rd(cpu, cpu->mptr);
+			res = pdp_rd(cpu, cpu->regWZ);
 		}
 	}
 	return res;
 }
 
-// write result back (w/o calculating address again), addr is in cpu->mptr
+// write result back (w/o calculating address again), addr is in cpu->regWZ
 void pdp_wres(CPU* cpu, int t, unsigned short v) {
 	if (t & 0x38) {
-		pdp_wr(cpu, cpu->mptr, v);
+		pdp_wr(cpu, cpu->regWZ, v);
 	} else {
 		cpu->preg[t & 7] = v;
 	}
@@ -223,7 +223,7 @@ void pdp_wres(CPU* cpu, int t, unsigned short v) {
 
 void pdp_wresb(CPU* cpu, int t, unsigned char v) {
 	if (t & 0x38) {
-		pdp_wrb(cpu, cpu->mptr, v);
+		pdp_wrb(cpu, cpu->regWZ, v);
 	} else {
 		cpu->preg[t & 7] &= 0xff00;
 		cpu->preg[t & 7] |= (v & 0xff);
@@ -231,7 +231,7 @@ void pdp_wresb(CPU* cpu, int t, unsigned char v) {
 }
 
 void pdp_dst(CPU* cpu, unsigned short wrd, int type, int b) {
-	cpu->mptr = pdp_adr(cpu, type, b);
+	cpu->regWZ = pdp_adr(cpu, type, b);
 	if (b) {
 		pdp_wresb(cpu, type, wrd & 0xff);
 	} else {
@@ -269,7 +269,7 @@ void pdp_wait(CPU* cpu) {
 	// cpu->mcir = 0;
 	cpu->wait = 1;
 	cpu->preg[7] -= 2;
-	cpu->pc = cpu->preg[7];
+	cpu->regPC = cpu->preg[7];
 }
 
 // 0002:rti
@@ -328,9 +328,9 @@ void pdp_rtt(CPU* cpu) {
 void pdp_start(CPU* cpu) {
 	cpu->preg[7] = pdp_rd(cpu, 0177674) & 0xffff;
 	cpu->f = pdp_rd(cpu, 0177676) & 0xffff;
-	cpu->mptr = pdp_rd(cpu, 0177716) & 0xffff;
-	cpu->mptr &= ~8;
-	pdp_wr(cpu, 0177716, cpu->mptr);
+	cpu->regWZ = pdp_rd(cpu, 0177716) & 0xffff;
+	cpu->regWZ &= ~8;
+	pdp_wr(cpu, 0177716, cpu->regWZ);
 }
 
 // 000B..000F : step
@@ -338,9 +338,9 @@ void pdp_start(CPU* cpu) {
 void pdp_step(CPU* cpu) {
 	cpu->preg[7] = pdp_rd(cpu, 0177674) & 0xffff;
 	cpu->f = pdp_rd(cpu, 0177676) & 0xffff;
-	cpu->mptr = pdp_rd(cpu, 0177716) & 0xffff;
-	cpu->mptr &= ~8;
-	pdp_wr(cpu, 0177716, cpu->mptr);
+	cpu->regWZ = pdp_rd(cpu, 0177716) & 0xffff;
+	cpu->regWZ &= ~8;
+	pdp_wr(cpu, 0177716, cpu->regWZ);
 }
 
 static cbcpu pdp_000n_tab[16] = {
@@ -998,11 +998,11 @@ void pdp_mtps(CPU* cpu) {
 // V: 0
 // C: not affected
 void pdp_mfps(CPU* cpu) {
-	cpu->mptr = pdp_adr(cpu, cpu->com, 1);
+	cpu->regWZ = pdp_adr(cpu, cpu->com, 1);
 	twsrc = cpu->f & 0xff;
 	if (twsrc & 0x80) twsrc |= 0xff00;
 	if (cpu->com & 0x38) {
-		pdp_wrb(cpu, cpu->mptr, twsrc & 0xff);
+		pdp_wrb(cpu, cpu->regWZ, twsrc & 0xff);
 	} else {
 		cpu->preg[cpu->com & 7] = twsrc;
 	}
@@ -1198,7 +1198,7 @@ void pdp_movb(CPU* cpu) {
 	twsrc = pdp_src(cpu, cpu->com >> 6, 1);
 	if (cpu->com & 0x38) {
 		twdst = pdp_src(cpu, cpu->com, 1);
-		pdp_wrb(cpu, cpu->mptr, twsrc & 0xff);		// write low byte only
+		pdp_wrb(cpu, cpu->regWZ, twsrc & 0xff);		// write low byte only
 	} else {
 		twsrc &= 0xff;					// extend sign
 		if (twsrc & 0x80)
@@ -1407,8 +1407,8 @@ int pdp11_exec(CPU* cpu) {
 #ifdef ISDEBUG
 //	printf("%.4X : %.4X\n", cpu->preg[7], pdp_rd(cpu, cpu->preg[7]));
 #endif
-	cpu->preg[7] = cpu->pc;
-	cpu->oldpc = cpu->pc;
+	cpu->preg[7] = cpu->regPC;
+	cpu->oldpc = cpu->regPC;
 	//if (cpu->halt) return 4;
 	//cpu->t = cpu->wait ? 8 : 0;
 	cpu->t = 0;
@@ -1425,8 +1425,8 @@ int pdp11_exec(CPU* cpu) {
 //			pdp_trap(cpu, 4);
 //		}
 	}
-	cpu->pc = cpu->preg[7];
-	cpu->sp = cpu->preg[6];		// for correct deBUGa stack dump
+	cpu->regPC = cpu->preg[7];
+	cpu->regSP = cpu->preg[6];		// for correct deBUGa stack dump
 	pdp_timer(cpu, cpu->t);
 	return cpu->t;
 }
@@ -1491,7 +1491,7 @@ void pdp11_set_regs(CPU* cpu, xRegBunch bunch) {
 			case PDP11_REG4: cpu->preg[4] = bunch.regs[idx].value; break;
 			case PDP11_REG5: cpu->preg[5] = bunch.regs[idx].value; break;
 			case PDP11_REG6: cpu->preg[6] = bunch.regs[idx].value; break;
-			case PDP11_REG7: cpu->preg[7] = bunch.regs[idx].value; cpu->pc = cpu->preg[7]; break;
+			case PDP11_REG7: cpu->preg[7] = bunch.regs[idx].value; cpu->regPC = cpu->preg[7]; break;
 			case PDP11_REGF: cpu->f = bunch.regs[idx].value; break;
 		}
 		idx++;

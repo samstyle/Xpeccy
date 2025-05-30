@@ -36,7 +36,7 @@ void zx_sync(Computer* comp, int ns) {
 	tapSync(comp->tape, ns);
 	bcSync(comp->beep, ns);
 	// nmi
-	if ((comp->cpu->pc > 0x3fff) && comp->nmiRequest) {
+	if ((comp->cpu->regPC > 0x3fff) && comp->nmiRequest) {
 		comp->cpu->intrq |= Z80_NMI;	// request nmi
 		comp->dos = 1;			// set dos page
 		comp->rom = 1;

@@ -8,7 +8,7 @@
 	#include <windows.h>
 	#define dlopen(d1,d2) LoadLibrary(d1)
 	#define dlclose FreeLibrary
-	#define dlsym GetProcAddress#else
+	#define dlsym GetProcAddress
 #else
 	#include <dlfcn.h>
 	#define EXPORTDLL

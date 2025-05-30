@@ -386,7 +386,7 @@ QList<dasmData> getDisasm(Computer* comp, int& adr) {
 //	int wid;
 	// 0:adr
 	QString lab;
-	xadr = mem_get_xadr(comp->mem, comp->cpu->pc + comp->cpu->cs.base);
+	xadr = mem_get_xadr(comp->mem, comp->cpu->regPC + comp->cpu->cs.base);
 	int abs = xadr.abs;		// remember pc cell
 	int pct = xadr.type;
 	switch (mode) {
@@ -512,10 +512,10 @@ int xDisasmModel::update_lst() {
 	int res = fill();
 	int i;
 	Computer* comp = conf.prof.cur->zx;
-	xMnem mnm = cpuDisasm(comp->cpu, comp->cpu->pc + comp->cpu->cs.base, NULL, dasmrd, conf.prof.cur->zx);
+	xMnem mnm = cpuDisasm(comp->cpu, comp->cpu->regPC + comp->cpu->cs.base, NULL, dasmrd, conf.prof.cur->zx);
 	if (mnm.cond && mnm.met) {
 		for (i = 0; i < dasm.size(); i++) {
-			if ((dasm[i].adr == mnm.oadr) && (mnm.oadr != conf.prof.cur->zx->cpu->pc)) {
+			if ((dasm[i].adr == mnm.oadr) && (mnm.oadr != conf.prof.cur->zx->cpu->regPC)) {
 				dasm[i].icon = QString(":/images/arrleft.png");
 			}
 		}
@@ -965,14 +965,14 @@ void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 		case XCUT_TOPC:
 			if (mode != XVIEW_CPU) break;
 			if (!conf.prof.cur->zx) break;
-			setAdr(conf.prof.cur->zx->cpu->pc + conf.prof.cur->zx->cpu->cs.base, 0);
+			setAdr(conf.prof.cur->zx->cpu->regPC + conf.prof.cur->zx->cpu->cs.base, 0);
 			break;
 		case XCUT_SETPC:
 			if (mode != XVIEW_CPU) break;
 			if (!conf.prof.cur->zx) break;
 			i = getData(idx.row(), 0, Qt::UserRole).toInt() - conf.prof.cur->zx->cpu->cs.base;
 			if ((i >= 0) && (i <= conf.prof.cur->zx->cpu->cs.limit)) {
-				conf.prof.cur->zx->cpu->pc = i;
+				conf.prof.cur->zx->cpu->regPC = i;
 				emit rqRefillAll();
 			}
 			break;

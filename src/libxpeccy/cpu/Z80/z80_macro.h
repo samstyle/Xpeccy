@@ -219,9 +219,9 @@ extern const unsigned char FVsubTab[8];
 	cpu->tmp = val & (1 << bit);\
 	cpu->fz.s = !!(cpu->tmp & 0x80);\
 	cpu->fz.z = !cpu->tmp;\
-	cpu->fz.f5 = !!(cpu->hptr & 0x20);\
+	cpu->fz.f5 = !!(cpu->regWZh & 0x20);\
 	cpu->fz.h = 1;\
-	cpu->fz.f3 = !!(cpu->hptr & 0x08);\
+	cpu->fz.f3 = !!(cpu->regWZh & 0x08);\
 	cpu->fz.pv = cpu->fz.z;\
 	cpu->fz.n = 0;\
 }
@@ -234,17 +234,17 @@ extern const unsigned char FVsubTab[8];
 #define SWAP(rp1,rp2) {cpu->tmpw = rp1; rp1 = rp2; rp2 = cpu->tmpw;}		// swap 16bit regs
 
 #define	RDSHIFT(base) {\
-	cpu->tmp = z80_mrd(cpu, cpu->pc++);\
-	cpu->mptr = base + (signed char)cpu->tmp;\
+	cpu->tmp = z80_mrd(cpu, cpu->regPC++);\
+	cpu->regWZ = base + (signed char)cpu->tmp;\
 	cpu->t += 5;\
 }
 
 #define XDCB(base,_name) {\
-	cpu->mptr = base + (signed char)cpu->tmp;\
+	cpu->regWZ = base + (signed char)cpu->tmp;\
 	cpu->t += 5;\
-	cpu->tmpb = z80_mrd(cpu, cpu->mptr); cpu->t++;\
+	cpu->tmpb = z80_mrd(cpu, cpu->regWZ); cpu->t++;\
 	cpu->tmpb = _name(cpu, cpu->tmpb);\
-	z80_mwr(cpu, cpu->mptr, cpu->tmpb);\
+	z80_mwr(cpu, cpu->regWZ, cpu->tmpb);\
 }
 
 #define XDCBR(base,name,reg) {\
@@ -253,18 +253,18 @@ extern const unsigned char FVsubTab[8];
 }
 
 #define	BITX(base,bit) {\
-	cpu->mptr = base + (signed char)cpu->tmp;\
+	cpu->regWZ = base + (signed char)cpu->tmp;\
 	cpu->t += 5;\
-	cpu->tmpb = z80_mrd(cpu, cpu->mptr); cpu->t++;\
+	cpu->tmpb = z80_mrd(cpu, cpu->regWZ); cpu->t++;\
 	BITM(bit,cpu->tmpb);\
 }
 
 #define RESX(base,bit) {\
-	cpu->mptr = base + (signed char)cpu->tmp;\
+	cpu->regWZ = base + (signed char)cpu->tmp;\
 	cpu->t += 5;\
-	cpu->tmpb = z80_mrd(cpu, cpu->mptr); cpu->t++;\
+	cpu->tmpb = z80_mrd(cpu, cpu->regWZ); cpu->t++;\
 	cpu->tmpb &= ~(0x01 << bit);\
-	z80_mwr(cpu, cpu->mptr, cpu->tmpb);\
+	z80_mwr(cpu, cpu->regWZ, cpu->tmpb);\
 }
 
 #define RESXR(base,bit,reg) {\
@@ -273,11 +273,11 @@ extern const unsigned char FVsubTab[8];
 }
 
 #define SETX(base,bit) {\
-	cpu->mptr = base + (signed char)cpu->tmp;\
+	cpu->regWZ = base + (signed char)cpu->tmp;\
 	cpu->t += 5;\
-	cpu->tmpb = z80_mrd(cpu, cpu->mptr); cpu->t++;\
+	cpu->tmpb = z80_mrd(cpu, cpu->regWZ); cpu->t++;\
 	cpu->tmpb |= (0x01 << bit);\
-	z80_mwr(cpu, cpu->mptr, cpu->tmpb);\
+	z80_mwr(cpu, cpu->regWZ, cpu->tmpb);\
 }
 
 #define SETXR(base,bit,reg) {\

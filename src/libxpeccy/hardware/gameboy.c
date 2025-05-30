@@ -644,7 +644,7 @@ void gbcSync(Computer* comp, int ns) {
 	// cpu speed change
 	if (comp->cpu->stop && comp->cpu->speedrq) {
 		comp->cpu->stop = 0;
-		comp->cpu->pc++;
+		comp->cpu->regPC++;
 		comp->cpu->speedrq = 0;
 		comp->cpu->speed ^= 1;
 		compSetTurbo(comp, comp->cpu->speed ? 2.0 : 1.0);

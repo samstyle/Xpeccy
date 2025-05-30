@@ -78,7 +78,7 @@ int memrd(int adr, int m1, void* ptr) {
 	if (fptr) {
 		unsigned char flag = *fptr;
 		if (comp->maping) {
-			if ((comp->cpu->pc-1+comp->cpu->cs.base) == adr) {
+			if ((comp->cpu->regPC-1+comp->cpu->cs.base) == adr) {
 				flag &= 0x0f;
 				flag |= DBG_VIEW_EXEC;
 				*fptr = flag;
@@ -550,7 +550,7 @@ int compExec(Computer* comp) {
 	comp->vid->time = 0;
 // breakpoints
 	if (!comp->debug) {
-		bpChecker ch = comp_check_bp(comp, comp->cpu->pc + comp->cpu->cs.base, MEM_BRK_FETCH | MEM_BRK_TFETCH);
+		bpChecker ch = comp_check_bp(comp, comp->cpu->regPC + comp->cpu->cs.base, MEM_BRK_FETCH | MEM_BRK_TFETCH);
 		if (ch.t >= 0) {
 			comp->brk = 1;
 			comp->brkt = ch.t;

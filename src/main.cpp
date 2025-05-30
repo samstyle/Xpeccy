@@ -217,10 +217,10 @@ int main(int ac,char** av) {
 				//mwin.setProfile(std::string(av[i]));
 				i++;
 			} else if (!strcmp(parg,"--pc")) {
-				conf.prof.cur->zx->cpu->pc = strtol(av[i],NULL,0) & 0xffff;
+				conf.prof.cur->zx->cpu->regPC = strtol(av[i],NULL,0) & 0xffff;
 				i++;
 			} else if (!strcmp(parg,"--sp")) {
-				conf.prof.cur->zx->cpu->sp = strtol(av[i],NULL,0) & 0xffff;
+				conf.prof.cur->zx->cpu->regSP = strtol(av[i],NULL,0) & 0xffff;
 				i++;
 			} else if (!strcmp(parg,"-b") || !strcmp(parg,"--bank")) {
 				memSetBank(conf.prof.cur->zx->mem, 0xc0, MEM_RAM, strtol(av[i],NULL,0), MEM_16K, NULL, NULL, NULL);

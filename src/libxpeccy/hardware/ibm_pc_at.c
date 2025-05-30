@@ -238,7 +238,7 @@ int ibm_inCHP(Computer* comp, int adr) {
 
 void ibm_out80(Computer* comp, int adr, int val) {
 	if (comp->post != (val & 0xff)) {
-		printf("%4X:%.4X\tPOST %.2X\n",comp->cpu->cs.idx,comp->cpu->pc,val & 0xff);
+		printf("%4X:%.4X\tPOST %.2X\n",comp->cpu->cs.idx,comp->cpu->regPC,val & 0xff);
 		comp->post = val & 0xff;
 	}
 }

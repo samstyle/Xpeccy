@@ -126,8 +126,8 @@ void i286_sys_mwrw(CPU* cpu, xSegPtr seg, unsigned short adr, unsigned short v) 
 // real mode
 
 unsigned char i286_fetch_real(CPU* cpu) {
-	unsigned char res = cpu_fetch(cpu, cpu->cs.base + cpu->pc) & 0xff;
-	cpu->pc++;
+	unsigned char res = cpu_fetch(cpu, cpu->cs.base + cpu->regPC) & 0xff;
+	cpu->regPC++;
 	return res;
 }
 
@@ -146,22 +146,22 @@ void i286_mwr_real(CPU* cpu, xSegPtr seg, int rpl, unsigned short adr, int val) 
 // stack (TODO: real/prt mode stack rd/wr procedures)
 
 void i286_push(CPU* cpu, unsigned short w) {
-	if ((cpu->msw & I286_FPE) && (cpu->sp < 2)) {
+	if ((cpu->msw & I286_FPE) && (cpu->regSP < 2)) {
 		THROW(I286_INT_SS);
 	}
-	cpu->sp -= 2;
-	i286_mwr(cpu, cpu->ss, 0, cpu->sp, w & 0xff);
-	i286_mwr(cpu, cpu->ss, 0, cpu->sp + 1, (w >> 8) & 0xff);
+	cpu->regSP -= 2;
+	i286_mwr(cpu, cpu->ss, 0, cpu->regSP, w & 0xff);
+	i286_mwr(cpu, cpu->ss, 0, cpu->regSP + 1, (w >> 8) & 0xff);
 }
 
 unsigned short i286_pop(CPU* cpu) {
-	if ((cpu->msw & I286_FPE) && (cpu->sp + 2 > cpu->ss.limit)) {
+	if ((cpu->msw & I286_FPE) && (cpu->regSP + 2 > cpu->ss.limit)) {
 		THROW(I286_INT_SS);
 	}
 	PAIR(w,h,l) rx;
-	rx.l = i286_mrd(cpu, cpu->ss, 0, cpu->sp);
-	rx.h = i286_mrd(cpu, cpu->ss, 0, cpu->sp + 1);
-	cpu->sp += 2;
+	rx.l = i286_mrd(cpu, cpu->ss, 0, cpu->regSP);
+	rx.h = i286_mrd(cpu, cpu->ss, 0, cpu->regSP + 1);
+	cpu->regSP += 2;
 	return rx.w;
 }
 
@@ -170,9 +170,9 @@ unsigned short i286_pop(CPU* cpu) {
 unsigned char i286_fetch_prt(CPU* cpu) {
 	unsigned char res = 0xff;
 //	if (i286_check_segment_exec(cpu, &cpu->cs)) {		// check it when CS changed
-		if (i286_check_segment_limit(cpu, &cpu->cs, cpu->pc)) {
-			res = cpu_fetch(cpu, cpu->cs.base + cpu->pc) & 0xff;
-			cpu->pc++;
+		if (i286_check_segment_limit(cpu, &cpu->cs, cpu->regPC)) {
+			res = cpu_fetch(cpu, cpu->cs.base + cpu->regPC) & 0xff;
+			cpu->regPC++;
 		} else {
 			THROW(I286_INT_SL);
 		}
@@ -204,7 +204,7 @@ void i286_mwr_prt(CPU* cpu, xSegPtr seg, int rpl, unsigned short adr, int val) {
 		if (i286_check_segment_limit(cpu, &seg, adr)) {
 			cpu_mwr(cpu, seg.base + adr, val);
 		} else {
-			cpu->pc = cpu->oldpc;
+			cpu->regPC = cpu->oldpc;
 			THROW(I286_INT_SL);
 		}
 	} else {
@@ -350,13 +350,13 @@ void i286_switch_task(CPU* cpu, int tsss, int nest, int iret) {
 				f |= 2;
 				cpu_mwr(cpu, adr + 5, f);
 				// save current state to current TSS
-				i286_sys_mwrw(cpu, cpu->tsdr, 14, cpu->pc);
+				i286_sys_mwrw(cpu, cpu->tsdr, 14, cpu->regPC);
 				i286_sys_mwrw(cpu, cpu->tsdr, 16, cpu->f);
 				i286_sys_mwrw(cpu, cpu->tsdr, 18, cpu->ax);
 				i286_sys_mwrw(cpu, cpu->tsdr, 20, cpu->cx);
 				i286_sys_mwrw(cpu, cpu->tsdr, 22, cpu->dx);
 				i286_sys_mwrw(cpu, cpu->tsdr, 24, cpu->bx);
-				i286_sys_mwrw(cpu, cpu->tsdr, 26, cpu->sp);
+				i286_sys_mwrw(cpu, cpu->tsdr, 26, cpu->regSP);
 				i286_sys_mwrw(cpu, cpu->tsdr, 28, cpu->bp);
 				i286_sys_mwrw(cpu, cpu->tsdr, 30, cpu->si);
 				i286_sys_mwrw(cpu, cpu->tsdr, 32, cpu->di);
@@ -367,7 +367,7 @@ void i286_switch_task(CPU* cpu, int tsss, int nest, int iret) {
 				// load registers from new tss
 				i286_sys_mwrw(cpu, seg, 0, cpu->tsdr.idx);	// previous TSS selector as link
 				cpu->tsdr = seg;				// switch to new TSS
-				cpu->pc = i286_sys_mrdw(cpu, cpu->tsdr, 14);
+				cpu->regPC = i286_sys_mrdw(cpu, cpu->tsdr, 14);
 				cpu->f = i286_sys_mrdw(cpu, cpu->tsdr, 16);
 				cpu->ax = i286_sys_mrdw(cpu, cpu->tsdr, 18);
 				cpu->cx = i286_sys_mrdw(cpu, cpu->tsdr, 20);
@@ -386,15 +386,15 @@ void i286_switch_task(CPU* cpu, int tsss, int nest, int iret) {
 				cpu->es = i286_cash_seg(cpu, i286_sys_mrdw(cpu, cpu->tsdr, 34));
 				cpu->cs = i286_cash_seg(cpu, i286_sys_mrdw(cpu, cpu->tsdr, 36));
 				cpu->ds = i286_cash_seg(cpu, i286_sys_mrdw(cpu, cpu->tsdr, 40));
-				if (cpu->pc > cpu->cs.limit) {
+				if (cpu->regPC > cpu->cs.limit) {
 					THROW_EC(I286_INT_GP, 0);
 				}
 				// TODO: check it
 				if (dpl < cpl) {		// switch stack
-					cpu->sp = i286_sys_mrdw(cpu, cpu->tsdr, 2 + 4 * dpl);
+					cpu->regSP = i286_sys_mrdw(cpu, cpu->tsdr, 2 + 4 * dpl);
 					cpu->ss = i286_cash_seg(cpu, i286_sys_mrdw(cpu, cpu->tsdr, 4 + 4 * dpl));
 				} else {			// don't
-					cpu->sp = i286_sys_mrdw(cpu, cpu->tsdr, 26);
+					cpu->regSP = i286_sys_mrdw(cpu, cpu->tsdr, 26);
 					cpu->ss = i286_cash_seg(cpu, i286_sys_mrdw(cpu, cpu->tsdr, 38));
 				}
 				// set CPL to RPL of CS selector
@@ -544,7 +544,7 @@ int i286_get_reg(CPU* cpu, int wrd) {
 			case 1: res = cpu->cx; break;
 			case 2: res = cpu->dx; break;
 			case 3: res = cpu->bx; break;
-			case 4: res = cpu->sp; break;
+			case 4: res = cpu->regSP; break;
 			case 5: res = cpu->bp; break;
 			case 6: res = cpu->si; break;
 			case 7: res = cpu->di; break;
@@ -574,7 +574,7 @@ void i286_set_reg(CPU* cpu, int val, int wrd) {
 			case 1: cpu->cx = val; break;
 			case 2: cpu->dx = val; break;
 			case 3: cpu->bx = val; break;
-			case 4: cpu->sp = val; break;
+			case 4: cpu->regSP = val; break;
 			case 5: cpu->bp = val; break;
 			case 6: cpu->si = val; break;
 			case 7: cpu->di = val; break;
@@ -609,7 +609,7 @@ void i286_get_ea(CPU* cpu, int wrd) {
 				case 1: cpu->tmpw = cpu->cx; break;
 				case 2: cpu->tmpw = cpu->dx; break;
 				case 3: cpu->tmpw = cpu->bx; break;
-				case 4: cpu->tmpw = cpu->sp; break;
+				case 4: cpu->tmpw = cpu->regSP; break;
 				case 5: cpu->tmpw = cpu->bp; break;
 				case 6: cpu->tmpw = cpu->si; break;
 				case 7: cpu->tmpw = cpu->di; break;
@@ -689,7 +689,7 @@ void i286_wr_ea(CPU* cpu, int val, int wrd) {
 				case 1: cpu->cx = val & 0xffff; break;
 				case 2: cpu->dx = val & 0xffff; break;
 				case 3: cpu->bx = val & 0xffff; break;
-				case 4: cpu->sp = val & 0xffff; break;
+				case 4: cpu->regSP = val & 0xffff; break;
 				case 5: cpu->bp = val & 0xffff; break;
 				case 6: cpu->si = val & 0xffff; break;
 				case 7: cpu->di = val & 0xffff; break;
@@ -1220,9 +1220,9 @@ void i286_op43(CPU* cpu) {
 	cpu->bx = i286_inc16(cpu, cpu->bx);
 }
 
-// 44: inc sp
+// 44: inc regSP
 void i286_op44(CPU* cpu) {
-	cpu->sp = i286_inc16(cpu, cpu->sp);
+	cpu->regSP = i286_inc16(cpu, cpu->regSP);
 }
 
 // 45: inc bp
@@ -1284,9 +1284,9 @@ void i286_op4B(CPU* cpu) {
 	cpu->bx = i286_dec16(cpu, cpu->bx);
 }
 
-// 4c: dec sp
+// 4c: dec regSP
 void i286_op4C(CPU* cpu) {
-	cpu->sp = i286_dec16(cpu, cpu->sp);
+	cpu->regSP = i286_dec16(cpu, cpu->regSP);
 }
 
 // 4d: dec bp
@@ -1324,9 +1324,9 @@ void i286_op53(CPU* cpu) {
 	i286_push(cpu, cpu->bx);
 }
 
-// 54: push sp
+// 54: push regSP
 void i286_op54(CPU* cpu) {
-	i286_push(cpu, cpu->sp);
+	i286_push(cpu, cpu->regSP);
 }
 
 // 55: push bp
@@ -1364,9 +1364,9 @@ void i286_op5B(CPU* cpu) {
 	cpu->bx = i286_pop(cpu);
 }
 
-// 5c: pop sp
+// 5c: pop regSP
 void i286_op5C(CPU* cpu) {
-	cpu->sp = i286_pop(cpu);
+	cpu->regSP = i286_pop(cpu);
 }
 
 // 5d: pop bp
@@ -1384,9 +1384,9 @@ void i286_op5F(CPU* cpu) {
 	cpu->di = i286_pop(cpu);
 }
 
-// 60: pusha	(push ax,cx,dx,bx,orig.sp,bp,si,di)
+// 60: pusha	(push ax,cx,dx,bx,orig.regSP,bp,si,di)
 void i286_op60(CPU* cpu) {
-	cpu->tmpw = cpu->sp;
+	cpu->tmpw = cpu->regSP;
 	i286_push(cpu, cpu->ax);
 	i286_push(cpu, cpu->cx);
 	i286_push(cpu, cpu->dx);
@@ -1484,7 +1484,7 @@ void i286_rep(CPU* cpu, cbcpu foo) {
 			foo(cpu);
 			cpu->cx--;
 			if (cpu->cx)			// don't do last dummy cycle (cx=0)
-				cpu->pc = cpu->oldpc;
+				cpu->regPC = cpu->oldpc;
 		}
 	}
 }
@@ -1542,7 +1542,7 @@ void i286_jr(CPU* cpu, int cnd) {
 	cpu->ltw = i286_rd_imm(cpu);
 	cpu->htw = (cpu->ltw & 0x80) ? 0xff : 0x00;
 	if (cnd) {
-		cpu->pc += cpu->tmpw;
+		cpu->regPC += cpu->tmpw;
 		cpu->t += 4;
 	}
 }
@@ -1757,11 +1757,11 @@ void i286_op93(CPU* cpu) {
 	cpu->bx = cpu->tmpw;
 }
 
-// 94: xchg ax,sp
+// 94: xchg ax,regSP
 void i286_op94(CPU* cpu) {
 	cpu->tmpw = cpu->ax;
-	cpu->ax = cpu->sp;
-	cpu->sp = cpu->tmpw;
+	cpu->ax = cpu->regSP;
+	cpu->regSP = cpu->tmpw;
 }
 
 // 95:xchg ax,bp
@@ -1801,18 +1801,18 @@ void i286_callf(CPU* cpu, int nip, int ncs) {
 		i286_check_gate(cpu, nip, ncs);		// ea.seg:ea.adr is new destination
 		if (cpu->ea.reg) {		// call gate?
 			if (cpu->ea.seg.pl < cpu->cs.pl) {	// more priv
-				unsigned short osp = cpu->sp;
+				unsigned short osp = cpu->regSP;
 				unsigned short oss = cpu->ss.idx;
-				unsigned int sadr = cpu->ss.base + cpu->sp;		// old stack top
-				cpu->sp = i286_sys_mrdw(cpu, cpu->tsdr, 2 + (4 * cpu->ea.seg.pl));			// ss:sp for new PL
+				unsigned int sadr = cpu->ss.base + cpu->regSP;		// old stack top
+				cpu->regSP = i286_sys_mrdw(cpu, cpu->tsdr, 2 + (4 * cpu->ea.seg.pl));			// ss:sp for new PL
 				cpu->ss = i286_cash_seg(cpu, i286_sys_mrdw(cpu, cpu->tsdr, 4 + (4 * cpu->ea.seg.pl)));
 				i286_push(cpu, oss);		// push old sp
 				i286_push(cpu, osp);
 				cpu->cs = cpu->ea.seg;
-				cpu->pc = cpu->ea.adr;
+				cpu->regPC = cpu->ea.adr;
 				int cnt = (cpu->ea.cnt << 1);
-				cpu->sp -= cnt;	// space for params
-				int dadr = cpu->ss.base + cpu->sp;			// new stack top
+				cpu->regSP -= cnt;	// space for params
+				int dadr = cpu->ss.base + cpu->regSP;			// new stack top
 				cpu->t = 86;
 				while (cnt > 0) {
 					cpu_mwr(cpu, dadr, cpu_mrd(cpu, sadr));
@@ -1827,14 +1827,14 @@ void i286_callf(CPU* cpu, int nip, int ncs) {
 			cpu->t = 41;
 		}
 		i286_push(cpu, cpu->cs.idx);		// push return addr
-		i286_push(cpu, cpu->pc);
+		i286_push(cpu, cpu->regPC);
 		cpu->cs = cpu->ea.seg;
-		cpu->pc = cpu->ea.adr;
+		cpu->regPC = cpu->ea.adr;
 	} else {
 		i286_push(cpu, cpu->cs.idx);
-		i286_push(cpu, cpu->pc);
+		i286_push(cpu, cpu->regPC);
 		cpu->cs = i286_cash_seg(cpu, ncs);
-		cpu->pc = nip;
+		cpu->regPC = nip;
 		cpu->t = 41;
 	}
 }
@@ -1991,9 +1991,9 @@ void i286_rep_fz(CPU* cpu, cbcpu foo) {
 		cpu->cx--;
 		foo(cpu);
 		if ((cpu->rep == I286_REPZ) && cpu->fx.z && cpu->cx) {
-			cpu->pc = cpu->oldpc;
+			cpu->regPC = cpu->oldpc;
 		} else if ((cpu->rep == I286_REPNZ) && !cpu->fx.z && cpu->cx) {
-			cpu->pc = cpu->oldpc;
+			cpu->regPC = cpu->oldpc;
 		}
 	}
 }
@@ -2132,7 +2132,7 @@ void i286_opB8(CPU* cpu) {cpu->ax = i286_rd_immw(cpu);}
 void i286_opB9(CPU* cpu) {cpu->cx = i286_rd_immw(cpu);}
 void i286_opBA(CPU* cpu) {cpu->dx = i286_rd_immw(cpu);}
 void i286_opBB(CPU* cpu) {cpu->bx = i286_rd_immw(cpu);}
-void i286_opBC(CPU* cpu) {cpu->sp = i286_rd_immw(cpu);}
+void i286_opBC(CPU* cpu) {cpu->regSP = i286_rd_immw(cpu);}
 void i286_opBD(CPU* cpu) {cpu->bp = i286_rd_immw(cpu);}
 void i286_opBE(CPU* cpu) {cpu->si = i286_rd_immw(cpu);}
 void i286_opBF(CPU* cpu) {cpu->di = i286_rd_immw(cpu);}
@@ -2196,16 +2196,16 @@ void i286_opC1(CPU* cpu) {
 	i286_wr_ea(cpu, cpu->tmpw, 1);
 }
 
-// c2,iw: ret iw	pop pc, pop iw bytes
+// c2,iw: ret iw	pop regPC, pop iw bytes
 void i286_opC2(CPU* cpu) {
 	cpu->tmpw = i286_rd_immw(cpu);
-	cpu->pc = i286_pop(cpu);
-	cpu->sp += cpu->tmpw;
+	cpu->regPC = i286_pop(cpu);
+	cpu->regSP += cpu->tmpw;
 }
 
 // c3: ret
 void i286_opC3(CPU* cpu) {
-	cpu->pc = i286_pop(cpu);
+	cpu->regPC = i286_pop(cpu);
 }
 
 // c4,mod: les rw,ed
@@ -2252,7 +2252,7 @@ void i286_opC8(CPU* cpu) {
 	cpu->tmpw = i286_rd_immw(cpu);
 	cpu->tmpb = i286_rd_imm(cpu) & 0x1f;
 	i286_push(cpu, cpu->bp);
-	cpu->ea.adr = cpu->sp;
+	cpu->ea.adr = cpu->regSP;
 	if (cpu->tmpb > 0) {
 		while(--cpu->tmpb) {
 			cpu->bp -= 2;
@@ -2263,28 +2263,28 @@ void i286_opC8(CPU* cpu) {
 		i286_push(cpu, cpu->ea.adr);					// +2T (1?)
 	}
 	cpu->bp = cpu->ea.adr;
-	cpu->sp -= cpu->tmpw;
+	cpu->regSP -= cpu->tmpw;
 }
 
 // c9: leave
 void i286_opC9(CPU* cpu) {
-	cpu->sp = cpu->bp;
+	cpu->regSP = cpu->bp;
 	cpu->bp = i286_pop(cpu);
 }
 
 // ca,iw: retf iw	pop ip,cs,iw bytes	15/25/55T
 void i286_opCA(CPU* cpu) {
 	cpu->twrd = i286_rd_immw(cpu);
-	cpu->pc = i286_pop(cpu);
+	cpu->regPC = i286_pop(cpu);
 	cpu->tmpw = i286_pop(cpu);
 	cpu->cs = i286_cash_seg(cpu, cpu->tmpw);
-	cpu->sp += cpu->twrd;
+	cpu->regSP += cpu->twrd;
 	cpu->t += cpu->twrd;
 }
 
 // cb: retf	pop ip,cs
 void i286_opCB(CPU* cpu) {
-	cpu->pc = i286_pop(cpu);
+	cpu->regPC = i286_pop(cpu);
 	cpu->tmpw = i286_pop(cpu);
 	cpu->cs = i286_cash_seg(cpu, cpu->tmpw);
 }
@@ -2328,7 +2328,7 @@ void i286_opCF(CPU* cpu) {
 				unsigned char tf = cpu_mrd(cpu, seg.base + 5);	// mark old TS as not-busy
 				tf &= ~2;
 				cpu_mwr(cpu, seg.base + 5, tf);
-				if (cpu->pc > cpu->cs.limit) {
+				if (cpu->regPC > cpu->cs.limit) {
 					THROW_EC(I286_INT_GP, 0);
 				}
 			}
@@ -2352,7 +2352,7 @@ void i286_opCF(CPU* cpu) {
 				} else if (nip > seg.limit) {
 					THROW_EC(I286_INT_GP, 0);
 				} else {
-					cpu->pc = i286_pop(cpu);
+					cpu->regPC = i286_pop(cpu);
 					cpu->cs = i286_cash_seg(cpu, i286_pop(cpu));
 					cpu->f = i286_pop(cpu);
 				}
@@ -2368,19 +2368,19 @@ void i286_opCF(CPU* cpu) {
 				} else if (!seg.pr) {
 					THROW_EC(I286_INT_NP, ncs);
 				} else {
-					cpu->pc = i286_pop(cpu);
+					cpu->regPC = i286_pop(cpu);
 					cpu->cs = i286_cash_seg(cpu, i286_pop(cpu));
 					cpu->f = i286_pop(cpu);
 					int nsp = i286_pop(cpu);
 					cpu->ss = i286_cash_seg(cpu, i286_pop(cpu));
-					cpu->sp = nsp;
+					cpu->regSP = nsp;
 				}
 
 
 			}
 		}
 	} else {				// real
-		cpu->pc = i286_pop(cpu);
+		cpu->regPC = i286_pop(cpu);
 		cpu->tmpw = i286_pop(cpu);
 		cpu->f = i286_pop(cpu);
 		cpu->cs = i286_cash_seg(cpu, cpu->tmpw);
@@ -2521,24 +2521,24 @@ void i286_opE7(CPU* cpu) {
 // e8,cw: call cw	(relative call)
 void i286_opE8(CPU* cpu) {
 	cpu->tmpw = i286_rd_immw(cpu);
-	i286_push(cpu, cpu->pc);
-	cpu->pc += cpu->tmpw;
+	i286_push(cpu, cpu->regPC);
+	cpu->regPC += cpu->tmpw;
 }
 
 // e9,cw: jmp cw	(relative jump)
 void i286_opE9(CPU* cpu) {
 	cpu->tmpw = i286_rd_immw(cpu);
-	cpu->pc += cpu->tmpw;
+	cpu->regPC += cpu->tmpw;
 }
 
 // common: jmpf to ncs:nip using gates in protected mode
 void i286_jmpf(CPU* cpu, int nip, int ncs) {
 	if (cpu->msw & I286_FPE) {		// protected
 		i286_check_gate(cpu, nip, ncs);
-		cpu->pc = cpu->ea.adr;
+		cpu->regPC = cpu->ea.adr;
 		cpu->cs = cpu->ea.seg;
 	} else {				// real
-		cpu->pc = nip;
+		cpu->regPC = nip;
 		cpu->cs = i286_cash_seg(cpu, ncs);
 	}
 }
@@ -2554,7 +2554,7 @@ void i286_opEA(CPU* cpu) {
 void i286_opEB(CPU* cpu) {
 	cpu->ltw = i286_rd_imm(cpu);
 	cpu->htw = (cpu->ltw & 0x80) ? 0xff : 0x00;
-	cpu->pc += cpu->tmpw;
+	cpu->regPC += cpu->tmpw;
 }
 
 // ec: in al,dx
@@ -2600,7 +2600,7 @@ void i286_opF3(CPU* cpu) {
 void i286_opF4(CPU* cpu) {
 	if (!((cpu->intrq & cpu->inten) && cpu->fx.i)) {
 		cpu->halt = 1;
-		cpu->pc = cpu->oldpc;
+		cpu->regPC = cpu->oldpc;
 	} else {
 		cpu->halt = 0;
 	}
@@ -2816,14 +2816,14 @@ void i286_opFF(CPU* cpu) {
 		case 1: cpu->tmpw = i286_dec16(cpu, cpu->tmpw);
 			i286_wr_ea(cpu, cpu->tmpw, 1);
 			break;	// dec ew
-		case 2:	i286_push(cpu, cpu->pc);
-			cpu->pc = cpu->tmpw;
+		case 2:	i286_push(cpu, cpu->regPC);
+			cpu->regPC = cpu->tmpw;
 			break; // call ew
 		case 3:	cpu->lwr = i286_mrd(cpu, cpu->ea.seg, 1, cpu->ea.adr + 2);	// twrd = segment
 			cpu->hwr = i286_mrd(cpu, cpu->ea.seg, 1, cpu->ea.adr + 3);
 			i286_callf(cpu, cpu->tmpw, cpu->twrd);
 			break; // callf ed
-		case 4: cpu->pc = cpu->tmpw;
+		case 4: cpu->regPC = cpu->tmpw;
 			break; // jmp ew
 		case 5:	cpu->lwr = i286_mrd(cpu, cpu->ea.seg, 1, cpu->ea.adr + 2);
 			cpu->hwr = i286_mrd(cpu, cpu->ea.seg, 1, cpu->ea.adr + 3);

@@ -113,20 +113,20 @@ int loadZ80_f(Computer* comp, FILE* file) {
 	fread((char*)&hd, sizeof(z80v1Header), 1, file);
 	if (hd.flag12 == 0xff) hd.flag12 = 0x01;	// Because of compatibility, if byte 12 is 255, it has to be regarded as being 1.
 
-	comp->cpu->a = hd.a;
+	comp->cpu->regA = hd.a;
 	comp->cpu->f = hd.f;
-	comp->cpu->bc = (hd.b << 8) | hd.c;
-	comp->cpu->de = (hd.d << 8) | hd.e;
-	comp->cpu->hl = (hd.h << 8) | hd.l;
+	comp->cpu->regBC = (hd.b << 8) | hd.c;
+	comp->cpu->regDE = (hd.d << 8) | hd.e;
+	comp->cpu->regHL = (hd.h << 8) | hd.l;
 	comp->cpu->a_ = hd._a;
 	comp->cpu->f_ = hd._f;
 	comp->cpu->bc_ = (hd._b << 8) | hd._c;
 	comp->cpu->de_ = (hd._d << 8) | hd._e;
 	comp->cpu->hl_ = (hd._h << 8) | hd._l;
-	comp->cpu->pc = (hd.pch << 8) | hd.pcl;
-	comp->cpu->sp = (hd.sph << 8) | hd.spl;
-	comp->cpu->ix = (hd.ixh << 8) | hd.ixl;
-	comp->cpu->iy = (hd.iyh << 8) | hd.iyl;
+	comp->cpu->regPC = (hd.pch << 8) | hd.pcl;
+	comp->cpu->regSP = (hd.sph << 8) | hd.spl;
+	comp->cpu->regIX = (hd.ixh << 8) | hd.ixl;
+	comp->cpu->regIY = (hd.iyh << 8) | hd.iyl;
 	comp->cpu->i = hd.i;
 	comp->cpu->r7 = (hd.flag12 & 1) ? 0x80 : 0;
 	comp->cpu->r = (hd.r7 & 0x7f) | comp->cpu->r7;
@@ -141,10 +141,10 @@ int loadZ80_f(Computer* comp, FILE* file) {
 	if (hd.flag29 & 0x04) printf("...flag 29.bit 2.Issue 2 emulation\n");
 	if (hd.flag29 & 0x08) printf("...flag 29.bit 3.Double interrupt frequency\n");
 // continued
-	if (comp->cpu->pc == 0) {
+	if (comp->cpu->regPC == 0) {
 		adr = fgetw(file);
 		twrd = fgetw(file);
-		comp->cpu->pc = twrd;
+		comp->cpu->regPC = twrd;
 		lst = fgetc(file);			// 34: HW mode
 		tmp = fgetc(file);			// 35: 7FFD last out
 		comp->bdiz = 0;

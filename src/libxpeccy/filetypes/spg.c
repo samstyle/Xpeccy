@@ -74,8 +74,8 @@ int loadSPG(Computer* comp, const char* name, int drv) {
 		idx += 3;
 	}
 	compReset(comp, RES_DEFAULT);
-	comp->cpu->pc = (hd.pch << 8) | hd.pcl;
-	comp->cpu->sp = (hd.sph << 8) | hd.spl;
+	comp->cpu->regPC = (hd.pch << 8) | hd.pcl;
+	comp->cpu->regSP = (hd.sph << 8) | hd.spl;
 	switch (hd.flag35 & 0x03) {
 		case 0: compSetTurbo(comp, 1); break;
 		case 1: compSetTurbo(comp, 2); break;

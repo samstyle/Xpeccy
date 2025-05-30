@@ -8,11 +8,11 @@ extern opCode lrTab[256];
 extern opCode lrcbTab[256];
 
 void lr_reset(CPU* cpu) {
-	cpu->pc = 0;
-	cpu->bc = cpu->de = cpu->hl = 0xffff;
-	cpu->a = 0xff;
+	cpu->regPC = 0;
+	cpu->regBC = cpu->regDE = cpu->regHL = 0xffff;
+	cpu->regA = 0xff;
 	cpu->f = 0xff;
-	cpu->sp = 0xffff;
+	cpu->regSP = 0xffff;
 	cpu->lock = 0;
 	cpu->iff1 = 0;
 	cpu->intrq = 0;
@@ -25,7 +25,7 @@ void lr_reset(CPU* cpu) {
 	cpu->bc_ = cpu->de_ = cpu->hl_ = 0xffff;
 	cpu->a_ = 0xff;
 	cpu->f_ = 0xff;
-	cpu->ix = cpu->iy = 0xffff;
+	cpu->regIX = cpu->regIY = 0xffff;
 	cpu->i = cpu->r = 0xff;
 	cpu->r7 = 0x80;
 }
@@ -43,10 +43,10 @@ void z80_call(CPU*, unsigned short);
 int lr_int(CPU* cpu) {
 	if (cpu->halt) {		// free HALT anyway
 		cpu->halt = 0;
-		cpu->pc++;
+		cpu->regPC++;
 		if (!cpu->iff1) {
 			cpu->dihalt = 1;
-			cpu->tmpw = cpu->pc;		// tmpw doesn't used on LR35902, store PC there
+			cpu->tmpw = cpu->regPC;		// tmpw doesn't used on LR35902, store PC there
 		}
 	}
 	if (!cpu->iff1) return 0;
@@ -76,14 +76,14 @@ int lr_exec(CPU* cpu) {
 		cpu->t = 0;
 		cpu->opTab = lrTab;
 		do {
-			cpu->tmp = cpu->mrd(cpu->pc++, 1, cpu->xptr);
+			cpu->tmp = cpu->mrd(cpu->regPC++, 1, cpu->xptr);
 			cpu->op = &cpu->opTab[cpu->tmp];
 			cpu->t += cpu->op->t;
 			cpu->op->exec(cpu);
 		} while (cpu->op->flag & OF_PREFIX);
 		if (cpu->dihalt) {		// LR35902 bug (?) : repeat opcode after HALT with disabled interrupts (DI)
 			cpu->dihalt = 0;
-			cpu->pc = cpu->tmpw;
+			cpu->regPC = cpu->tmpw;
 		}
 		res = cpu->t;
 	}
@@ -129,13 +129,13 @@ xMnem lr_mnem(CPU* cpu, int qadr, cbdmr mrd, void* data) {
 	// mem
 	if (strstr(mn.mnem, "(hl)") && strcmp(mn.mnem, "jp (hl)")) {
 		mn.mem = 1;
-		mn.mop = mrd(cpu->hl, data);
+		mn.mop = mrd(cpu->regHL, data);
 	} else if (strstr(mn.mnem, "(de)")) {
 		mn.mem = 1;
-		mn.mop = mrd(cpu->de, data);
+		mn.mop = mrd(cpu->regDE, data);
 	} else if (strstr(mn.mnem, "(bc)")) {
 		mn.mem = 1;
-		mn.mop = mrd(cpu->bc, data);
+		mn.mop = mrd(cpu->regBC, data);
 	} else if (strstr(mn.mnem, "(:1)")) {
 		mn.mem = 1;
 		madr = mrd(adr, data) & 0xff;
@@ -145,7 +145,7 @@ xMnem lr_mnem(CPU* cpu, int qadr, cbdmr mrd, void* data) {
 		if ((op & 0xef) == 0xe0) {		// ldh (:1)
 			madr = mrd(adr, data) & 0xff;
 		} else {				// ldh (c)
-			madr = cpu->c & 0xff;
+			madr = cpu->regC & 0xff;
 		}
 		mn.mem = 1;
 		mn.mop = mrd(madr | 0xff00, data);
@@ -155,7 +155,7 @@ xMnem lr_mnem(CPU* cpu, int qadr, cbdmr mrd, void* data) {
 	mn.met = 0;
 	if (strstr(opc->mnem, "djnz")) {
 		mn.cond = 1;
-		mn.met = (cpu->b == 1) ? 0 : 1;
+		mn.met = (cpu->regB == 1) ? 0 : 1;
 	} else if (opt == lrTab) {
 		if (((op & 0xc7) == 0xc2) || ((op & 0xc7) == 0xc4) || ((op & 0xc7) == 0xc0)) {		// call, jp, ret
 			mn.cond = 1;
@@ -178,13 +178,13 @@ xMnem lr_mnem(CPU* cpu, int qadr, cbdmr mrd, void* data) {
 // registers
 
 xRegDsc lrRegTab[] = {
-	{LR_REG_PC, "PC", REG_WORD | REG_RDMP, offsetof(CPU, pc)},
+	{LR_REG_PC, "PC", REG_WORD | REG_RDMP, offsetof(CPU, regPC)},
 	{LR_REG_AF, "AF", REG_WORD, 0},
-	{LR_REG_BC, "BC", REG_WORD | REG_RDMP, offsetof(CPU, bc)},
-	{LR_REG_DE, "DE", REG_WORD | REG_RDMP, offsetof(CPU, de)},
-	{LR_REG_HL, "HL", REG_WORD | REG_RDMP, offsetof(CPU, hl)},
-	{LR_REG_SP, "SP", REG_WORD | REG_RDMP, offsetof(CPU, sp)},
-	{REG_EMPTY, "A", REG_BYTE, offsetof(CPU, a)},
+	{LR_REG_BC, "BC", REG_WORD | REG_RDMP, offsetof(CPU, regBC)},
+	{LR_REG_DE, "DE", REG_WORD | REG_RDMP, offsetof(CPU, regDE)},
+	{LR_REG_HL, "HL", REG_WORD | REG_RDMP, offsetof(CPU, regHL)},
+	{LR_REG_SP, "SP", REG_WORD | REG_RDMP, offsetof(CPU, regSP)},
+	{REG_EMPTY, "A", REG_BYTE, offsetof(CPU, regA)},
 	{REG_EMPTY, "F", REG_32, offsetof(CPU, f)},
 	{REG_NONE, "", 0, 0}
 };
@@ -199,15 +199,15 @@ void lr_get_regs(CPU* cpu, xRegBunch* bunch) {
 		bunch->regs[idx].name = lrRegTab[idx].name;
 		bunch->regs[idx].type = lrRegTab[idx].type;
 		switch(lrRegTab[idx].id) {
-			case LR_REG_PC: bunch->regs[idx].value = cpu->pc; break;
-			case LR_REG_SP: bunch->regs[idx].value = cpu->sp; break;
-			case LR_REG_AF: rx.h = cpu->a;
+			case LR_REG_PC: bunch->regs[idx].value = cpu->regPC; break;
+			case LR_REG_SP: bunch->regs[idx].value = cpu->regSP; break;
+			case LR_REG_AF: rx.h = cpu->regA;
 					rx.l = cpu->f & 0xff;
 					bunch->regs[idx].value = rx.w;
 					break;
-			case LR_REG_BC: bunch->regs[idx].value = cpu->bc; break;
-			case LR_REG_DE: bunch->regs[idx].value = cpu->de; break;
-			case LR_REG_HL: bunch->regs[idx].value = cpu->hl; break;
+			case LR_REG_BC: bunch->regs[idx].value = cpu->regBC; break;
+			case LR_REG_DE: bunch->regs[idx].value = cpu->regDE; break;
+			case LR_REG_HL: bunch->regs[idx].value = cpu->regHL; break;
 		}
 		idx++;
 	}
@@ -221,15 +221,15 @@ void lr_set_regs(CPU* cpu, xRegBunch bunch) {
 	PAIR(w,h,l)rx;
 	for (idx = 0; idx < 32; idx++) {
 		switch(bunch.regs[idx].id) {
-			case LR_REG_PC: cpu->pc = bunch.regs[idx].value; break;
-			case LR_REG_SP: cpu->sp = bunch.regs[idx].value; break;
+			case LR_REG_PC: cpu->regPC = bunch.regs[idx].value; break;
+			case LR_REG_SP: cpu->regSP = bunch.regs[idx].value; break;
 			case LR_REG_AF: rx.w = bunch.regs[idx].value;
-					cpu->a = rx.h;
+					cpu->regA = rx.h;
 					cpu->f = rx.l;
 					break;
-			case LR_REG_BC: cpu->bc = bunch.regs[idx].value; break;
-			case LR_REG_DE: cpu->de = bunch.regs[idx].value; break;
-			case LR_REG_HL: cpu->hl = bunch.regs[idx].value; break;
+			case LR_REG_BC: cpu->regBC = bunch.regs[idx].value; break;
+			case LR_REG_DE: cpu->regDE = bunch.regs[idx].value; break;
+			case LR_REG_HL: cpu->regHL = bunch.regs[idx].value; break;
 			case REG_NONE: idx = 100; break;
 		}
 	}

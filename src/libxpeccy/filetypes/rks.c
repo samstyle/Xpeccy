@@ -10,7 +10,7 @@ int loadRKSmem(Computer* comp, const char* name, int drv) {
 		adr = fgetw(file);
 		end = fgetw(file);
 		int ch;
-		comp->cpu->pc = adr;
+		comp->cpu->regPC = adr;
 		while (adr <= end) {
 			ch = fgetc(file);
 			comp->hw->mwr(comp, adr, ch);

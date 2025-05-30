@@ -42,8 +42,8 @@ void xThread::tap_catch_load(Computer* comp) {
 	int blk = comp->tape->block;
 	if (blk >= comp->tape->blkCount) return;
 	if (conf.tape.fast && comp->tape->blkData[blk].hasBytes) {
-		unsigned short de = comp->cpu->de;
-		unsigned short ix = comp->cpu->ix;
+		unsigned short de = comp->cpu->regDE;
+		unsigned short ix = comp->cpu->regIX;
 		TapeBlockInfo inf = tapGetBlockInfo(comp->tape,blk,TFRM_ZX);
 		unsigned char* blkData = (unsigned char*)malloc(inf.size + 2);
 		tapGetBlockData(comp->tape,blk,blkData, inf.size + 2);
@@ -52,14 +52,14 @@ void xThread::tap_catch_load(Computer* comp) {
 				memWr(comp->mem,ix,blkData[i + 1]);
 				ix++;
 			}
-			comp->cpu->ix = ix;
-			comp->cpu->de = 0x0000;
-			comp->cpu->hl = 0x0000;
+			comp->cpu->regIX = ix;
+			comp->cpu->regDE = 0x0000;
+			comp->cpu->regHL = 0x0000;
 		} else {
-			comp->cpu->hl = 0xff00;
+			comp->cpu->regHL = 0xff00;
 		}
 		tapNextBlock(comp->tape);
-		comp->cpu->pc = 0x5df;
+		comp->cpu->regPC = 0x5df;
 		free(blkData);
 	} else if (conf.tape.autostart) {
 		emit tapeSignal(TW_STATE,TWS_PLAY);
@@ -68,9 +68,9 @@ void xThread::tap_catch_load(Computer* comp) {
 
 void xThread::tap_catch_save(Computer* comp) {
 	if (conf.tape.fast) {
-		unsigned short de = comp->cpu->de;	// len
-		unsigned short ix = comp->cpu->ix;	// adr
-		unsigned char crc = comp->cpu->a;	// block type
+		unsigned short de = comp->cpu->regDE;	// len
+		unsigned short ix = comp->cpu->regIX;	// adr
+		unsigned char crc = comp->cpu->regA;	// block type
 		unsigned char* buf = (unsigned char*)malloc(de + 2);
 
 		buf[0] = crc;
@@ -84,11 +84,11 @@ void xThread::tap_catch_save(Computer* comp) {
 		tap_add_block(comp->tape, blk);
 		blkClear(&blk);
 		free(buf);
-		comp->cpu->pc = 0x053e;
-		comp->cpu->bc = 0x000e;
-		comp->cpu->de = 0xffff;
-		comp->cpu->hl = 0x0000;
-		comp->cpu->a = 0x00;
+		comp->cpu->regPC = 0x053e;
+		comp->cpu->regBC = 0x000e;
+		comp->cpu->regDE = 0xffff;
+		comp->cpu->regHL = 0x0000;
+		comp->cpu->regA = 0x00;
 		comp->cpu->f = 0x51;
 	} else if (conf.tape.autostart) {
 		emit tapeSignal(TW_STATE, TWS_REC);
@@ -110,12 +110,12 @@ void xThread::emuCycle(Computer* comp) {
 			wavNs += tm;
 			// tape trap
 			if ((comp->hw->grp == HWG_ZX) && (comp->mem->map[0].type == MEM_ROM) && comp->rom && !comp->dos && !comp->ext) {
-				if ((comp->cpu->pc == 0x56c) || (comp->cpu->pc == 0x5e7)) {	// load: ix:addr, de:len (0x580 ?) 56c/559
+				if ((comp->cpu->regPC == 0x56c) || (comp->cpu->regPC == 0x5e7)) {	// load: ix:addr, de:len (0x580 ?) 56c/559
 					tap_catch_load(comp);
-				} else if (comp->cpu->pc == 0x4d0) {				// save: ix:addr, de:len, a:block type(b7), hl:pilot len (1f80/0c98)?
+				} else if (comp->cpu->regPC == 0x4d0) {				// save: ix:addr, de:len, a:block type(b7), hl:pilot len (1f80/0c98)?
 					tap_catch_save(comp);
 				}
-				if (conf.tape.autostart && !conf.tape.fast && ((comp->cpu->pc == 0x5df) || (comp->cpu->pc == 0x53a))) {
+				if (conf.tape.autostart && !conf.tape.fast && ((comp->cpu->regPC == 0x5df) || (comp->cpu->regPC == 0x53a))) {
 					comp->tape->sigLen = 1e6;
 					tapNextBlock(comp->tape);
 					tapStop(comp->tape);

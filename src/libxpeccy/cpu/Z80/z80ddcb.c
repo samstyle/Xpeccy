@@ -2,234 +2,234 @@
 #include "../cpu.h"
 #include "z80_macro.h"
 
-// rlc reg,(ix+e)	[3rd] 4 5add 4rd 3wr
-void ddcb00(CPU* cpu) {XDCBR(cpu->ix,z80_rlc,cpu->b);}
-void ddcb01(CPU* cpu) {XDCBR(cpu->ix,z80_rlc,cpu->c);}
-void ddcb02(CPU* cpu) {XDCBR(cpu->ix,z80_rlc,cpu->d);}
-void ddcb03(CPU* cpu) {XDCBR(cpu->ix,z80_rlc,cpu->e);}
-void ddcb04(CPU* cpu) {XDCBR(cpu->ix,z80_rlc,cpu->h);}
-void ddcb05(CPU* cpu) {XDCBR(cpu->ix,z80_rlc,cpu->l);}
-void ddcb06(CPU* cpu) {XDCB(cpu->ix,z80_rlc);}
-void ddcb07(CPU* cpu) {XDCBR(cpu->ix,z80_rlc,cpu->a);}
-// rrc reg,(ix+e)
-void ddcb08(CPU* cpu) {XDCBR(cpu->ix,z80_rrc,cpu->b);}
-void ddcb09(CPU* cpu) {XDCBR(cpu->ix,z80_rrc,cpu->c);}
-void ddcb0A(CPU* cpu) {XDCBR(cpu->ix,z80_rrc,cpu->d);}
-void ddcb0B(CPU* cpu) {XDCBR(cpu->ix,z80_rrc,cpu->e);}
-void ddcb0C(CPU* cpu) {XDCBR(cpu->ix,z80_rrc,cpu->h);}
-void ddcb0D(CPU* cpu) {XDCBR(cpu->ix,z80_rrc,cpu->l);}
-void ddcb0E(CPU* cpu) {XDCB(cpu->ix,z80_rrc);}
-void ddcb0F(CPU* cpu) {XDCBR(cpu->ix,z80_rrc,cpu->a);}
-// rl reg,(ix+e)
-void ddcb10(CPU* cpu) {XDCBR(cpu->ix,z80_rl,cpu->b);}
-void ddcb11(CPU* cpu) {XDCBR(cpu->ix,z80_rl,cpu->c);}
-void ddcb12(CPU* cpu) {XDCBR(cpu->ix,z80_rl,cpu->d);}
-void ddcb13(CPU* cpu) {XDCBR(cpu->ix,z80_rl,cpu->e);}
-void ddcb14(CPU* cpu) {XDCBR(cpu->ix,z80_rl,cpu->h);}
-void ddcb15(CPU* cpu) {XDCBR(cpu->ix,z80_rl,cpu->l);}
-void ddcb16(CPU* cpu) {XDCB(cpu->ix,z80_rl);}
-void ddcb17(CPU* cpu) {XDCBR(cpu->ix,z80_rl,cpu->a);}
-// rr reg,(ix+e)
-void ddcb18(CPU* cpu) {XDCBR(cpu->ix,z80_rr,cpu->b);}
-void ddcb19(CPU* cpu) {XDCBR(cpu->ix,z80_rr,cpu->c);}
-void ddcb1A(CPU* cpu) {XDCBR(cpu->ix,z80_rr,cpu->d);}
-void ddcb1B(CPU* cpu) {XDCBR(cpu->ix,z80_rr,cpu->e);}
-void ddcb1C(CPU* cpu) {XDCBR(cpu->ix,z80_rr,cpu->h);}
-void ddcb1D(CPU* cpu) {XDCBR(cpu->ix,z80_rr,cpu->l);}
-void ddcb1E(CPU* cpu) {XDCB(cpu->ix,z80_rr);}
-void ddcb1F(CPU* cpu) {XDCBR(cpu->ix,z80_rr,cpu->a);}
-// sla reg,(ix+e)
-void ddcb20(CPU* cpu) {XDCBR(cpu->ix,z80_sla,cpu->b);}
-void ddcb21(CPU* cpu) {XDCBR(cpu->ix,z80_sla,cpu->c);}
-void ddcb22(CPU* cpu) {XDCBR(cpu->ix,z80_sla,cpu->d);}
-void ddcb23(CPU* cpu) {XDCBR(cpu->ix,z80_sla,cpu->e);}
-void ddcb24(CPU* cpu) {XDCBR(cpu->ix,z80_sla,cpu->h);}
-void ddcb25(CPU* cpu) {XDCBR(cpu->ix,z80_sla,cpu->l);}
-void ddcb26(CPU* cpu) {XDCB(cpu->ix,z80_sla);}
-void ddcb27(CPU* cpu) {XDCBR(cpu->ix,z80_sla,cpu->a);}
-// sra reg,(ix+e)
-void ddcb28(CPU* cpu) {XDCBR(cpu->ix,z80_sra,cpu->b);}
-void ddcb29(CPU* cpu) {XDCBR(cpu->ix,z80_sra,cpu->c);}
-void ddcb2A(CPU* cpu) {XDCBR(cpu->ix,z80_sra,cpu->d);}
-void ddcb2B(CPU* cpu) {XDCBR(cpu->ix,z80_sra,cpu->e);}
-void ddcb2C(CPU* cpu) {XDCBR(cpu->ix,z80_sra,cpu->h);}
-void ddcb2D(CPU* cpu) {XDCBR(cpu->ix,z80_sra,cpu->l);}
-void ddcb2E(CPU* cpu) {XDCB(cpu->ix,z80_sra);}
-void ddcb2F(CPU* cpu) {XDCBR(cpu->ix,z80_sra,cpu->a);}
-// sll reg,(ix+e)
-void ddcb30(CPU* cpu) {XDCBR(cpu->ix,z80_sll,cpu->b);}
-void ddcb31(CPU* cpu) {XDCBR(cpu->ix,z80_sll,cpu->c);}
-void ddcb32(CPU* cpu) {XDCBR(cpu->ix,z80_sll,cpu->d);}
-void ddcb33(CPU* cpu) {XDCBR(cpu->ix,z80_sll,cpu->e);}
-void ddcb34(CPU* cpu) {XDCBR(cpu->ix,z80_sll,cpu->h);}
-void ddcb35(CPU* cpu) {XDCBR(cpu->ix,z80_sll,cpu->l);}
-void ddcb36(CPU* cpu) {XDCB(cpu->ix,z80_sll);}
-void ddcb37(CPU* cpu) {XDCBR(cpu->ix,z80_sll,cpu->a);}
-// srl reg,(ix+e)
-void ddcb38(CPU* cpu) {XDCBR(cpu->ix,z80_srl,cpu->b);}
-void ddcb39(CPU* cpu) {XDCBR(cpu->ix,z80_srl,cpu->c);}
-void ddcb3A(CPU* cpu) {XDCBR(cpu->ix,z80_srl,cpu->d);}
-void ddcb3B(CPU* cpu) {XDCBR(cpu->ix,z80_srl,cpu->e);}
-void ddcb3C(CPU* cpu) {XDCBR(cpu->ix,z80_srl,cpu->h);}
-void ddcb3D(CPU* cpu) {XDCBR(cpu->ix,z80_srl,cpu->l);}
-void ddcb3E(CPU* cpu) {XDCB(cpu->ix,z80_srl);}
-void ddcb3F(CPU* cpu) {XDCBR(cpu->ix,z80_srl,cpu->a);}
+// rlc reg,(regIX+e)	[3rd] 4 5add 4rd 3wr
+void ddcb00(CPU* cpu) {XDCBR(cpu->regIX,z80_rlc,cpu->regB);}
+void ddcb01(CPU* cpu) {XDCBR(cpu->regIX,z80_rlc,cpu->regC);}
+void ddcb02(CPU* cpu) {XDCBR(cpu->regIX,z80_rlc,cpu->regD);}
+void ddcb03(CPU* cpu) {XDCBR(cpu->regIX,z80_rlc,cpu->regE);}
+void ddcb04(CPU* cpu) {XDCBR(cpu->regIX,z80_rlc,cpu->regH);}
+void ddcb05(CPU* cpu) {XDCBR(cpu->regIX,z80_rlc,cpu->regL);}
+void ddcb06(CPU* cpu) {XDCB(cpu->regIX,z80_rlc);}
+void ddcb07(CPU* cpu) {XDCBR(cpu->regIX,z80_rlc,cpu->regA);}
+// rrc reg,(regIX+e)
+void ddcb08(CPU* cpu) {XDCBR(cpu->regIX,z80_rrc,cpu->regB);}
+void ddcb09(CPU* cpu) {XDCBR(cpu->regIX,z80_rrc,cpu->regC);}
+void ddcb0A(CPU* cpu) {XDCBR(cpu->regIX,z80_rrc,cpu->regD);}
+void ddcb0B(CPU* cpu) {XDCBR(cpu->regIX,z80_rrc,cpu->regE);}
+void ddcb0C(CPU* cpu) {XDCBR(cpu->regIX,z80_rrc,cpu->regH);}
+void ddcb0D(CPU* cpu) {XDCBR(cpu->regIX,z80_rrc,cpu->regL);}
+void ddcb0E(CPU* cpu) {XDCB(cpu->regIX,z80_rrc);}
+void ddcb0F(CPU* cpu) {XDCBR(cpu->regIX,z80_rrc,cpu->regA);}
+// rl reg,(regIX+e)
+void ddcb10(CPU* cpu) {XDCBR(cpu->regIX,z80_rl,cpu->regB);}
+void ddcb11(CPU* cpu) {XDCBR(cpu->regIX,z80_rl,cpu->regC);}
+void ddcb12(CPU* cpu) {XDCBR(cpu->regIX,z80_rl,cpu->regD);}
+void ddcb13(CPU* cpu) {XDCBR(cpu->regIX,z80_rl,cpu->regE);}
+void ddcb14(CPU* cpu) {XDCBR(cpu->regIX,z80_rl,cpu->regH);}
+void ddcb15(CPU* cpu) {XDCBR(cpu->regIX,z80_rl,cpu->regL);}
+void ddcb16(CPU* cpu) {XDCB(cpu->regIX,z80_rl);}
+void ddcb17(CPU* cpu) {XDCBR(cpu->regIX,z80_rl,cpu->regA);}
+// rr reg,(regIX+e)
+void ddcb18(CPU* cpu) {XDCBR(cpu->regIX,z80_rr,cpu->regB);}
+void ddcb19(CPU* cpu) {XDCBR(cpu->regIX,z80_rr,cpu->regC);}
+void ddcb1A(CPU* cpu) {XDCBR(cpu->regIX,z80_rr,cpu->regD);}
+void ddcb1B(CPU* cpu) {XDCBR(cpu->regIX,z80_rr,cpu->regE);}
+void ddcb1C(CPU* cpu) {XDCBR(cpu->regIX,z80_rr,cpu->regH);}
+void ddcb1D(CPU* cpu) {XDCBR(cpu->regIX,z80_rr,cpu->regL);}
+void ddcb1E(CPU* cpu) {XDCB(cpu->regIX,z80_rr);}
+void ddcb1F(CPU* cpu) {XDCBR(cpu->regIX,z80_rr,cpu->regA);}
+// sla reg,(regIX+e)
+void ddcb20(CPU* cpu) {XDCBR(cpu->regIX,z80_sla,cpu->regB);}
+void ddcb21(CPU* cpu) {XDCBR(cpu->regIX,z80_sla,cpu->regC);}
+void ddcb22(CPU* cpu) {XDCBR(cpu->regIX,z80_sla,cpu->regD);}
+void ddcb23(CPU* cpu) {XDCBR(cpu->regIX,z80_sla,cpu->regE);}
+void ddcb24(CPU* cpu) {XDCBR(cpu->regIX,z80_sla,cpu->regH);}
+void ddcb25(CPU* cpu) {XDCBR(cpu->regIX,z80_sla,cpu->regL);}
+void ddcb26(CPU* cpu) {XDCB(cpu->regIX,z80_sla);}
+void ddcb27(CPU* cpu) {XDCBR(cpu->regIX,z80_sla,cpu->regA);}
+// sra reg,(regIX+e)
+void ddcb28(CPU* cpu) {XDCBR(cpu->regIX,z80_sra,cpu->regB);}
+void ddcb29(CPU* cpu) {XDCBR(cpu->regIX,z80_sra,cpu->regC);}
+void ddcb2A(CPU* cpu) {XDCBR(cpu->regIX,z80_sra,cpu->regD);}
+void ddcb2B(CPU* cpu) {XDCBR(cpu->regIX,z80_sra,cpu->regE);}
+void ddcb2C(CPU* cpu) {XDCBR(cpu->regIX,z80_sra,cpu->regH);}
+void ddcb2D(CPU* cpu) {XDCBR(cpu->regIX,z80_sra,cpu->regL);}
+void ddcb2E(CPU* cpu) {XDCB(cpu->regIX,z80_sra);}
+void ddcb2F(CPU* cpu) {XDCBR(cpu->regIX,z80_sra,cpu->regA);}
+// sll reg,(regIX+e)
+void ddcb30(CPU* cpu) {XDCBR(cpu->regIX,z80_sll,cpu->regB);}
+void ddcb31(CPU* cpu) {XDCBR(cpu->regIX,z80_sll,cpu->regC);}
+void ddcb32(CPU* cpu) {XDCBR(cpu->regIX,z80_sll,cpu->regD);}
+void ddcb33(CPU* cpu) {XDCBR(cpu->regIX,z80_sll,cpu->regE);}
+void ddcb34(CPU* cpu) {XDCBR(cpu->regIX,z80_sll,cpu->regH);}
+void ddcb35(CPU* cpu) {XDCBR(cpu->regIX,z80_sll,cpu->regL);}
+void ddcb36(CPU* cpu) {XDCB(cpu->regIX,z80_sll);}
+void ddcb37(CPU* cpu) {XDCBR(cpu->regIX,z80_sll,cpu->regA);}
+// srl reg,(regIX+e)
+void ddcb38(CPU* cpu) {XDCBR(cpu->regIX,z80_srl,cpu->regB);}
+void ddcb39(CPU* cpu) {XDCBR(cpu->regIX,z80_srl,cpu->regC);}
+void ddcb3A(CPU* cpu) {XDCBR(cpu->regIX,z80_srl,cpu->regD);}
+void ddcb3B(CPU* cpu) {XDCBR(cpu->regIX,z80_srl,cpu->regE);}
+void ddcb3C(CPU* cpu) {XDCBR(cpu->regIX,z80_srl,cpu->regH);}
+void ddcb3D(CPU* cpu) {XDCBR(cpu->regIX,z80_srl,cpu->regL);}
+void ddcb3E(CPU* cpu) {XDCB(cpu->regIX,z80_srl);}
+void ddcb3F(CPU* cpu) {XDCBR(cpu->regIX,z80_srl,cpu->regA);}
 
-// bit n,(ix+e)
-void ddcb46(CPU* cpu) {BITX(cpu->ix,0);}
-void ddcb4E(CPU* cpu) {BITX(cpu->ix,1);}
-void ddcb56(CPU* cpu) {BITX(cpu->ix,2);}
-void ddcb5E(CPU* cpu) {BITX(cpu->ix,3);}
-void ddcb66(CPU* cpu) {BITX(cpu->ix,4);}
-void ddcb6E(CPU* cpu) {BITX(cpu->ix,5);}
-void ddcb76(CPU* cpu) {BITX(cpu->ix,6);}
-void ddcb7E(CPU* cpu) {BITX(cpu->ix,7);}
+// bit n,(regIX+e)
+void ddcb46(CPU* cpu) {BITX(cpu->regIX,0);}
+void ddcb4E(CPU* cpu) {BITX(cpu->regIX,1);}
+void ddcb56(CPU* cpu) {BITX(cpu->regIX,2);}
+void ddcb5E(CPU* cpu) {BITX(cpu->regIX,3);}
+void ddcb66(CPU* cpu) {BITX(cpu->regIX,4);}
+void ddcb6E(CPU* cpu) {BITX(cpu->regIX,5);}
+void ddcb76(CPU* cpu) {BITX(cpu->regIX,6);}
+void ddcb7E(CPU* cpu) {BITX(cpu->regIX,7);}
 
-// res 0,reg,(ix+e)
-void ddcb80(CPU* cpu) {RESXR(cpu->ix,0,cpu->b);}
-void ddcb81(CPU* cpu) {RESXR(cpu->ix,0,cpu->c);}
-void ddcb82(CPU* cpu) {RESXR(cpu->ix,0,cpu->d);}
-void ddcb83(CPU* cpu) {RESXR(cpu->ix,0,cpu->e);}
-void ddcb84(CPU* cpu) {RESXR(cpu->ix,0,cpu->h);}
-void ddcb85(CPU* cpu) {RESXR(cpu->ix,0,cpu->l);}
-void ddcb86(CPU* cpu) {RESX(cpu->ix,0);}
-void ddcb87(CPU* cpu) {RESXR(cpu->ix,0,cpu->a);}
-// res 1,reg,(ix+e)
-void ddcb88(CPU* cpu) {RESXR(cpu->ix,1,cpu->b);}
-void ddcb89(CPU* cpu) {RESXR(cpu->ix,1,cpu->c);}
-void ddcb8A(CPU* cpu) {RESXR(cpu->ix,1,cpu->d);}
-void ddcb8B(CPU* cpu) {RESXR(cpu->ix,1,cpu->e);}
-void ddcb8C(CPU* cpu) {RESXR(cpu->ix,1,cpu->h);}
-void ddcb8D(CPU* cpu) {RESXR(cpu->ix,1,cpu->l);}
-void ddcb8E(CPU* cpu) {RESX(cpu->ix,1);}
-void ddcb8F(CPU* cpu) {RESXR(cpu->ix,1,cpu->a);}
-// res 2,reg,(ix+e)
-void ddcb90(CPU* cpu) {RESXR(cpu->ix,2,cpu->b);}
-void ddcb91(CPU* cpu) {RESXR(cpu->ix,2,cpu->c);}
-void ddcb92(CPU* cpu) {RESXR(cpu->ix,2,cpu->d);}
-void ddcb93(CPU* cpu) {RESXR(cpu->ix,2,cpu->e);}
-void ddcb94(CPU* cpu) {RESXR(cpu->ix,2,cpu->h);}
-void ddcb95(CPU* cpu) {RESXR(cpu->ix,2,cpu->l);}
-void ddcb96(CPU* cpu) {RESX(cpu->ix,2);}
-void ddcb97(CPU* cpu) {RESXR(cpu->ix,2,cpu->a);}
-// res 3,reg,(ix+e)
-void ddcb98(CPU* cpu) {RESXR(cpu->ix,3,cpu->b);}
-void ddcb99(CPU* cpu) {RESXR(cpu->ix,3,cpu->c);}
-void ddcb9A(CPU* cpu) {RESXR(cpu->ix,3,cpu->d);}
-void ddcb9B(CPU* cpu) {RESXR(cpu->ix,3,cpu->e);}
-void ddcb9C(CPU* cpu) {RESXR(cpu->ix,3,cpu->h);}
-void ddcb9D(CPU* cpu) {RESXR(cpu->ix,3,cpu->l);}
-void ddcb9E(CPU* cpu) {RESX(cpu->ix,3);}
-void ddcb9F(CPU* cpu) {RESXR(cpu->ix,3,cpu->a);}
-// res 4,reg,(ix+e)
-void ddcbA0(CPU* cpu) {RESXR(cpu->ix,4,cpu->b);}
-void ddcbA1(CPU* cpu) {RESXR(cpu->ix,4,cpu->c);}
-void ddcbA2(CPU* cpu) {RESXR(cpu->ix,4,cpu->d);}
-void ddcbA3(CPU* cpu) {RESXR(cpu->ix,4,cpu->e);}
-void ddcbA4(CPU* cpu) {RESXR(cpu->ix,4,cpu->h);}
-void ddcbA5(CPU* cpu) {RESXR(cpu->ix,4,cpu->l);}
-void ddcbA6(CPU* cpu) {RESX(cpu->ix,4);}
-void ddcbA7(CPU* cpu) {RESXR(cpu->ix,4,cpu->a);}
-// res 5,reg,(ix+e)
-void ddcbA8(CPU* cpu) {RESXR(cpu->ix,5,cpu->b);}
-void ddcbA9(CPU* cpu) {RESXR(cpu->ix,5,cpu->c);}
-void ddcbAA(CPU* cpu) {RESXR(cpu->ix,5,cpu->d);}
-void ddcbAB(CPU* cpu) {RESXR(cpu->ix,5,cpu->e);}
-void ddcbAC(CPU* cpu) {RESXR(cpu->ix,5,cpu->h);}
-void ddcbAD(CPU* cpu) {RESXR(cpu->ix,5,cpu->l);}
-void ddcbAE(CPU* cpu) {RESX(cpu->ix,5);}
-void ddcbAF(CPU* cpu) {RESXR(cpu->ix,5,cpu->a);}
-// res 6,reg,(ix+e)
-void ddcbB0(CPU* cpu) {RESXR(cpu->ix,6,cpu->b);}
-void ddcbB1(CPU* cpu) {RESXR(cpu->ix,6,cpu->c);}
-void ddcbB2(CPU* cpu) {RESXR(cpu->ix,6,cpu->d);}
-void ddcbB3(CPU* cpu) {RESXR(cpu->ix,6,cpu->e);}
-void ddcbB4(CPU* cpu) {RESXR(cpu->ix,6,cpu->h);}
-void ddcbB5(CPU* cpu) {RESXR(cpu->ix,6,cpu->l);}
-void ddcbB6(CPU* cpu) {RESX(cpu->ix,6);}
-void ddcbB7(CPU* cpu) {RESXR(cpu->ix,6,cpu->a);}
-// res 7,reg,(ix+e)
-void ddcbB8(CPU* cpu) {RESXR(cpu->ix,7,cpu->b);}
-void ddcbB9(CPU* cpu) {RESXR(cpu->ix,7,cpu->c);}
-void ddcbBA(CPU* cpu) {RESXR(cpu->ix,7,cpu->d);}
-void ddcbBB(CPU* cpu) {RESXR(cpu->ix,7,cpu->e);}
-void ddcbBC(CPU* cpu) {RESXR(cpu->ix,7,cpu->h);}
-void ddcbBD(CPU* cpu) {RESXR(cpu->ix,7,cpu->l);}
-void ddcbBE(CPU* cpu) {RESX(cpu->ix,7);}
-void ddcbBF(CPU* cpu) {RESXR(cpu->ix,7,cpu->a);}
+// res 0,reg,(regIX+e)
+void ddcb80(CPU* cpu) {RESXR(cpu->regIX,0,cpu->regB);}
+void ddcb81(CPU* cpu) {RESXR(cpu->regIX,0,cpu->regC);}
+void ddcb82(CPU* cpu) {RESXR(cpu->regIX,0,cpu->regD);}
+void ddcb83(CPU* cpu) {RESXR(cpu->regIX,0,cpu->regE);}
+void ddcb84(CPU* cpu) {RESXR(cpu->regIX,0,cpu->regH);}
+void ddcb85(CPU* cpu) {RESXR(cpu->regIX,0,cpu->regL);}
+void ddcb86(CPU* cpu) {RESX(cpu->regIX,0);}
+void ddcb87(CPU* cpu) {RESXR(cpu->regIX,0,cpu->regA);}
+// res 1,reg,(regIX+e)
+void ddcb88(CPU* cpu) {RESXR(cpu->regIX,1,cpu->regB);}
+void ddcb89(CPU* cpu) {RESXR(cpu->regIX,1,cpu->regC);}
+void ddcb8A(CPU* cpu) {RESXR(cpu->regIX,1,cpu->regD);}
+void ddcb8B(CPU* cpu) {RESXR(cpu->regIX,1,cpu->regE);}
+void ddcb8C(CPU* cpu) {RESXR(cpu->regIX,1,cpu->regH);}
+void ddcb8D(CPU* cpu) {RESXR(cpu->regIX,1,cpu->regL);}
+void ddcb8E(CPU* cpu) {RESX(cpu->regIX,1);}
+void ddcb8F(CPU* cpu) {RESXR(cpu->regIX,1,cpu->regA);}
+// res 2,reg,(regIX+e)
+void ddcb90(CPU* cpu) {RESXR(cpu->regIX,2,cpu->regB);}
+void ddcb91(CPU* cpu) {RESXR(cpu->regIX,2,cpu->regC);}
+void ddcb92(CPU* cpu) {RESXR(cpu->regIX,2,cpu->regD);}
+void ddcb93(CPU* cpu) {RESXR(cpu->regIX,2,cpu->regE);}
+void ddcb94(CPU* cpu) {RESXR(cpu->regIX,2,cpu->regH);}
+void ddcb95(CPU* cpu) {RESXR(cpu->regIX,2,cpu->regL);}
+void ddcb96(CPU* cpu) {RESX(cpu->regIX,2);}
+void ddcb97(CPU* cpu) {RESXR(cpu->regIX,2,cpu->regA);}
+// res 3,reg,(regIX+e)
+void ddcb98(CPU* cpu) {RESXR(cpu->regIX,3,cpu->regB);}
+void ddcb99(CPU* cpu) {RESXR(cpu->regIX,3,cpu->regC);}
+void ddcb9A(CPU* cpu) {RESXR(cpu->regIX,3,cpu->regD);}
+void ddcb9B(CPU* cpu) {RESXR(cpu->regIX,3,cpu->regE);}
+void ddcb9C(CPU* cpu) {RESXR(cpu->regIX,3,cpu->regH);}
+void ddcb9D(CPU* cpu) {RESXR(cpu->regIX,3,cpu->regL);}
+void ddcb9E(CPU* cpu) {RESX(cpu->regIX,3);}
+void ddcb9F(CPU* cpu) {RESXR(cpu->regIX,3,cpu->regA);}
+// res 4,reg,(regIX+e)
+void ddcbA0(CPU* cpu) {RESXR(cpu->regIX,4,cpu->regB);}
+void ddcbA1(CPU* cpu) {RESXR(cpu->regIX,4,cpu->regC);}
+void ddcbA2(CPU* cpu) {RESXR(cpu->regIX,4,cpu->regD);}
+void ddcbA3(CPU* cpu) {RESXR(cpu->regIX,4,cpu->regE);}
+void ddcbA4(CPU* cpu) {RESXR(cpu->regIX,4,cpu->regH);}
+void ddcbA5(CPU* cpu) {RESXR(cpu->regIX,4,cpu->regL);}
+void ddcbA6(CPU* cpu) {RESX(cpu->regIX,4);}
+void ddcbA7(CPU* cpu) {RESXR(cpu->regIX,4,cpu->regA);}
+// res 5,reg,(regIX+e)
+void ddcbA8(CPU* cpu) {RESXR(cpu->regIX,5,cpu->regB);}
+void ddcbA9(CPU* cpu) {RESXR(cpu->regIX,5,cpu->regC);}
+void ddcbAA(CPU* cpu) {RESXR(cpu->regIX,5,cpu->regD);}
+void ddcbAB(CPU* cpu) {RESXR(cpu->regIX,5,cpu->regE);}
+void ddcbAC(CPU* cpu) {RESXR(cpu->regIX,5,cpu->regH);}
+void ddcbAD(CPU* cpu) {RESXR(cpu->regIX,5,cpu->regL);}
+void ddcbAE(CPU* cpu) {RESX(cpu->regIX,5);}
+void ddcbAF(CPU* cpu) {RESXR(cpu->regIX,5,cpu->regA);}
+// res 6,reg,(regIX+e)
+void ddcbB0(CPU* cpu) {RESXR(cpu->regIX,6,cpu->regB);}
+void ddcbB1(CPU* cpu) {RESXR(cpu->regIX,6,cpu->regC);}
+void ddcbB2(CPU* cpu) {RESXR(cpu->regIX,6,cpu->regD);}
+void ddcbB3(CPU* cpu) {RESXR(cpu->regIX,6,cpu->regE);}
+void ddcbB4(CPU* cpu) {RESXR(cpu->regIX,6,cpu->regH);}
+void ddcbB5(CPU* cpu) {RESXR(cpu->regIX,6,cpu->regL);}
+void ddcbB6(CPU* cpu) {RESX(cpu->regIX,6);}
+void ddcbB7(CPU* cpu) {RESXR(cpu->regIX,6,cpu->regA);}
+// res 7,reg,(regIX+e)
+void ddcbB8(CPU* cpu) {RESXR(cpu->regIX,7,cpu->regB);}
+void ddcbB9(CPU* cpu) {RESXR(cpu->regIX,7,cpu->regC);}
+void ddcbBA(CPU* cpu) {RESXR(cpu->regIX,7,cpu->regD);}
+void ddcbBB(CPU* cpu) {RESXR(cpu->regIX,7,cpu->regE);}
+void ddcbBC(CPU* cpu) {RESXR(cpu->regIX,7,cpu->regH);}
+void ddcbBD(CPU* cpu) {RESXR(cpu->regIX,7,cpu->regL);}
+void ddcbBE(CPU* cpu) {RESX(cpu->regIX,7);}
+void ddcbBF(CPU* cpu) {RESXR(cpu->regIX,7,cpu->regA);}
 
-// set 0,reg,(ix+e)
-void ddcbC0(CPU* cpu) {SETXR(cpu->ix,0,cpu->b);}
-void ddcbC1(CPU* cpu) {SETXR(cpu->ix,0,cpu->c);}
-void ddcbC2(CPU* cpu) {SETXR(cpu->ix,0,cpu->d);}
-void ddcbC3(CPU* cpu) {SETXR(cpu->ix,0,cpu->e);}
-void ddcbC4(CPU* cpu) {SETXR(cpu->ix,0,cpu->h);}
-void ddcbC5(CPU* cpu) {SETXR(cpu->ix,0,cpu->l);}
-void ddcbC6(CPU* cpu) {SETX(cpu->ix,0);}
-void ddcbC7(CPU* cpu) {SETXR(cpu->ix,0,cpu->a);}
-// set 1,reg,(ix+e)
-void ddcbC8(CPU* cpu) {SETXR(cpu->ix,1,cpu->b);}
-void ddcbC9(CPU* cpu) {SETXR(cpu->ix,1,cpu->c);}
-void ddcbCA(CPU* cpu) {SETXR(cpu->ix,1,cpu->d);}
-void ddcbCB(CPU* cpu) {SETXR(cpu->ix,1,cpu->e);}
-void ddcbCC(CPU* cpu) {SETXR(cpu->ix,1,cpu->h);}
-void ddcbCD(CPU* cpu) {SETXR(cpu->ix,1,cpu->l);}
-void ddcbCE(CPU* cpu) {SETX(cpu->ix,1);}
-void ddcbCF(CPU* cpu) {SETXR(cpu->ix,1,cpu->a);}
-// set 2,reg,(ix+e)
-void ddcbD0(CPU* cpu) {SETXR(cpu->ix,2,cpu->b);}
-void ddcbD1(CPU* cpu) {SETXR(cpu->ix,2,cpu->c);}
-void ddcbD2(CPU* cpu) {SETXR(cpu->ix,2,cpu->d);}
-void ddcbD3(CPU* cpu) {SETXR(cpu->ix,2,cpu->e);}
-void ddcbD4(CPU* cpu) {SETXR(cpu->ix,2,cpu->h);}
-void ddcbD5(CPU* cpu) {SETXR(cpu->ix,2,cpu->l);}
-void ddcbD6(CPU* cpu) {SETX(cpu->ix,2);}
-void ddcbD7(CPU* cpu) {SETXR(cpu->ix,2,cpu->a);}
-// set 3,reg,(ix+e)
-void ddcbD8(CPU* cpu) {SETXR(cpu->ix,3,cpu->b);}
-void ddcbD9(CPU* cpu) {SETXR(cpu->ix,3,cpu->c);}
-void ddcbDA(CPU* cpu) {SETXR(cpu->ix,3,cpu->d);}
-void ddcbDB(CPU* cpu) {SETXR(cpu->ix,3,cpu->e);}
-void ddcbDC(CPU* cpu) {SETXR(cpu->ix,3,cpu->h);}
-void ddcbDD(CPU* cpu) {SETXR(cpu->ix,3,cpu->l);}
-void ddcbDE(CPU* cpu) {SETX(cpu->ix,3);}
-void ddcbDF(CPU* cpu) {SETXR(cpu->ix,3,cpu->a);}
-// set 4,reg,(ix+e)
-void ddcbE0(CPU* cpu) {SETXR(cpu->ix,4,cpu->b);}
-void ddcbE1(CPU* cpu) {SETXR(cpu->ix,4,cpu->c);}
-void ddcbE2(CPU* cpu) {SETXR(cpu->ix,4,cpu->d);}
-void ddcbE3(CPU* cpu) {SETXR(cpu->ix,4,cpu->e);}
-void ddcbE4(CPU* cpu) {SETXR(cpu->ix,4,cpu->h);}
-void ddcbE5(CPU* cpu) {SETXR(cpu->ix,4,cpu->l);}
-void ddcbE6(CPU* cpu) {SETX(cpu->ix,4);}
-void ddcbE7(CPU* cpu) {SETXR(cpu->ix,4,cpu->a);}
-// set 5,reg,(ix+e)
-void ddcbE8(CPU* cpu) {SETXR(cpu->ix,5,cpu->b);}
-void ddcbE9(CPU* cpu) {SETXR(cpu->ix,5,cpu->c);}
-void ddcbEA(CPU* cpu) {SETXR(cpu->ix,5,cpu->d);}
-void ddcbEB(CPU* cpu) {SETXR(cpu->ix,5,cpu->e);}
-void ddcbEC(CPU* cpu) {SETXR(cpu->ix,5,cpu->h);}
-void ddcbED(CPU* cpu) {SETXR(cpu->ix,5,cpu->l);}
-void ddcbEE(CPU* cpu) {SETX(cpu->ix,5);}
-void ddcbEF(CPU* cpu) {SETXR(cpu->ix,5,cpu->a);}
-// set 6,reg,(ix+e)
-void ddcbF0(CPU* cpu) {SETXR(cpu->ix,6,cpu->b);}
-void ddcbF1(CPU* cpu) {SETXR(cpu->ix,6,cpu->c);}
-void ddcbF2(CPU* cpu) {SETXR(cpu->ix,6,cpu->d);}
-void ddcbF3(CPU* cpu) {SETXR(cpu->ix,6,cpu->e);}
-void ddcbF4(CPU* cpu) {SETXR(cpu->ix,6,cpu->h);}
-void ddcbF5(CPU* cpu) {SETXR(cpu->ix,6,cpu->l);}
-void ddcbF6(CPU* cpu) {SETX(cpu->ix,6);}
-void ddcbF7(CPU* cpu) {SETXR(cpu->ix,6,cpu->a);}
-// set 7,reg,(ix+e)
-void ddcbF8(CPU* cpu) {SETXR(cpu->ix,7,cpu->b);}
-void ddcbF9(CPU* cpu) {SETXR(cpu->ix,7,cpu->c);}
-void ddcbFA(CPU* cpu) {SETXR(cpu->ix,7,cpu->d);}
-void ddcbFB(CPU* cpu) {SETXR(cpu->ix,7,cpu->e);}
-void ddcbFC(CPU* cpu) {SETXR(cpu->ix,7,cpu->h);}
-void ddcbFD(CPU* cpu) {SETXR(cpu->ix,7,cpu->l);}
-void ddcbFE(CPU* cpu) {SETX(cpu->ix,7);}
-void ddcbFF(CPU* cpu) {SETXR(cpu->ix,7,cpu->a);}
+// set 0,reg,(regIX+e)
+void ddcbC0(CPU* cpu) {SETXR(cpu->regIX,0,cpu->regB);}
+void ddcbC1(CPU* cpu) {SETXR(cpu->regIX,0,cpu->regC);}
+void ddcbC2(CPU* cpu) {SETXR(cpu->regIX,0,cpu->regD);}
+void ddcbC3(CPU* cpu) {SETXR(cpu->regIX,0,cpu->regE);}
+void ddcbC4(CPU* cpu) {SETXR(cpu->regIX,0,cpu->regH);}
+void ddcbC5(CPU* cpu) {SETXR(cpu->regIX,0,cpu->regL);}
+void ddcbC6(CPU* cpu) {SETX(cpu->regIX,0);}
+void ddcbC7(CPU* cpu) {SETXR(cpu->regIX,0,cpu->regA);}
+// set 1,reg,(regIX+e)
+void ddcbC8(CPU* cpu) {SETXR(cpu->regIX,1,cpu->regB);}
+void ddcbC9(CPU* cpu) {SETXR(cpu->regIX,1,cpu->regC);}
+void ddcbCA(CPU* cpu) {SETXR(cpu->regIX,1,cpu->regD);}
+void ddcbCB(CPU* cpu) {SETXR(cpu->regIX,1,cpu->regE);}
+void ddcbCC(CPU* cpu) {SETXR(cpu->regIX,1,cpu->regH);}
+void ddcbCD(CPU* cpu) {SETXR(cpu->regIX,1,cpu->regL);}
+void ddcbCE(CPU* cpu) {SETX(cpu->regIX,1);}
+void ddcbCF(CPU* cpu) {SETXR(cpu->regIX,1,cpu->regA);}
+// set 2,reg,(regIX+e)
+void ddcbD0(CPU* cpu) {SETXR(cpu->regIX,2,cpu->regB);}
+void ddcbD1(CPU* cpu) {SETXR(cpu->regIX,2,cpu->regC);}
+void ddcbD2(CPU* cpu) {SETXR(cpu->regIX,2,cpu->regD);}
+void ddcbD3(CPU* cpu) {SETXR(cpu->regIX,2,cpu->regE);}
+void ddcbD4(CPU* cpu) {SETXR(cpu->regIX,2,cpu->regH);}
+void ddcbD5(CPU* cpu) {SETXR(cpu->regIX,2,cpu->regL);}
+void ddcbD6(CPU* cpu) {SETX(cpu->regIX,2);}
+void ddcbD7(CPU* cpu) {SETXR(cpu->regIX,2,cpu->regA);}
+// set 3,reg,(regIX+e)
+void ddcbD8(CPU* cpu) {SETXR(cpu->regIX,3,cpu->regB);}
+void ddcbD9(CPU* cpu) {SETXR(cpu->regIX,3,cpu->regC);}
+void ddcbDA(CPU* cpu) {SETXR(cpu->regIX,3,cpu->regD);}
+void ddcbDB(CPU* cpu) {SETXR(cpu->regIX,3,cpu->regE);}
+void ddcbDC(CPU* cpu) {SETXR(cpu->regIX,3,cpu->regH);}
+void ddcbDD(CPU* cpu) {SETXR(cpu->regIX,3,cpu->regL);}
+void ddcbDE(CPU* cpu) {SETX(cpu->regIX,3);}
+void ddcbDF(CPU* cpu) {SETXR(cpu->regIX,3,cpu->regA);}
+// set 4,reg,(regIX+e)
+void ddcbE0(CPU* cpu) {SETXR(cpu->regIX,4,cpu->regB);}
+void ddcbE1(CPU* cpu) {SETXR(cpu->regIX,4,cpu->regC);}
+void ddcbE2(CPU* cpu) {SETXR(cpu->regIX,4,cpu->regD);}
+void ddcbE3(CPU* cpu) {SETXR(cpu->regIX,4,cpu->regE);}
+void ddcbE4(CPU* cpu) {SETXR(cpu->regIX,4,cpu->regH);}
+void ddcbE5(CPU* cpu) {SETXR(cpu->regIX,4,cpu->regL);}
+void ddcbE6(CPU* cpu) {SETX(cpu->regIX,4);}
+void ddcbE7(CPU* cpu) {SETXR(cpu->regIX,4,cpu->regA);}
+// set 5,reg,(regIX+e)
+void ddcbE8(CPU* cpu) {SETXR(cpu->regIX,5,cpu->regB);}
+void ddcbE9(CPU* cpu) {SETXR(cpu->regIX,5,cpu->regC);}
+void ddcbEA(CPU* cpu) {SETXR(cpu->regIX,5,cpu->regD);}
+void ddcbEB(CPU* cpu) {SETXR(cpu->regIX,5,cpu->regE);}
+void ddcbEC(CPU* cpu) {SETXR(cpu->regIX,5,cpu->regH);}
+void ddcbED(CPU* cpu) {SETXR(cpu->regIX,5,cpu->regL);}
+void ddcbEE(CPU* cpu) {SETX(cpu->regIX,5);}
+void ddcbEF(CPU* cpu) {SETXR(cpu->regIX,5,cpu->regA);}
+// set 6,reg,(regIX+e)
+void ddcbF0(CPU* cpu) {SETXR(cpu->regIX,6,cpu->regB);}
+void ddcbF1(CPU* cpu) {SETXR(cpu->regIX,6,cpu->regC);}
+void ddcbF2(CPU* cpu) {SETXR(cpu->regIX,6,cpu->regD);}
+void ddcbF3(CPU* cpu) {SETXR(cpu->regIX,6,cpu->regE);}
+void ddcbF4(CPU* cpu) {SETXR(cpu->regIX,6,cpu->regH);}
+void ddcbF5(CPU* cpu) {SETXR(cpu->regIX,6,cpu->regL);}
+void ddcbF6(CPU* cpu) {SETX(cpu->regIX,6);}
+void ddcbF7(CPU* cpu) {SETXR(cpu->regIX,6,cpu->regA);}
+// set 7,reg,(regIX+e)
+void ddcbF8(CPU* cpu) {SETXR(cpu->regIX,7,cpu->regB);}
+void ddcbF9(CPU* cpu) {SETXR(cpu->regIX,7,cpu->regC);}
+void ddcbFA(CPU* cpu) {SETXR(cpu->regIX,7,cpu->regD);}
+void ddcbFB(CPU* cpu) {SETXR(cpu->regIX,7,cpu->regE);}
+void ddcbFC(CPU* cpu) {SETXR(cpu->regIX,7,cpu->regH);}
+void ddcbFD(CPU* cpu) {SETXR(cpu->regIX,7,cpu->regL);}
+void ddcbFE(CPU* cpu) {SETX(cpu->regIX,7);}
+void ddcbFF(CPU* cpu) {SETXR(cpu->regIX,7,cpu->regA);}
 
 //====
 // why opcode fetching doesn't eat 4T?

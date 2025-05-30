@@ -9,33 +9,33 @@ void m6502_reset(CPU* cpu) {
 	cpu->lock = 0;
 	cpu->intrq = 0;
 	cpu->inten = MOS6502_INT_IRQ | MOS6502_INT_NMI;	// brk/nmi enabled. irq is allways enabled, controlled by I flag
-	cpu->sp = 0x1fd;				// segment 01xx is stack
+	cpu->regSP = 0x1fd;				// segment 01xx is stack
 	// cpu->f = MF5 | MFI;
 	cpu->fm.f5 = 1;
 	cpu->fm.i = 1;
-	cpu->a = 0;
-	cpu->lx = 0;
-	cpu->ly = 0;
-	cpu->lpc = cpu->mrd(0xfffc, 0, cpu->xptr);
-	cpu->hpc = cpu->mrd(0xfffd, 0, cpu->xptr);
+	cpu->regA = 0;
+	cpu->regIXl = 0;
+	cpu->regIYl = 0;
+	cpu->regPCl = cpu->mrd(0xfffc, 0, cpu->xptr);
+	cpu->regPCh = cpu->mrd(0xfffd, 0, cpu->xptr);
 //	printf("mos pc = %.4X\n", cpu->pc);
 }
 
 void m6502_push_int(CPU* cpu) {
-	cpu->mwr(cpu->sp, cpu->hpc, cpu->xptr);
-	cpu->lsp--;
-	cpu->mwr(cpu->sp, cpu->lpc, cpu->xptr);
-	cpu->lsp--;
-	cpu->mwr(cpu->sp, cpu->f, cpu->xptr);
-	cpu->lsp--;
+	cpu->mwr(cpu->regSP, cpu->regPCh, cpu->xptr);
+	cpu->regSPl--;
+	cpu->mwr(cpu->regSP, cpu->regPCl, cpu->xptr);
+	cpu->regSPl--;
+	cpu->mwr(cpu->regSP, cpu->f, cpu->xptr);
+	cpu->regSPl--;
 }
 
 int m6502_int(CPU* cpu) {
 	if (cpu->intrq & MOS6502_INT_NMI) {		// NMI (VBlank)
 		cpu->intrq &= ~MOS6502_INT_NMI;
 		m6502_push_int(cpu);
-		cpu->lpc = cpu->mrd(0xfffa, 0, cpu->xptr);
-		cpu->hpc = cpu->mrd(0xfffb, 0, cpu->xptr);
+		cpu->regPCl = cpu->mrd(0xfffa, 0, cpu->xptr);
+		cpu->regPCh = cpu->mrd(0xfffb, 0, cpu->xptr);
 	} else if (cpu->intrq & MOS6502_INT_IRQ) {	// IRQ
 		cpu->intrq &= ~MOS6502_INT_IRQ;
 		//if (!(cpu->f & MFI)) {			// IRQ enabled, I flag = 0
@@ -45,8 +45,8 @@ int m6502_int(CPU* cpu) {
 			m6502_push_int(cpu);
 			//cpu->f |= MFI;			// disable IRQ
 			cpu->fm.i = 1;
-			cpu->lpc = cpu->mrd(0xfffe, 0, cpu->xptr);
-			cpu->hpc = cpu->mrd(0xffff, 0, cpu->xptr);
+			cpu->regPCl = cpu->mrd(0xfffe, 0, cpu->xptr);
+			cpu->regPCh = cpu->mrd(0xffff, 0, cpu->xptr);
 		}
 	}
 	return 7;				// real: 7T
@@ -64,7 +64,7 @@ int m6502_exec(CPU* cpu) {
 		res = m6502_int(cpu);
 	} else {
 		cpu->noint = 0;
-		com = cpu->mrd(cpu->pc++, 1, cpu->xptr);
+		com = cpu->mrd(cpu->regPC++, 1, cpu->xptr);
 		opCode* op = &mosTab[com];
 		cpu->t = op->t;
 		cpu->sta = op->flag & OF_EXT;
@@ -124,11 +124,11 @@ xAsmScan m6502_asm(int a, const char* cbuf, char* buf) {
 }
 
 xRegDsc m6502RegTab[] = {
-	{M6502_REG_PC, "PC", REG_WORD | REG_RDMP, offsetof(CPU, pc)},
-	{M6502_REG_A, "A", REG_BYTE, offsetof(CPU, a)},
-	{M6502_REG_X, "X", REG_BYTE, offsetof(CPU, lx)},
-	{M6502_REG_Y, "Y", REG_BYTE, offsetof(CPU, ly)},
-	{M6502_REG_S, "S", REG_BYTE, offsetof(CPU, lsp)},
+	{M6502_REG_PC, "PC", REG_WORD | REG_RDMP, offsetof(CPU, regPC)},
+	{M6502_REG_A, "A", REG_BYTE, offsetof(CPU, regA)},
+	{M6502_REG_X, "X", REG_BYTE, offsetof(CPU, regIXl)},	// regX
+	{M6502_REG_Y, "Y", REG_BYTE, offsetof(CPU, regIYl)},	// regY
+	{M6502_REG_S, "S", REG_BYTE, offsetof(CPU, regSPl)},	// regS
 	{M6502_REG_F, "P", REG_32, offsetof(CPU, f)},
 	{REG_NONE, "", 0, 0}
 };
@@ -142,12 +142,12 @@ void m6502_get_regs(CPU* cpu, xRegBunch* bunch) {
 		bunch->regs[idx].name = m6502RegTab[idx].name;
 		bunch->regs[idx].type = m6502RegTab[idx].type;
 		switch(m6502RegTab[idx].id) {
-			case M6502_REG_PC: bunch->regs[idx].value = cpu->pc; break;
-			case M6502_REG_S: bunch->regs[idx].value = cpu->lsp; break;
-			case M6502_REG_A: bunch->regs[idx].value = cpu->a; break;
+			case M6502_REG_PC: bunch->regs[idx].value = cpu->regPC; break;
+			case M6502_REG_S: bunch->regs[idx].value = cpu->regSPl; break;
+			case M6502_REG_A: bunch->regs[idx].value = cpu->regA; break;
 			case M6502_REG_F: bunch->regs[idx].value = cpu->f; break;
-			case M6502_REG_X: bunch->regs[idx].value = cpu->lx; break;
-			case M6502_REG_Y: bunch->regs[idx].value = cpu->ly; break;
+			case M6502_REG_X: bunch->regs[idx].value = cpu->regIXl; break;
+			case M6502_REG_Y: bunch->regs[idx].value = cpu->regIYl; break;
 		}
 		idx++;
 	}
@@ -160,12 +160,12 @@ void m6502_set_regs(CPU* cpu, xRegBunch bunch) {
 	int idx;
 	for (idx = 0; idx < 32; idx++) {
 		switch(bunch.regs[idx].id) {
-			case M6502_REG_PC: cpu->pc = bunch.regs[idx].value; break;
-			case M6502_REG_S: cpu->sp = 0x0100 | (bunch.regs[idx].value & 0xff); break;
-			case M6502_REG_A: cpu->a = bunch.regs[idx].value & 0xff; break;
+			case M6502_REG_PC: cpu->regPC = bunch.regs[idx].value; break;
+			case M6502_REG_S: cpu->regSP = 0x0100 | (bunch.regs[idx].value & 0xff); break;
+			case M6502_REG_A: cpu->regA = bunch.regs[idx].value & 0xff; break;
 			case M6502_REG_F: cpu->f = bunch.regs[idx].value & 0xff; break;
-			case M6502_REG_X: cpu->lx = bunch.regs[idx].value & 0xff; break;
-			case M6502_REG_Y: cpu->ly = bunch.regs[idx].value & 0xff; break;
+			case M6502_REG_X: cpu->regIXl = bunch.regs[idx].value & 0xff; break;
+			case M6502_REG_Y: cpu->regIYl = bunch.regs[idx].value & 0xff; break;
 			case REG_NONE: idx = 100; break;
 		}
 	}

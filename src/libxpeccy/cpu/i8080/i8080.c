@@ -4,10 +4,10 @@
 extern opCode i8080_tab[256];
 
 void i8080_reset(CPU* cpu) {
-	cpu->pc = 0x0000;
-	cpu->bc = cpu->de = cpu->hl = 0xffff;
-	cpu->sp = 0xffff;
-	cpu->a = 0xff;
+	cpu->regPC = 0x0000;
+	cpu->regBC = cpu->regDE = cpu->regHL = 0xffff;
+	cpu->regSP = 0xffff;
+	cpu->regA = 0xff;
 	cpu->f = 0x02;
 	cpu->inten = 0;
 }
@@ -15,7 +15,7 @@ void i8080_reset(CPU* cpu) {
 int i8080_int(CPU* cpu) {
 	cpu->iff1 = 0;
 	if (cpu->halt) {
-		cpu->pc++;
+		cpu->regPC++;
 		cpu->halt = 0;
 	}
 	cpu->t = 2 + 5;			// 2 extra + 5 on RST38 fetch
@@ -28,7 +28,7 @@ int i8080_exec(CPU* cpu) {
 	if (cpu->intrq & cpu->inten)
 		cpu->t = i8080_int(cpu);
 	if (cpu->t) return cpu->t;
-	cpu->com = cpu->mrd(cpu->pc++, 1, cpu->xptr) & 0xff;
+	cpu->com = cpu->mrd(cpu->regPC++, 1, cpu->xptr) & 0xff;
 	cpu->op = &i8080_tab[cpu->com];
 	cpu->t = cpu->op->t;
 	cpu->op->exec(cpu);
@@ -84,13 +84,13 @@ xMnem i8080_mnem(CPU* cpu, int qadr, cbdmr mrd, void* data) {
 }
 
 xRegDsc i8080RegTab[] = {
-	{I8080_REG_PC, "PC", REG_WORD | REG_RDMP, offsetof(CPU, pc)},
+	{I8080_REG_PC, "PC", REG_WORD | REG_RDMP, offsetof(CPU, regPC)},
 	{I8080_REG_AF, "AF", REG_WORD, 0},
-	{I8080_REG_BC, "BC", REG_WORD | REG_RDMP, offsetof(CPU, bc)},
-	{I8080_REG_DE, "DE", REG_WORD | REG_RDMP, offsetof(CPU, de)},
-	{I8080_REG_HL, "HL", REG_WORD | REG_RDMP, offsetof(CPU, hl)},
-	{I8080_REG_SP, "SP", REG_WORD | REG_RDMP, offsetof(CPU, sp)},
-	{REG_EMPTY, "A", REG_BYTE, offsetof(CPU, a)},
+	{I8080_REG_BC, "BC", REG_WORD | REG_RDMP, offsetof(CPU, regBC)},
+	{I8080_REG_DE, "DE", REG_WORD | REG_RDMP, offsetof(CPU, regDE)},
+	{I8080_REG_HL, "HL", REG_WORD | REG_RDMP, offsetof(CPU, regHL)},
+	{I8080_REG_SP, "SP", REG_WORD | REG_RDMP, offsetof(CPU, regSP)},
+	{REG_EMPTY, "A", REG_BYTE, offsetof(CPU, regA)},
 	{REG_EMPTY, "F", REG_32, offsetof(CPU, f)},
 	{REG_NONE, "", 0, 0}
 };
@@ -105,15 +105,15 @@ void i8080_get_regs(CPU* cpu, xRegBunch* bunch) {
 		bunch->regs[idx].name = i8080RegTab[idx].name;
 		bunch->regs[idx].type = i8080RegTab[idx].type;
 		switch(i8080RegTab[idx].id) {
-			case I8080_REG_PC: bunch->regs[idx].value = cpu->pc; break;
-			case I8080_REG_SP: bunch->regs[idx].value = cpu->sp; break;
-			case I8080_REG_AF: rx.h = cpu->a;
+			case I8080_REG_PC: bunch->regs[idx].value = cpu->regPC; break;
+			case I8080_REG_SP: bunch->regs[idx].value = cpu->regSP; break;
+			case I8080_REG_AF: rx.h = cpu->regA;
 					rx.l = cpu->f & 0xff;
 					bunch->regs[idx].value = rx.w;
 					break;
-			case I8080_REG_BC: bunch->regs[idx].value = cpu->bc; break;
-			case I8080_REG_DE: bunch->regs[idx].value = cpu->de; break;
-			case I8080_REG_HL: bunch->regs[idx].value = cpu->hl; break;
+			case I8080_REG_BC: bunch->regs[idx].value = cpu->regBC; break;
+			case I8080_REG_DE: bunch->regs[idx].value = cpu->regDE; break;
+			case I8080_REG_HL: bunch->regs[idx].value = cpu->regHL; break;
 		}
 		idx++;
 	}
@@ -127,15 +127,15 @@ void i8080_set_regs(CPU* cpu, xRegBunch bunch) {
 	PAIR(w,h,l)rx;
 	for (idx = 0; idx < 32; idx++) {
 		switch(bunch.regs[idx].id) {
-			case I8080_REG_PC: cpu->pc = bunch.regs[idx].value; break;
-			case I8080_REG_SP: cpu->sp = bunch.regs[idx].value; break;
+			case I8080_REG_PC: cpu->regPC = bunch.regs[idx].value; break;
+			case I8080_REG_SP: cpu->regSP = bunch.regs[idx].value; break;
 			case I8080_REG_AF: rx.w = bunch.regs[idx].value;
-					cpu->a = rx.h;
+					cpu->regA = rx.h;
 					cpu->f = rx.l;
 					break;
-			case I8080_REG_BC: cpu->bc = bunch.regs[idx].value; break;
-			case I8080_REG_DE: cpu->de = bunch.regs[idx].value; break;
-			case I8080_REG_HL: cpu->hl = bunch.regs[idx].value; break;
+			case I8080_REG_BC: cpu->regBC = bunch.regs[idx].value; break;
+			case I8080_REG_DE: cpu->regDE = bunch.regs[idx].value; break;
+			case I8080_REG_HL: cpu->regHL = bunch.regs[idx].value; break;
 			case REG_NONE: idx = 100; break;
 		}
 	}

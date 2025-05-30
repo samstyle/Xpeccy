@@ -7,225 +7,225 @@ extern opCode fdcbTab[256];
 extern opCode ddTab[256];
 extern opCode edTab[256];
 
-// 09	add iy,bc	11	mptr = iy+1 before adding
+// 09	add regIY,regBC	11	mptr = regIY+1 before adding
 void fd09(CPU* cpu) {
-	cpu->iy = z80_add16(cpu, cpu->iy, cpu->bc); //ADD16(cpu->iy, cpu->bc);
+	cpu->regIY = z80_add16(cpu, cpu->regIY, cpu->regBC); //ADD16(cpu->iy, cpu->bc);
 }
 
-// 19	add iy,de	11	mptr = iy+1 before adding
+// 19	add regIY,regDE	11	mptr = regIY+1 before adding
 void fd19(CPU* cpu) {
-	cpu->iy = z80_add16(cpu, cpu->iy, cpu->de); //ADD16(cpu->iy,cpu->de);
+	cpu->regIY = z80_add16(cpu, cpu->regIY, cpu->regDE); //ADD16(cpu->iy,cpu->de);
 }
 
 // 21	ld iy,nn	4 3rd 3rd
 void fd21(CPU* cpu) {
-	cpu->ly = z80_mrd(cpu, cpu->pc++);
-	cpu->hy = z80_mrd(cpu, cpu->pc++);
+	cpu->regIYl = z80_mrd(cpu, cpu->regPC++);
+	cpu->regIYh = z80_mrd(cpu, cpu->regPC++);
 }
 
-// 22	ld (nn),iy	4 3rd 3rd 3wr 3wr	mptr = nn+1
+// 22	ld (nn),iy	4 3rd 3rd 3wr 3wr	regWZ = nn+1
 void fd22(CPU* cpu) {
-	cpu->lptr = z80_mrd(cpu, cpu->pc++);
-	cpu->hptr = z80_mrd(cpu, cpu->pc++);
-	z80_mwr(cpu, cpu->mptr++, cpu->ly);
-	z80_mwr(cpu, cpu->mptr, cpu->hy);
+	cpu->regWZl = z80_mrd(cpu, cpu->regPC++);
+	cpu->regWZh = z80_mrd(cpu, cpu->regPC++);
+	z80_mwr(cpu, cpu->regWZ++, cpu->regIYl);
+	z80_mwr(cpu, cpu->regWZ, cpu->regIYh);
 }
 
-// 23	inc iy		6
+// 23	inc regIY		6
 void fd23(CPU* cpu) {
-	cpu->iy++;
+	cpu->regIY++;
 }
 
-// 24	inc hy		4
+// 24	inc regIYh		4
 void fd24(CPU* cpu) {
-	cpu->hy = z80_inc8(cpu, cpu->hy); // INC(cpu->hy);
+	cpu->regIYh = z80_inc8(cpu, cpu->regIYh); // INC(cpu->hy);
 }
 
-// 25	dec hy		4
+// 25	dec regIYh		4
 void fd25(CPU* cpu) {
-	cpu->hy = z80_dec8(cpu, cpu->hy); //DEC(cpu->hy);
+	cpu->regIYh = z80_dec8(cpu, cpu->regIYh); //DEC(cpu->hy);
 }
 
-// 26	ld hy,n		4 3rd
+// 26	ld regIYh,n		4 3rd
 void fd26(CPU* cpu) {
-	cpu->hy = z80_mrd(cpu, cpu->pc++);
+	cpu->regIYh = z80_mrd(cpu, cpu->regPC++);
 }
 
-// 29	add iy,iy	11
+// 29	add regIY,regIY	11
 void fd29(CPU* cpu) {
-	cpu->iy = z80_add16(cpu, cpu->iy, cpu->iy); //ADD16(cpu->iy,cpu->iy);
+	cpu->regIY = z80_add16(cpu, cpu->regIY, cpu->regIY); //ADD16(cpu->iy,cpu->iy);
 }
 
-// 2A	ld iy,(nn)	4 3rd 3rd 3rd 3rd	mptr = nn+1
+// 2A	ld iy,(nn)	4 3rd 3rd 3rd 3rd	regWZ = nn+1
 void fd2A(CPU* cpu) {
-	cpu->lptr = z80_mrd(cpu, cpu->pc++);
-	cpu->hptr = z80_mrd(cpu, cpu->pc++);
-	cpu->ly = z80_mrd(cpu, cpu->mptr++);
-	cpu->hy = z80_mrd(cpu, cpu->mptr);
+	cpu->regWZl = z80_mrd(cpu, cpu->regPC++);
+	cpu->regWZh = z80_mrd(cpu, cpu->regPC++);
+	cpu->regIYl = z80_mrd(cpu, cpu->regWZ++);
+	cpu->regIYh = z80_mrd(cpu, cpu->regWZ);
 }
 
-// 2B	dec iy		6
+// 2B	dec regIY		6
 void fd2B(CPU* cpu) {
-	cpu->iy--;
+	cpu->regIY--;
 }
 
-// 2C	inc ly		4
+// 2C	inc regIYl		4
 void fd2C(CPU* cpu) {
-	cpu->ly = z80_inc8(cpu, cpu->ly); // INC(cpu->ly);
+	cpu->regIYl = z80_inc8(cpu, cpu->regIYl); // INC(cpu->ly);
 }
 
-// 2D	dec ly		4
+// 2D	dec regIYl		4
 void fd2D(CPU* cpu) {
-	cpu->ly = z80_dec8(cpu, cpu->ly); // DEC(cpu->ly);
+	cpu->regIYl = z80_dec8(cpu, cpu->regIYl); // DEC(cpu->ly);
 }
 
-// 2E	ld ly,n		4 3rd
+// 2E	ld regIYl,n		4 3rd
 void fd2E(CPU* cpu) {
-	cpu->ly = z80_mrd(cpu, cpu->pc++);
+	cpu->regIYl = z80_mrd(cpu, cpu->regPC++);
 }
 
-// 34	inc (iy+e)	4 3rd 5add 4rd 3wr
+// 34	inc (regIY+e)	4 3rd 5add 4rd 3wr
 void fd34(CPU* cpu) {
-	RDSHIFT(cpu->iy);
-	cpu->tmp = z80_mrd(cpu, cpu->mptr);
+	RDSHIFT(cpu->regIY);
+	cpu->tmp = z80_mrd(cpu, cpu->regWZ);
 	cpu->t++;
 	cpu->tmp = z80_inc8(cpu, cpu->tmp); //INC(cpu->tmp);
-	z80_mwr(cpu, cpu->mptr,cpu->tmp);
+	z80_mwr(cpu, cpu->regWZ,cpu->tmp);
 }
 
-// 35	dec (iy+e)	4 3rd 5add 4rd 3wr	mptr = iy+e
+// 35	dec (regIY+e)	4 3rd 5add 4rd 3wr	regWZ = regIY+e
 void fd35(CPU* cpu) {
-	RDSHIFT(cpu->iy);
-	cpu->tmp = z80_mrd(cpu, cpu->mptr);
+	RDSHIFT(cpu->regIY);
+	cpu->tmp = z80_mrd(cpu, cpu->regWZ);
 	cpu->t++;
 	cpu->tmp = z80_dec8(cpu, cpu->tmp); //DEC(cpu->tmp);
-	z80_mwr(cpu, cpu->mptr,cpu->tmp);
+	z80_mwr(cpu, cpu->regWZ,cpu->tmp);
 }
 
-// 36	ld (iy+e),n	4 3rd {5add 3rd} 3wr	mptr = iy+e
+// 36	ld (regIY+e),n	4 3rd {5add 3rd} 3wr	regWZ = regIY+e
 void fd36(CPU* cpu) {
-	RDSHIFT(cpu->iy);
-	cpu->tmp = z80_mrd(cpu, cpu->pc++); cpu->t -= 3;
-	z80_mwr(cpu, cpu->mptr, cpu->tmp);
+	RDSHIFT(cpu->regIY);
+	cpu->tmp = z80_mrd(cpu, cpu->regPC++); cpu->t -= 3;
+	z80_mwr(cpu, cpu->regWZ, cpu->tmp);
 }
 
-// 39	add iy,sp	11
+// 39	add regIY,regSP	11
 void fd39(CPU* cpu) {
-	cpu->iy = z80_add16(cpu, cpu->iy, cpu->sp); //ADD16(cpu->iy,cpu->sp);
+	cpu->regIY = z80_add16(cpu, cpu->regIY, cpu->regSP); //ADD16(cpu->iy,cpu->sp);
 }
 
 // ld r,r		4 [3rd 5add 3rd]
-void fd44(CPU* cpu) {cpu->b = cpu->hy;}
-void fd45(CPU* cpu) {cpu->b = cpu->ly;}
-void fd46(CPU* cpu) {RDSHIFT(cpu->iy); cpu->b = z80_mrd(cpu, cpu->mptr);}
-void fd4C(CPU* cpu) {cpu->c = cpu->hy;}
-void fd4D(CPU* cpu) {cpu->c = cpu->ly;}
-void fd4E(CPU* cpu) {RDSHIFT(cpu->iy); cpu->c = z80_mrd(cpu, cpu->mptr);}
-void fd54(CPU* cpu) {cpu->d = cpu->hy;}
-void fd55(CPU* cpu) {cpu->d = cpu->ly;}
-void fd56(CPU* cpu) {RDSHIFT(cpu->iy); cpu->d = z80_mrd(cpu, cpu->mptr);}
-void fd5C(CPU* cpu) {cpu->e = cpu->hy;}
-void fd5D(CPU* cpu) {cpu->e = cpu->ly;}
-void fd5E(CPU* cpu) {RDSHIFT(cpu->iy); cpu->e = z80_mrd(cpu, cpu->mptr);}
+void fd44(CPU* cpu) {cpu->regB = cpu->regIYh;}
+void fd45(CPU* cpu) {cpu->regB = cpu->regIYl;}
+void fd46(CPU* cpu) {RDSHIFT(cpu->regIY); cpu->regB = z80_mrd(cpu, cpu->regWZ);}
+void fd4C(CPU* cpu) {cpu->regC = cpu->regIYh;}
+void fd4D(CPU* cpu) {cpu->regC = cpu->regIYl;}
+void fd4E(CPU* cpu) {RDSHIFT(cpu->regIY); cpu->regC = z80_mrd(cpu, cpu->regWZ);}
+void fd54(CPU* cpu) {cpu->regD = cpu->regIYh;}
+void fd55(CPU* cpu) {cpu->regD = cpu->regIYl;}
+void fd56(CPU* cpu) {RDSHIFT(cpu->regIY); cpu->regD = z80_mrd(cpu, cpu->regWZ);}
+void fd5C(CPU* cpu) {cpu->regE = cpu->regIYh;}
+void fd5D(CPU* cpu) {cpu->regE = cpu->regIYl;}
+void fd5E(CPU* cpu) {RDSHIFT(cpu->regIY); cpu->regE = z80_mrd(cpu, cpu->regWZ);}
 
-void fd60(CPU* cpu) {cpu->hy = cpu->b;}
-void fd61(CPU* cpu) {cpu->hy = cpu->c;}
-void fd62(CPU* cpu) {cpu->hy = cpu->d;}
-void fd63(CPU* cpu) {cpu->hy = cpu->e;}
+void fd60(CPU* cpu) {cpu->regIYh = cpu->regB;}
+void fd61(CPU* cpu) {cpu->regIYh = cpu->regC;}
+void fd62(CPU* cpu) {cpu->regIYh = cpu->regD;}
+void fd63(CPU* cpu) {cpu->regIYh = cpu->regE;}
 void fd64(CPU* cpu) {}
-void fd65(CPU* cpu) {cpu->hy = cpu->ly;}
-void fd66(CPU* cpu) {RDSHIFT(cpu->iy); cpu->h = z80_mrd(cpu, cpu->mptr);}
-void fd67(CPU* cpu) {cpu->hy = cpu->a;}
+void fd65(CPU* cpu) {cpu->regIYh = cpu->regIYl;}
+void fd66(CPU* cpu) {RDSHIFT(cpu->regIY); cpu->regH = z80_mrd(cpu, cpu->regWZ);}
+void fd67(CPU* cpu) {cpu->regIYh = cpu->regA;}
 
-void fd68(CPU* cpu) {cpu->ly = cpu->b;}
-void fd69(CPU* cpu) {cpu->ly = cpu->c;}
-void fd6A(CPU* cpu) {cpu->ly = cpu->d;}
-void fd6B(CPU* cpu) {cpu->ly = cpu->e;}
-void fd6C(CPU* cpu) {cpu->ly = cpu->hy;}
+void fd68(CPU* cpu) {cpu->regIYl = cpu->regB;}
+void fd69(CPU* cpu) {cpu->regIYl = cpu->regC;}
+void fd6A(CPU* cpu) {cpu->regIYl = cpu->regD;}
+void fd6B(CPU* cpu) {cpu->regIYl = cpu->regE;}
+void fd6C(CPU* cpu) {cpu->regIYl = cpu->regIYh;}
 void fd6D(CPU* cpu) {}
-void fd6E(CPU* cpu) {RDSHIFT(cpu->iy); cpu->l = z80_mrd(cpu, cpu->mptr);}
-void fd6F(CPU* cpu) {cpu->ly = cpu->a;}
-// 70..77	ld (iy+e),r	4 3rd 5add 3wr
-void fd70(CPU* cpu) {RDSHIFT(cpu->iy); z80_mwr(cpu, cpu->mptr, cpu->b);}
-void fd71(CPU* cpu) {RDSHIFT(cpu->iy); z80_mwr(cpu, cpu->mptr, cpu->c);}
-void fd72(CPU* cpu) {RDSHIFT(cpu->iy); z80_mwr(cpu, cpu->mptr, cpu->d);}
-void fd73(CPU* cpu) {RDSHIFT(cpu->iy); z80_mwr(cpu, cpu->mptr, cpu->e);}
-void fd74(CPU* cpu) {RDSHIFT(cpu->iy); z80_mwr(cpu, cpu->mptr, cpu->h);}
-void fd75(CPU* cpu) {RDSHIFT(cpu->iy); z80_mwr(cpu, cpu->mptr, cpu->l);}
-void fd77(CPU* cpu) {RDSHIFT(cpu->iy); z80_mwr(cpu, cpu->mptr, cpu->a);}
+void fd6E(CPU* cpu) {RDSHIFT(cpu->regIY); cpu->regL = z80_mrd(cpu, cpu->regWZ);}
+void fd6F(CPU* cpu) {cpu->regIYl = cpu->regA;}
+// 70..77	ld (regIY+e),r	4 3rd 5add 3wr
+void fd70(CPU* cpu) {RDSHIFT(cpu->regIY); z80_mwr(cpu, cpu->regWZ, cpu->regB);}
+void fd71(CPU* cpu) {RDSHIFT(cpu->regIY); z80_mwr(cpu, cpu->regWZ, cpu->regC);}
+void fd72(CPU* cpu) {RDSHIFT(cpu->regIY); z80_mwr(cpu, cpu->regWZ, cpu->regD);}
+void fd73(CPU* cpu) {RDSHIFT(cpu->regIY); z80_mwr(cpu, cpu->regWZ, cpu->regE);}
+void fd74(CPU* cpu) {RDSHIFT(cpu->regIY); z80_mwr(cpu, cpu->regWZ, cpu->regH);}
+void fd75(CPU* cpu) {RDSHIFT(cpu->regIY); z80_mwr(cpu, cpu->regWZ, cpu->regL);}
+void fd77(CPU* cpu) {RDSHIFT(cpu->regIY); z80_mwr(cpu, cpu->regWZ, cpu->regA);}
 
-void fd7C(CPU* cpu) {cpu->a = cpu->hy;}
-void fd7D(CPU* cpu) {cpu->a = cpu->ly;}
-void fd7E(CPU* cpu) {RDSHIFT(cpu->iy); cpu->a = z80_mrd(cpu, cpu->mptr);}
+void fd7C(CPU* cpu) {cpu->regA = cpu->regIYh;}
+void fd7D(CPU* cpu) {cpu->regA = cpu->regIYl;}
+void fd7E(CPU* cpu) {RDSHIFT(cpu->regIY); cpu->regA = z80_mrd(cpu, cpu->regWZ);}
 
 // add x
-void fd84(CPU* cpu) {cpu->a = z80_add8(cpu, cpu->hy, 0);} //ADD(cpu->hy);}
-void fd85(CPU* cpu) {cpu->a = z80_add8(cpu, cpu->ly, 0);} //ADD(cpu->ly);}
-void fd86(CPU* cpu) {RDSHIFT(cpu->iy); cpu->tmpb = z80_mrd(cpu, cpu->mptr); cpu->a = z80_add8(cpu, cpu->tmpb, 0);} // ADD(cpu->tmpb);
+void fd84(CPU* cpu) {cpu->regA = z80_add8(cpu, cpu->regIYh, 0);} //ADD(cpu->hy);}
+void fd85(CPU* cpu) {cpu->regA = z80_add8(cpu, cpu->regIYl, 0);} //ADD(cpu->ly);}
+void fd86(CPU* cpu) {RDSHIFT(cpu->regIY); cpu->tmpb = z80_mrd(cpu, cpu->regWZ); cpu->regA = z80_add8(cpu, cpu->tmpb, 0);} // ADD(cpu->tmpb);
 // adc x
-void fd8C(CPU* cpu) {cpu->a = z80_add8(cpu, cpu->hy, cpu->fz.c);} //ADC(cpu->hy);}
-void fd8D(CPU* cpu) {cpu->a = z80_add8(cpu, cpu->ly, cpu->fz.c);} //ADC(cpu->ly);}
-void fd8E(CPU* cpu) {RDSHIFT(cpu->iy); cpu->tmpb = z80_mrd(cpu, cpu->mptr); cpu->a = z80_add8(cpu, cpu->tmpb, cpu->fz.c);} // ADC(cpu->tmpb);
+void fd8C(CPU* cpu) {cpu->regA = z80_add8(cpu, cpu->regIYh, cpu->fz.c);} //ADC(cpu->hy);}
+void fd8D(CPU* cpu) {cpu->regA = z80_add8(cpu, cpu->regIYl, cpu->fz.c);} //ADC(cpu->ly);}
+void fd8E(CPU* cpu) {RDSHIFT(cpu->regIY); cpu->tmpb = z80_mrd(cpu, cpu->regWZ); cpu->regA = z80_add8(cpu, cpu->tmpb, cpu->fz.c);} // ADC(cpu->tmpb);
 // sub x
-void fd94(CPU* cpu) {cpu->a = z80_sub8(cpu, cpu->hy, 0);} //SUB(cpu->hy);}
-void fd95(CPU* cpu) {cpu->a = z80_sub8(cpu, cpu->ly, 0);} //SUB(cpu->ly);}
-void fd96(CPU* cpu) {RDSHIFT(cpu->iy); cpu->tmpb = z80_mrd(cpu, cpu->mptr); cpu->a = z80_sub8(cpu, cpu->tmpb, 0);} // SUB(cpu->tmpb);}
+void fd94(CPU* cpu) {cpu->regA = z80_sub8(cpu, cpu->regIYh, 0);} //SUB(cpu->hy);}
+void fd95(CPU* cpu) {cpu->regA = z80_sub8(cpu, cpu->regIYl, 0);} //SUB(cpu->ly);}
+void fd96(CPU* cpu) {RDSHIFT(cpu->regIY); cpu->tmpb = z80_mrd(cpu, cpu->regWZ); cpu->regA = z80_sub8(cpu, cpu->tmpb, 0);} // SUB(cpu->tmpb);}
 // sbc x
-void fd9C(CPU* cpu) {cpu->a = z80_sub8(cpu, cpu->hy, cpu->fz.c);} //SBC(cpu->hy);}
-void fd9D(CPU* cpu) {cpu->a = z80_sub8(cpu, cpu->ly, cpu->fz.c);} //SBC(cpu->ly);}
-void fd9E(CPU* cpu) {RDSHIFT(cpu->iy); cpu->tmpb = z80_mrd(cpu, cpu->mptr); cpu->a = z80_sub8(cpu, cpu->tmpb, cpu->fz.c);} // SBC(cpu->tmpb);}
+void fd9C(CPU* cpu) {cpu->regA = z80_sub8(cpu, cpu->regIYh, cpu->fz.c);} //SBC(cpu->hy);}
+void fd9D(CPU* cpu) {cpu->regA = z80_sub8(cpu, cpu->regIYl, cpu->fz.c);} //SBC(cpu->ly);}
+void fd9E(CPU* cpu) {RDSHIFT(cpu->regIY); cpu->tmpb = z80_mrd(cpu, cpu->regWZ); cpu->regA = z80_sub8(cpu, cpu->tmpb, cpu->fz.c);} // SBC(cpu->tmpb);}
 // and x
-void fdA4(CPU* cpu) {z80_and8(cpu, cpu->hy);}
-void fdA5(CPU* cpu) {z80_and8(cpu, cpu->ly);}
-void fdA6(CPU* cpu) {RDSHIFT(cpu->iy); cpu->tmpb = z80_mrd(cpu, cpu->mptr); z80_and8(cpu, cpu->tmpb);}
+void fdA4(CPU* cpu) {z80_and8(cpu, cpu->regIYh);}
+void fdA5(CPU* cpu) {z80_and8(cpu, cpu->regIYl);}
+void fdA6(CPU* cpu) {RDSHIFT(cpu->regIY); cpu->tmpb = z80_mrd(cpu, cpu->regWZ); z80_and8(cpu, cpu->tmpb);}
 // xor x
-void fdAC(CPU* cpu) {z80_xor8(cpu, cpu->hy);}
-void fdAD(CPU* cpu) {z80_xor8(cpu, cpu->ly);}
-void fdAE(CPU* cpu) {RDSHIFT(cpu->iy); cpu->tmpb = z80_mrd(cpu, cpu->mptr); z80_xor8(cpu, cpu->tmpb);}
+void fdAC(CPU* cpu) {z80_xor8(cpu, cpu->regIYh);}
+void fdAD(CPU* cpu) {z80_xor8(cpu, cpu->regIYl);}
+void fdAE(CPU* cpu) {RDSHIFT(cpu->regIY); cpu->tmpb = z80_mrd(cpu, cpu->regWZ); z80_xor8(cpu, cpu->tmpb);}
 // or x
-void fdB4(CPU* cpu) {z80_or8(cpu, cpu->hy);}
-void fdB5(CPU* cpu) {z80_or8(cpu, cpu->ly);}
-void fdB6(CPU* cpu) {RDSHIFT(cpu->iy); cpu->tmpb = z80_mrd(cpu, cpu->mptr); z80_or8(cpu, cpu->tmpb);}
+void fdB4(CPU* cpu) {z80_or8(cpu, cpu->regIYh);}
+void fdB5(CPU* cpu) {z80_or8(cpu, cpu->regIYl);}
+void fdB6(CPU* cpu) {RDSHIFT(cpu->regIY); cpu->tmpb = z80_mrd(cpu, cpu->regWZ); z80_or8(cpu, cpu->tmpb);}
 // cp x
-void fdBC(CPU* cpu) {z80_cp8(cpu, cpu->hy);} //CP(cpu->hy);}
-void fdBD(CPU* cpu) {z80_cp8(cpu, cpu->ly);} //CP(cpu->ly);}
-void fdBE(CPU* cpu) {RDSHIFT(cpu->iy); cpu->tmpb = z80_mrd(cpu, cpu->mptr); z80_cp8(cpu, cpu->tmpb);} //CP(cpu->tmpb);}
+void fdBC(CPU* cpu) {z80_cp8(cpu, cpu->regIYh);} //CP(cpu->hy);}
+void fdBD(CPU* cpu) {z80_cp8(cpu, cpu->regIYl);} //CP(cpu->ly);}
+void fdBE(CPU* cpu) {RDSHIFT(cpu->regIY); cpu->tmpb = z80_mrd(cpu, cpu->regWZ); z80_cp8(cpu, cpu->tmpb);} //CP(cpu->tmpb);}
 
 // cb	fdcb prefix	4 3rd
 void fdCB(CPU* cpu) {
 	cpu->opTab = fdcbTab;
-	cpu->tmp = z80_mrd(cpu, cpu->pc++);
-	cpu->com = z80_mrd(cpu, cpu->pc++); cpu->t -= 3;	// not M1. in the same time as ix+e calculating?
+	cpu->tmp = z80_mrd(cpu, cpu->regPC++);
+	cpu->com = z80_mrd(cpu, cpu->regPC++); cpu->t -= 3;	// not M1. in the same time as ix+e calculating?
 	cpu->op = &fdcbTab[cpu->com];
 	cpu->op->exec(cpu);
 }
 
-// e1	pop iy		4 3rd 3rd
+// e1	pop regIY		4 3rd 3rd
 void fdE1(CPU* cpu) {
-	cpu->iy = z80_pop(cpu); // POP(cpu->hy,cpu->ly);
+	cpu->regIY = z80_pop(cpu); // POP(cpu->hy,cpu->ly);
 }
 
-// e3	ex (sp),iy	4 3rd 4rd 3wr 5wr	mptr = iy
+// e3	ex (sp),regIY	4 3rd 4rd 3wr 5wr	regWZ = regIY
 void fdE3(CPU* cpu) {
 	cpu->tmpw = z80_pop(cpu); cpu->t++;	// 3,3+1
-	z80_push(cpu, cpu->iy); cpu->t += 2;	// 3,3+2
-	cpu->iy = cpu->tmpw;
-	cpu->mptr = cpu->iy;
+	z80_push(cpu, cpu->regIY); cpu->t += 2;	// 3,3+2
+	cpu->regIY = cpu->tmpw;
+	cpu->regWZ = cpu->regIY;
 }
 
-// e5	push iy		5 3wr 3wr
+// e5	push regIY		5 3wr 3wr
 void fdE5(CPU* cpu) {
-	z80_push(cpu, cpu->iy);
+	z80_push(cpu, cpu->regIY);
 }
 
-// e9	jp (iy)		4
+// e9	jp (regIY)		4
 void fdE9(CPU* cpu) {
-	cpu->pc = cpu->iy;
+	cpu->regPC = cpu->regIY;
 }
 
-// f9	ld sp,iy	6
+// f9	ld regSP,regIY	6
 void fdF9(CPU* cpu) {
-	cpu->sp = cpu->iy;
+	cpu->regSP = cpu->regIY;
 }
 
 // ======

@@ -166,11 +166,11 @@ struct CPU {
 
 	int adr;
 // z80, lr35902, i8080, 6502 registers
-	reg16(pc,hpc,lpc);
-	reg16(sp,hsp,lsp);
-	reg16(ix,hx,lx);
-	reg16(iy,hy,ly);
-	reg16(mptr,hptr,lptr);
+	reg16(regPC,regPCh,regPCl);
+	reg16(regSP,regSPh,regSPl);
+	reg16(regIX,regIXh,regIXl);
+	reg16(regIY,regIYh,regIYl);
+	reg16(regWZ,regWZh,regWZl);
 	unsigned char i;
 	unsigned char r;
 	unsigned char r7;
@@ -178,7 +178,7 @@ struct CPU {
 	unsigned char iff2;
 	unsigned char imode;		// Z80:int mode
 
-	unsigned char a;
+	unsigned char regA;
 #if 1
 	union {
 		unsigned int f;		// 32-bit value
@@ -189,7 +189,6 @@ struct CPU {
 		vm1flag_t fv;		// bits for 1801vm1
 		x86flag_t fx;		// bits for 80286
 	};
-//	unsigned short f;
 #else
 	struct {
 		unsigned c:1;		// all: carry
@@ -217,9 +216,9 @@ struct CPU {
 		unsigned f11:1;
 	} f;
 #endif
-	reg16(bc,b,c);
-	reg16(de,d,e);
-	reg16(hl,h,l);
+	reg16(regBC,regB,regC);
+	reg16(regDE,regD,regE);
+	reg16(regHL,regH,regL);
 
 	unsigned char a_;
 	unsigned int f_;
@@ -258,7 +257,7 @@ struct CPU {
 	unsigned short x87sr;	// x87 status register
 	unsigned short x87tw;	// x87 tag word
 	unsigned char mod;	// 80286: mod byte (EA/reg)
-	struct {xSegPtr seg; PAIR(adr,adrh,adrl); unsigned reg:1; unsigned cnt:5;} ea;
+	struct {xSegPtr seg; reg16(adr,adrh,adrl); unsigned reg:1; unsigned cnt:5;} ea;
 	int rep;		// 80286: repeat condition id
 	jmp_buf jbuf;
 	// callbacks, depend on x86 mode (real/prt)
@@ -282,7 +281,7 @@ struct CPU {
 	void* xptr;
 
 // opcode
-	PAIR(com, hcom, lcom);
+	reg16(com, hcom, lcom);
 	opCode* opTab;
 	opCode* op;
 
