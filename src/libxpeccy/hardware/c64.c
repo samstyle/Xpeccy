@@ -3,6 +3,7 @@
 #include <time.h>
 
 #include "../spectrum.h"
+#include "../cpu/MOS6502/6502.h"
 
 // Commodore
 // dotClock	8.18MHz (ntsc) / 7.88MHz (pal)

@@ -1,4 +1,5 @@
 #include "filetypes.h"
+#include "../cpu/Z80/z80.h"
 
 #pragma pack (push, 1)
 
@@ -25,30 +26,30 @@ int loadSNA_f(Computer* comp, FILE* file, size_t fileSize) {
 
 	snaHead hd;
 	fread((char*)&hd, sizeof(snaHead), 1, file);
-	comp->cpu->hl_ = (hd._h << 8) | hd._l;
-	comp->cpu->de_ = (hd._d << 8) | hd._e;
-	comp->cpu->bc_ = (hd._b << 8) | hd._c;
-	comp->cpu->a_ = hd._a;
+	comp->cpu->regHLa = (hd._h << 8) | hd._l;
+	comp->cpu->regDEa = (hd._d << 8) | hd._e;
+	comp->cpu->regBCa = (hd._b << 8) | hd._c;
+	comp->cpu->regAa = hd._a;
 	comp->cpu->f_ = hd._f;
 	comp->cpu->regHL = (hd.h << 8) | hd.l;
 	comp->cpu->regDE = (hd.d << 8) | hd.e;
 	comp->cpu->regBC = (hd.b << 8) | hd.c;
 	comp->cpu->regA = hd.a;
-	comp->cpu->f = hd.f;
+	cpu_set_flag(comp->cpu, hd.f);
 	comp->cpu->regIX = (hd.hx << 8) | hd.lx;
 	comp->cpu->regIY = (hd.hy << 8) | hd.ly;
 	comp->cpu->regSP = (hd.hsp << 8) | hd.lsp;
 	comp->cpu->i = hd.i;
 	comp->cpu->r = hd.r;
 	comp->cpu->r7 = hd.r & 0x80;
-	comp->cpu->imode = hd.imod & 3;
-	comp->cpu->iff1 = (hd.flag19 & 4) ? 1 : 0;
-	comp->cpu->iff2 = 1;
-	comp->cpu->inten = Z80_NMI | (comp->cpu->iff1 ? Z80_INT : 0);
+	comp->cpu->f.im = hd.imod & 3;
+	comp->cpu->f.iff1 = (hd.flag19 & 4) ? 1 : 0;
+	comp->cpu->f.iff2 = 1;
+	comp->cpu->inten = Z80_NMI | (comp->cpu->f.iff1 ? Z80_INT : 0);
 	comp->vid->brdcol = hd.border & 7;
 	comp->vid->nextbrd = hd.border & 7;
 
-	if (comp->cpu->iff1) {
+	if (comp->cpu->f.iff1) {
 		comp->cpu->inten |= Z80_INT;
 	} else {
 		comp->cpu->inten &= ~Z80_INT;
@@ -125,21 +126,21 @@ int saveSNA(Computer* comp, const char* name, int drv) {
 		memWr(comp->mem, --comp->cpu->regSP, comp->cpu->regPCl);
 	}
 	snaHead hd;
-	hd._h = comp->cpu->h_; hd._l = comp->cpu->l_;
-	hd._d = comp->cpu->d_; hd._e = comp->cpu->e_;
-	hd._b = comp->cpu->b_; hd._c = comp->cpu->c_;
-	hd._a = comp->cpu->a_; hd._f = comp->cpu->f_;
+	hd._h = comp->cpu->regHa; hd._l = comp->cpu->regLa;
+	hd._d = comp->cpu->regDa; hd._e = comp->cpu->regEa;
+	hd._b = comp->cpu->regBa; hd._c = comp->cpu->regCa;
+	hd._a = comp->cpu->regAa; hd._f = comp->cpu->f_;
 	hd.h = comp->cpu->regH; hd.l = comp->cpu->regL;
 	hd.d = comp->cpu->regD; hd.e = comp->cpu->regE;
 	hd.b = comp->cpu->regB; hd.c = comp->cpu->regC;
-	hd.a = comp->cpu->regA; hd.f = comp->cpu->f;
+	hd.a = comp->cpu->regA; hd.f = cpu_get_flag(comp->cpu);
 	hd.hx = comp->cpu->regIXh; hd.lx = comp->cpu->regIXl;
 	hd.hy = comp->cpu->regIYh; hd.ly = comp->cpu->regIYl;
 	hd.hsp = comp->cpu->regSPh; hd.lsp = comp->cpu->regSPl;
 	hd.i = comp->cpu->i;
 	hd.r = comp->cpu->r;
-	hd.imod = comp->cpu->imode;
-	hd.flag19 = comp->cpu->iff1 ? 4 : 0;
+	hd.imod = comp->cpu->f.im;
+	hd.flag19 = comp->cpu->f.iff1 ? 4 : 0;
 	hd.border = comp->vid->brdcol & 7;
 	fwrite((char*)&hd, sizeof(snaHead), 1, file);
 

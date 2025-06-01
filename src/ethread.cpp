@@ -8,6 +8,7 @@
 #include "xgui/xgui.h"
 #include "xcore/sound.h"
 #include "xcore/vfilters.h"
+//#include "libxpeccy/cpu/cpu.h"
 
 #if USEMUTEX
 QMutex emutex;
@@ -89,7 +90,7 @@ void xThread::tap_catch_save(Computer* comp) {
 		comp->cpu->regDE = 0xffff;
 		comp->cpu->regHL = 0x0000;
 		comp->cpu->regA = 0x00;
-		comp->cpu->f = 0x51;
+		cpu_set_flag(comp->cpu, 0x51); // comp->cpu->f = 0x51;
 	} else if (conf.tape.autostart) {
 		emit tapeSignal(TW_STATE, TWS_REC);
 	}

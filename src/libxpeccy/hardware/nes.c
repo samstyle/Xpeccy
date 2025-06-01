@@ -1,4 +1,5 @@
 #include "hardware.h"
+#include "../cpu/MOS6502/6502.h"
 
 #include <stdio.h>
 

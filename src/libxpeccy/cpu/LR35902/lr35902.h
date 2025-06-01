@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../cpu.h"
+
 /*
 #define FLZ 0x80
 #define FLN 0x40
@@ -36,8 +38,6 @@ enum {
 	LR_REG_HL
 };
 
-#include "../cpu.h"
-
 void lr_reset(CPU*);
 int lr_exec(CPU*);
 
@@ -46,6 +46,9 @@ xMnem lr_mnem(CPU*, int, cbdmr, void*);
 
 void lr_get_regs(CPU*, xRegBunch*);
 void lr_set_regs(CPU*, xRegBunch);
+
+int lr_get_flag(CPU*);
+void lr_set_flag(CPU*, int);
 
 // internal
 

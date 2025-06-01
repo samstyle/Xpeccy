@@ -3,17 +3,33 @@
 
 extern opCode i8080_tab[256];
 
+int i8080_get_flag(CPU* cpu) {
+	return cpu->f.c | (cpu->f.f1 << 1) | (cpu->f.p << 2) | (cpu->f.f3 << 3) | (cpu->f.a << 4) | (cpu->f.f5 << 5) | (cpu->f.z << 6) | (cpu->f.s << 7);
+}
+
+void i8080_set_flag(CPU* cpu, int v) {
+	cpu->f.c = v & 1;
+	cpu->f.f1 = !!(v & 2);
+	cpu->f.p = !!(v & 4);
+	cpu->f.f3 = !!(v & 8);
+	cpu->f.a = !!(v & 16);
+	cpu->f.f5 = !!(v & 32);
+	cpu->f.z = !!(v & 64);
+	cpu->f.s = !!(v & 128);
+}
+
+
 void i8080_reset(CPU* cpu) {
 	cpu->regPC = 0x0000;
 	cpu->regBC = cpu->regDE = cpu->regHL = 0xffff;
 	cpu->regSP = 0xffff;
 	cpu->regA = 0xff;
-	cpu->f = 0x02;
+	i8080_set_flag(cpu, 0x02);
 	cpu->inten = 0;
 }
 
 int i8080_int(CPU* cpu) {
-	cpu->iff1 = 0;
+	cpu->f.iff1 = 0;
 	if (cpu->halt) {
 		cpu->regPC++;
 		cpu->halt = 0;
@@ -32,9 +48,9 @@ int i8080_exec(CPU* cpu) {
 	cpu->op = &i8080_tab[cpu->com];
 	cpu->t = cpu->op->t;
 	cpu->op->exec(cpu);
-	cpu->fi.f5 = 0;
-	cpu->fi.f3 = 0;
-	cpu->fi.f1 = 1;
+	cpu->f.f5 = 0;
+	cpu->f.f3 = 0;
+	cpu->f.f1 = 1;
 	return cpu->t;
 }
 
@@ -108,7 +124,7 @@ void i8080_get_regs(CPU* cpu, xRegBunch* bunch) {
 			case I8080_REG_PC: bunch->regs[idx].value = cpu->regPC; break;
 			case I8080_REG_SP: bunch->regs[idx].value = cpu->regSP; break;
 			case I8080_REG_AF: rx.h = cpu->regA;
-					rx.l = cpu->f & 0xff;
+					rx.l = i8080_get_flag(cpu) & 0xff;
 					bunch->regs[idx].value = rx.w;
 					break;
 			case I8080_REG_BC: bunch->regs[idx].value = cpu->regBC; break;
@@ -131,7 +147,7 @@ void i8080_set_regs(CPU* cpu, xRegBunch bunch) {
 			case I8080_REG_SP: cpu->regSP = bunch.regs[idx].value; break;
 			case I8080_REG_AF: rx.w = bunch.regs[idx].value;
 					cpu->regA = rx.h;
-					cpu->f = rx.l;
+					i8080_set_flag(cpu, rx.l);
 					break;
 			case I8080_REG_BC: cpu->regBC = bunch.regs[idx].value; break;
 			case I8080_REG_DE: cpu->regDE = bunch.regs[idx].value; break;

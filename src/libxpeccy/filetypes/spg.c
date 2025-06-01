@@ -1,5 +1,6 @@
 #include "filetypes.h"
 #include "unpackers/unpackers.h"
+#include "../cpu/Z80/z80.h"
 
 #include <stdio.h>
 
@@ -81,9 +82,9 @@ int loadSPG(Computer* comp, const char* name, int drv) {
 		case 1: compSetTurbo(comp, 2); break;
 		default: compSetTurbo(comp, 3); break;
 	}
-	comp->cpu->iff1 = (hd.flag35 & 0x04) ? 1 : 0;	// int enabled/disabled
-	comp->cpu->inten = Z80_NMI | (comp->cpu->iff1 ? Z80_INT : 0);
-	comp->cpu->imode = 1;				// im 1
+	comp->cpu->f.iff1 = (hd.flag35 & 0x04) ? 1 : 0;	// int enabled/disabled
+	comp->cpu->inten = Z80_NMI | (comp->cpu->f.iff1 ? Z80_INT : 0);
+	comp->cpu->f.im = 1;				// im 1
 	comp->cpu->i = 0x3f;				// i = 3F
 	comp->dos = 0;					// basic 48 in bank0
 	comp->rom = 1;

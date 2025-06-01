@@ -7,23 +7,34 @@
 extern opCode lrTab[256];
 extern opCode lrcbTab[256];
 
+void lr_set_flag(CPU* cpu, int v) {
+	cpu->f.c = !!(v & 0x10);
+	cpu->f.h = !!(v & 0x20);
+	cpu->f.n = !!(v & 0x40);
+	cpu->f.z = !!(v & 0x80);
+}
+
+int lr_get_flag(CPU* cpu) {
+	return (cpu->f.c << 4) | (cpu->f.h << 5) | (cpu->f.n << 6) | (cpu->f.z << 7);
+}
+
 void lr_reset(CPU* cpu) {
 	cpu->regPC = 0;
 	cpu->regBC = cpu->regDE = cpu->regHL = 0xffff;
 	cpu->regA = 0xff;
-	cpu->f = 0xff;
+	lr_set_flag(cpu, 0xff);
 	cpu->regSP = 0xffff;
 	cpu->lock = 0;
-	cpu->iff1 = 0;
+	cpu->f.iff1 = 0;
 	cpu->intrq = 0;
 	cpu->halt = 0;
 	cpu->stop = 0;
 	cpu->intrq = 0;
 	cpu->inten = 0;
 	// not necessary
-	cpu->imode = 0;
-	cpu->bc_ = cpu->de_ = cpu->hl_ = 0xffff;
-	cpu->a_ = 0xff;
+	cpu->f.im = 0;
+	cpu->regBCa = cpu->regDEa = cpu->regHLa = 0xffff;
+	cpu->regAa = 0xff;
 	cpu->f_ = 0xff;
 	cpu->regIX = cpu->regIY = 0xffff;
 	cpu->i = cpu->r = 0xff;
@@ -44,18 +55,18 @@ int lr_int(CPU* cpu) {
 	if (cpu->halt) {		// free HALT anyway
 		cpu->halt = 0;
 		cpu->regPC++;
-		if (!cpu->iff1) {
+		if (!cpu->f.iff1) {
 			cpu->dihalt = 1;
 			cpu->tmpw = cpu->regPC;		// tmpw doesn't used on LR35902, store PC there
 		}
 	}
-	if (!cpu->iff1) return 0;
+	if (!cpu->f.iff1) return 0;
 	int idx = 0;
 	int res = 0;
 	cpu->intrq &= cpu->inten;
 	while (lr_intab[idx].mask) {
 		if (cpu->intrq & lr_intab[idx].mask) {
-			cpu->iff1 = 0;
+			cpu->f.iff1 = 0;
 			cpu->intrq ^= lr_intab[idx].mask;	// reset int request flag
 			z80_call(cpu, lr_intab[idx].inta);	// execute call	{RST(lr_intab[idx].inta);}
 			res = 15;				// TODO: to know how much T eats INT handle
@@ -68,7 +79,7 @@ int lr_int(CPU* cpu) {
 
 int lr_exec(CPU* cpu) {
 	int res = 0;
-	if ((cpu->intrq & cpu->inten) && cpu->iff1) {
+	if ((cpu->intrq & cpu->inten) && cpu->f.iff1) {
 		res = lr_int(cpu);
 	} else if (cpu->lock) {
 		res = 1;
@@ -159,14 +170,14 @@ xMnem lr_mnem(CPU* cpu, int qadr, cbdmr mrd, void* data) {
 	} else if (opt == lrTab) {
 		if (((op & 0xc7) == 0xc2) || ((op & 0xc7) == 0xc4) || ((op & 0xc7) == 0xc0)) {		// call, jp, ret
 			mn.cond = 1;
-			mn.met = (op & 0x10) ? !cpu->fl.z : !cpu->fl.c;
+			mn.met = (op & 0x10) ? !cpu->f.z : !cpu->f.c;
 			//mn.met = (cpu->f & lr_cnd[(op & 0x30) >> 4]) ? 0 : 1;
 			if (op & 8)
 				mn.met ^= 1;
 		} else if ((op & 0xe7) == 0x20) {							// jr
 			mn.cond = 1;
 			//mn.met = (cpu->f & lr_cnd[(op & 0x10) >> 4] ? 0 : 1);
-			mn.met = (op & 0x10) ? !cpu->fl.z : !cpu->fl.c;
+			mn.met = (op & 0x10) ? !cpu->f.z : !cpu->f.c;
 			if (op & 8)
 				mn.met ^= 1;
 		}
@@ -202,7 +213,7 @@ void lr_get_regs(CPU* cpu, xRegBunch* bunch) {
 			case LR_REG_PC: bunch->regs[idx].value = cpu->regPC; break;
 			case LR_REG_SP: bunch->regs[idx].value = cpu->regSP; break;
 			case LR_REG_AF: rx.h = cpu->regA;
-					rx.l = cpu->f & 0xff;
+					rx.l = lr_get_flag(cpu) & 0xff;
 					bunch->regs[idx].value = rx.w;
 					break;
 			case LR_REG_BC: bunch->regs[idx].value = cpu->regBC; break;
@@ -225,7 +236,7 @@ void lr_set_regs(CPU* cpu, xRegBunch bunch) {
 			case LR_REG_SP: cpu->regSP = bunch.regs[idx].value; break;
 			case LR_REG_AF: rx.w = bunch.regs[idx].value;
 					cpu->regA = rx.h;
-					cpu->f = rx.l;
+					lr_set_flag(cpu, rx.l);
 					break;
 			case LR_REG_BC: cpu->regBC = bunch.regs[idx].value; break;
 			case LR_REG_DE: cpu->regDE = bunch.regs[idx].value; break;

@@ -1,6 +1,6 @@
 #include <stdlib.h>
-#include "../cpu.h"
-#include "z80_macro.h"
+#include "z80.h"
+// #include "z80_macro.h"
 
 // 00..07	rlc	4 [4rd 3wr]
 void cb00(CPU* cpu) {cpu->regB = z80_rlc(cpu, cpu->regB);}

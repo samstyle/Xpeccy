@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../cpu.h"
+
 #ifdef WORDS_BIG_ENDIAN
 typedef struct {
 	unsigned _nu:24;		// not used (padding to 32 bits)
@@ -26,7 +28,6 @@ typedef struct {
 } z80flag_t;
 #endif
 
-#include "../cpu.h"
 #include "z80_macro.h"
 
 enum {
@@ -56,6 +57,9 @@ xMnem z80_mnem(CPU*, int, cbdmr, void*);
 
 void z80_get_regs(CPU*, xRegBunch*);
 void z80_set_regs(CPU*, xRegBunch);
+
+void z80_set_flag(CPU*, int);
+int z80_get_flag(CPU*);
 
 // internal
 

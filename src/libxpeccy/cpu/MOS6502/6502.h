@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../cpu.h"
+
 enum {
 	M6502_REG_PC = 1,
 	M6502_REG_A,
@@ -46,8 +48,6 @@ typedef struct {
 #define MOS6502_INT_RES	2
 #define MOS6502_INT_IRQ	4
 
-#include "../cpu.h"
-
 void m6502_reset(CPU*);
 int m6502_exec(CPU*);
 int m6502_int(CPU*);
@@ -57,3 +57,6 @@ xAsmScan m6502_asm(int, const char*, char*);
 
 void m6502_get_regs(CPU*, xRegBunch*);
 void m6502_set_regs(CPU*, xRegBunch);
+
+void mos_set_flag(CPU*, int);
+int mos_get_flag(CPU*);

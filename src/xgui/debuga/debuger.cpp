@@ -974,12 +974,13 @@ void DebugWin::fillFlags(const char* fnam) {
 		fnam = cpuGetRegs(conf.prof.cur->zx->cpu).flags;
 	int flgcnt = strlen(fnam);
 	QString allflags = QString(fnam).rightJustified(16, '-');
+	int f = cpu_get_flag(conf.prof.cur->zx->cpu);
 	for (int i = 0; i < 16; i++) {
 		if (i < flgcnt) {
 			dbgFlagBox[i]->setVisible(true);
 			dbgFlagLabs[i]->setVisible(true);
 			dbgFlagLabs[i]->setText(allflags.at(15 - i));
-			dbgFlagBox[i]->setChecked(conf.prof.cur->zx->cpu->f & (1 << i));
+			dbgFlagBox[i]->setChecked(f & (1 << i));
 		} else {
 			dbgFlagBox[i]->setVisible(false);
 			dbgFlagLabs[i]->setVisible(false);
@@ -1017,9 +1018,9 @@ void DebugWin::fillCPU() {
 		}
 	}
 	fillFlags(bunch.flags);
-	ui_cpu.boxIM->setValue(cpu->imode);
-	ui_cpu.flagIFF1->setChecked(cpu->iff1);
-	ui_cpu.flagIFF2->setChecked(cpu->iff2);
+	ui_cpu.boxIM->setValue(cpu->f.im);
+	ui_cpu.flagIFF1->setChecked(cpu->f.iff1);
+	ui_cpu.flagIFF2->setChecked(cpu->f.iff2);
 	fillStack();
 	block = 0;
 }
@@ -1032,7 +1033,7 @@ void DebugWin::setFlags() {
 		if (dbgFlagBox[i]->isVisible() && dbgFlagBox[i]->isChecked())
 			f |= (1 << i);
 	}
-	conf.prof.cur->zx->cpu->f = f;
+	cpu_set_flag(conf.prof.cur->zx->cpu, f);
 	fillCPU();
 }
 
@@ -1052,9 +1053,9 @@ void DebugWin::setCPU() {
 		}
 	}
 	cpuSetRegs(cpu, bunch);
-	cpu->imode = ui_cpu.boxIM->value() & 0xff;
-	cpu->iff1 = ui_cpu.flagIFF1->isChecked() ? 1 : 0;
-	cpu->iff2 = ui_cpu.flagIFF2->isChecked() ? 1 : 0;
+	cpu->f.im = ui_cpu.boxIM->value() & 3;
+	cpu->f.iff1 = ui_cpu.flagIFF1->isChecked() ? 1 : 0;
+	cpu->f.iff2 = ui_cpu.flagIFF2->isChecked() ? 1 : 0;
 	fillFlags(NULL);
 	fillStack();
 	fillDisasm();

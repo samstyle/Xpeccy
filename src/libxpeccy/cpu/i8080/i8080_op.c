@@ -12,96 +12,99 @@ static int iop_sub_h[8] = {1, 0, 0, 0, 1, 1, 1, 0};
 unsigned char iop_inr(CPU* cpu, unsigned char val) {
 	val++;
 	//cpu->f &= IFL_C;
-	cpu->fi.s = !!(val & 0x80);
-	cpu->fi.z = !val;
-	cpu->fi.a = !!((val & 0x0f) == 0);
-	cpu->fi.p = parity(val);
+	cpu->f.s = !!(val & 0x80);
+	cpu->f.z = !val;
+	cpu->f.a = !!((val & 0x0f) == 0);
+	cpu->f.p = parity(val);
 	return val;
 }
 
 unsigned char iop_dcr(CPU* cpu, unsigned char val) {
 	val--;
 	//cpu->f &= IFL_C;
-	cpu->fi.s = !!(val & 0x80);
-	cpu->fi.z = !val;
-	cpu->fi.a = !!((val & 0x0f) != 0x0f);	// A flag is inverted (1:no b4-carry, 0:b4-carry)
-	cpu->fi.p = parity(val);
+	cpu->f.s = !!(val & 0x80);
+	cpu->f.z = !val;
+	cpu->f.a = !!((val & 0x0f) != 0x0f);	// A flag is inverted (1:no b4-carry, 0:b4-carry)
+	cpu->f.p = parity(val);
 	return val;
 }
 
 unsigned char iop_add(CPU* cpu, unsigned char val, unsigned char add) {
 	cpu->tmpw = val + add;
-	cpu->f = 0;
-	cpu->fi.s = !!(cpu->ltw & 0x80);
-	cpu->fi.z = !cpu->ltw;
-	cpu->fi.a = !!iop_add_h[((val & 8) >> 1) | ((add & 8) >> 2) | ((cpu->ltw & 8) >> 3)];
-	cpu->fi.p = parity(cpu->ltw);
-	cpu->fi.c = !!cpu->htw;
+//	cpu->f = 0;
+	cpu->f.s = !!(cpu->ltw & 0x80);
+	cpu->f.z = !cpu->ltw;
+	cpu->f.a = !!iop_add_h[((val & 8) >> 1) | ((add & 8) >> 2) | ((cpu->ltw & 8) >> 3)];
+	cpu->f.p = parity(cpu->ltw);
+	cpu->f.c = !!cpu->htw;
+	cpu->f.f1 = 0;
+	cpu->f.f3 = 0;
+	cpu->f.f5 = 0;
 	return cpu->ltw;
 }
 
 unsigned char iop_adc(CPU* cpu, unsigned char val, unsigned char add) {
-	cpu->tmpw = val + add + cpu->fi.c;
+	cpu->tmpw = val + add + cpu->f.c;
 	//cpu->f = 0;
-	cpu->fi.s = !!(cpu->ltw & 0x80);
-	cpu->fi.z = !cpu->ltw;
-	cpu->fi.a = !!iop_add_h[((val & 8) >> 1) | ((add & 8) >> 2) | ((cpu->ltw & 8) >> 3)];
-	cpu->fi.p = parity(cpu->ltw);
-	cpu->fi.c = !!cpu->htw;
+	cpu->f.s = !!(cpu->ltw & 0x80);
+	cpu->f.z = !cpu->ltw;
+	cpu->f.a = !!iop_add_h[((val & 8) >> 1) | ((add & 8) >> 2) | ((cpu->ltw & 8) >> 3)];
+	cpu->f.p = parity(cpu->ltw);
+	cpu->f.c = !!cpu->htw;
 	return cpu->ltw;
 }
 
 unsigned char iop_sub(CPU* cpu, unsigned char val, unsigned char sub) {
 	cpu->tmpw = val - sub;
 	//cpu->f = 0;
-	cpu->fi.s = !!(cpu->ltw & 0x80);
-	cpu->fi.z = !cpu->ltw;
-	cpu->fi.a = !!iop_sub_h[((val & 8) >> 1) | ((sub & 8) >> 2) | ((cpu->ltw & 8) >> 3)];
-	cpu->fi.p = parity(cpu->ltw);
-	cpu->fi.c = !!cpu->htw;
+	cpu->f.s = !!(cpu->ltw & 0x80);
+	cpu->f.z = !cpu->ltw;
+	cpu->f.a = !!iop_sub_h[((val & 8) >> 1) | ((sub & 8) >> 2) | ((cpu->ltw & 8) >> 3)];
+	cpu->f.p = parity(cpu->ltw);
+	cpu->f.c = !!cpu->htw;
 	return cpu->ltw;
 }
 
 unsigned char iop_sbb(CPU* cpu, unsigned char val, unsigned char sub) {
-	cpu->tmpw = val - sub - cpu->fi.c;
+	cpu->tmpw = val - sub - cpu->f.c;
 	//cpu->f = 0;
-	cpu->fi.s = !!(cpu->ltw & 0x80);
-	cpu->fi.z = !cpu->ltw;
-	cpu->fi.a = !!iop_sub_h[((val & 8) >> 1) | ((sub & 8) >> 2) | ((cpu->ltw & 8) >> 3)];
-	cpu->fi.p = parity(cpu->ltw);
-	cpu->fi.c = !!cpu->htw;
+	cpu->f.s = !!(cpu->ltw & 0x80);
+	cpu->f.z = !cpu->ltw;
+	cpu->f.a = !!iop_sub_h[((val & 8) >> 1) | ((sub & 8) >> 2) | ((cpu->ltw & 8) >> 3)];
+	cpu->f.p = parity(cpu->ltw);
+	cpu->f.c = !!cpu->htw;
 	return cpu->ltw;
 }
 
 unsigned char iop_ana(CPU* cpu, unsigned char val, unsigned char arg) {
-	cpu->fi.a = !!((val | arg) & 0x08);	// from sPycialist
+	cpu->f.a = !!((val | arg) & 0x08);	// from sPycialist
 	val &= arg;
-	cpu->fi.c = !!(val & 0x80);
-	cpu->fi.z = !val;
-	cpu->fi.p = parity(val);
-	cpu->fi.c = 0;
+	cpu->f.c = !!(val & 0x80);
+	cpu->f.z = !val;
+	cpu->f.p = parity(val);
+	cpu->f.c = 0;
 	return  val;
 }
 
 unsigned char iop_xra(CPU* cpu, unsigned char val, unsigned char arg) {
 	val ^= arg;
 	// cpu->f = 0;
-	cpu->fi.s = !!(val & 0x80);
-	cpu->fi.z = !val;
-	cpu->fi.c = parity(val);
-	cpu->fi.a = 0;
-	cpu->fi.c = 0;
+	cpu->f.s = !!(val & 0x80);
+	cpu->f.z = !val;
+	cpu->f.c = parity(val);
+	cpu->f.a = 0;
+	cpu->f.c = 0;
 	return val;
 }
 
 unsigned char iop_ora(CPU* cpu, unsigned char val, unsigned char arg) {
 	val |= arg;
 	// cpu->f = 0;
-	cpu->fi.s = !!(val & 0x80);
-	cpu->fi.z = !val;
-	cpu->fi.p = parity(val);
-	cpu->fi.a = 0;
-	cpu->fi.c = 0;
+	cpu->f.s = !!(val & 0x80);
+	cpu->f.z = !val;
+	cpu->f.p = parity(val);
+	cpu->f.a = 0;
+	cpu->f.c = 0;
 	return val;
 }
 
@@ -162,9 +165,9 @@ void iop_06(CPU* cpu) {
 // 07:rlc
 void iop_07(CPU* cpu) {
 	//cpu->f &= ~IFL_C;
-	cpu->fi.c = !!(cpu->regA & 0x80);
+	cpu->f.c = !!(cpu->regA & 0x80);
 	cpu->regA <<= 1;
-	if (cpu->fi.c) cpu->regA |= 1;
+	if (cpu->f.c) cpu->regA |= 1;
 }
 
 // 08:nop*
@@ -173,7 +176,7 @@ void iop_09(CPU* cpu) {
 	cpu->tmpi = cpu->regBC + cpu->regHL;
 	cpu->regHL = cpu->tmpi & 0xffff;
 	//cpu->f &= ~IFL_C;
-	cpu->fi.c = !!(cpu->tmpi > 0xffff);
+	cpu->f.c = !!(cpu->tmpi > 0xffff);
 }
 
 // 0a:ldax b
@@ -206,9 +209,9 @@ void iop_0e(CPU* cpu) {
 // 0f:rrc
 void iop_0f(CPU* cpu) {
 	//cpu->f &= ~IFL_C;
-	cpu->fi.c = cpu->regA & 0x01;
+	cpu->f.c = cpu->regA & 0x01;
 	cpu->regA >>= 1;
-	if (cpu->fi.c) cpu->regA |= 0x80;
+	if (cpu->f.c) cpu->regA |= 0x80;
 }
 
 // 11:lxi regD,nn
@@ -250,8 +253,8 @@ void iop_16(CPU* cpu) {
 void iop_17(CPU* cpu) {
 	cpu->ltw = cpu->regA;
 	cpu->tmpw <<= 1;
-	if (cpu->fi.c) cpu->ltw |= 1;
-	cpu->fi.c = cpu->htw & 1;
+	if (cpu->f.c) cpu->ltw |= 1;
+	cpu->f.c = cpu->htw & 1;
 	cpu->regA = cpu->ltw;
 }
 
@@ -260,7 +263,7 @@ void iop_19(CPU* cpu) {
 	cpu->tmpi = cpu->regDE + cpu->regHL;
 	cpu->regHL = cpu->tmpi & 0xffff;
 	//cpu->f &= ~IFL_C;
-	cpu->fi.c = !!(cpu->tmpi > 0xffff);
+	cpu->f.c = !!(cpu->tmpi > 0xffff);
 }
 
 // 1a:ldax d
@@ -294,8 +297,8 @@ void iop_1e(CPU* cpu) {
 void iop_1f(CPU* cpu) {
 	cpu->htw = cpu->regA;
 	cpu->tmpw >>= 1;
-	if (cpu->fi.c) cpu->htw |= 0x80;
-	cpu->fi.c = !!(cpu->ltw & 0x80);
+	if (cpu->f.c) cpu->htw |= 0x80;
+	cpu->f.c = !!(cpu->ltw & 0x80);
 	cpu->regA = cpu->htw;
 }
 
@@ -344,15 +347,15 @@ void iop_26(CPU* cpu) {
 // 27:daa
 void iop_27(CPU* cpu) {
 	unsigned char add = 0;
-	unsigned char cf = cpu->fi.c;
-	if ((cpu->fi.a) || ((cpu->regA & 0x0f) > 0x09))
+	unsigned char cf = cpu->f.c;
+	if ((cpu->f.a) || ((cpu->regA & 0x0f) > 0x09))
 		add = 6;
-	if ((cpu->fi.c) || (cpu->regA > 0x9f) || ((cpu->regA > 0x8f) && ((cpu->regA & 0x0f) > 0x09)))
+	if ((cpu->f.c) || (cpu->regA > 0x9f) || ((cpu->regA > 0x8f) && ((cpu->regA & 0x0f) > 0x09)))
 		add |= 0x60;
 	if (cpu->regA > 0x99)
 		cf = 1;
 	cpu->regA = iop_add(cpu, cpu->regA, add);
-	cpu->fi.c = cf; // = (cpu->f & ~IFL_C) | cf;
+	cpu->f.c = cf; // = (cpu->f & ~IFL_C) | cf;
 }
 
 // 29:dad h
@@ -360,7 +363,7 @@ void iop_29(CPU* cpu) {
 	cpu->tmpi = cpu->regHL + cpu->regHL;
 	cpu->regHL = cpu->tmpi & 0xffff;
 	//cpu->f &= ~IFL_C;
-	cpu->fi.c = !!(cpu->tmpi > 0xffff);
+	cpu->f.c = !!(cpu->tmpi > 0xffff);
 }
 
 // 2a:lhld nn
@@ -452,7 +455,7 @@ void iop_36(CPU* cpu) {
 
 // 37:stc
 void iop_37(CPU* cpu) {
-	cpu->fi.c = 1;
+	cpu->f.c = 1;
 }
 
 // 39:dad regSP
@@ -460,7 +463,7 @@ void iop_39(CPU* cpu) {
 	cpu->tmpi = cpu->regSP + cpu->regHL;
 	cpu->regHL = cpu->tmpi & 0xffff;
 	// cpu->f &= ~IFL_C;
-	cpu->fi.c = !!(cpu->tmpi > 0xffff);
+	cpu->f.c = !!(cpu->tmpi > 0xffff);
 }
 
 // 3a:lda nn
@@ -496,7 +499,7 @@ void iop_3e(CPU* cpu) {
 
 // 3f:cmc
 void iop_3f(CPU* cpu) {
-	cpu->fi.c ^= 1;
+	cpu->f.c ^= 1;
 }
 
 // 40..47: mov regB,x
@@ -676,7 +679,7 @@ void iop_be(CPU* cpu) {
 }
 void iop_bf(CPU* cpu) {cpu->tmpb = iop_sub(cpu, cpu->regA, cpu->regA);}
 // c0: rnz
-void iop_c0(CPU* cpu) {if (!cpu->fi.z) cpu->regPC = iop_pop(cpu);}
+void iop_c0(CPU* cpu) {if (!cpu->f.z) cpu->regPC = iop_pop(cpu);}
 // c1: pop b
 void iop_c1(CPU* cpu) {cpu->regBC = iop_pop(cpu);}
 // c2: jnz nn
@@ -685,7 +688,7 @@ void iop_c2(CPU* cpu) {
 	cpu->regWZl = cpu->mrd(cpu->regPC++, 0, cpu->xptr) & 0xff;
 	cpu->t += 3;
 	cpu->regWZh = cpu->mrd(cpu->regPC++, 0, cpu->xptr) & 0xff;
-	if (!cpu->fi.z) cpu->regPC = cpu->regWZ;
+	if (!cpu->f.z) cpu->regPC = cpu->regWZ;
 }
 // c3: jmp nn
 void iop_c3(CPU* cpu) {
@@ -701,7 +704,7 @@ void iop_c4(CPU* cpu) {
 	cpu->ltw = cpu->mrd(cpu->regPC++, 0, cpu->xptr) & 0xff;
 	cpu->t += 3;
 	cpu->htw = cpu->mrd(cpu->regPC++, 0, cpu->xptr) & 0xff;
-	if (!cpu->fi.z) {
+	if (!cpu->f.z) {
 		iop_push(cpu, cpu->regPC);
 		cpu->regPC = cpu->tmpw;
 	}
@@ -720,7 +723,7 @@ void iop_rst(CPU* cpu) {
 	cpu->regPC = cpu->com & 0x38;
 }
 // c8: rz
-void iop_c8(CPU* cpu) {if (cpu->fi.z) cpu->regPC = iop_pop(cpu);}
+void iop_c8(CPU* cpu) {if (cpu->f.z) cpu->regPC = iop_pop(cpu);}
 // c9: ret
 void iop_c9(CPU* cpu) {cpu->regPC = iop_pop(cpu);}
 // ca: jz nn
@@ -729,7 +732,7 @@ void iop_ca(CPU* cpu) {
 	cpu->regWZl = cpu->mrd(cpu->regPC++, 0, cpu->xptr) & 0xff;
 	cpu->t += 3;
 	cpu->regWZh = cpu->mrd(cpu->regPC++, 0, cpu->xptr) & 0xff;
-	if (cpu->fi.z) cpu->regPC = cpu->regWZ;
+	if (cpu->f.z) cpu->regPC = cpu->regWZ;
 }
 // cb = c3
 // cc: cz nn
@@ -738,7 +741,7 @@ void iop_cc(CPU* cpu) {
 	cpu->ltw = cpu->mrd(cpu->regPC++, 0, cpu->xptr) & 0xff;
 	cpu->t += 3;
 	cpu->htw = cpu->mrd(cpu->regPC++, 0, cpu->xptr) & 0xff;
-	if (cpu->fi.z) {
+	if (cpu->f.z) {
 		iop_push(cpu, cpu->regPC);
 		cpu->regPC = cpu->tmpw;
 	}
@@ -760,7 +763,7 @@ void iop_ce(CPU* cpu) {
 }
 // cf: rst 1
 // d0: rnc
-void iop_d0(CPU* cpu) {if (!cpu->fi.c) cpu->regPC = iop_pop(cpu);}
+void iop_d0(CPU* cpu) {if (!cpu->f.c) cpu->regPC = iop_pop(cpu);}
 // d1: pop d
 void iop_d1(CPU* cpu) {cpu->regDE = iop_pop(cpu);}
 // d2: jnc nn
@@ -769,7 +772,7 @@ void iop_d2(CPU* cpu) {
 	cpu->regWZl = cpu->mrd(cpu->regPC++, 0, cpu->xptr) & 0xff;
 	cpu->t += 3;
 	cpu->regWZh = cpu->mrd(cpu->regPC++, 0, cpu->xptr) & 0xff;
-	if (!cpu->fi.c) cpu->regPC = cpu->regWZ;
+	if (!cpu->f.c) cpu->regPC = cpu->regWZ;
 }
 // d3: out n
 void iop_d3(CPU* cpu) {
@@ -785,7 +788,7 @@ void iop_d4(CPU* cpu) {
 	cpu->ltw = cpu->mrd(cpu->regPC++, 0, cpu->xptr) & 0xff;
 	cpu->t += 3;
 	cpu->htw = cpu->mrd(cpu->regPC++, 0, cpu->xptr) & 0xff;
-	if (!cpu->fi.c) {
+	if (!cpu->f.c) {
 		iop_push(cpu, cpu->regPC);
 		cpu->regPC = cpu->tmpw;
 	}
@@ -800,7 +803,7 @@ void iop_d6(CPU* cpu) {
 }
 // d7: rst 2
 // d8: rc
-void iop_d8(CPU* cpu) {if (cpu->fi.c) cpu->regPC = iop_pop(cpu);}
+void iop_d8(CPU* cpu) {if (cpu->f.c) cpu->regPC = iop_pop(cpu);}
 // d9: ret*
 // da: jc nn
 void iop_da(CPU* cpu) {
@@ -808,7 +811,7 @@ void iop_da(CPU* cpu) {
 	cpu->regWZl = cpu->mrd(cpu->regPC++, 0, cpu->xptr) & 0xff;
 	cpu->t += 3;
 	cpu->regWZh = cpu->mrd(cpu->regPC++, 0, cpu->xptr) & 0xff;
-	if (cpu->fi.c) cpu->regPC = cpu->regWZ;
+	if (cpu->f.c) cpu->regPC = cpu->regWZ;
 }
 // db: in n
 void iop_db(CPU* cpu) {
@@ -824,7 +827,7 @@ void iop_dc(CPU* cpu) {
 	cpu->ltw = cpu->mrd(cpu->regPC++, 0, cpu->xptr) & 0xff;
 	cpu->t += 3;
 	cpu->htw = cpu->mrd(cpu->regPC++, 0, cpu->xptr) & 0xff;
-	if (cpu->fi.c) {
+	if (cpu->f.c) {
 		iop_push(cpu, cpu->regPC);
 		cpu->regPC = cpu->tmpw;
 	}
@@ -838,7 +841,7 @@ void iop_de(CPU* cpu) {
 }
 // df: rst 3
 // e0: rpo
-void iop_e0(CPU* cpu) {if (!cpu->fi.p) cpu->regPC = iop_pop(cpu);}
+void iop_e0(CPU* cpu) {if (!cpu->f.p) cpu->regPC = iop_pop(cpu);}
 // e1: pop h
 void iop_e1(CPU* cpu) {cpu->regHL = iop_pop(cpu);}
 // e2: jpo nn
@@ -847,7 +850,7 @@ void iop_e2(CPU* cpu) {
 	cpu->regWZl = cpu->mrd(cpu->regPC++, 0, cpu->xptr) & 0xff;
 	cpu->t += 3;
 	cpu->regWZh = cpu->mrd(cpu->regPC++, 0, cpu->xptr) & 0xff;
-	if (!cpu->fi.p) cpu->regPC = cpu->regWZ;
+	if (!cpu->f.p) cpu->regPC = cpu->regWZ;
 }
 // e3: xthl = ex (sp),regHL
 void iop_e3(CPU* cpu) {
@@ -862,7 +865,7 @@ void iop_e4(CPU* cpu) {
 	cpu->ltw = cpu->mrd(cpu->regPC++, 0, cpu->xptr) & 0xff;
 	cpu->t += 3;
 	cpu->htw = cpu->mrd(cpu->regPC++, 0, cpu->xptr) & 0xff;
-	if (!cpu->fi.p) {
+	if (!cpu->f.p) {
 		iop_push(cpu, cpu->regPC);
 		cpu->regPC = cpu->tmpw;
 	}
@@ -877,7 +880,7 @@ void iop_e6(CPU* cpu) {
 }
 // e7: rst 4
 // e8: rpe
-void iop_e8(CPU* cpu) {if (cpu->fi.p) cpu->regPC = iop_pop(cpu);}
+void iop_e8(CPU* cpu) {if (cpu->f.p) cpu->regPC = iop_pop(cpu);}
 // e9: pchl
 void iop_e9(CPU* cpu) {cpu->regPC = cpu->regHL;}
 // ea: jpe nn
@@ -886,7 +889,7 @@ void iop_ea(CPU* cpu) {
 	cpu->regWZl = cpu->mrd(cpu->regPC++, 0, cpu->xptr) & 0xff;
 	cpu->t += 3;
 	cpu->regWZh = cpu->mrd(cpu->regPC++, 0, cpu->xptr) & 0xff;
-	if (cpu->fi.p) cpu->regPC = cpu->regWZ;
+	if (cpu->f.p) cpu->regPC = cpu->regWZ;
 }
 // eb: xchg
 void iop_eb(CPU* cpu) {
@@ -900,7 +903,7 @@ void iop_ec(CPU* cpu) {
 	cpu->ltw = cpu->mrd(cpu->regPC++, 0, cpu->xptr) & 0xff;
 	cpu->t += 3;
 	cpu->htw = cpu->mrd(cpu->regPC++, 0, cpu->xptr) & 0xff;
-	if (cpu->fi.p) {
+	if (cpu->f.p) {
 		iop_push(cpu, cpu->regPC);
 		cpu->regPC = cpu->tmpw;
 	}
@@ -914,12 +917,12 @@ void iop_ee(CPU* cpu) {
 }
 // ef: rst 5
 // f0: rp
-void iop_f0(CPU* cpu) {if (!cpu->fi.s) cpu->regPC = iop_pop(cpu);}
+void iop_f0(CPU* cpu) {if (!cpu->f.s) cpu->regPC = iop_pop(cpu);}
 // f1: pop psw
 void iop_f1(CPU* cpu) {
 	cpu->tmpw = iop_pop(cpu);
 	cpu->regA = cpu->htw;
-	cpu->f = cpu->ltw;
+	i8080_set_flag(cpu, cpu->ltw);
 }
 // f2: jp nn
 void iop_f2(CPU* cpu) {
@@ -927,13 +930,13 @@ void iop_f2(CPU* cpu) {
 	cpu->ltw = cpu->mrd(cpu->regPC++, 0, cpu->xptr) & 0xff;
 	cpu->t += 3;
 	cpu->htw = cpu->mrd(cpu->regPC, 0, cpu->xptr) & 0xff;
-	if (!cpu->fi.s) {
+	if (!cpu->f.s) {
 		cpu->regPC = cpu->tmpw;
 	}
 }
 // f3: di
 void iop_f3(CPU* cpu) {
-	cpu->iff1 = 0;
+	cpu->f.iff1 = 0;
 	cpu->inten &= ~I8080_INT;
 }
 // f4: cp nn
@@ -942,7 +945,7 @@ void iop_f4(CPU* cpu) {
 	cpu->ltw = cpu->mrd(cpu->regPC++, 0, cpu->xptr) & 0xff;
 	cpu->t += 3;
 	cpu->htw = cpu->mrd(cpu->regPC++, 0, cpu->xptr) & 0xff;
-	if (!cpu->fi.s) {
+	if (!cpu->f.s) {
 		iop_push(cpu, cpu->regPC);
 		cpu->regPC = cpu->tmpw;
 	}
@@ -950,7 +953,7 @@ void iop_f4(CPU* cpu) {
 // f5: push psw
 void iop_f5(CPU* cpu) {
 	cpu->htw = cpu->regA;
-	cpu->ltw = cpu->f & 0xff;;
+	cpu->ltw = i8080_get_flag(cpu) & 0xff;;
 	iop_push(cpu, cpu->tmpw);
 }
 
@@ -962,7 +965,7 @@ void iop_f6(CPU* cpu) {
 }
 // f7: rst 6
 // f8: rm
-void iop_f8(CPU* cpu) {if (cpu->fi.s) cpu->regPC = iop_pop(cpu);}
+void iop_f8(CPU* cpu) {if (cpu->f.s) cpu->regPC = iop_pop(cpu);}
 // f9: sphl
 void iop_f9(CPU* cpu) {
 	cpu->regSP = cpu->regHL;
@@ -973,11 +976,11 @@ void iop_fa(CPU* cpu) {
 	cpu->regWZl = cpu->mrd(cpu->regPC++, 0, cpu->xptr) & 0xff;
 	cpu->t += 3;
 	cpu->regWZh = cpu->mrd(cpu->regPC++, 0, cpu->xptr) & 0xff;
-	if (cpu->fi.s) cpu->regPC = cpu->regWZ;
+	if (cpu->f.s) cpu->regPC = cpu->regWZ;
 }
 // fb: ei
 void iop_fb(CPU* cpu) {
-	cpu->iff1 = 1;
+	cpu->f.iff1 = 1;
 	cpu->inten |= I8080_INT;
 }
 // fc: cm nn
@@ -986,7 +989,7 @@ void iop_fc(CPU* cpu) {
 	cpu->ltw = cpu->mrd(cpu->regPC++, 0, cpu->xptr) & 0xff;
 	cpu->t += 3;
 	cpu->htw = cpu->mrd(cpu->regPC++, 0, cpu->xptr) & 0xff;
-	if (cpu->fi.s) {
+	if (cpu->f.s) {
 		iop_push(cpu, cpu->regPC);
 		cpu->regPC = cpu->tmpw;
 	}

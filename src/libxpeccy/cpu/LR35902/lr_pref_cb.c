@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include "../cpu.h"
+#include "lr35902.h"
 #include "lr_macro.h"
 
 // 00..07	rlc	4 [4rd 3wr]

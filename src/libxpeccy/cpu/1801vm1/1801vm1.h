@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../cpu.h"
+
 enum {
 	PDP11_REG0 = 1,
 	PDP11_REG1,
@@ -71,8 +73,6 @@ typedef struct {
 #define PDP_INT_VIRQ	(1 << 3)
 #define PDP_INT_TIMER	(1 << 4)
 
-#include "../cpu.h"
-
 void pdp11_reset(CPU*);
 int pdp11_exec(CPU*);
 
@@ -84,3 +84,5 @@ xAsmScan pdp11_asm(int, const char*, char*);
 
 void pdp11_get_regs(CPU*, xRegBunch*);
 void pdp11_set_regs(CPU*, xRegBunch);
+void pdp_set_flag(CPU*, int);
+int pdp_get_flag(CPU*);

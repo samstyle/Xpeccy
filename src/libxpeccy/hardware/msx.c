@@ -1,4 +1,5 @@
 #include "hardware.h"
+#include "../cpu/Z80/z80.h"
 
 // MSX...
 // master clock		MSX2:21.48MHz | MSX1:10.74

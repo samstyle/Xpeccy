@@ -5,14 +5,29 @@
 
 extern opCode mosTab[256];
 
+void mos_set_flag(CPU* cpu, int v) {
+	cpu->f.c = v & 1;
+	cpu->f.z = !!(v & 2);
+	cpu->f.i = !!(v & 4);
+	cpu->f.d = !!(v & 8);
+	cpu->f.b = !!(v & 16);
+	cpu->f.f5 = !!(v & 32);
+	cpu->f.v = !!(v & 64);
+	cpu->f.n = !!(v & 128);
+}
+
+int mos_get_flag(CPU* cpu) {
+	return cpu->f.c | (cpu->f.z << 1) | (cpu->f.i << 2) | (cpu->f.d << 3) | (cpu->f.b << 4) | (1 << 5) | (cpu->f.v << 6) | (cpu->f.n << 7);
+}
+
 void m6502_reset(CPU* cpu) {
 	cpu->lock = 0;
 	cpu->intrq = 0;
 	cpu->inten = MOS6502_INT_IRQ | MOS6502_INT_NMI;	// brk/nmi enabled. irq is allways enabled, controlled by I flag
 	cpu->regSP = 0x1fd;				// segment 01xx is stack
 	// cpu->f = MF5 | MFI;
-	cpu->fm.f5 = 1;
-	cpu->fm.i = 1;
+	cpu->f.f5 = 1;
+	cpu->f.i = 1;
 	cpu->regA = 0;
 	cpu->regIXl = 0;
 	cpu->regIYl = 0;
@@ -26,7 +41,7 @@ void m6502_push_int(CPU* cpu) {
 	cpu->regSPl--;
 	cpu->mwr(cpu->regSP, cpu->regPCl, cpu->xptr);
 	cpu->regSPl--;
-	cpu->mwr(cpu->regSP, cpu->f, cpu->xptr);
+	cpu->mwr(cpu->regSP, mos_get_flag(cpu), cpu->xptr);
 	cpu->regSPl--;
 }
 
@@ -39,12 +54,12 @@ int m6502_int(CPU* cpu) {
 	} else if (cpu->intrq & MOS6502_INT_IRQ) {	// IRQ
 		cpu->intrq &= ~MOS6502_INT_IRQ;
 		//if (!(cpu->f & MFI)) {			// IRQ enabled, I flag = 0
-		if (!cpu->fm.i) {
+		if (!cpu->f.i) {
 			//cpu->f &= ~MFB;			// reset B flag
-			cpu->fm.b = 0;
+			cpu->f.b = 0;
 			m6502_push_int(cpu);
 			//cpu->f |= MFI;			// disable IRQ
-			cpu->fm.i = 1;
+			cpu->f.i = 1;
 			cpu->regPCl = cpu->mrd(0xfffe, 0, cpu->xptr);
 			cpu->regPCh = cpu->mrd(0xffff, 0, cpu->xptr);
 		}
@@ -58,7 +73,7 @@ int m6502_exec(CPU* cpu) {
 	unsigned char com;
 	cpu->intrq &= cpu->inten;
 //	if (cpu->f & MFI)
-	if (cpu->fm.i)
+	if (cpu->f.i)
 		cpu->intrq &= ~MOS6502_INT_IRQ;
 	if (cpu->intrq && !cpu->noint) {
 		res = m6502_int(cpu);
@@ -96,10 +111,10 @@ xMnem m6502_mnem(CPU* cpu, int qadr, cbdmr mrd, void* data) {
 		mn.cond = 1;
 #if 1
 		switch((op >> 6) & 3) {
-			case 0: mn.met = !cpu->fm.n; break;
-			case 1: mn.met = !cpu->fm.v; break;
-			case 2: mn.met = !cpu->fm.c; break;
-			case 3: mn.met = !cpu->fm.z; break;
+			case 0: mn.met = !cpu->f.n; break;
+			case 1: mn.met = !cpu->f.v; break;
+			case 2: mn.met = !cpu->f.c; break;
+			case 3: mn.met = !cpu->f.z; break;
 		}
 #else
 		mn.met = (cpu->f & m6502_cond[(op >> 6) & 3]) ? 0 : 1;		// true if 0
@@ -145,7 +160,7 @@ void m6502_get_regs(CPU* cpu, xRegBunch* bunch) {
 			case M6502_REG_PC: bunch->regs[idx].value = cpu->regPC; break;
 			case M6502_REG_S: bunch->regs[idx].value = cpu->regSPl; break;
 			case M6502_REG_A: bunch->regs[idx].value = cpu->regA; break;
-			case M6502_REG_F: bunch->regs[idx].value = cpu->f; break;
+			case M6502_REG_F: bunch->regs[idx].value = mos_get_flag(cpu); break;
 			case M6502_REG_X: bunch->regs[idx].value = cpu->regIXl; break;
 			case M6502_REG_Y: bunch->regs[idx].value = cpu->regIYl; break;
 		}
@@ -163,7 +178,7 @@ void m6502_set_regs(CPU* cpu, xRegBunch bunch) {
 			case M6502_REG_PC: cpu->regPC = bunch.regs[idx].value; break;
 			case M6502_REG_S: cpu->regSP = 0x0100 | (bunch.regs[idx].value & 0xff); break;
 			case M6502_REG_A: cpu->regA = bunch.regs[idx].value & 0xff; break;
-			case M6502_REG_F: cpu->f = bunch.regs[idx].value & 0xff; break;
+			case M6502_REG_F: mos_set_flag(cpu, bunch.regs[idx].value & 0xff); break;
 			case M6502_REG_X: cpu->regIXl = bunch.regs[idx].value & 0xff; break;
 			case M6502_REG_Y: cpu->regIYl = bunch.regs[idx].value & 0xff; break;
 			case REG_NONE: idx = 100; break;

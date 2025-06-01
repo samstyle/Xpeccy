@@ -7,13 +7,13 @@
 void ed40(CPU* cpu) {
 	cpu->regWZ = cpu->regBC;
 	cpu->regB = z80_iord(cpu, cpu->regWZ++); // IORD(cpu->mptr++,4);
-	cpu->fz.s = !!(cpu->regB & 0x80);
-	cpu->fz.z = !cpu->regB;
-	cpu->fz.f5 = !!(cpu->regB & 0x20);
-	cpu->fz.h = 0;
-	cpu->fz.f3 = !!(cpu->regB & 0x08);
-	cpu->fz.pv = parity(cpu->regB);
-	cpu->fz.n = 0;
+	cpu->f.s = !!(cpu->regB & 0x80);
+	cpu->f.z = !cpu->regB;
+	cpu->f.f5 = !!(cpu->regB & 0x20);
+	cpu->f.h = 0;
+	cpu->f.f3 = !!(cpu->regB & 0x08);
+	cpu->f.pv = parity(cpu->regB);
+	cpu->f.n = 0;
 	//cpu->f = (cpu->f & Z80_FC) | sz53pTab[cpu->b];
 }
 
@@ -26,7 +26,7 @@ void ed41(CPU* cpu) {
 
 // 42	sbc regHL,regBC	11
 void ed42(CPU* cpu) {
-	cpu->regHL = z80_sub16(cpu, cpu->regHL, cpu->regBC, cpu->fz.c); //SBC16(cpu->bc);
+	cpu->regHL = z80_sub16(cpu, cpu->regHL, cpu->regBC, cpu->f.c); //SBC16(cpu->bc);
 }
 
 // 43	ld (nn),bc	4 3rd 3rd 3wr 3wr	regWZ = nn + 1
@@ -46,13 +46,13 @@ void ed44(CPU* cpu) {
 
 // 45	retn	4 3rd 3rd
 void ed45(CPU* cpu) {
-	cpu->iff1 = cpu->iff2;
+	cpu->f.iff1 = cpu->f.iff2;
 	z80_ret(cpu);
 }
 
 // 46	im0	4
 void ed46(CPU* cpu) {
-	cpu->imode = 0;
+	cpu->f.im = 0;
 }
 
 // 47	ld i,regA	5
@@ -64,13 +64,13 @@ void ed47(CPU* cpu) {
 void ed48(CPU* cpu) {
 	cpu->regWZ = cpu->regBC;
 	cpu->regC = z80_iord(cpu, cpu->regWZ++);
-	cpu->fz.s = !!(cpu->regC & 0x80);
-	cpu->fz.z = !cpu->regC;
-	cpu->fz.f5 = !!(cpu->regC & 0x20);
-	cpu->fz.h = 0;
-	cpu->fz.f3 = !!(cpu->regC & 0x08);
-	cpu->fz.pv = parity(cpu->regC);
-	cpu->fz.n = 0;
+	cpu->f.s = !!(cpu->regC & 0x80);
+	cpu->f.z = !cpu->regC;
+	cpu->f.f5 = !!(cpu->regC & 0x20);
+	cpu->f.h = 0;
+	cpu->f.f3 = !!(cpu->regC & 0x08);
+	cpu->f.pv = parity(cpu->regC);
+	cpu->f.n = 0;
 }
 
 // 49	out (regC),regC	4 4out		regWZ = (a<<8) | ((port + 1) & 0xff)
@@ -82,7 +82,7 @@ void ed49(CPU* cpu) {
 
 // 4a	adc regHL,regBC	11
 void ed4A(CPU* cpu) {
-	cpu->regHL = z80_adc16(cpu, cpu->regHL, cpu->regBC, cpu->fz.c); // ADC16(cpu->bc);
+	cpu->regHL = z80_adc16(cpu, cpu->regHL, cpu->regBC, cpu->f.c); // ADC16(cpu->bc);
 }
 
 // 4b	ld bc,(nn)	4 3rd 3rd 3rd 3rd	regWZ = nn+1
@@ -109,13 +109,13 @@ void ed4F(CPU* cpu) {
 void ed50(CPU* cpu) {
 	cpu->regWZ = cpu->regBC;
 	cpu->regD = z80_iord(cpu, cpu->regWZ++);
-	cpu->fz.s = !!(cpu->regD & 0x80);
-	cpu->fz.z = !cpu->regD;
-	cpu->fz.f5 = !!(cpu->regD & 0x20);
-	cpu->fz.h = 0;
-	cpu->fz.f3 = !!(cpu->regD & 0x08);
-	cpu->fz.pv = parity(cpu->regD);
-	cpu->fz.n = 0;
+	cpu->f.s = !!(cpu->regD & 0x80);
+	cpu->f.z = !cpu->regD;
+	cpu->f.f5 = !!(cpu->regD & 0x20);
+	cpu->f.h = 0;
+	cpu->f.f3 = !!(cpu->regD & 0x08);
+	cpu->f.pv = parity(cpu->regD);
+	cpu->f.n = 0;
 }
 
 // 51	out (c),regD	4 4out	regWZ = (a<<8) | ((port+1) & ff)
@@ -127,7 +127,7 @@ void ed51(CPU* cpu) {
 
 // 52	sbc regHL,regDE	11
 void ed52(CPU* cpu) {
-	cpu->regHL = z80_sub16(cpu, cpu->regHL, cpu->regDE, cpu->fz.c); //SBC16(cpu->de);
+	cpu->regHL = z80_sub16(cpu, cpu->regHL, cpu->regDE, cpu->f.c); //SBC16(cpu->de);
 }
 
 // 53	ld (nn),de	4 3rd 3rd 3wr 3wr	regWZ = nn + 1
@@ -140,20 +140,20 @@ void ed53(CPU* cpu) {
 
 // 56	im1		4
 void ed56(CPU* cpu) {
-	cpu->imode = 1;
+	cpu->f.im = 1;
 }
 
 // 57	ld regA,i		5
 void ed57(CPU* cpu) {
 	cpu->regA = cpu->i;
 	// cpu->f = (cpu->f & Z80_FC) | (cpu->a & (Z80_FS | Z80_F5 | Z80_F3)) | (cpu->a ? 0 : Z80_FZ) | (cpu->iff2 ? Z80_FV : 0);
-	cpu->fz.s = !!(cpu->regA & 0x80);
-	cpu->fz.z = !cpu->regA;
-	cpu->fz.f5 = !!(cpu->regA & 0x20);
-	cpu->fz.h = 0;
-	cpu->fz.f3 = !!(cpu->regA & 0x08);
-	cpu->fz.pv = cpu->iff2;
-	cpu->fz.n = 0;
+	cpu->f.s = !!(cpu->regA & 0x80);
+	cpu->f.z = !cpu->regA;
+	cpu->f.f5 = !!(cpu->regA & 0x20);
+	cpu->f.h = 0;
+	cpu->f.f3 = !!(cpu->regA & 0x08);
+	cpu->f.pv = cpu->f.iff2;
+	cpu->f.n = 0;
 	cpu->resPV = 1;			// if INT coming after this opcode, reset PV flag
 }
 
@@ -161,13 +161,13 @@ void ed57(CPU* cpu) {
 void ed58(CPU* cpu) {
 	cpu->regWZ = cpu->regBC;
 	cpu->regE = z80_iord(cpu, cpu->regWZ++);
-	cpu->fz.s = !!(cpu->regE & 0x80);
-	cpu->fz.z = !cpu->regE;
-	cpu->fz.f5 = !!(cpu->regE & 0x20);
-	cpu->fz.h = 0;
-	cpu->fz.f3 = !!(cpu->regE & 0x08);
-	cpu->fz.pv = parity(cpu->regE);
-	cpu->fz.n = 0;
+	cpu->f.s = !!(cpu->regE & 0x80);
+	cpu->f.z = !cpu->regE;
+	cpu->f.f5 = !!(cpu->regE & 0x20);
+	cpu->f.h = 0;
+	cpu->f.f3 = !!(cpu->regE & 0x08);
+	cpu->f.pv = parity(cpu->regE);
+	cpu->f.n = 0;
 }
 
 // 59	out (c),regE	4 4out		regWZ = ((port+1) & ff) | (a << 8)
@@ -179,7 +179,7 @@ void ed59(CPU* cpu) {
 
 // 5a	adc regHL,regDE	11
 void ed5A(CPU* cpu) {
-	cpu->regHL = z80_adc16(cpu, cpu->regHL, cpu->regDE, cpu->fz.c); //ADC16(cpu->de);
+	cpu->regHL = z80_adc16(cpu, cpu->regHL, cpu->regDE, cpu->f.c); //ADC16(cpu->de);
 }
 
 // 5b	ld de,(nn)	4 3rd 3rd 3rd 3rd	regWZ = nn + 1
@@ -192,20 +192,20 @@ void ed5B(CPU* cpu) {
 
 // 5e	im2		4
 void ed5E(CPU* cpu) {
-	cpu->imode = 2;
+	cpu->f.im = 2;
 }
 
 // 5f	ld regA,r		5
 void ed5F(CPU* cpu) {
 	cpu->regA = (cpu->r & 0x7f) | (cpu->r7 & 0x80);
 //	cpu->f = (cpu->f & Z80_FC) | (cpu->a & (Z80_FS | Z80_F5 | Z80_F3)) | (cpu->a ? 0 : Z80_FZ) | (cpu->iff2 ? Z80_FV : 0);
-	cpu->fz.s = !!(cpu->regA & 0x80);
-	cpu->fz.z = !cpu->regA;
-	cpu->fz.f5 = !!(cpu->regA & 0x20);
-	cpu->fz.h = 0;
-	cpu->fz.f3 = !!(cpu->regA & 0x08);
-	cpu->fz.pv = cpu->iff2;
-	cpu->fz.n = 0;
+	cpu->f.s = !!(cpu->regA & 0x80);
+	cpu->f.z = !cpu->regA;
+	cpu->f.f5 = !!(cpu->regA & 0x20);
+	cpu->f.h = 0;
+	cpu->f.f3 = !!(cpu->regA & 0x08);
+	cpu->f.pv = cpu->f.iff2;
+	cpu->f.n = 0;
 	cpu->resPV = 1;
 }
 
@@ -213,13 +213,13 @@ void ed5F(CPU* cpu) {
 void ed60(CPU* cpu) {
 	cpu->regWZ = cpu->regBC;
 	cpu->regH = z80_iord(cpu, cpu->regWZ++);
-	cpu->fz.s = !!(cpu->regH & 0x80);
-	cpu->fz.z = !cpu->regH;
-	cpu->fz.f5 = !!(cpu->regH & 0x20);
-	cpu->fz.h = 0;
-	cpu->fz.f3 = !!(cpu->regH & 0x08);
-	cpu->fz.pv = parity(cpu->regH);
-	cpu->fz.n = 0;
+	cpu->f.s = !!(cpu->regH & 0x80);
+	cpu->f.z = !cpu->regH;
+	cpu->f.f5 = !!(cpu->regH & 0x20);
+	cpu->f.h = 0;
+	cpu->f.f3 = !!(cpu->regH & 0x08);
+	cpu->f.pv = parity(cpu->regH);
+	cpu->f.n = 0;
 }
 
 // 61	out (c),regH	4 4out		regWZ = ((port + 1) & FF) | (a << 8)
@@ -231,7 +231,7 @@ void ed61(CPU* cpu) {
 
 // 62	sbc regHL,regHL	11
 void ed62(CPU* cpu) {
-	cpu->regHL = z80_sub16(cpu, cpu->regHL, cpu->regHL, cpu->fz.c); //SBC16(cpu->hl);
+	cpu->regHL = z80_sub16(cpu, cpu->regHL, cpu->regHL, cpu->f.c); //SBC16(cpu->hl);
 }
 
 // 67	rrd		4 3rd 4 3wr	regWZ = regHL + 1
@@ -242,26 +242,26 @@ void ed67(CPU* cpu) {
 	z80_mwr(cpu, cpu->regWZ++, (cpu->regA << 4) | (cpu->tmpb >> 4));
 	cpu->regA = (cpu->regA & 0xf0) | (cpu->tmpb & 0x0f);
 //	cpu->f = (cpu->f & Z80_FC) | sz53pTab[cpu->a];
-	cpu->fz.s = !!(cpu->regA & 0x80);
-	cpu->fz.z = !cpu->regA;
-	cpu->fz.f5 = !!(cpu->regA & 0x20);
-	cpu->fz.h = 0;
-	cpu->fz.f3 = !!(cpu->regA & 0x08);
-	cpu->fz.pv = parity(cpu->regA);
-	cpu->fz.n = 0;
+	cpu->f.s = !!(cpu->regA & 0x80);
+	cpu->f.z = !cpu->regA;
+	cpu->f.f5 = !!(cpu->regA & 0x20);
+	cpu->f.h = 0;
+	cpu->f.f3 = !!(cpu->regA & 0x08);
+	cpu->f.pv = parity(cpu->regA);
+	cpu->f.n = 0;
 }
 
 // 68	in regL,(c)	4 4in		regWZ = port + 1
 void ed68(CPU* cpu) {
 	cpu->regWZ = cpu->regBC;
 	cpu->regL = z80_iord(cpu, cpu->regWZ++);
-	cpu->fz.s = !!(cpu->regL & 0x80);
-	cpu->fz.z = !cpu->regL;
-	cpu->fz.f5 = !!(cpu->regL & 0x20);
-	cpu->fz.h = 0;
-	cpu->fz.f3 = !!(cpu->regL & 0x08);
-	cpu->fz.pv = parity(cpu->regL);
-	cpu->fz.n = 0;
+	cpu->f.s = !!(cpu->regL & 0x80);
+	cpu->f.z = !cpu->regL;
+	cpu->f.f5 = !!(cpu->regL & 0x20);
+	cpu->f.h = 0;
+	cpu->f.f3 = !!(cpu->regL & 0x08);
+	cpu->f.pv = parity(cpu->regL);
+	cpu->f.n = 0;
 }
 
 // 69	out (c),regL	4 4out		regWZ = ((port+1)&FF)|(a<<8)
@@ -273,7 +273,7 @@ void ed69(CPU* cpu) {
 
 // 6a	adc regHL,regHL	11
 void ed6A(CPU* cpu) {
-	cpu->regHL = z80_adc16(cpu, cpu->regHL, cpu->regHL, cpu->fz.c); //ADC16(cpu->hl);
+	cpu->regHL = z80_adc16(cpu, cpu->regHL, cpu->regHL, cpu->f.c); //ADC16(cpu->hl);
 }
 
 // 6f	rld		4 3rd 4 3wr	regWZ = regHL+1
@@ -284,13 +284,13 @@ void ed6F(CPU* cpu) {
 	z80_mwr(cpu, cpu->regWZ++, (cpu->tmpb << 4 ) | (cpu->regA & 0x0f));
 	cpu->regA = (cpu->regA & 0xf0) | (cpu->tmpb >> 4);
 //	cpu->f = (cpu->f & Z80_FC) | sz53pTab[cpu->a];
-	cpu->fz.s = !!(cpu->regA & 0x80);
-	cpu->fz.z = !cpu->regA;
-	cpu->fz.f5 = !!(cpu->regA & 0x20);
-	cpu->fz.h = 0;
-	cpu->fz.f3 = !!(cpu->regA & 0x08);
-	cpu->fz.pv = parity(cpu->regA);
-	cpu->fz.n = 0;
+	cpu->f.s = !!(cpu->regA & 0x80);
+	cpu->f.z = !cpu->regA;
+	cpu->f.f5 = !!(cpu->regA & 0x20);
+	cpu->f.h = 0;
+	cpu->f.f3 = !!(cpu->regA & 0x08);
+	cpu->f.pv = parity(cpu->regA);
+	cpu->f.n = 0;
 }
 
 // 70	in (c)		4 4in		regWZ = port + 1
@@ -298,13 +298,13 @@ void ed70(CPU* cpu) {
 	cpu->regWZ = cpu->regBC;
 	cpu->tmp = z80_iord(cpu, cpu->regWZ++);
 //	cpu->f = (cpu->f & Z80_FC) | sz53pTab[cpu->tmp];
-	cpu->fz.s = !!(cpu->tmp & 0x80);
-	cpu->fz.z = !cpu->tmp;
-	cpu->fz.f5 = !!(cpu->tmp & 0x20);
-	cpu->fz.h = 0;
-	cpu->fz.f3 = !!(cpu->tmp & 0x08);
-	cpu->fz.pv = parity(cpu->tmp);
-	cpu->fz.n = 0;
+	cpu->f.s = !!(cpu->tmp & 0x80);
+	cpu->f.z = !cpu->tmp;
+	cpu->f.f5 = !!(cpu->tmp & 0x20);
+	cpu->f.h = 0;
+	cpu->f.f3 = !!(cpu->tmp & 0x08);
+	cpu->f.pv = parity(cpu->tmp);
+	cpu->f.n = 0;
 }
 
 // 71	out (c),0	4 4out		regWZ = ((port+1)&FF)|(a<<8)
@@ -316,7 +316,7 @@ void ed71(CPU* cpu) {
 
 // 72	sbc regHL,regSP	11
 void ed72(CPU* cpu) {
-	cpu->regHL = z80_sub16(cpu, cpu->regHL, cpu->regSP, cpu->fz.c); //SBC16(cpu->sp);
+	cpu->regHL = z80_sub16(cpu, cpu->regHL, cpu->regSP, cpu->f.c); //SBC16(cpu->sp);
 }
 
 // 73	ld (nn),sp	4 3rd 3rd 3wr 3wr	regWZ = nn + 1
@@ -332,13 +332,13 @@ void ed78(CPU* cpu) {
 	cpu->regWZ = cpu->regBC;
 	cpu->regA = z80_iord(cpu, cpu->regWZ++);
 //	cpu->f = (cpu->f & Z80_FC) | sz53pTab[cpu->a];
-	cpu->fz.s = !!(cpu->regA & 0x80);
-	cpu->fz.z = !cpu->regA;
-	cpu->fz.f5 = !!(cpu->regA & 0x20);
-	cpu->fz.h = 0;
-	cpu->fz.f3 = !!(cpu->regA & 0x08);
-	cpu->fz.pv = parity(cpu->regA);
-	cpu->fz.n = 0;
+	cpu->f.s = !!(cpu->regA & 0x80);
+	cpu->f.z = !cpu->regA;
+	cpu->f.f5 = !!(cpu->regA & 0x20);
+	cpu->f.h = 0;
+	cpu->f.f3 = !!(cpu->regA & 0x08);
+	cpu->f.pv = parity(cpu->regA);
+	cpu->f.n = 0;
 }
 
 // 79	out (c),regA	4 4out		regWZ = ((port+1)&FF)|(regA<<8)
@@ -350,7 +350,7 @@ void ed79(CPU* cpu) {
 
 // 7a	adc regHL,regSP	11
 void ed7A(CPU* cpu) {
-	cpu->regHL = z80_adc16(cpu, cpu->regHL, cpu->regSP, cpu->fz.c); //ADC16(cpu->sp);
+	cpu->regHL = z80_adc16(cpu, cpu->regHL, cpu->regSP, cpu->f.c); //ADC16(cpu->sp);
 }
 
 // 7b	ld sp,(nn)	4 3rd 3rd 3rd 3rd	regWZ = nn + 1
@@ -369,11 +369,11 @@ void edA0(CPU* cpu) {
 	cpu->regBC--;
 	cpu->tmp += cpu->regA;
 	//cpu->f = (cpu->f & (Z80_FC | Z80_FZ | Z80_FS)) | (cpu->bc ? Z80_FV : 0 ) | (cpu->tmp & Z80_F3) | ((cpu->tmp & 0x02) ? Z80_F5 : 0);
-	cpu->fz.f5 = !!(cpu->tmp & 2);
-	cpu->fz.h = 0;
-	cpu->fz.f3 = !!(cpu->tmp & 8);
-	cpu->fz.pv = !!cpu->regBC;
-	cpu->fz.n = 0;
+	cpu->f.f5 = !!(cpu->tmp & 2);
+	cpu->f.h = 0;
+	cpu->f.f3 = !!(cpu->tmp & 8);
+	cpu->f.pv = !!cpu->regBC;
+	cpu->f.n = 0;
 }
 
 // a1	cpi	4 3rd 5?	regWZ++
@@ -384,15 +384,15 @@ void edA1(CPU* cpu) {
 	cpu->regHL++;
 	cpu->regBC--;
 	//cpu->f = (cpu->f & Z80_FC) | (cpu->bc ? Z80_FV : 0) | Z80_FN | (cpu->tmpw ? 0 : Z80_FZ) | (cpu->tmpw & Z80_FS);
-	cpu->fz.s = !!(cpu->tmpw & 0x80);
-	cpu->fz.z = !cpu->tmpw;
-	cpu->fz.h = !!FHsubTab[cpu->tmp];
-	cpu->fz.pv = !!cpu->regBC;
-	cpu->fz.n = 1;
-	if (cpu->fz.h) cpu->tmpw--;
+	cpu->f.s = !!(cpu->tmpw & 0x80);
+	cpu->f.z = !cpu->tmpw;
+	cpu->f.h = !!FHsubTab[cpu->tmp];
+	cpu->f.pv = !!cpu->regBC;
+	cpu->f.n = 1;
+	if (cpu->f.h) cpu->tmpw--;
 	//cpu->f |= (cpu->tmpw & Z80_F3) | ((cpu->tmpw & 0x02) ? Z80_F5 : 0);
-	cpu->fz.f5 = !!(cpu->tmpw & 2);
-	cpu->fz.f3 = !!(cpu->tmpw & 3);
+	cpu->f.f5 = !!(cpu->tmpw & 2);
+	cpu->f.f3 = !!(cpu->tmpw & 3);
 	cpu->regWZ++;
 	cpu->t += 5;
 }
@@ -406,16 +406,16 @@ void edA2(CPU* cpu) {
 	z80_mwr(cpu, cpu->regHL++, cpu->tmp);
 	cpu->regB--;
 	//cpu->f = (cpu->tmp & 0x80 ? Z80_FN : 0) | (cpu->b & (Z80_FS | Z80_F5 | Z80_F3)) | (cpu->b ? 0 : Z80_FZ);
-	cpu->fz.s = !!(cpu->regB & 0x80);
-	cpu->fz.z = !cpu->regB;
-	cpu->fz.f5 = !!(cpu->regB & 0x20);
-	cpu->fz.f3 = !!(cpu->regB & 0x08);
-	cpu->fz.n = !!(cpu->tmp & 0x80);
+	cpu->f.s = !!(cpu->regB & 0x80);
+	cpu->f.z = !cpu->regB;
+	cpu->f.f5 = !!(cpu->regB & 0x20);
+	cpu->f.f3 = !!(cpu->regB & 0x08);
+	cpu->f.n = !!(cpu->tmp & 0x80);
 	cpu->tmpw = cpu->tmp + ((cpu->regC + 1) & 0xff);
-	cpu->fz.c = !!(cpu->tmpw > 255);
-	cpu->fz.h = cpu->fz.c;
+	cpu->f.c = !!(cpu->tmpw > 255);
+	cpu->f.h = cpu->f.c;
 	// cpu->f |= (sz53pTab[(cpu->tmpw & 7) ^ cpu->b] & Z80_FP);
-	cpu->fz.pv = parity((cpu->tmpw & 7) ^ cpu->regB);
+	cpu->f.pv = parity((cpu->tmpw & 7) ^ cpu->regB);
 }
 
 // a3	outi	5 3rd 4wr	regWZ = regBC + 1 (after dec)
@@ -426,16 +426,16 @@ void edA3(CPU* cpu) {
 	z80_iowr(cpu, cpu->regBC, cpu->tmp);
 	cpu->regHL++;
 //	cpu->f = (cpu->tmp & 0x80 ? Z80_FN : 0 ) | (cpu->b & (Z80_FS | Z80_F5 | Z80_F3)) | (cpu->b ? 0 : Z80_FZ);
-	cpu->fz.s = !!(cpu->regB & 0x80);
-	cpu->fz.z = !cpu->regB;
-	cpu->fz.f5 = !!(cpu->regB & 0x20);
-	cpu->fz.f3 = !!(cpu->regB & 0x08);
-	cpu->fz.n = !!(cpu->tmp & 0x80);
+	cpu->f.s = !!(cpu->regB & 0x80);
+	cpu->f.z = !cpu->regB;
+	cpu->f.f5 = !!(cpu->regB & 0x20);
+	cpu->f.f3 = !!(cpu->regB & 0x08);
+	cpu->f.n = !!(cpu->tmp & 0x80);
 	cpu->tmpw = cpu->tmp + cpu->regL;
-	cpu->fz.c = !!(cpu->tmpw > 255);
-	cpu->fz.h = cpu->fz.c;
+	cpu->f.c = !!(cpu->tmpw > 255);
+	cpu->f.h = cpu->f.c;
 	//cpu->f |= (sz53pTab[(cpu->tmpw & 7) ^ cpu->b] & Z80_FP);
-	cpu->fz.pv = parity((cpu->tmpw & 7) ^ cpu->regB);
+	cpu->f.pv = parity((cpu->tmpw & 7) ^ cpu->regB);
 }
 
 // a8	ldd	4 3rd 5wr
@@ -446,11 +446,11 @@ void edA8(CPU* cpu) {
 	cpu->regBC--;
 	cpu->tmp += cpu->regA;
 	//cpu->f = (cpu->f & (Z80_FC | Z80_FZ | Z80_FS)) | (cpu->bc ? Z80_FV : 0 ) | (cpu->tmp & Z80_F3) | ((cpu->tmp & 0x02) ? Z80_F5 : 0);
-	cpu->fz.f5 = !!(cpu->tmp & 2);
-	cpu->fz.h = 0;
-	cpu->fz.f3 = !!(cpu->tmp & 8);
-	cpu->fz.pv = !!cpu->regBC;
-	cpu->fz.n = 0;
+	cpu->f.f5 = !!(cpu->tmp & 2);
+	cpu->f.h = 0;
+	cpu->f.f3 = !!(cpu->tmp & 8);
+	cpu->f.pv = !!cpu->regBC;
+	cpu->f.n = 0;
 }
 
 // a9	cpd	4 3rd 5?	regWZ--
@@ -461,15 +461,15 @@ void edA9(CPU* cpu) {
 	cpu->regHL--;
 	cpu->regBC--;
 	//cpu->f = (cpu->f & Z80_FC) | (cpu->bc ? Z80_FV : 0) | Z80_FN | (cpu->tmpw ? 0 : Z80_FZ) | (cpu->tmpw & Z80_FS);
-	cpu->fz.s = !!(cpu->tmpw & 0x80);
-	cpu->fz.z = !cpu->tmpw;
-	cpu->fz.h = !!FHsubTab[cpu->tmp];
-	cpu->fz.pv = !!cpu->regBC;
-	cpu->fz.n = 1;
-	if (cpu->fz.h) cpu->tmpw--;
+	cpu->f.s = !!(cpu->tmpw & 0x80);
+	cpu->f.z = !cpu->tmpw;
+	cpu->f.h = !!FHsubTab[cpu->tmp];
+	cpu->f.pv = !!cpu->regBC;
+	cpu->f.n = 1;
+	if (cpu->f.h) cpu->tmpw--;
 	//cpu->f |= (cpu->tmpw & Z80_F3) | ((cpu->tmpw & 0x02) ? Z80_F5 : 0);
-	cpu->fz.f5 = !!(cpu->tmpw & 2);
-	cpu->fz.f3 = !!(cpu->tmpw & 8);
+	cpu->f.f5 = !!(cpu->tmpw & 2);
+	cpu->f.f3 = !!(cpu->tmpw & 8);
 	cpu->regWZ--;
 	cpu->t += 5;
 }
@@ -481,16 +481,16 @@ void edAA(CPU* cpu) {
 	z80_mwr(cpu, cpu->regHL--, cpu->tmp);
 	cpu->regB--;
 //	cpu->f = ((cpu->tmp & 0x80) ? Z80_FN : 0) | (cpu->b & (Z80_FS | Z80_F5 | Z80_F3)) | (cpu->b ? 0 : Z80_FZ);
-	cpu->fz.s = !!(cpu->regB & 0x80);
-	cpu->fz.z = !cpu->regB;
-	cpu->fz.f5 = !!(cpu->regB & 0x20);
-	cpu->fz.f3 = !!(cpu->regB & 0x08);
-	cpu->fz.n = !!(cpu->tmp & 0x80);
+	cpu->f.s = !!(cpu->regB & 0x80);
+	cpu->f.z = !cpu->regB;
+	cpu->f.f5 = !!(cpu->regB & 0x20);
+	cpu->f.f3 = !!(cpu->regB & 0x08);
+	cpu->f.n = !!(cpu->tmp & 0x80);
 	cpu->tmpw = cpu->tmp + ((cpu->regC - 1) & 0xff);
-	cpu->fz.c = !!(cpu->tmpw > 255);
-	cpu->fz.h = cpu->fz.c;
+	cpu->f.c = !!(cpu->tmpw > 255);
+	cpu->f.h = cpu->f.c;
 	//cpu->f |= (sz53pTab[(cpu->tmpw & 7) ^ cpu->b] & Z80_FP);
-	cpu->fz.pv = parity((cpu->tmpw & 7) ^ cpu->regB);
+	cpu->f.pv = parity((cpu->tmpw & 7) ^ cpu->regB);
 }
 
 // ab	outd	5 3rd 4wr	regWZ = regBC - 1 (after dec)
@@ -501,16 +501,16 @@ void edAB(CPU* cpu) {
 	z80_iowr(cpu, cpu->regBC, cpu->tmp);
 	cpu->regHL--;
 	//cpu->f = (cpu->tmp & 0x80 ? Z80_FN : 0 ) | (cpu->b & (Z80_FS | Z80_F5 | Z80_F3)) | (cpu->b ? 0 : Z80_FZ);
-	cpu->fz.s = !!(cpu->regB & 0x80);
-	cpu->fz.z = !cpu->regB;
-	cpu->fz.f5 = !!(cpu->regB & 0x20);
-	cpu->fz.f3 = !!(cpu->regB & 0x08);
-	cpu->fz.n = !!(cpu->tmp & 0x80);
+	cpu->f.s = !!(cpu->regB & 0x80);
+	cpu->f.z = !cpu->regB;
+	cpu->f.f5 = !!(cpu->regB & 0x20);
+	cpu->f.f3 = !!(cpu->regB & 0x08);
+	cpu->f.n = !!(cpu->tmp & 0x80);
 	cpu->tmpw = cpu->tmp + cpu->regL;
-	cpu->fz.c = !!(cpu->tmpw > 255);
-	cpu->fz.h = cpu->fz.c;
+	cpu->f.c = !!(cpu->tmpw > 255);
+	cpu->f.h = cpu->f.c;
 	//cpu->f |= (sz53pTab[(cpu->tmpw & 7) ^ cpu->b] & Z80_FP);
-	cpu->fz.pv = parity((cpu->tmpw & 7) ^ cpu->regB);
+	cpu->f.pv = parity((cpu->tmpw & 7) ^ cpu->regB);
 }
 
 // for ldxr/cpxr: f3,f5 from regPCh (TODO: or from hi.regWZ=regPC+1?)
@@ -518,8 +518,8 @@ void blkRepeat(CPU* cpu) {
 	cpu->regPC -= 2;
 	cpu->t += 5;
 	cpu->regWZ = cpu->regPC + 1;
-	cpu->fz.f5 = !!(cpu->regPCh & 0x20);
-	cpu->fz.f3 = !!(cpu->regPCh & 0x08);
+	cpu->f.f5 = !!(cpu->regPCh & 0x20);
+	cpu->f.f3 = !!(cpu->regPCh & 0x08);
 }
 
 // b0	ldir	= ldi until regBC!=0	[+5T, mptr = pc+1]
@@ -533,7 +533,7 @@ void edB0(CPU* cpu) {
 // b1	cpir	= cpi until (FV & !FZ)
 void edB1(CPU* cpu) {
 	edA1(cpu);
-	if (cpu->fz.pv && !cpu->fz.z) {
+	if (cpu->f.pv && !cpu->f.z) {
 		blkRepeat(cpu);
 	}
 }
@@ -542,24 +542,24 @@ void blkioRepeat(CPU* cpu) {
 	cpu->regPC -= 2;
 	cpu->t += 5;
 	cpu->regWZ = cpu->regPC + 1;
-	cpu->fz.f5 = !!(cpu->regPCh & 0x20);
-	cpu->fz.f3 = !!(cpu->regPCh & 0x08);
-	if (cpu->fz.c) {
-		cpu->fz.h = 0;
+	cpu->f.f5 = !!(cpu->regPCh & 0x20);
+	cpu->f.f3 = !!(cpu->regPCh & 0x08);
+	if (cpu->f.c) {
+		cpu->f.h = 0;
 		// NOTE: act like inc/dec b (look at N flag), H is half-carry, PV changed if
-		if (cpu->fz.n) {
+		if (cpu->f.n) {
 			if (!parity((cpu->regB - 1) & 7))
-				cpu->fz.pv ^= 1;
+				cpu->f.pv ^= 1;
 			if ((cpu->regB & 15) == 0)
-				cpu->fz.h = 1;
+				cpu->f.h = 1;
 		} else {
 			if (!parity((cpu->regB + 1) & 7))
-				cpu->fz.pv ^= 1;
+				cpu->f.pv ^= 1;
 			if ((cpu->regB & 15) == 15)
-				cpu->fz.h = 1;
+				cpu->f.h = 1;
 		}
 	} else if (!parity(cpu->regB & 7)) {
-		cpu->fz.pv ^= 1;
+		cpu->f.pv ^= 1;
 	}
 }
 
@@ -590,7 +590,7 @@ void edB8(CPU* cpu) {
 // b9	cpdr	= cpd until (FV & !FZ)
 void edB9(CPU* cpu) {
 	edA9(cpu);
-	if (cpu->fz.pv && !cpu->fz.z) {
+	if (cpu->f.pv && !cpu->f.z) {
 		blkRepeat(cpu);
 	}
 }

@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include "../cpu.h"
+#include "z80.h"
 #include "z80_macro.h"
 #include "z80_nop.h"
 
@@ -163,17 +163,17 @@ void dd84(CPU* cpu) {cpu->regA = z80_add8(cpu, cpu->regIXh, 0);} //ADD(cpu->hx);
 void dd85(CPU* cpu) {cpu->regA = z80_add8(cpu, cpu->regIXl, 0);} //ADD(cpu->lx);}
 void dd86(CPU* cpu) {RDSHIFT(cpu->regIX); cpu->tmpb = z80_mrd(cpu, cpu->regWZ); cpu->regA = z80_add8(cpu, cpu->tmpb, 0);} //ADD(cpu->tmpb);}
 // adc x
-void dd8C(CPU* cpu) {cpu->regA = z80_add8(cpu, cpu->regIXh, cpu->fz.c);} //ADC(cpu->hx);}
-void dd8D(CPU* cpu) {cpu->regA = z80_add8(cpu, cpu->regIXl, cpu->fz.c);} //ADC(cpu->lx);}
-void dd8E(CPU* cpu) {RDSHIFT(cpu->regIX); cpu->tmpb = z80_mrd(cpu, cpu->regWZ); cpu->regA = z80_add8(cpu, cpu->tmpb, cpu->fz.c);} //ADC(cpu->tmpb);}
+void dd8C(CPU* cpu) {cpu->regA = z80_add8(cpu, cpu->regIXh, cpu->f.c);} //ADC(cpu->hx);}
+void dd8D(CPU* cpu) {cpu->regA = z80_add8(cpu, cpu->regIXl, cpu->f.c);} //ADC(cpu->lx);}
+void dd8E(CPU* cpu) {RDSHIFT(cpu->regIX); cpu->tmpb = z80_mrd(cpu, cpu->regWZ); cpu->regA = z80_add8(cpu, cpu->tmpb, cpu->f.c);} //ADC(cpu->tmpb);}
 // sub x
 void dd94(CPU* cpu) {cpu->regA = z80_sub8(cpu, cpu->regIXh, 0);} //SUB(cpu->hx);}
 void dd95(CPU* cpu) {cpu->regA = z80_sub8(cpu, cpu->regIXl, 0);} //SUB(cpu->lx);}
 void dd96(CPU* cpu) {RDSHIFT(cpu->regIX); cpu->tmpb = z80_mrd(cpu, cpu->regWZ); cpu->regA = z80_sub8(cpu, cpu->tmpb, 0);} //SUB(cpu->tmpb);}
 // sbc x
-void dd9C(CPU* cpu) {cpu->regA = z80_sub8(cpu, cpu->regIXh, cpu->fz.c);} //SBC(cpu->hx);}
-void dd9D(CPU* cpu) {cpu->regA = z80_sub8(cpu, cpu->regIXl, cpu->fz.c);} //SBC(cpu->lx);}
-void dd9E(CPU* cpu) {RDSHIFT(cpu->regIX); cpu->tmpb = z80_mrd(cpu, cpu->regWZ); cpu->regA = z80_sub8(cpu, cpu->tmpb, cpu->fz.c);} //SBC(cpu->tmpb);}
+void dd9C(CPU* cpu) {cpu->regA = z80_sub8(cpu, cpu->regIXh, cpu->f.c);} //SBC(cpu->hx);}
+void dd9D(CPU* cpu) {cpu->regA = z80_sub8(cpu, cpu->regIXl, cpu->f.c);} //SBC(cpu->lx);}
+void dd9E(CPU* cpu) {RDSHIFT(cpu->regIX); cpu->tmpb = z80_mrd(cpu, cpu->regWZ); cpu->regA = z80_sub8(cpu, cpu->tmpb, cpu->f.c);} //SBC(cpu->tmpb);}
 // and x
 void ddA4(CPU* cpu) {z80_and8(cpu, cpu->regIXh);}
 void ddA5(CPU* cpu) {z80_and8(cpu, cpu->regIXl);}

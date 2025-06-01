@@ -163,17 +163,17 @@ void fd84(CPU* cpu) {cpu->regA = z80_add8(cpu, cpu->regIYh, 0);} //ADD(cpu->hy);
 void fd85(CPU* cpu) {cpu->regA = z80_add8(cpu, cpu->regIYl, 0);} //ADD(cpu->ly);}
 void fd86(CPU* cpu) {RDSHIFT(cpu->regIY); cpu->tmpb = z80_mrd(cpu, cpu->regWZ); cpu->regA = z80_add8(cpu, cpu->tmpb, 0);} // ADD(cpu->tmpb);
 // adc x
-void fd8C(CPU* cpu) {cpu->regA = z80_add8(cpu, cpu->regIYh, cpu->fz.c);} //ADC(cpu->hy);}
-void fd8D(CPU* cpu) {cpu->regA = z80_add8(cpu, cpu->regIYl, cpu->fz.c);} //ADC(cpu->ly);}
-void fd8E(CPU* cpu) {RDSHIFT(cpu->regIY); cpu->tmpb = z80_mrd(cpu, cpu->regWZ); cpu->regA = z80_add8(cpu, cpu->tmpb, cpu->fz.c);} // ADC(cpu->tmpb);
+void fd8C(CPU* cpu) {cpu->regA = z80_add8(cpu, cpu->regIYh, cpu->f.c);} //ADC(cpu->hy);}
+void fd8D(CPU* cpu) {cpu->regA = z80_add8(cpu, cpu->regIYl, cpu->f.c);} //ADC(cpu->ly);}
+void fd8E(CPU* cpu) {RDSHIFT(cpu->regIY); cpu->tmpb = z80_mrd(cpu, cpu->regWZ); cpu->regA = z80_add8(cpu, cpu->tmpb, cpu->f.c);} // ADC(cpu->tmpb);
 // sub x
 void fd94(CPU* cpu) {cpu->regA = z80_sub8(cpu, cpu->regIYh, 0);} //SUB(cpu->hy);}
 void fd95(CPU* cpu) {cpu->regA = z80_sub8(cpu, cpu->regIYl, 0);} //SUB(cpu->ly);}
 void fd96(CPU* cpu) {RDSHIFT(cpu->regIY); cpu->tmpb = z80_mrd(cpu, cpu->regWZ); cpu->regA = z80_sub8(cpu, cpu->tmpb, 0);} // SUB(cpu->tmpb);}
 // sbc x
-void fd9C(CPU* cpu) {cpu->regA = z80_sub8(cpu, cpu->regIYh, cpu->fz.c);} //SBC(cpu->hy);}
-void fd9D(CPU* cpu) {cpu->regA = z80_sub8(cpu, cpu->regIYl, cpu->fz.c);} //SBC(cpu->ly);}
-void fd9E(CPU* cpu) {RDSHIFT(cpu->regIY); cpu->tmpb = z80_mrd(cpu, cpu->regWZ); cpu->regA = z80_sub8(cpu, cpu->tmpb, cpu->fz.c);} // SBC(cpu->tmpb);}
+void fd9C(CPU* cpu) {cpu->regA = z80_sub8(cpu, cpu->regIYh, cpu->f.c);} //SBC(cpu->hy);}
+void fd9D(CPU* cpu) {cpu->regA = z80_sub8(cpu, cpu->regIYl, cpu->f.c);} //SBC(cpu->ly);}
+void fd9E(CPU* cpu) {RDSHIFT(cpu->regIY); cpu->tmpb = z80_mrd(cpu, cpu->regWZ); cpu->regA = z80_sub8(cpu, cpu->tmpb, cpu->f.c);} // SBC(cpu->tmpb);}
 // and x
 void fdA4(CPU* cpu) {z80_and8(cpu, cpu->regIYh);}
 void fdA5(CPU* cpu) {z80_and8(cpu, cpu->regIYl);}

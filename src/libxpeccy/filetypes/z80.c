@@ -1,4 +1,5 @@
 #include "filetypes.h"
+#include "../cpu/Z80/z80.h"
 
 #pragma pack (push, 1)
 
@@ -114,15 +115,15 @@ int loadZ80_f(Computer* comp, FILE* file) {
 	if (hd.flag12 == 0xff) hd.flag12 = 0x01;	// Because of compatibility, if byte 12 is 255, it has to be regarded as being 1.
 
 	comp->cpu->regA = hd.a;
-	comp->cpu->f = hd.f;
+	cpu_set_flag(comp->cpu, hd.f);
 	comp->cpu->regBC = (hd.b << 8) | hd.c;
 	comp->cpu->regDE = (hd.d << 8) | hd.e;
 	comp->cpu->regHL = (hd.h << 8) | hd.l;
-	comp->cpu->a_ = hd._a;
+	comp->cpu->regAa = hd._a;
 	comp->cpu->f_ = hd._f;
-	comp->cpu->bc_ = (hd._b << 8) | hd._c;
-	comp->cpu->de_ = (hd._d << 8) | hd._e;
-	comp->cpu->hl_ = (hd._h << 8) | hd._l;
+	comp->cpu->regBCa = (hd._b << 8) | hd._c;
+	comp->cpu->regDEa = (hd._d << 8) | hd._e;
+	comp->cpu->regHLa = (hd._h << 8) | hd._l;
 	comp->cpu->regPC = (hd.pch << 8) | hd.pcl;
 	comp->cpu->regSP = (hd.sph << 8) | hd.spl;
 	comp->cpu->regIX = (hd.ixh << 8) | hd.ixl;
@@ -130,9 +131,9 @@ int loadZ80_f(Computer* comp, FILE* file) {
 	comp->cpu->i = hd.i;
 	comp->cpu->r7 = (hd.flag12 & 1) ? 0x80 : 0;
 	comp->cpu->r = (hd.r7 & 0x7f) | comp->cpu->r7;
-	comp->cpu->imode = hd.flag29 & 3;
-	comp->cpu->iff1 = hd.iff1;
-	comp->cpu->iff2 = hd.iff2;
+	comp->cpu->f.im = hd.flag29 & 3;
+	comp->cpu->f.iff1 = hd.iff1;
+	comp->cpu->f.iff2 = hd.iff2;
 	comp->cpu->inten = Z80_NMI | (hd.iff1 ? Z80_INT : 0);
 	comp->vid->brdcol = (hd.flag12 >> 1) & 7;
 	comp->vid->nextbrd = comp->vid->brdcol;

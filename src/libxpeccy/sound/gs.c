@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "gs.h"
+#include "../cpu/Z80/z80.h"
 
 #define GS_FLUSH 1
 

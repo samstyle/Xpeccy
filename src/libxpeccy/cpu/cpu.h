@@ -118,12 +118,57 @@ typedef struct {
 	char arg[8][256];
 } xAsmScan;
 
-#include "Z80/z80.h"
-#include "LR35902/lr35902.h"
-#include "MOS6502/6502.h"
-#include "1801vm1/1801vm1.h"
-#include "i8080/i8080.h"
-#include "i80286/i80286.h"
+//#include "Z80/z80.h"
+//#include "LR35902/lr35902.h"
+//#include "MOS6502/6502.h"
+//#include "1801vm1/1801vm1.h"
+//#include "i8080/i8080.h"
+//#include "i80286/i80286.h"
+
+typedef struct {
+	int idx;			// 'visible' value
+//	unsigned char flag;		// access flag
+	unsigned pl:2;			// priv.level
+	unsigned ar:5;			// type
+	unsigned ext:1;			// code is conforming | data is growing from limit to FFFF
+	unsigned wr:1;			// write enable (for data, 0 for code)
+	unsigned rd:1;			// read enable (for code, 1 for data)
+	unsigned pr:1;			// present
+	unsigned sys:1;			// !(ar & 0x10)
+	unsigned code:1;		// ar & 0x18 = 0x18
+	unsigned data:1;		// ar & 0x18 = 0x10
+	unsigned base:24;		// segment base addr
+	unsigned short limit;		// segment size in bytes
+} xSegPtr;				// aka segment table descriptor
+
+typedef struct {
+	unsigned c:1;		// all: carry
+	unsigned n:1;		// z80: substraction, lr: negative
+	unsigned p:1;		// mostly: parity
+	unsigned o:1;		// x86: overflow
+	unsigned v:1;		// vm1/2: overflow
+	unsigned pv:1;		// z80: parity/overflow
+	unsigned h:1;		// all: half-carry
+	unsigned a:1;		// x86: half-carry
+	unsigned z:1;		// all: zero
+	unsigned s:1;		// all: sign
+	unsigned b:1;		// 6502: break;
+	unsigned t:1;		// vm1,x86: trap
+	unsigned i:1;		// x86, 6502: interrrupt
+	unsigned d:1;		// x86: direction, 6502:bcd mode
+	union {
+		unsigned ip:2;		// x86: iopl
+		unsigned im:2;		// z80: int mode
+	};
+	unsigned iff1:1;	// z80:interrupt flags
+	unsigned iff2:1;
+	unsigned f1:1;		// i8080: unnamed flag b1
+	unsigned f3:1;		// z80: f3
+	unsigned f5:1;		// z80: f5
+	unsigned f7:1;		// vm1: unnamed flags
+	unsigned f10:1;
+	unsigned f11:1;
+} cpuFlags;
 
 enum {
 	CPU_NONE = 0,		// dummy
@@ -174,12 +219,12 @@ struct CPU {
 	unsigned char i;
 	unsigned char r;
 	unsigned char r7;
-	unsigned char iff1;
-	unsigned char iff2;
-	unsigned char imode;		// Z80:int mode
+//	unsigned char iff1;
+//	unsigned char iff2;
+//	unsigned char imode;		// Z80:int mode
 
 	unsigned char regA;
-#if 1
+#if 0
 	union {
 		unsigned int f;		// 32-bit value
 		z80flag_t fz;		// bits for Z80
@@ -190,41 +235,17 @@ struct CPU {
 		x86flag_t fx;		// bits for 80286
 	};
 #else
-	struct {
-		unsigned c:1;		// all: carry
-		unsigned n:1;		// z80: substraction, lr: negative
-		unsigned p:1;		// all: parity z80:+overflow
-		unsigned f3:1;		// z80: f3
-		union {
-			unsigned h:1;	// all: half-carry
-			unsigned a:1;	// x86: half-carry
-		};
-		unsigned f5:1;		// z80: f5
-		unsigned z:1;		// all: zero
-		unsigned s:1;		// all: sign
-		unsigned b:1;		// 6502: break;
-		unsigned t:1;		// vm1,x86: trap
-		unsigned i:1;		// x86, 6502: interrrupt
-		unsigned d:1;		// x86: direction, 6502:bcd mode
-		unsigned o:1;		// x86: overflow
-		union {
-			unsigned ip:2;		// x86: iopl
-			unsigned im:2;		// z80: int mode
-		}
-		unsigned f7:1;		// vm1: unnamed flags
-		unsigned f10:1;
-		unsigned f11:1;
-	} f;
+	cpuFlags f;
 #endif
 	reg16(regBC,regB,regC);
 	reg16(regDE,regD,regE);
 	reg16(regHL,regH,regL);
 
-	unsigned char a_;
+	unsigned char regAa;
 	unsigned int f_;
-	reg16(bc_,b_,c_);
-	reg16(de_,d_,e_);
-	reg16(hl_,h_,l_);
+	reg16(regBCa,regBa,regCa);
+	reg16(regDEa,regDa,regEa);
+	reg16(regHLa,regHa,regLa);
 
 // 80286 registers
 	unsigned wrd:1;		// i/o: out word
@@ -320,6 +341,8 @@ struct cpuCore {
 	xMnem (*mnem)(CPU*, int, cbdmr, void*);
 	void (*getregs)(CPU*,xRegBunch*);	// get cpu registers: name,id,value
 	void (*setregs)(CPU*,xRegBunch);	// set cpu registers
+	int (*getflag)(CPU*);			// get flag value
+	void (*setflag)(CPU*,int);		// set flags from value
 };
 typedef struct cpuCore cpuCore;
 
@@ -340,6 +363,8 @@ xRegister cpuGetReg(CPU*, int);
 void cpuSetRegs(CPU*, xRegBunch);
 int cpu_get_reg(CPU*, const char*, bool*);
 bool cpu_set_reg(CPU*, const char*, int);
+int cpu_get_flag(CPU*);
+void cpu_set_flag(CPU*, int);
 
 int parity(int);
 

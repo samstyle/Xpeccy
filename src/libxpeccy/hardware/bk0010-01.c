@@ -1,6 +1,7 @@
 #include <string.h>
 
 #include "hardware.h"
+#include "../cpu/1801vm1/1801vm1.h"
 
 // BK0010
 // dot: 25.175MHz (~40 ns/dot)

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../cpu.h"
+
 // flag
 /*
 #define I286_FC	0x0001	// carry
@@ -18,22 +20,6 @@ enum {
 	X86_REAL = 0,
 	X86_PROT
 };
-
-typedef struct {
-	int idx;			// 'visible' value
-//	unsigned char flag;		// access flag
-	unsigned pl:2;			// priv.level
-	unsigned ar:5;			// type
-	unsigned ext:1;			// code is conforming | data is growing from limit to FFFF
-	unsigned wr:1;			// write enable (for data, 0 for code)
-	unsigned rd:1;			// read enable (for code, 1 for data)
-	unsigned pr:1;			// present
-	unsigned sys:1;			// !(ar & 0x10)
-	unsigned code:1;		// ar & 0x18 = 0x18
-	unsigned data:1;		// ar & 0x18 = 0x10
-	unsigned base:24;		// segment base addr
-	unsigned short limit;		// segment size in bytes
-} xSegPtr;				// aka segment table descriptor
 
 #ifdef WORDS_LITTLE_ENDIAN
 typedef struct {
@@ -134,8 +120,6 @@ enum {
 	I286_TSS
 };
 
-#include "../cpu.h"
-
 void i286_interrupt(CPU*, int);
 void i286_rd_ea(CPU*, int);
 void i286_wr_ea(CPU*, int, int);
@@ -153,6 +137,8 @@ xAsmScan i286_asm(int, const char*, char*);
 xMnem i286_mnem(CPU*, int, cbdmr, void*);
 void i286_get_regs(CPU*, xRegBunch*);
 void i286_set_regs(CPU*, xRegBunch);
+void x86_set_flag(CPU*, int);
+int x86_get_flag(CPU*);
 
 void x86_set_mode(CPU*, int);
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../cpu.h"
+
 #define I8080_INT	1
 
 /*
@@ -48,11 +50,12 @@ typedef struct {
 } i80flag_t;
 #endif
 
-#include "../cpu.h"
-
 void i8080_reset(CPU*);
 int i8080_exec(CPU*);
 xAsmScan i8080_asm(int, const char*, char*);
 xMnem i8080_mnem(CPU*, int, cbdmr, void*);
 void i8080_get_regs(CPU*, xRegBunch*);
 void i8080_set_regs(CPU*, xRegBunch);
+
+void i8080_set_flag(CPU*, int);
+int i8080_get_flag(CPU*);
