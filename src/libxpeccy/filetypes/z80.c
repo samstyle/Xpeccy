@@ -128,9 +128,9 @@ int loadZ80_f(Computer* comp, FILE* file) {
 	comp->cpu->regSP = (hd.sph << 8) | hd.spl;
 	comp->cpu->regIX = (hd.ixh << 8) | hd.ixl;
 	comp->cpu->regIY = (hd.iyh << 8) | hd.iyl;
-	comp->cpu->i = hd.i;
-	comp->cpu->r7 = (hd.flag12 & 1) ? 0x80 : 0;
-	comp->cpu->r = (hd.r7 & 0x7f) | comp->cpu->r7;
+	comp->cpu->regI = hd.i;
+	comp->cpu->regR7 = (hd.flag12 & 1) ? 0x80 : 0;
+	comp->cpu->regR = (hd.r7 & 0x7f) | comp->cpu->regR7;
 	comp->cpu->f.im = hd.flag29 & 3;
 	comp->cpu->f.iff1 = hd.iff1;
 	comp->cpu->f.iff2 = hd.iff2;

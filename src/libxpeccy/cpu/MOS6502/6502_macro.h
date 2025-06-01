@@ -1,5 +1,8 @@
 #pragma once
 
+#define regA regs[0].l
+#define regE regs[2].l
+
 #define MFLAGZN(_op) \
 	/*cpu->f = (cpu->f & ~(MFN | MFZ)) | ((_op & 0x80) ? MFN : 0) | (_op ? 0 : MFZ)*/;\
 	cpu->f.n = !!((_op) & 0x80);\

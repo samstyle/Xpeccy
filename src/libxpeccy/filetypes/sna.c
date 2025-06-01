@@ -39,9 +39,9 @@ int loadSNA_f(Computer* comp, FILE* file, size_t fileSize) {
 	comp->cpu->regIX = (hd.hx << 8) | hd.lx;
 	comp->cpu->regIY = (hd.hy << 8) | hd.ly;
 	comp->cpu->regSP = (hd.hsp << 8) | hd.lsp;
-	comp->cpu->i = hd.i;
-	comp->cpu->r = hd.r;
-	comp->cpu->r7 = hd.r & 0x80;
+	comp->cpu->regI = hd.i;
+	comp->cpu->regR = hd.r;
+	comp->cpu->regR7 = hd.r & 0x80;
 	comp->cpu->f.im = hd.imod & 3;
 	comp->cpu->f.iff1 = (hd.flag19 & 4) ? 1 : 0;
 	comp->cpu->f.iff2 = 1;
@@ -126,9 +126,10 @@ int saveSNA(Computer* comp, const char* name, int drv) {
 		memWr(comp->mem, --comp->cpu->regSP, comp->cpu->regPCl);
 	}
 	snaHead hd;
-	hd._h = comp->cpu->regHa; hd._l = comp->cpu->regLa;
-	hd._d = comp->cpu->regDa; hd._e = comp->cpu->regEa;
-	hd._b = comp->cpu->regBa; hd._c = comp->cpu->regCa;
+	xreg16 rp;
+	rp.w = comp->cpu->regHLa; hd._h = rp.h; hd._l = rp.l;
+	rp.w = comp->cpu->regDEa; hd._h = rp.h; hd._l = rp.l;
+	rp.w = comp->cpu->regBCa; hd._h = rp.h; hd._l = rp.l;
 	hd._a = comp->cpu->regAa; hd._f = comp->cpu->f_;
 	hd.h = comp->cpu->regH; hd.l = comp->cpu->regL;
 	hd.d = comp->cpu->regD; hd.e = comp->cpu->regE;
@@ -137,8 +138,8 @@ int saveSNA(Computer* comp, const char* name, int drv) {
 	hd.hx = comp->cpu->regIXh; hd.lx = comp->cpu->regIXl;
 	hd.hy = comp->cpu->regIYh; hd.ly = comp->cpu->regIYl;
 	hd.hsp = comp->cpu->regSPh; hd.lsp = comp->cpu->regSPl;
-	hd.i = comp->cpu->i;
-	hd.r = comp->cpu->r;
+	hd.i = comp->cpu->regI;
+	hd.r = comp->cpu->regR;
 	hd.imod = comp->cpu->f.im;
 	hd.flag19 = comp->cpu->f.iff1 ? 4 : 0;
 	hd.border = comp->vid->brdcol & 7;

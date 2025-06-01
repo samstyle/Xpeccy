@@ -44,7 +44,7 @@ void z80_reset(CPU* cpu) {
 	cpu->f_ = 0xff;
 	cpu->regIX = cpu->regIY = 0xffff;
 	cpu->regSP = 0xffff;
-	cpu->i = cpu->r = cpu->r7 = 0;
+	cpu->regI = cpu->regR = cpu->regR7 = 0;
 	cpu->halt = 0;
 	cpu->intrq = 0;
 	cpu->inten = Z80_NMI;	// NMI allways enabled, INT is controlled by ei/di
@@ -106,27 +106,27 @@ int z80_int(CPU* cpu) {
 				case 0:
 					cpu->t = 2;
 					cpu->op = &cpu->opTab[cpu->xack(cpu->xptr)];
-					cpu->r++;
+					cpu->regR++;
 					cpu->t += cpu->op->t;		// +5 (RST38 fetch)
 					cpu->op->exec(cpu);		// +3 +3 execution. 13 total
 					while (cpu->op->flag & OF_PREFIX) {
 						cpu->op = &cpu->opTab[z80_fetch(cpu)]; // cpu->mrd(cpu->pc++,1,cpu->xptr)];
-						cpu->r++;
+						cpu->regR++;
 						cpu->t += cpu->op->t - 3;
 						cpu->op->exec(cpu);
 					}
 					break;
 				case 1:
-					cpu->r++;
+					cpu->regR++;
 					cpu->t = 2 + 5;	// 2 extra + 5 on RST38 fetch
 					z80_call(cpu, 0x38);	// +3 +3 execution. 13 total
 					break;
 				case 2:
-					cpu->r++;
+					cpu->regR++;
 					cpu->t = 7;
 					z80_push(cpu, cpu->regPC);			// +3 (10) +3 (13)
 					cpu->regWZl = cpu->xack(cpu->xptr);	// int vector (FF)
-					cpu->regWZh = cpu->i;
+					cpu->regWZh = cpu->regI;
 					cpu->regPCl = z80_mrd(cpu, cpu->regWZ++);	// +3 (16)
 					cpu->regPCh = z80_mrd(cpu, cpu->regWZ);	// +3 (19)
 					cpu->regWZ = cpu->regPC;
@@ -137,7 +137,7 @@ int z80_int(CPU* cpu) {
 		}
 	} else if (cpu->intrq & Z80_NMI) {			// nmi
 		if (!cpu->noint) {
-			cpu->r++;
+			cpu->regR++;
 			cpu->f.iff2 = cpu->f.iff1;
 			cpu->f.iff1 = 0;
 			cpu->t = 5;
@@ -164,7 +164,7 @@ int z80_exec(CPU* cpu) {
 		do {
 			cpu->com = z80_fetch(cpu); // cpu->mrd(cpu->pc++,1,cpu->xptr);
 			cpu->op = &cpu->opTab[cpu->com];
-			cpu->r++;
+			cpu->regR++;
 			cpu->t += cpu->op->t - 3;
 			cpu->op->exec(cpu);
 		} while (cpu->op->flag & OF_PREFIX);
@@ -330,8 +330,8 @@ xRegDsc z80RegTab[] = {
 
 	{Z80_REG_IX, "IX", REG_WORD | REG_RDMP, offsetof(CPU, regIX)},
 	{Z80_REG_IY, "IY", REG_WORD | REG_RDMP, offsetof(CPU, regIY)},
-	{Z80_REG_I, "I", REG_BYTE, offsetof(CPU, i)},
-	{Z80_REG_R, "R", REG_BYTE, offsetof(CPU, r)},
+	{Z80_REG_I, "I", REG_BYTE, offsetof(CPU, regI)},
+	{Z80_REG_R, "R", REG_BYTE, offsetof(CPU, regR)},
 	{REG_EMPTY, "A", REG_BYTE, offsetof(CPU, regA)},
 	{REG_EMPTY, "F", REG_32, offsetof(CPU, f)},
 	{REG_EMPTY, "A'", REG_BYTE, offsetof(CPU, regAa)},
@@ -372,8 +372,8 @@ void z80_get_regs(CPU* cpu, xRegBunch* bunch) {
 			case Z80_REG_HLA: reg.value = cpu->regHLa; break;
 			case Z80_REG_IX: reg.value = cpu->regIX; break;
 			case Z80_REG_IY: reg.value = cpu->regIY; break;
-			case Z80_REG_I: reg.value = cpu->i; break;
-			case Z80_REG_R:reg.value = (cpu->r & 0x7f) | (cpu->r7 & 0x80); break;
+			case Z80_REG_I: reg.value = cpu->regI; break;
+			case Z80_REG_R:reg.value = (cpu->regR & 0x7f) | (cpu->regR7 & 0x80); break;
 			case REG_MPTR: reg.value = cpu->regWZ; break;
 		}
 		if (reg.id != REG_EMPTY) {
@@ -412,10 +412,10 @@ void z80_set_regs(CPU* cpu, xRegBunch bunch) {
 			case Z80_REG_HLA: cpu->regHLa = rd->value; break;
 			case Z80_REG_IX: cpu->regIX = rd->value; break;
 			case Z80_REG_IY: cpu->regIY = rd->value; break;
-			case Z80_REG_I: cpu->i = rd->value & 0xff; break;
+			case Z80_REG_I: cpu->regI = rd->value & 0xff; break;
 			case Z80_REG_R:
-				cpu->r = rd->value;
-				cpu->r7 = rd->value & 0x80;
+				cpu->regR = rd->value;
+				cpu->regR7 = rd->value & 0x80;
 				break;
 			case REG_MPTR: cpu->regWZ = rd->value; break;
 			case REG_NONE: idx = 100; break;

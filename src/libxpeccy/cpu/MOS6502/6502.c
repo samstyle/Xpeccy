@@ -24,25 +24,32 @@ void m6502_reset(CPU* cpu) {
 	cpu->lock = 0;
 	cpu->intrq = 0;
 	cpu->inten = MOS6502_INT_IRQ | MOS6502_INT_NMI;	// brk/nmi enabled. irq is allways enabled, controlled by I flag
-	cpu->regSP = 0x1fd;				// segment 01xx is stack
+	cpu->regS = 0xfd;				// segment 01xx is stack
 	// cpu->f = MF5 | MFI;
 	cpu->f.f5 = 1;
 	cpu->f.i = 1;
 	cpu->regA = 0;
-	cpu->regIXl = 0;
-	cpu->regIYl = 0;
+	cpu->regX = 0;
+	cpu->regY = 0;
 	cpu->regPCl = cpu->mrd(0xfffc, 0, cpu->xptr);
 	cpu->regPCh = cpu->mrd(0xfffd, 0, cpu->xptr);
 //	printf("mos pc = %.4X\n", cpu->pc);
 }
 
+void m6502_push(CPU* cpu, int v) {
+	cpu->mwr(cpu->regS | 0x100, v & 0xff, cpu->xptr);
+	cpu->regS--;
+}
+
+int m6502_pop(CPU* cpu) {
+	cpu->regS++;
+	return cpu->mrd(cpu->regS | 0x100, 0, cpu->xptr) & 0xff;
+}
+
 void m6502_push_int(CPU* cpu) {
-	cpu->mwr(cpu->regSP, cpu->regPCh, cpu->xptr);
-	cpu->regSPl--;
-	cpu->mwr(cpu->regSP, cpu->regPCl, cpu->xptr);
-	cpu->regSPl--;
-	cpu->mwr(cpu->regSP, mos_get_flag(cpu), cpu->xptr);
-	cpu->regSPl--;
+	m6502_push(cpu, cpu->regPCh);
+	m6502_push(cpu, cpu->regPCl);
+	m6502_push(cpu, mos_get_flag(cpu));
 }
 
 int m6502_int(CPU* cpu) {
@@ -141,9 +148,9 @@ xAsmScan m6502_asm(int a, const char* cbuf, char* buf) {
 xRegDsc m6502RegTab[] = {
 	{M6502_REG_PC, "PC", REG_WORD | REG_RDMP, offsetof(CPU, regPC)},
 	{M6502_REG_A, "A", REG_BYTE, offsetof(CPU, regA)},
-	{M6502_REG_X, "X", REG_BYTE, offsetof(CPU, regIXl)},	// regX
-	{M6502_REG_Y, "Y", REG_BYTE, offsetof(CPU, regIYl)},	// regY
-	{M6502_REG_S, "S", REG_BYTE, offsetof(CPU, regSPl)},	// regS
+	{M6502_REG_X, "X", REG_BYTE, offsetof(CPU, regX)},
+	{M6502_REG_Y, "Y", REG_BYTE, offsetof(CPU, regY)},
+	{M6502_REG_S, "S", REG_BYTE, offsetof(CPU, regS)},
 	{M6502_REG_F, "P", REG_32, offsetof(CPU, f)},
 	{REG_NONE, "", 0, 0}
 };
@@ -158,11 +165,11 @@ void m6502_get_regs(CPU* cpu, xRegBunch* bunch) {
 		bunch->regs[idx].type = m6502RegTab[idx].type;
 		switch(m6502RegTab[idx].id) {
 			case M6502_REG_PC: bunch->regs[idx].value = cpu->regPC; break;
-			case M6502_REG_S: bunch->regs[idx].value = cpu->regSPl; break;
+			case M6502_REG_S: bunch->regs[idx].value = cpu->regS; break;
 			case M6502_REG_A: bunch->regs[idx].value = cpu->regA; break;
 			case M6502_REG_F: bunch->regs[idx].value = mos_get_flag(cpu); break;
-			case M6502_REG_X: bunch->regs[idx].value = cpu->regIXl; break;
-			case M6502_REG_Y: bunch->regs[idx].value = cpu->regIYl; break;
+			case M6502_REG_X: bunch->regs[idx].value = cpu->regX; break;
+			case M6502_REG_Y: bunch->regs[idx].value = cpu->regY; break;
 		}
 		idx++;
 	}
@@ -176,11 +183,11 @@ void m6502_set_regs(CPU* cpu, xRegBunch bunch) {
 	for (idx = 0; idx < 32; idx++) {
 		switch(bunch.regs[idx].id) {
 			case M6502_REG_PC: cpu->regPC = bunch.regs[idx].value; break;
-			case M6502_REG_S: cpu->regSP = 0x0100 | (bunch.regs[idx].value & 0xff); break;
+			case M6502_REG_S: cpu->regS = bunch.regs[idx].value & 0xff; break;
 			case M6502_REG_A: cpu->regA = bunch.regs[idx].value & 0xff; break;
 			case M6502_REG_F: mos_set_flag(cpu, bunch.regs[idx].value & 0xff); break;
-			case M6502_REG_X: cpu->regIXl = bunch.regs[idx].value & 0xff; break;
-			case M6502_REG_Y: cpu->regIYl = bunch.regs[idx].value & 0xff; break;
+			case M6502_REG_X: cpu->regX = bunch.regs[idx].value & 0xff; break;
+			case M6502_REG_Y: cpu->regY = bunch.regs[idx].value & 0xff; break;
 			case REG_NONE: idx = 100; break;
 		}
 	}

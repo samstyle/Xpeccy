@@ -2,6 +2,17 @@
 
 #include "../cpu.h"
 
+#define regA regs[0].l
+#define regX regs[4].l
+#define regY regs[5].l
+#define regS regs[6].l		// stack = 0x100 | regS
+#define regPC regs[7].w
+#define regPCh regs[7].h
+#define regPCl regs[7].l
+#define regWZ regs[8].w
+#define regWZh regs[8].h
+#define regWZl regs[8].l
+
 enum {
 	M6502_REG_PC = 1,
 	M6502_REG_A,

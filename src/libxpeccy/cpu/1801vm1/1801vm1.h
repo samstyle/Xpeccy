@@ -14,6 +14,9 @@ enum {
 	PDP11_REGF
 };
 
+#define regWZ regs[8].w
+#define regRN(_n) regs[_n].w
+
 // external signals, working by IOWR
 enum {
 	PDP11_INIT = 1

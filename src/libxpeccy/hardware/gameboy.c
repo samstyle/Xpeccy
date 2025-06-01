@@ -1,7 +1,7 @@
 #include <string.h>
 
 #include "hardware.h"
-
+#include "../cpu/LR35902/lr35902.h"
 
 // IO ports
 

@@ -578,7 +578,7 @@ void x87_fstenv(CPU* cpu) {
 	x87_wr_word(cpu, cpu->ea.seg, adr, cpu->x87cr);
 	x87_wr_word(cpu, cpu->ea.seg, adr+2, cpu->x87sr);
 	x87_wr_word(cpu, cpu->ea.seg, adr+4, cpu->x87tw);
-	x87_wr_word(cpu, cpu->ea.seg, adr+6, cpu->regPC);
+	x87_wr_word(cpu, cpu->ea.seg, adr+6, cpu->regIP);
 	x87_wr_word(cpu, cpu->ea.seg, adr+8, cpu->cs.idx);
 	x87_wr_word(cpu, cpu->ea.seg, adr+10, cpu->ea.adr);
 	x87_wr_word(cpu, cpu->ea.seg, adr+12, cpu->ea.seg.idx);
@@ -629,7 +629,7 @@ void x87_fstcw(CPU* cpu) {
 void x87_fstsw_ax(CPU* cpu) {
 	cpu->x87sr &= ~(7 << 11);
 	cpu->x87sr |= ((cpu->x87top & 7) << 11);
-	cpu->ax = cpu->x87sr;
+	cpu->regAX = cpu->x87sr;
 }
 
 // clear exceptions

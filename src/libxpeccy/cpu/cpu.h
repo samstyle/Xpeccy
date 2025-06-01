@@ -211,19 +211,9 @@ struct CPU {
 
 	int adr;
 // z80, lr35902, i8080, 6502 registers
-	reg16(regPC,regPCh,regPCl);
-	reg16(regSP,regSPh,regSPl);
-	reg16(regIX,regIXh,regIXl);
-	reg16(regIY,regIYh,regIYl);
-	reg16(regWZ,regWZh,regWZl);
-	unsigned char i;
-	unsigned char r;
-	unsigned char r7;
-//	unsigned char iff1;
-//	unsigned char iff2;
-//	unsigned char imode;		// Z80:int mode
-
-	unsigned char regA;
+//	unsigned char regI;
+//	unsigned char regR;
+//	unsigned char regR7;
 #if 0
 	union {
 		unsigned int f;		// 32-bit value
@@ -237,28 +227,10 @@ struct CPU {
 #else
 	cpuFlags f;
 #endif
-	reg16(regBC,regB,regC);
-	reg16(regDE,regD,regE);
-	reg16(regHL,regH,regL);
-
-	unsigned char regAa;
 	unsigned int f_;
-	reg16(regBCa,regBa,regCa);
-	reg16(regDEa,regDa,regEa);
-	reg16(regHLa,regHa,regLa);
 
 // 80286 registers
 	unsigned wrd:1;		// i/o: out word
-	reg32(eax,ax,ah,al);
-	reg32(edx,dx,dh,dl);
-	reg32(ecx,cx,ch,cl);
-	reg32(ebx,bx,bh,bl);
-	reg32(ebp,bp,bph,bpl);
-	reg32(esi,si,sih,sil);
-	reg32(edi,di,dih,dil);
-	// unsigned short sp;	// use sp above
-	// unsigned short flag;	// use f above
-	// unsigned short ip;	// use pc above
 	unsigned short msw;
 	// segment registers (+hidden parts)
 	xSegPtr cs;		// cs value,flag,base,limit
@@ -288,8 +260,6 @@ struct CPU {
 // pdp registers
 	unsigned mcir:3;
 	unsigned vsel:4;
-//	unsigned short pflag;		// pdp11 flag = f
-	unsigned short preg[8];		// pdp11 registers (preg[7] -> pc)
 	xTimer timer;
 
 // external callbacks
@@ -326,7 +296,6 @@ struct CPU {
 	PAIR(tmpw,htw,ltw);
 	PAIR(twrd,hwr,lwr);
 	int tmpi;
-	int tmpf;
 };
 
 struct cpuCore {

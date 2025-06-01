@@ -1,6 +1,39 @@
 #pragma once
 
 #include "../cpu.h"
+//	reg32(regEAX,regAX,regAH,regAL);
+//	reg32(regEDX,regDX,regDH,regDL);
+//	reg32(regECX,regCX,regCH,regCL);
+//	reg32(regEBX,regBX,regBH,regBL);
+//	reg32(regEBP,regBP,regBPh,regBPl);
+//	reg32(regESI,regSI,regSIh,regSIl);
+//	reg32(regEDI,regDI,regDIh,regDIl);
+
+#define regEAX regs[0].i
+#define regAX regs[0].w
+#define regAH regs[0].h
+#define regAL regs[0].l
+#define regEBX regs[1].i
+#define regBX regs[1].w
+#define regBH regs[1].h
+#define regBL regs[1].l
+#define regECX regs[2].i
+#define regCX regs[2].w
+#define regCH regs[2].h
+#define regCL regs[2].l
+#define regEDX regs[3].i
+#define regDX regs[3].w
+#define regDH regs[3].h
+#define regDL regs[3].l
+#define regESI regs[4].i
+#define regSI regs[4].w
+#define regEDI regs[5].i
+#define regDI regs[5].w
+#define regESP regs[6].i
+#define regSP regs[6].w
+#define regEIP regs[7].i
+#define regIP regs[7].w
+#define regBP regs[8].w
 
 // flag
 /*

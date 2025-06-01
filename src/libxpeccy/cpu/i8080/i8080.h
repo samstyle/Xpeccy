@@ -15,6 +15,26 @@
 #define IFL_C	0x01
 */
 
+#define regA regs[0].l
+#define regBC regs[1].w
+#define regB regs[1].h
+#define regC regs[1].l
+#define regDE regs[2].w
+#define regD regs[2].h
+#define regE regs[2].l
+#define regHL regs[3].w
+#define regH regs[3].h
+#define regL regs[3].l
+#define regSP regs[6].w
+#define regSPh regs[6].h
+#define regSPl regs[6].l
+#define regPC regs[7].w
+#define regPCh regs[7].h
+#define regPCl regs[7].l
+#define regWZ regs[8].w
+#define regWZh regs[8].h
+#define regWZl regs[8].l
+
 enum {
 	I8080_REG_PC = 1,
 	I8080_REG_SP,

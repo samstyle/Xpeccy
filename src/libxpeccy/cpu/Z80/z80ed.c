@@ -55,9 +55,9 @@ void ed46(CPU* cpu) {
 	cpu->f.im = 0;
 }
 
-// 47	ld i,regA	5
+// 47	ld regI,regA	5
 void ed47(CPU* cpu) {
-	cpu->i = cpu->regA;
+	cpu->regI = cpu->regA;
 }
 
 // 48	in regC,(regC)	4 4in		regWZ = port + 1
@@ -99,10 +99,10 @@ void ed4D(CPU* cpu) {
 	z80_ret(cpu);
 }
 
-// 4f	ld r,regA	5
+// 4f	ld regR,regA	5
 void ed4F(CPU* cpu) {
-	cpu->r = cpu->regA;
-	cpu->r7 = cpu->regA & 0x80;
+	cpu->regR = cpu->regA;
+	cpu->regR7 = cpu->regA & 0x80;
 }
 
 // 50	in regD,(c)	4 4in	regWZ = port + 1
@@ -143,9 +143,9 @@ void ed56(CPU* cpu) {
 	cpu->f.im = 1;
 }
 
-// 57	ld regA,i		5
+// 57	ld regA,regI		5
 void ed57(CPU* cpu) {
-	cpu->regA = cpu->i;
+	cpu->regA = cpu->regI;
 	// cpu->f = (cpu->f & Z80_FC) | (cpu->a & (Z80_FS | Z80_F5 | Z80_F3)) | (cpu->a ? 0 : Z80_FZ) | (cpu->iff2 ? Z80_FV : 0);
 	cpu->f.s = !!(cpu->regA & 0x80);
 	cpu->f.z = !cpu->regA;
@@ -195,9 +195,9 @@ void ed5E(CPU* cpu) {
 	cpu->f.im = 2;
 }
 
-// 5f	ld regA,r		5
+// 5f	ld regA,regR		5
 void ed5F(CPU* cpu) {
-	cpu->regA = (cpu->r & 0x7f) | (cpu->r7 & 0x80);
+	cpu->regA = (cpu->regR & 0x7f) | (cpu->regR7 & 0x80);
 //	cpu->f = (cpu->f & Z80_FC) | (cpu->a & (Z80_FS | Z80_F5 | Z80_F3)) | (cpu->a ? 0 : Z80_FZ) | (cpu->iff2 ? Z80_FV : 0);
 	cpu->f.s = !!(cpu->regA & 0x80);
 	cpu->f.z = !cpu->regA;

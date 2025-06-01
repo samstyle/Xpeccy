@@ -12,6 +12,7 @@
 #include "xcore/sound.h"
 #include "xgui/xgui.h"
 #include "libxpeccy/spectrum.h"
+#include "libxpeccy/cpu/Z80/z80.h"
 
 #include "xapp.h"
 #include "emulwin.h"

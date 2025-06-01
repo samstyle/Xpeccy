@@ -64,11 +64,11 @@ void i286_reset(CPU* cpu) {
 	switch (cpu->gen) {
 		case 0:
 		case 1:
-			cpu->regPC = 0x0000;
+			cpu->regIP = 0x0000;
 			cpu->cs = i286_cash_seg(cpu, 0xffff);
 			break;
 		case 2:
-			cpu->regPC = 0xfff0;	// ip
+			cpu->regIP = 0xfff0;	// ip
 			cpu->cs = i286_cash_seg(cpu, 0xf000);
 			break;
 	}
@@ -87,15 +87,15 @@ void i286_reset(CPU* cpu) {
 void i286_int_real(CPU* cpu, int vec) {
 	if (cpu->halt) {
 		cpu->halt = 0;
-		cpu->regPC++;
+		cpu->regIP++;
 	}
 	i286_push(cpu, x86_get_flag(cpu));
 	i286_push(cpu, cpu->cs.idx);
-	i286_push(cpu, cpu->regPC);
+	i286_push(cpu, cpu->regIP);
 	cpu->f.i = 0;
 	cpu->f.t = 0;
 	cpu->tmpi = (vec & 0xff) << 2;
-	cpu->regPC = i286_sys_mrdw(cpu, cpu->idtr, cpu->tmpi);
+	cpu->regIP = i286_sys_mrdw(cpu, cpu->idtr, cpu->tmpi);
 	cpu->cs = i286_cash_seg(cpu, i286_sys_mrdw(cpu, cpu->idtr, cpu->tmpi+2));
 }
 
@@ -117,7 +117,7 @@ void i286_int_prt(CPU* cpu, int vec) {
 	} else if (cpu->f.i) {
 		if (cpu->halt) {
 			cpu->halt = 0;
-			cpu->regPC++;
+			cpu->regIP++;
 		}
 		PAIR(w,h,l)seg;
 		PAIR(w,h,l)off;
@@ -126,7 +126,7 @@ void i286_int_prt(CPU* cpu, int vec) {
 		cpu->gate.idx = vec;
 		switch(cpu->gate.ar) {
 			case 5:		// task gate
-				off.w = cpu->regPC;
+				off.w = cpu->regIP;
 				seg.w = cpu->cs.idx;
 				adr = x86_get_flag(cpu);
 				i286_switch_task(cpu, cpu->gate.base & 0xffff, 1, 0);
@@ -149,7 +149,7 @@ void i286_int_prt(CPU* cpu, int vec) {
 					}
 					i286_push(cpu, x86_get_flag(cpu));
 					i286_push(cpu, cpu->cs.idx);
-					i286_push(cpu, cpu->regPC);
+					i286_push(cpu, cpu->regIP);
 					if (cpu->errcod >= 0) {
 						i286_push(cpu, cpu->errcod);
 						cpu->errcod = -1;
@@ -163,10 +163,10 @@ void i286_int_prt(CPU* cpu, int vec) {
 						THROW_EC(I286_INT_GP, (vec << 3));
 					} else if (!cpu->tmpdr.pr) {
 						THROW_EC(I286_INT_NP, seg.w);
-					} else if (cpu->regPC > cpu->tmpdr.limit) {
+					} else if (cpu->regIP > cpu->tmpdr.limit) {
 						THROW_EC(I286_INT_GP, 0);
 					}
-					cpu->regPC = off.w;
+					cpu->regIP = off.w;
 					cpu->cs = cpu->tmpdr;
 					cpu->f.n = 0;			// clear N flag
 					if (!(cpu->gate.ar & 1)) {	// disable interrupts on int.gate / don't change on trap gate
@@ -236,7 +236,7 @@ int i286_exec(CPU* cpu) {
 	cpu->seg.idx = -1;
 	cpu->lock = 0;
 	cpu->rep = I286_REP_NONE;
-	cpu->oldpc = cpu->regPC;
+	cpu->oldpc = cpu->regIP;
 
 	int val = setjmp(cpu->jbuf);	// set THROW return point (val = err.code)
 	if (!val) {
@@ -256,7 +256,7 @@ int i286_exec(CPU* cpu) {
 		}
 	} else {
 		if (val < 0) val = I286_INT_DE;		// cuz INT_DE has code 0 (success for setjmp)
-		cpu->regPC = cpu->oldpc;
+		cpu->regIP = cpu->oldpc;
 		i286_interrupt(cpu, val);
 	}
 	return cpu->t;
@@ -527,15 +527,15 @@ xMnem i286_mnem(CPU* cpu, int sadr, cbdmr mrd, void* data) {
 // asm
 
 xRegDsc i286RegTab[] = {
-	{I286_IP, "IP", REG_WORD | REG_RDMP, offsetof(CPU, regPC)},
+	{I286_IP, "IP", REG_WORD | REG_RDMP, offsetof(CPU, regIP)},
 	{I286_SP, "SP", REG_WORD | REG_RDMP, offsetof(CPU, regSP)},
-	{I286_BP, "BP", REG_WORD | REG_RDMP, offsetof(CPU, bp)},
-	{I286_SI, "SI", REG_WORD | REG_RDMP, offsetof(CPU, si)},
-	{I286_DI, "DI", REG_WORD | REG_RDMP, offsetof(CPU, di)},
-	{I286_AX, "AX", REG_WORD | REG_RDMP, offsetof(CPU, ax)},
-	{I286_BX, "BX", REG_WORD | REG_RDMP, offsetof(CPU, bx)},
-	{I286_CX, "CX", REG_WORD | REG_RDMP, offsetof(CPU, cx)},
-	{I286_DX, "DX", REG_WORD | REG_RDMP, offsetof(CPU, dx)},
+	{I286_BP, "BP", REG_WORD | REG_RDMP, offsetof(CPU, regBP)},
+	{I286_SI, "SI", REG_WORD | REG_RDMP, offsetof(CPU, regSI)},
+	{I286_DI, "DI", REG_WORD | REG_RDMP, offsetof(CPU, regDI)},
+	{I286_AX, "AX", REG_WORD | REG_RDMP, offsetof(CPU, regAX)},
+	{I286_BX, "BX", REG_WORD | REG_RDMP, offsetof(CPU, regBX)},
+	{I286_CX, "CX", REG_WORD | REG_RDMP, offsetof(CPU, regCX)},
+	{I286_DX, "DX", REG_WORD | REG_RDMP, offsetof(CPU, regDX)},
 	{I286_CS, "CS", REG_WORD|REG_SEG, offsetof(CPU, cs)},
 	{I286_SS, "SS", REG_WORD|REG_SEG, offsetof(CPU, ss)},
 	{I286_DS, "DS", REG_WORD|REG_SEG, offsetof(CPU, ds)},
@@ -549,15 +549,15 @@ xRegDsc i286RegTab[] = {
 };
 
 xRegDsc i8086RegTab[] = {
-	{I286_IP, "IP", REG_WORD | REG_RDMP, offsetof(CPU, regPC)},
+	{I286_IP, "IP", REG_WORD | REG_RDMP, offsetof(CPU, regIP)},
 	{I286_SP, "SP", REG_WORD | REG_RDMP, offsetof(CPU, regSP)},
-	{I286_BP, "BP", REG_WORD | REG_RDMP, offsetof(CPU, bp)},
-	{I286_SI, "SI", REG_WORD | REG_RDMP, offsetof(CPU, si)},
-	{I286_DI, "DI", REG_WORD | REG_RDMP, offsetof(CPU, di)},
-	{I286_AX, "AX", REG_WORD | REG_RDMP, offsetof(CPU, ax)},
-	{I286_BX, "BX", REG_WORD | REG_RDMP, offsetof(CPU, bx)},
-	{I286_CX, "CX", REG_WORD | REG_RDMP, offsetof(CPU, cx)},
-	{I286_DX, "DX", REG_WORD | REG_RDMP, offsetof(CPU, dx)},
+	{I286_BP, "BP", REG_WORD | REG_RDMP, offsetof(CPU, regBP)},
+	{I286_SI, "SI", REG_WORD | REG_RDMP, offsetof(CPU, regSI)},
+	{I286_DI, "DI", REG_WORD | REG_RDMP, offsetof(CPU, regDI)},
+	{I286_AX, "AX", REG_WORD | REG_RDMP, offsetof(CPU, regAX)},
+	{I286_BX, "BX", REG_WORD | REG_RDMP, offsetof(CPU, regBX)},
+	{I286_CX, "CX", REG_WORD | REG_RDMP, offsetof(CPU, regCX)},
+	{I286_DX, "DX", REG_WORD | REG_RDMP, offsetof(CPU, regDX)},
 	{I286_CS, "CS", REG_WORD|REG_SEG, offsetof(CPU, cs)},
 	{I286_SS, "SS", REG_WORD|REG_SEG, offsetof(CPU, ss)},
 	{I286_DS, "DS", REG_WORD|REG_SEG, offsetof(CPU, ds)},
@@ -583,15 +583,15 @@ void i286_get_regs(CPU* cpu, xRegBunch* bnch) {
 		val = -1;
 		bas = 0;
 		switch (i286RegTab[idx].id) {
-			case I286_IP: val = cpu->regPC; bas = cpu->cs.base; break;
+			case I286_IP: val = cpu->regIP; bas = cpu->cs.base; break;
 			case I286_SP: val = cpu->regSP; bas = cpu->ss.base; break;
-			case I286_BP: val = cpu->bp; bas = cpu->ss.base; break;
-			case I286_SI: val = cpu->si; bas = cpu->ds.base; break;
-			case I286_DI: val = cpu->di; bas = cpu->ds.base; break;
-			case I286_AX: val = cpu->ax; bas = cpu->ds.base; break;
-			case I286_CX: val = cpu->cx; bas = cpu->ds.base; break;
-			case I286_DX: val = cpu->dx; bas = cpu->ds.base; break;
-			case I286_BX: val = cpu->bx; bas = cpu->ds.base; break;
+			case I286_BP: val = cpu->regBP; bas = cpu->ss.base; break;
+			case I286_SI: val = cpu->regSI; bas = cpu->ds.base; break;
+			case I286_DI: val = cpu->regDI; bas = cpu->ds.base; break;
+			case I286_AX: val = cpu->regAX; bas = cpu->ds.base; break;
+			case I286_CX: val = cpu->regCX; bas = cpu->ds.base; break;
+			case I286_DX: val = cpu->regDX; bas = cpu->ds.base; break;
+			case I286_BX: val = cpu->regBX; bas = cpu->ds.base; break;
 			case I286_CS: val = cpu->cs.idx; bas = cpu->cs.base; break;
 			case I286_SS: val = cpu->ss.idx; bas = cpu->ss.base; break;
 			case I286_DS: val = cpu->ds.idx; bas = cpu->ds.base; break;
@@ -616,15 +616,15 @@ void i286_set_regs(CPU* cpu, xRegBunch bnch) {
 	while (bnch.regs[idx].id != REG_NONE) {
 		val = bnch.regs[idx].value;
 		switch(bnch.regs[idx].id) {
-			case I286_IP: cpu->regPC = val; break;
+			case I286_IP: cpu->regIP = val; break;
 			case I286_SP: cpu->regSP = val; break;
-			case I286_BP: cpu->bp = val; break;
-			case I286_SI: cpu->si = val; break;
-			case I286_DI: cpu->di = val; break;
-			case I286_AX: cpu->ax = val; break;
-			case I286_CX: cpu->cx = val; break;
-			case I286_DX: cpu->dx = val; break;
-			case I286_BX: cpu->bx = val; break;
+			case I286_BP: cpu->regBP = val; break;
+			case I286_SI: cpu->regSI = val; break;
+			case I286_DI: cpu->regDI = val; break;
+			case I286_AX: cpu->regAX = val; break;
+			case I286_CX: cpu->regCX = val; break;
+			case I286_DX: cpu->regDX = val; break;
+			case I286_BX: cpu->regBX = val; break;
 			case I286_CS: cpu->cs = i286_cash_seg(cpu, val); break;
 			case I286_SS: cpu->ss = i286_cash_seg(cpu, val); break;
 			case I286_DS: cpu->ds = i286_cash_seg(cpu, val); break;

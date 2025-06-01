@@ -1,4 +1,5 @@
 #include "filetypes.h"
+#include "../../libxpeccy/cpu/i8080/i8080.h"
 
 int loadRKSmem(Computer* comp, const char* name, int drv) {
 	int err = ERR_OK;

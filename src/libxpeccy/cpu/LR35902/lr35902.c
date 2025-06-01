@@ -37,8 +37,8 @@ void lr_reset(CPU* cpu) {
 	cpu->regAa = 0xff;
 	cpu->f_ = 0xff;
 	cpu->regIX = cpu->regIY = 0xffff;
-	cpu->i = cpu->r = 0xff;
-	cpu->r7 = 0x80;
+	cpu->regI = cpu->regR = 0xff;
+	cpu->regR7 = 0x80;
 }
 
 typedef struct {

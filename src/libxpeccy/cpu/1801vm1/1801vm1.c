@@ -58,10 +58,10 @@ int pdp_rdb(CPU* cpu, int adr) {
 // F = 0xe0
 void pdp11_reset(CPU* cpu) {
 	for (int i = 0; i < 7; i++)
-		cpu->preg[i] = 0;
+		cpu->regRN(i) = 0;
 	cpu->t += 1016;
-	cpu->preg[7] = pdp_rd(cpu, 0xffce) & 0xff00;
-	cpu->regPC = cpu->preg[7];
+	cpu->regRN(7) = pdp_rd(cpu, 0xffce) & 0xff00;
+//	cpu->regPC = cpu->regRN(7);
 	pdp_set_flag(cpu, 0x300); //cpu->f = 0x300;			// b8,9 = 11, cpu0
 	cpu->intrq = 0;
 	cpu->inten = PDP_INT_IRQ2 | PDP_INT_VIRQ;
@@ -71,13 +71,13 @@ void pdp11_reset(CPU* cpu) {
 }
 
 void pdp_push(CPU* cpu, unsigned short val) {
-	cpu->preg[6] -= 2;
-	pdp_wr(cpu, cpu->preg[6], val);
+	cpu->regRN(6) -= 2;
+	pdp_wr(cpu, cpu->regRN(6), val);
 }
 
 unsigned short pdp_pop(CPU* cpu) {
-	unsigned short res = pdp_rd(cpu, cpu->preg[6]);
-	cpu->preg[6] += 2;
+	unsigned short res = pdp_rd(cpu, cpu->regRN(6));
+	cpu->regRN(6) += 2;
 	return res;
 }
 
@@ -91,16 +91,16 @@ unsigned short pdp_pop(CPU* cpu) {
 
 void pdp_trap(CPU* cpu, unsigned short adr) {
 	if ((cpu->mcir == 2) || (cpu->mcir == 4)) {
-		cpu->preg[7] -= 2;
+		cpu->regRN(7) -= 2;
 	}
 	if ((cpu->mcir & 6) == 2) {		// irq1, halt
 		pdp_wr(cpu, 0177676, pdp_get_flag(cpu));
-		pdp_wr(cpu, 0177674, cpu->preg[7]);
+		pdp_wr(cpu, 0177674, cpu->regRN(7));
 	} else {
 		pdp_push(cpu, pdp_get_flag(cpu));
-		pdp_push(cpu, cpu->preg[7]);
+		pdp_push(cpu, cpu->regRN(7));
 	}
-	cpu->preg[7] = pdp_rd(cpu, adr);
+	cpu->regRN(7) = pdp_rd(cpu, adr);
 	pdp_set_flag(cpu, pdp_rd(cpu, adr+2));
 	cpu->mcir = 1;
 }
@@ -110,7 +110,7 @@ int pdp11_int(CPU* cpu) {
 	cpu->intrq &= cpu->inten;
 	if (cpu->intrq && cpu->wait) {
 		cpu->wait = 0;
-		cpu->preg[7] += 2;
+		cpu->regRN(7) += 2;
 	}
 	if (cpu->intrq & PDP_INT_IRQ1) {
 		cpu->intrq &= ~PDP_INT_IRQ1;
@@ -164,45 +164,45 @@ int pdp_adr(CPU* cpu, int type, int b) {
 	switch (type & 0x38) {
 		case 0x00: res = -1;			// Rn (no addr)
 			break;
-		case 0x08: res = cpu->preg[type & 7];	// @Rn
+		case 0x08: res = cpu->regRN(type & 7);	// @Rn
 			cpu->t += 13;
 			break;
-		case 0x10: res = cpu->preg[type & 7];	// (Rn)+
-			cpu->preg[type & 7] += b ? 1 : 2;
+		case 0x10: res = cpu->regRN(type & 7);	// (Rn)+
+			cpu->regRN(type & 7) += b ? 1 : 2;
 			cpu->t += 12;
 			break;
-		case 0x18: res = cpu->preg[type & 7];	// @(Rn)+
-			cpu->preg[type & 7] += 2;
+		case 0x18: res = cpu->regRN(type & 7);	// @(Rn)+
+			cpu->regRN(type & 7) += 2;
 			cpu->t += 12;
 			res = pdp_rd(cpu, res & 0xffff);
 			cpu->t += 7;
 			break;
 		case 0x20:				// -(Rn)
-			cpu->preg[type & 7] -= b ? 1 : 2;
+			cpu->regRN(type & 7) -= b ? 1 : 2;
 			cpu->t += 13;
-			res = cpu->preg[type & 7];
+			res = cpu->regRN(type & 7);
 			break;
 		case 0x28:				// @-(Rn)
-			cpu->preg[type & 7] -= 2;
-			res = cpu->preg[type & 7];
+			cpu->regRN(type & 7) -= 2;
+			res = cpu->regRN(type & 7);
 			cpu->t += 13;
 			res = pdp_rd(cpu, res & 0xffff);
 			cpu->t += 7;
 			break;
 		case 0x30:				// E(Rn)
 			cpu->t += 12;
-			res = pdp_rd(cpu, cpu->preg[7]);	// offset
+			res = pdp_rd(cpu, cpu->regRN(7));	// offset
 			cpu->t += 7;
-			cpu->preg[7] += 2;
-			res += cpu->preg[type & 7];		// Rn + offset
+			cpu->regRN(7) += 2;
+			res += cpu->regRN(type & 7);		// Rn + offset
 			res &= 0xffff;
 			break;
 		case 0x38:				// @E(Rn)
 			cpu->t += 12;
-			res = pdp_rd(cpu, cpu->preg[7]);	// offset
+			res = pdp_rd(cpu, cpu->regRN(7));	// offset
 			cpu->t += 7;
-			cpu->preg[7] += 2;
-			res += cpu->preg[type & 7];		// Rn + offset
+			cpu->regRN(7) += 2;
+			res += cpu->regRN(type & 7);		// Rn + offset
 			res = pdp_rd(cpu, res & 0xffff);	// (Rn + offset)
 			cpu->t += 7;
 			break;
@@ -214,7 +214,7 @@ unsigned short pdp_src(CPU* cpu, int type, int b) {
 	unsigned short res;
 	int adr = pdp_adr(cpu, type, b);
 	if (adr < 0) {
-		res = cpu->preg[type & 7];
+		res = cpu->regRN(type & 7);
 		if (b) res &= 0xff;
 	} else {
 		cpu->regWZ = adr & 0xffff;
@@ -232,7 +232,7 @@ void pdp_wres(CPU* cpu, int t, unsigned short v) {
 	if (t & 0x38) {
 		pdp_wr(cpu, cpu->regWZ, v);
 	} else {
-		cpu->preg[t & 7] = v;
+		cpu->regRN(t & 7) = v;
 	}
 }
 
@@ -240,8 +240,8 @@ void pdp_wresb(CPU* cpu, int t, unsigned char v) {
 	if (t & 0x38) {
 		pdp_wrb(cpu, cpu->regWZ, v);
 	} else {
-		cpu->preg[t & 7] &= 0xff00;
-		cpu->preg[t & 7] |= (v & 0xff);
+		cpu->regRN(t & 7) &= 0xff00;
+		cpu->regRN(t & 7) |= (v & 0xff);
 	}
 }
 
@@ -261,7 +261,7 @@ static unsigned short twdst;
 static int twres;
 
 void pdp_undef(CPU* cpu) {
-	printf("undef command %.4X : %.4X\n", cpu->preg[7] - 2, cpu->com);
+	printf("undef command %.4X : %.4X\n", cpu->regRN(7) - 2, cpu->com);
 //	cpu->xirq(IRQ_BRK, cpu->xptr);
 	cpu->mcir = 5;
 	cpu->vsel = 2;
@@ -283,19 +283,19 @@ void pdp_halt(CPU* cpu) {
 void pdp_wait(CPU* cpu) {
 	// cpu->mcir = 0;
 	cpu->wait = 1;
-	cpu->preg[7] -= 2;
-	cpu->regPC = cpu->preg[7];
+	cpu->regRN(7) -= 2;
+//	cpu->regPC = cpu->regRN(7);
 }
 
 // 0002:rti
 void pdp_rti(CPU* cpu) {
 	cpu->t += 3;
-	cpu->preg[7] = pdp_rd(cpu, cpu->preg[6]) & 0xffff;
+	cpu->regRN(7) = pdp_rd(cpu, cpu->regRN(6)) & 0xffff;
 	cpu->t += 8;
-	cpu->preg[6] += 2;
-	pdp_set_flag(cpu, pdp_rd(cpu, cpu->preg[6]) & 0xff);	// ffff ?
+	cpu->regRN(6) += 2;
+	pdp_set_flag(cpu, pdp_rd(cpu, cpu->regRN(6)) & 0xff);	// ffff ?
 	cpu->t += 8;
-	cpu->preg[6] += 2;
+	cpu->regRN(6) += 2;
 //	cpu->f &= 0xff;
 	if (cpu->f.t) {
 		cpu->f.t = 0;		// RTI/RTT clears T-flag
@@ -330,10 +330,10 @@ void pdp_res(CPU* cpu) {
 
 // 0006:rtt
 void pdp_rtt(CPU* cpu) {
-	cpu->preg[7] = pdp_rd(cpu, cpu->preg[6]) & 0xffff;
-	cpu->preg[6] += 2;
-	pdp_set_flag(cpu, pdp_rd(cpu, cpu->preg[6]) & 0xff);	// ffff
-	cpu->preg[6] += 2;
+	cpu->regRN(7) = pdp_rd(cpu, cpu->regRN(6)) & 0xffff;
+	cpu->regRN(6) += 2;
+	pdp_set_flag(cpu, pdp_rd(cpu, cpu->regRN(6)) & 0xff);	// ffff
+	cpu->regRN(6) += 2;
 	// cpu->f &= 0xff;
 	cpu->f.t = 0;
 }
@@ -341,7 +341,7 @@ void pdp_rtt(CPU* cpu) {
 // 0007..000A : start
 
 void pdp_start(CPU* cpu) {
-	cpu->preg[7] = pdp_rd(cpu, 0177674) & 0xffff;
+	cpu->regRN(7) = pdp_rd(cpu, 0177674) & 0xffff;
 	pdp_set_flag(cpu, pdp_rd(cpu, 0177676) & 0xffff);
 	cpu->regWZ = pdp_rd(cpu, 0177716) & 0xffff;
 	cpu->regWZ &= ~8;
@@ -351,7 +351,7 @@ void pdp_start(CPU* cpu) {
 // 000B..000F : step
 
 void pdp_step(CPU* cpu) {
-	cpu->preg[7] = pdp_rd(cpu, 0177674) & 0xffff;
+	cpu->regRN(7) = pdp_rd(cpu, 0177674) & 0xffff;
 	pdp_set_flag(cpu, pdp_rd(cpu, 0177676) & 0xffff);
 	cpu->regWZ = pdp_rd(cpu, 0177716) & 0xffff;
 	cpu->regWZ &= ~8;
@@ -377,7 +377,7 @@ void pdp_jmp(CPU* cpu) {
 		cpu->vsel = 4;
 		pdp_trap(cpu, 4);
 	} else {
-		cpu->preg[7] = twres & 0xffff;
+		cpu->regRN(7) = twres & 0xffff;
 	}
 }
 
@@ -389,10 +389,10 @@ void pdp_008x(CPU* cpu) {
 		pdp_undef(cpu);
 	} else {
 		// cpu->mcir = 3;
-		cpu->preg[7] = cpu->preg[cpu->com & 7];
-		cpu->preg[cpu->com & 7] = pdp_rd(cpu, cpu->preg[6]) & 0xffff;
+		cpu->regRN(7) = cpu->regRN(cpu->com & 7);
+		cpu->regRN(cpu->com & 7) = pdp_rd(cpu, cpu->regRN(6)) & 0xffff;
 		cpu->t += 8;
-		cpu->preg[6] += 2;
+		cpu->regRN(6) += 2;
 	}
 }
 
@@ -442,7 +442,7 @@ void pdp_jr(CPU* cpu) {
 	twsrc = (cpu->com << 1) & 0x1fe;
 	if (twsrc & 0x100)
 		twsrc |= 0xff00;
-	cpu->preg[7] += twsrc;
+	cpu->regRN(7) += twsrc;
 }
 
 // br
@@ -514,10 +514,10 @@ void pdp_jsr(CPU* cpu) {
 	} else {
 		// cpu->mcir = 4;
 		twsrc = (cpu->com >> 6) & 7;
-		cpu->preg[6] -= 2;
-		pdp_wr(cpu, cpu->preg[6], cpu->preg[twsrc]);
-		cpu->preg[twsrc] = cpu->preg[7];
-		cpu->preg[7] = twres & 0xffff;
+		cpu->regRN(6) -= 2;
+		pdp_wr(cpu, cpu->regRN(6), cpu->regRN(twsrc));
+		cpu->regRN(twsrc) = cpu->regRN(7);
+		cpu->regRN(7) = twres & 0xffff;
 	}
 }
 
@@ -699,9 +699,9 @@ void pdp_0cxx(CPU* cpu) {
 //0000 1101 11dd dddd	sxt		dst = N ? -1 : 0
 
 void pdp_mark(CPU* cpu) {
-	cpu->preg[6] = cpu->preg[7] + (cpu->com & 0x3f) * 2;
-	cpu->preg[7] = cpu->preg[5];
-	cpu->preg[5] = pdp_pop(cpu);
+	cpu->regRN(6) = cpu->regRN(7) + (cpu->com & 0x3f) * 2;
+	cpu->regRN(7) = cpu->regRN(5);
+	cpu->regRN(5) = pdp_pop(cpu);
 }
 
 void pdp_mfpi(CPU* cpu) {
@@ -1025,7 +1025,7 @@ void pdp_mfps(CPU* cpu) {
 	if (cpu->com & 0x38) {
 		pdp_wrb(cpu, cpu->regWZ, twsrc & 0xff);
 	} else {
-		cpu->preg[cpu->com & 7] = twsrc;
+		cpu->regRN(cpu->com & 7) = twsrc;
 	}
 	//cpu->f &= ~(PDP_FZ | PDP_FN | PDP_FV);
 	cpu->f.v = 0;
@@ -1059,9 +1059,9 @@ void pdp_mul(CPU* cpu) {
 	} else {
 		signed short src = pdp_src(cpu, cpu->com, 0);
 		int rn = (cpu->com >> 6) & 7;		// reg number
-		signed int res = src * (signed short)cpu->preg[rn];
-		cpu->preg[rn] = (res >> 16) & 0xffff;
-		cpu->preg[rn | 1] = res & 0xffff;
+		signed int res = src * (signed short)cpu->regRN(rn);
+		cpu->regRN(rn) = (res >> 16) & 0xffff;
+		cpu->regRN(rn | 1) = res & 0xffff;
 		cpu->f.n = !!(res < 0);
 		cpu->f.z = !res;
 		cpu->f.v = 0;
@@ -1075,15 +1075,15 @@ void pdp_div(CPU* cpu) {
 		pdp_undef(cpu);
 	} else {
 		int rn = (cpu->com >> 6) & 6;	// & 7 ?
-		signed int src = (cpu->preg[rn] << 16) | cpu->preg[rn | 1];
+		signed int src = (cpu->regRN(rn) << 16) | cpu->regRN(rn | 1);
 		unsigned short dst = pdp_src(cpu, cpu->com, 0);
 		if (dst == 0) {
 			cpu->f.c = 1;
 		} else {
 			int res = src / dst;
 			int mod = src % dst;
-			cpu->preg[rn] = res & 0xffff;
-			cpu->preg[rn | 1] = mod & 0xffff;
+			cpu->regRN(rn) = res & 0xffff;
+			cpu->regRN(rn | 1) = mod & 0xffff;
 			cpu->f.n = !!(res < 0);
 			cpu->f.z = !res;
 			cpu->f.v = !!((src == 0) || (res < -(2 << 15)) || (res > (2 << 15) - 1));
@@ -1099,7 +1099,7 @@ void pdp_ash(CPU* cpu) {
 	} else {
 		twsrc = pdp_src(cpu, cpu->com, 0) & 0x3f;
 		int rn = (cpu->com >> 6) & 7;
-		twdst = cpu->preg[rn];
+		twdst = cpu->regRN(rn);
 		twres = twdst;
 		if (twsrc & 0x20) {	// shift right
 			twsrc = 0x40 - twsrc;
@@ -1115,7 +1115,7 @@ void pdp_ash(CPU* cpu) {
 				twsrc--;
 			}
 		}
-		cpu->preg[rn] = twdst;
+		cpu->regRN(rn) = twdst;
 		cpu->f.n = !!(twdst & 0x8000);
 		cpu->f.z = !twdst;
 		cpu->f.v = !!((twres ^ twdst) & 0x8000);	// sign changed?
@@ -1129,8 +1129,8 @@ void pdp_ashc(CPU* cpu) {
 	} else {
 		twsrc = pdp_src(cpu, cpu->com, 0) & 0x3f;
 		int rn = (cpu->com >> 6) & 7;
-		twres = (cpu->preg[rn] << 16) | (cpu->preg[rn | 1]);
-		twdst = cpu->preg[rn];
+		twres = (cpu->regRN(rn) << 16) | (cpu->regRN(rn | 1));
+		twdst = cpu->regRN(rn);
 		if (twsrc & 0x20) {
 			twsrc = 0x40 - twsrc;
 			while (twsrc) {
@@ -1145,18 +1145,18 @@ void pdp_ashc(CPU* cpu) {
 				twsrc--;
 			}
 		}
-		cpu->preg[rn] = (twres >> 16) & 0xffff;
-		cpu->preg[rn | 1] = twres & 0xffff;
+		cpu->regRN(rn) = (twres >> 16) & 0xffff;
+		cpu->regRN(rn | 1) = twres & 0xffff;
 		cpu->f.n = !!(twres & (1 << 31));
 		cpu->f.z = !twres;
-		cpu->f.v = !!((cpu->preg[rn] ^ twdst) & 0x8000);	// sign changed?
+		cpu->f.v = !!((cpu->regRN(rn) ^ twdst) & 0x8000);	// sign changed?
 	}
 }
 
 // 074rss	xor Rn,ss	ss ^= Rn
 void pdp_xor(CPU* cpu) {
 	twsrc = pdp_src(cpu, cpu->com, 0);
-	twsrc ^= cpu->preg[(cpu->com >> 6) & 7];
+	twsrc ^= cpu->regRN((cpu->com >> 6) & 7);
 	cpu->f.v = 0;
 	cpu->f.z = !twsrc;
 	cpu->f.n = !!(twsrc & 0x8000);
@@ -1177,9 +1177,9 @@ void pdp_075x(CPU* cpu) {
 void pdp_sob(CPU* cpu) {
 	cpu->t += 8;
 	twsrc = (cpu->com >> 6) & 7;
-	cpu->preg[twsrc]--;
-	if (cpu->preg[twsrc]) {
-		cpu->preg[7] -= (cpu->com & 0x3f) * 2;
+	cpu->regRN(twsrc)--;
+	if (cpu->regRN(twsrc)) {
+		cpu->regRN(7) -= (cpu->com & 0x3f) * 2;
 	}
 }
 
@@ -1224,7 +1224,7 @@ void pdp_movb(CPU* cpu) {
 		twsrc &= 0xff;					// extend sign
 		if (twsrc & 0x80)
 			twsrc |= 0xff00;
-		cpu->preg[cpu->com & 7] = twsrc;
+		cpu->regRN(cpu->com & 7) = twsrc;
 	}
 	//cpu->f &= ~(PDP_FN | PDP_FV | PDP_FZ);
 	cpu->f.v = 0;
@@ -1426,18 +1426,18 @@ void pdp_timer(CPU* cpu, int t) {
 
 int pdp11_exec(CPU* cpu) {
 #ifdef ISDEBUG
-//	printf("%.4X : %.4X\n", cpu->preg[7], pdp_rd(cpu, cpu->preg[7]));
+//	printf("%.4X : %.4X\n", cpu->regRN(7), pdp_rd(cpu, cpu->regRN(7)));
 #endif
-	cpu->preg[7] = cpu->regPC;
-	cpu->oldpc = cpu->regPC;
+//	cpu->regRN(7) = cpu->regPC;
+	cpu->oldpc = cpu->regRN(7);
 	//if (cpu->halt) return 4;
 	//cpu->t = cpu->wait ? 8 : 0;
 	cpu->t = 0;
 	if (cpu->inten & cpu->intrq)
 		cpu->t += pdp11_int(cpu);
 	if (cpu->t == 0) {
-		cpu->com = pdp_rd(cpu, cpu->preg[7]);
-		cpu->preg[7] += 2;
+		cpu->com = pdp_rd(cpu, cpu->regRN(7));
+		cpu->regRN(7) += 2;
 		cpu->t += 8;
 		// exec 1st tab #Nxxx
 		pdp_tab_a[(cpu->com >> 12) & 0x0f](cpu);
@@ -1446,8 +1446,8 @@ int pdp11_exec(CPU* cpu) {
 //			pdp_trap(cpu, 4);
 //		}
 	}
-	cpu->regPC = cpu->preg[7];
-	cpu->regSP = cpu->preg[6];		// for correct deBUGa stack dump
+//	cpu->regPC = cpu->regRN(7);
+//	cpu->regSP = cpu->regRN(6);		// for correct deBUGa stack dump
 	pdp_timer(cpu, cpu->t);
 	return cpu->t;
 }
@@ -1455,14 +1455,14 @@ int pdp11_exec(CPU* cpu) {
 // registers
 
 xRegDsc pdp11RegTab[] = {
-	{PDP11_REG0, "R0", REG_WORD | REG_RDMP, offsetof(CPU, preg[0])},
-	{PDP11_REG1, "R1", REG_WORD | REG_RDMP, offsetof(CPU, preg[1])},
-	{PDP11_REG2, "R2", REG_WORD | REG_RDMP, offsetof(CPU, preg[2])},
-	{PDP11_REG3, "R3", REG_WORD | REG_RDMP, offsetof(CPU, preg[3])},
-	{PDP11_REG4, "R4", REG_WORD | REG_RDMP, offsetof(CPU, preg[4])},
-	{PDP11_REG5, "R5", REG_WORD | REG_RDMP, offsetof(CPU, preg[5])},
-	{PDP11_REG6, "SP", REG_WORD | REG_RDMP, offsetof(CPU, preg[6])},
-	{PDP11_REG7, "PC", REG_WORD | REG_RDMP, offsetof(CPU, preg[7])},
+	{PDP11_REG0, "R0", REG_WORD | REG_RDMP, offsetof(CPU, regRN(0))},
+	{PDP11_REG1, "R1", REG_WORD | REG_RDMP, offsetof(CPU, regRN(1))},
+	{PDP11_REG2, "R2", REG_WORD | REG_RDMP, offsetof(CPU, regRN(2))},
+	{PDP11_REG3, "R3", REG_WORD | REG_RDMP, offsetof(CPU, regRN(3))},
+	{PDP11_REG4, "R4", REG_WORD | REG_RDMP, offsetof(CPU, regRN(4))},
+	{PDP11_REG5, "R5", REG_WORD | REG_RDMP, offsetof(CPU, regRN(5))},
+	{PDP11_REG6, "SP", REG_WORD | REG_RDMP, offsetof(CPU, regRN(6))},
+	{PDP11_REG7, "PC", REG_WORD | REG_RDMP, offsetof(CPU, regRN(7))},
 	{PDP11_REGF, "PSW", REG_32, offsetof(CPU, f)},
 	{REG_NONE, "", 0, 0}
 };
@@ -1473,14 +1473,14 @@ static char* pdpFlags = "I--TNZVC";
 unsigned short pdp_get_reg(CPU* cpu, int id) {
 	unsigned short res = 0;
 	switch(id) {
-		case PDP11_REG0: res = cpu->preg[0]; break;
-		case PDP11_REG1: res = cpu->preg[1]; break;
-		case PDP11_REG2: res = cpu->preg[2]; break;
-		case PDP11_REG3: res = cpu->preg[3]; break;
-		case PDP11_REG4: res = cpu->preg[4]; break;
-		case PDP11_REG5: res = cpu->preg[5]; break;
-		case PDP11_REG6: res = cpu->preg[6]; break;
-		case PDP11_REG7: res = cpu->preg[7]; break;
+		case PDP11_REG0: res = cpu->regRN(0); break;
+		case PDP11_REG1: res = cpu->regRN(1); break;
+		case PDP11_REG2: res = cpu->regRN(2); break;
+		case PDP11_REG3: res = cpu->regRN(3); break;
+		case PDP11_REG4: res = cpu->regRN(4); break;
+		case PDP11_REG5: res = cpu->regRN(5); break;
+		case PDP11_REG6: res = cpu->regRN(6); break;
+		case PDP11_REG7: res = cpu->regRN(7); break;
 		case PDP11_REGF: res = pdp_get_flag(cpu); break;
 	}
 	return res;
@@ -1507,14 +1507,14 @@ void pdp11_set_regs(CPU* cpu, xRegBunch bunch) {
 	int idx = 0;
 	while (bunch.regs[idx].id != REG_NONE) {
 		switch (bunch.regs[idx].id) {
-			case PDP11_REG0: cpu->preg[0] = bunch.regs[idx].value; break;
-			case PDP11_REG1: cpu->preg[1] = bunch.regs[idx].value; break;
-			case PDP11_REG2: cpu->preg[2] = bunch.regs[idx].value; break;
-			case PDP11_REG3: cpu->preg[3] = bunch.regs[idx].value; break;
-			case PDP11_REG4: cpu->preg[4] = bunch.regs[idx].value; break;
-			case PDP11_REG5: cpu->preg[5] = bunch.regs[idx].value; break;
-			case PDP11_REG6: cpu->preg[6] = bunch.regs[idx].value; break;
-			case PDP11_REG7: cpu->preg[7] = bunch.regs[idx].value; cpu->regPC = cpu->preg[7]; break;
+			case PDP11_REG0: cpu->regRN(0) = bunch.regs[idx].value; break;
+			case PDP11_REG1: cpu->regRN(1) = bunch.regs[idx].value; break;
+			case PDP11_REG2: cpu->regRN(2) = bunch.regs[idx].value; break;
+			case PDP11_REG3: cpu->regRN(3) = bunch.regs[idx].value; break;
+			case PDP11_REG4: cpu->regRN(4) = bunch.regs[idx].value; break;
+			case PDP11_REG5: cpu->regRN(5) = bunch.regs[idx].value; break;
+			case PDP11_REG6: cpu->regRN(6) = bunch.regs[idx].value; break;
+			case PDP11_REG7: cpu->regRN(7) = bunch.regs[idx].value; /*cpu->regPC = cpu->regRN(7);*/ break;
 			case PDP11_REGF: pdp_set_flag(cpu, bunch.regs[idx].value); break;
 		}
 		idx++;

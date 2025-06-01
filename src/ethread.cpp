@@ -8,7 +8,7 @@
 #include "xgui/xgui.h"
 #include "xcore/sound.h"
 #include "xcore/vfilters.h"
-//#include "libxpeccy/cpu/cpu.h"
+#include "libxpeccy/cpu/Z80/z80.h"
 
 #if USEMUTEX
 QMutex emutex;

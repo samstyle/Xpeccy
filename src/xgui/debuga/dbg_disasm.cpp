@@ -1,6 +1,7 @@
 #include "dbg_disasm.h"
 #include "dbg_dump.h"
 #include "../../xcore/xcore.h"
+#include "../../libxpeccy/cpu/Z80/z80.h"
 
 #include <QDebug>
 #include <QFont>
