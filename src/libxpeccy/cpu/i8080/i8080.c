@@ -4,20 +4,19 @@
 extern opCode i8080_tab[256];
 
 int i8080_get_flag(CPU* cpu) {
-	return cpu->f.c | (cpu->f.f1 << 1) | (cpu->f.p << 2) | (cpu->f.f3 << 3) | (cpu->f.a << 4) | (cpu->f.f5 << 5) | (cpu->f.z << 6) | (cpu->f.s << 7);
+	return cpu->flgC | (cpu->flgF1 << 1) | (cpu->flgP << 2) | (cpu->flgF3 << 3) | (cpu->flgA << 4) | (cpu->flgF5 << 5) | (cpu->flgZ << 6) | (cpu->flgS << 7);
 }
 
 void i8080_set_flag(CPU* cpu, int v) {
-	cpu->f.c = v & 1;
-	cpu->f.f1 = !!(v & 2);
-	cpu->f.p = !!(v & 4);
-	cpu->f.f3 = !!(v & 8);
-	cpu->f.a = !!(v & 16);
-	cpu->f.f5 = !!(v & 32);
-	cpu->f.z = !!(v & 64);
-	cpu->f.s = !!(v & 128);
+	cpu->flgC = v & 1;
+	cpu->flgF1 = !!(v & 2);
+	cpu->flgP = !!(v & 4);
+	cpu->flgF3 = !!(v & 8);
+	cpu->flgA = !!(v & 16);
+	cpu->flgF5 = !!(v & 32);
+	cpu->flgZ = !!(v & 64);
+	cpu->flgS = !!(v & 128);
 }
-
 
 void i8080_reset(CPU* cpu) {
 	cpu->regPC = 0x0000;
@@ -29,7 +28,7 @@ void i8080_reset(CPU* cpu) {
 }
 
 int i8080_int(CPU* cpu) {
-	cpu->f.iff1 = 0;
+	cpu->flgIFF1 = 0;
 	if (cpu->halt) {
 		cpu->regPC++;
 		cpu->halt = 0;
@@ -48,9 +47,9 @@ int i8080_exec(CPU* cpu) {
 	cpu->op = &i8080_tab[cpu->com];
 	cpu->t = cpu->op->t;
 	cpu->op->exec(cpu);
-	cpu->f.f5 = 0;
-	cpu->f.f3 = 0;
-	cpu->f.f1 = 1;
+	cpu->flgF5 = 0;
+	cpu->flgF3 = 0;
+	cpu->flgF1 = 1;
 	return cpu->t;
 }
 
@@ -107,7 +106,7 @@ xRegDsc i8080RegTab[] = {
 	{I8080_REG_HL, "HL", REG_WORD | REG_RDMP, offsetof(CPU, regHL)},
 	{I8080_REG_SP, "SP", REG_WORD | REG_RDMP, offsetof(CPU, regSP)},
 	{REG_EMPTY, "A", REG_BYTE, offsetof(CPU, regA)},
-	{REG_EMPTY, "F", REG_32, offsetof(CPU, f)},
+	{REG_EMPTY, "F", REG_32, 0},
 	{REG_NONE, "", 0, 0}
 };
 

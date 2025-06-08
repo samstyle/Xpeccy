@@ -120,7 +120,7 @@ int loadZ80_f(Computer* comp, FILE* file) {
 	comp->cpu->regDE = (hd.d << 8) | hd.e;
 	comp->cpu->regHL = (hd.h << 8) | hd.l;
 	comp->cpu->regAa = hd._a;
-	comp->cpu->f_ = hd._f;
+	comp->cpu->regFa = hd._f;
 	comp->cpu->regBCa = (hd._b << 8) | hd._c;
 	comp->cpu->regDEa = (hd._d << 8) | hd._e;
 	comp->cpu->regHLa = (hd._h << 8) | hd._l;
@@ -131,9 +131,9 @@ int loadZ80_f(Computer* comp, FILE* file) {
 	comp->cpu->regI = hd.i;
 	comp->cpu->regR7 = (hd.flag12 & 1) ? 0x80 : 0;
 	comp->cpu->regR = (hd.r7 & 0x7f) | comp->cpu->regR7;
-	comp->cpu->f.im = hd.flag29 & 3;
-	comp->cpu->f.iff1 = hd.iff1;
-	comp->cpu->f.iff2 = hd.iff2;
+	comp->cpu->regIM = hd.flag29 & 3;
+	comp->cpu->flgIFF1 = hd.iff1;
+	comp->cpu->flgIFF2 = hd.iff2;
 	comp->cpu->inten = Z80_NMI | (hd.iff1 ? Z80_INT : 0);
 	comp->vid->brdcol = (hd.flag12 >> 1) & 7;
 	comp->vid->nextbrd = comp->vid->brdcol;

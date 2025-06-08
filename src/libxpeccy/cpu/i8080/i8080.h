@@ -15,6 +15,16 @@
 #define IFL_C	0x01
 */
 
+#define flgC	flags[0]
+#define flgF1	flags[1]
+#define flgP	flags[2]
+#define flgF3	flags[3]
+#define flgA	flags[4]
+#define flgF5	flags[5]
+#define flgZ	flags[6]
+#define flgS	flags[7]
+#define flgIFF1	flags[32]
+
 #define regA regs[0].l
 #define regBC regs[1].w
 #define regB regs[1].h
@@ -44,6 +54,7 @@ enum {
 	I8080_REG_HL,
 };
 
+/*
 #ifdef WORDS_LITTLE_ENDIAN
 typedef struct {
 	unsigned c:1;
@@ -69,6 +80,7 @@ typedef struct {
 	unsigned c:1;
 } i80flag_t;
 #endif
+*/
 
 void i8080_reset(CPU*);
 int i8080_exec(CPU*);

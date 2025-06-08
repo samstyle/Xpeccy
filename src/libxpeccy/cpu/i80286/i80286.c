@@ -31,24 +31,24 @@ void i286_init(CPU* cpu) {cpu->gen = 2;}
 */
 
 void x86_set_flag(CPU* cpu, int v) {
-	cpu->f.c = (v & 1);
-	cpu->f.p = !!(v & 4);
-	cpu->f.a = !!(v & 16);
-	cpu->f.z = !!(v & 64);
-	cpu->f.s = !!(v & 128);
-	cpu->f.t = !!(v & 256);
-	cpu->f.i = !!(v & 512);
-	cpu->f.d = !!(v & 1024);
-	cpu->f.o = !!(v & 2048);
-	cpu->f.ip = (v >> 12) & 3;
-	cpu->f.n = !!(v & 16384);
+	cpu->flgC = (v & 1);
+	cpu->flgP = !!(v & 4);
+	cpu->flgA = !!(v & 16);
+	cpu->flgZ = !!(v & 64);
+	cpu->flgS = !!(v & 128);
+	cpu->flgT = !!(v & 256);
+	cpu->flgI = !!(v & 512);
+	cpu->flgD = !!(v & 1024);
+	cpu->flgO = !!(v & 2048);
+	cpu->regIOPL = (v >> 12) & 3;
+	cpu->flgN = !!(v & 16384);
 }
 
 int x86_get_flag(CPU* cpu) {
-	int f = cpu->f.c | 2\
-			| (cpu->f.p << 2) | (cpu->f.a << 4) | (cpu->f.z << 6) | (cpu->f.s << 7)\
-			| (cpu->f.t << 8) | (cpu->f.i << 9) | (cpu->f.d << 10) | (cpu->f.o << 11)\
-			| (cpu->f.ip << 12) | (cpu->f.n << 14);
+	int f = cpu->flgC | 2\
+			| (cpu->flgP << 2) | (cpu->flgA << 4) | (cpu->flgZ << 6) | (cpu->flgS << 7)\
+			| (cpu->flgT << 8) | (cpu->flgI << 9) | (cpu->flgD << 10) | (cpu->flgO << 11)\
+			| (cpu->regIOPL << 12) | (cpu->flgN << 14);
 	switch(cpu->gen) {
 		case 0:
 		case 1: f |= 0xff00; break;
@@ -92,8 +92,8 @@ void i286_int_real(CPU* cpu, int vec) {
 	i286_push(cpu, x86_get_flag(cpu));
 	i286_push(cpu, cpu->cs.idx);
 	i286_push(cpu, cpu->regIP);
-	cpu->f.i = 0;
-	cpu->f.t = 0;
+	cpu->flgI = 0;
+	cpu->flgT = 0;
 	cpu->tmpi = (vec & 0xff) << 2;
 	cpu->regIP = i286_sys_mrdw(cpu, cpu->idtr, cpu->tmpi);
 	cpu->cs = i286_cash_seg(cpu, i286_sys_mrdw(cpu, cpu->idtr, cpu->tmpi+2));
@@ -114,7 +114,7 @@ void i286_int_real(CPU* cpu, int vec) {
 void i286_int_prt(CPU* cpu, int vec) {
 	if (cpu->idtr.limit < (vec & 0xfff8)) {		// check idtr limit
 		THROW_EC(I286_INT_GP, cpu->idtr.idx);
-	} else if (cpu->f.i) {
+	} else if (cpu->flgI) {
 		if (cpu->halt) {
 			cpu->halt = 0;
 			cpu->regIP++;
@@ -168,9 +168,9 @@ void i286_int_prt(CPU* cpu, int vec) {
 					}
 					cpu->regIP = off.w;
 					cpu->cs = cpu->tmpdr;
-					cpu->f.n = 0;			// clear N flag
+					cpu->flgN = 0;			// clear N flag
 					if (!(cpu->gate.ar & 1)) {	// disable interrupts on int.gate / don't change on trap gate
-						cpu->f.i = 0;
+						cpu->flgI = 0;
 					}
 				}
 				break;
@@ -223,7 +223,7 @@ void i286_ext_int(CPU* cpu) {
 		cpu->inten |= I286_BLK_NMI;				// NMI is blocking until RETI, but next NMI will be remembered until then
 		cpu->intrq &= ~I286_NMI;
 		i286_interrupt(cpu, I286_INT_NMI);
-	} else 	if (cpu->f.i) {
+	} else 	if (cpu->flgI) {
 		cpu->intrq &= ~I286_INT;
 		cpu->intvec = cpu->xack(cpu->xptr);
 		i286_interrupt(cpu, cpu->intvec);

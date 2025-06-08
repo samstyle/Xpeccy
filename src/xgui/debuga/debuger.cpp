@@ -1019,9 +1019,9 @@ void DebugWin::fillCPU() {
 		}
 	}
 	fillFlags(bunch.flags);
-	ui_cpu.boxIM->setValue(cpu->f.im);
-	ui_cpu.flagIFF1->setChecked(cpu->f.iff1);
-	ui_cpu.flagIFF2->setChecked(cpu->f.iff2);
+	ui_cpu.boxIM->setValue(cpu->regIM);
+	ui_cpu.flagIFF1->setChecked(cpu->flgIFF1);
+	ui_cpu.flagIFF2->setChecked(cpu->flgIFF2);
 	fillStack();
 	block = 0;
 }
@@ -1054,9 +1054,9 @@ void DebugWin::setCPU() {
 		}
 	}
 	cpuSetRegs(cpu, bunch);
-	cpu->f.im = ui_cpu.boxIM->value() & 3;
-	cpu->f.iff1 = ui_cpu.flagIFF1->isChecked() ? 1 : 0;
-	cpu->f.iff2 = ui_cpu.flagIFF2->isChecked() ? 1 : 0;
+	cpu->regIM = ui_cpu.boxIM->value() & 3;
+	cpu->flgIFF1 = ui_cpu.flagIFF1->isChecked();// ? 1 : 0;
+	cpu->flgIFF2 = ui_cpu.flagIFF2->isChecked();// ? 1 : 0;
 	fillFlags(NULL);
 	fillStack();
 	fillDisasm();

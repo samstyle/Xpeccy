@@ -30,7 +30,7 @@ int loadSNA_f(Computer* comp, FILE* file, size_t fileSize) {
 	comp->cpu->regDEa = (hd._d << 8) | hd._e;
 	comp->cpu->regBCa = (hd._b << 8) | hd._c;
 	comp->cpu->regAa = hd._a;
-	comp->cpu->f_ = hd._f;
+	comp->cpu->regFa = hd._f;
 	comp->cpu->regHL = (hd.h << 8) | hd.l;
 	comp->cpu->regDE = (hd.d << 8) | hd.e;
 	comp->cpu->regBC = (hd.b << 8) | hd.c;
@@ -42,14 +42,14 @@ int loadSNA_f(Computer* comp, FILE* file, size_t fileSize) {
 	comp->cpu->regI = hd.i;
 	comp->cpu->regR = hd.r;
 	comp->cpu->regR7 = hd.r & 0x80;
-	comp->cpu->f.im = hd.imod & 3;
-	comp->cpu->f.iff1 = (hd.flag19 & 4) ? 1 : 0;
-	comp->cpu->f.iff2 = 1;
-	comp->cpu->inten = Z80_NMI | (comp->cpu->f.iff1 ? Z80_INT : 0);
+	comp->cpu->regIM = hd.imod & 3;
+	comp->cpu->flgIFF1 = (hd.flag19 & 4) ? 1 : 0;
+	comp->cpu->flgIFF2 = 1;
+	comp->cpu->inten = Z80_NMI | (comp->cpu->flgIFF1 ? Z80_INT : 0);
 	comp->vid->brdcol = hd.border & 7;
 	comp->vid->nextbrd = hd.border & 7;
 
-	if (comp->cpu->f.iff1) {
+	if (comp->cpu->flgIFF1) {
 		comp->cpu->inten |= Z80_INT;
 	} else {
 		comp->cpu->inten &= ~Z80_INT;
@@ -130,7 +130,7 @@ int saveSNA(Computer* comp, const char* name, int drv) {
 	rp.w = comp->cpu->regHLa; hd._h = rp.h; hd._l = rp.l;
 	rp.w = comp->cpu->regDEa; hd._h = rp.h; hd._l = rp.l;
 	rp.w = comp->cpu->regBCa; hd._h = rp.h; hd._l = rp.l;
-	hd._a = comp->cpu->regAa; hd._f = comp->cpu->f_;
+	hd._a = comp->cpu->regAa; hd._f = comp->cpu->regFa;
 	hd.h = comp->cpu->regH; hd.l = comp->cpu->regL;
 	hd.d = comp->cpu->regD; hd.e = comp->cpu->regE;
 	hd.b = comp->cpu->regB; hd.c = comp->cpu->regC;
@@ -140,8 +140,8 @@ int saveSNA(Computer* comp, const char* name, int drv) {
 	hd.hsp = comp->cpu->regSPh; hd.lsp = comp->cpu->regSPl;
 	hd.i = comp->cpu->regI;
 	hd.r = comp->cpu->regR;
-	hd.imod = comp->cpu->f.im;
-	hd.flag19 = comp->cpu->f.iff1 ? 4 : 0;
+	hd.imod = comp->cpu->regIM;
+	hd.flag19 = comp->cpu->flgIFF1 ? 4 : 0;
 	hd.border = comp->vid->brdcol & 7;
 	fwrite((char*)&hd, sizeof(snaHead), 1, file);
 

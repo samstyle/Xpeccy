@@ -4,6 +4,8 @@
 #include <string.h>
 
 #include "cpu.h"
+
+// TODO: cpu headers must be included cuz of callbacks, but flgX redefinition occurs
 #include "1801vm1/1801vm1.h"
 #include "i8080/i8080.h"
 #include "i80286/i80286.h"
@@ -458,6 +460,15 @@ int cpuAsm(CPU* cpu, const char* com, char* buf, unsigned short adr) {
 static const char noname[] = "undef";
 static char* dumFlags = "--------";
 
+int cpu_get_flag(CPU* cpu) {
+	return cpu->core->getflag ? cpu->core->getflag(cpu) : -1;
+}
+
+void cpu_set_flag(CPU* cpu, int v) {
+	if (cpu->core->setflag)
+		cpu->core->setflag(cpu, v);
+}
+
 xRegBunch cpuGetRegs(CPU* cpu) {
 	xRegBunch bunch;
 	int i;
@@ -478,6 +489,8 @@ int reg_get_value(CPU* cpu, xRegDsc* dsc) {
 	int res = -1;
 	if (dsc->type & REG_SEG) {
 		res = ((xSegPtr*)((cpu + dsc->offset)))->idx & 0xffff;
+	} else if (dsc->offset == 0) {		// is flag
+		res = cpu_get_flag(cpu);
 	} else {
 		void* ptr = ((void*)cpu) + dsc->offset;
 		switch(dsc->type & REG_TMASK) {
@@ -511,15 +524,6 @@ xRegister cpuGetReg(CPU* cpu, int id) {
 	return reg;
 }
 
-int cpu_get_flag(CPU* cpu) {
-	return cpu->core->getflag ? cpu->core->getflag(cpu) : -1;
-}
-
-void cpu_set_flag(CPU* cpu, int v) {
-	if (cpu->core->setflag)
-		cpu->core->setflag(cpu, v);
-}
-
 // f is pointer to bool variable: false if register doesn't exists
 int cpu_get_reg(CPU* cpu, const char* name, bool* f) {
 	int res = -1;
@@ -547,7 +551,7 @@ bool cpu_set_reg(CPU* cpu, const char* name, int val) {
 	void* ptr;
 	xRegDsc* rt = cpu->core->rdsctab;
 	while (work && (rt[i].id != REG_NONE)) {
-		if (!strcmp(name, rt[i].name) && (rt[i].offset != 0) && !(rt[i].type & REG_SEG)) {
+		if (!strcmp(name, rt[i].name) && (rt[i].offset != 0) && !(rt[i].type & REG_SEG)) {	// TODO: offset==0 -> setflag
 			ptr = ((void*)cpu) + rt[i].offset;
 			work = 0;
 			switch(rt[i].type & REG_TMASK) {

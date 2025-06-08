@@ -34,7 +34,21 @@
 #define regI regs[9].l
 #define regR regs[9].h
 #define regR7 regs[9].ih
+#define regFa regs[10].i
+#define regIM regs[11].l
 
+#define flgC	flags[0]
+#define flgN	flags[1]
+#define flgPV	flags[2]
+#define flgF3	flags[3]
+#define flgH	flags[4]
+#define flgF5	flags[5]
+#define flgZ	flags[6]
+#define flgS	flags[7]
+#define flgIFF1	flags[32]
+#define flgIFF2	flags[33]
+
+/*
 #ifdef WORDS_BIG_ENDIAN
 typedef struct {
 	unsigned _nu:24;		// not used (padding to 32 bits)
@@ -60,6 +74,7 @@ typedef struct {
 	unsigned _nu:24;		// not used (padding to 32 bits)
 } z80flag_t;
 #endif
+*/
 
 #include "z80_macro.h"
 

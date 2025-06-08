@@ -74,26 +74,26 @@ void i286_0F003(CPU* cpu) {
 // 0f 00 /4 verr ew (prt mode oly)	verify segment to read
 void i286_0F004(CPU* cpu) {
 	cpu->tmpdr = i286_get_dsc(cpu, cpu->tmpw);
-	cpu->f.z = 0;;
+	cpu->flgZ = 0;;
 	if (cpu->tmpdr.idx < 0) return;		// index out of bounds
 	if (!cpu->tmpdr.pr) return;		// not present
 	if (!(cpu->tmpdr.ar & 0x10)) return;	// special system segment
 	if ((cpu->tmpw & 3) > cpu->tmpdr.pl) return;	// dpl < rpl
 	if ((cpu->tmpdr.ar & 0x08) && !(cpu->tmpdr.ar & 2)) return;	// code segment, not readable
-	cpu->f.z = 1;
+	cpu->flgZ = 1;
 }
 
 // 0f 00 /5 verw ew (prt mode only)	verify segment to write
 void i286_0F005(CPU* cpu) {
 	cpu->tmpdr = i286_get_dsc(cpu, cpu->tmpw);
-	cpu->f.z = 0;;
+	cpu->flgZ = 0;;
 	if (cpu->tmpdr.idx < 0) return;		// index out of bounds
 	if (!cpu->tmpdr.pr) return;	// not present
 	if (!(cpu->tmpdr.ar & 0x10)) return;	// special system segment
 	if ((cpu->tmpw & 3) > cpu->tmpdr.pl) return;	// dpl < rpl
 	if (cpu->tmpdr.ar & 0x08) return;		// code segment is not writeable
 	if (!(cpu->tmpdr.ar & 2)) return;		// not writeable
-	cpu->f.z = 1;
+	cpu->flgZ = 1;
 }
 
 cbcpu i286_0f00_tab[8] = {

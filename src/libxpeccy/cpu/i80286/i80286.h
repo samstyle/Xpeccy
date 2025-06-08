@@ -1,13 +1,6 @@
 #pragma once
 
 #include "../cpu.h"
-//	reg32(regEAX,regAX,regAH,regAL);
-//	reg32(regEDX,regDX,regDH,regDL);
-//	reg32(regECX,regCX,regCH,regCL);
-//	reg32(regEBX,regBX,regBH,regBL);
-//	reg32(regEBP,regBP,regBPh,regBPl);
-//	reg32(regESI,regSI,regSIh,regSIl);
-//	reg32(regEDI,regDI,regDIh,regDIl);
 
 #define regEAX regs[0].i
 #define regAX regs[0].w
@@ -34,6 +27,13 @@
 #define regEIP regs[7].i
 #define regIP regs[7].w
 #define regBP regs[8].w
+#define regIOPL regs[9].l
+
+// TODO: segment registers:
+//	regs[n].i = base addr
+//	regs[n+1].i = limit
+//	regs[n+2].ih = index
+//	regs[n+2].w = flags
 
 // flag
 /*
@@ -49,11 +49,24 @@
 #define I286_FIP 0x3000	// 2bits: IOPL
 #define I286_FN	0x4000	// nested flag
 */
+
+#define flgC	flags[0]
+#define flgP	flags[2]
+#define flgA	flags[4]
+#define flgZ	flags[6]
+#define flgS	flags[7]
+#define flgT	flags[8]
+#define flgI	flags[9]
+#define flgD	flags[10]
+#define flgO	flags[11]
+#define flgN	flags[15]
+
 enum {
 	X86_REAL = 0,
 	X86_PROT
 };
 
+/*
 #ifdef WORDS_LITTLE_ENDIAN
 typedef struct {
 	unsigned c:1;
@@ -93,6 +106,7 @@ typedef struct {
 	unsigned c:1;
 } x86flag_t;
 #endif
+*/
 
 // msw
 #define I286_FPE 0x0001	// protected mode
@@ -123,7 +137,8 @@ typedef struct {
 
 enum {
 	I286_MOD_REAL = 0,
-	I286_MOD_PROT
+	I286_MOD_PROT,
+	X86_MOD_V86		// virtual 8086 mode (386+)
 };
 
 enum {

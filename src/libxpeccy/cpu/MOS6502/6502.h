@@ -13,6 +13,15 @@
 #define regWZh regs[8].h
 #define regWZl regs[8].l
 
+#define flgC	flags[0]
+#define flgZ	flags[1]
+#define flgI	flags[2]
+#define flgD	flags[3]
+#define flgB	flags[4]
+#define flgF5	flags[5]
+#define flgV	flags[6]
+#define flgN	flags[7]
+
 enum {
 	M6502_REG_PC = 1,
 	M6502_REG_A,
@@ -31,6 +40,7 @@ enum {
 //#define MFZ 0x02	// zero
 // #define MFC 0x01	// carry
 
+/*
 #ifdef WORDS_LITTLE_ENDIAN
 typedef struct {
 	unsigned c:1;
@@ -54,6 +64,7 @@ typedef struct {
 	unsigned c:1;
 } mosflag_t;
 #endif
+*/
 
 #define MOS6502_INT_NMI	1
 #define MOS6502_INT_RES	2

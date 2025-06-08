@@ -184,6 +184,54 @@ enum {
 };
 
 struct CPU {
+	// common part
+	int type;			// cpu type id
+	int gen;			// cpu generation (for x86: 0-8086, 1-80186, 2-80286 etc)
+	int intrq;			// interrupts request. each bit for each INT type, 1 = requested
+	int inten;			// interrupts enabled mask
+	unsigned short intvec;		// interrupt vector (internal/external)
+	int errcod;			// error code (-1 if not present)
+	int adr;			// address bus for using from outside
+	int t;				// ticks counter
+	unsigned short oldpc;		// address of current instruction
+	// if cpu is from external lib
+	unsigned lib:1;			// cpu core from exernal lib
+	char* libname;			// name of lib inside libs folder
+	void* libhnd;			// lib handler (dlopen)
+	// external callbacks
+	cbmr mrd;			// memory reading
+	cbmw mwr;			// memeory writing
+	cbir ird;			// i/o reading
+	cbiw iwr;			// i/o writing
+	cbiack xack;			// interrupt vector acknowledge
+	cbirq xirq;			// send signal
+	void* xptr;			// pointer to external data (almost always Computer*)
+	// polymorph callbacks (depends on type)
+	void (*reset)(CPU*);		// TODO: remove callbacks, cuz it exists inside cpuCore
+	int (*exec)(CPU*);
+	xAsmScan (*asmbl)(int, const char*, char*);
+	xMnem (*mnem)(CPU*, int, cbdmr, void*);
+	void (*getregs)(CPU*, xRegBunch*);
+	void (*setregs)(CPU*, xRegBunch);
+	struct cpuCore* core;
+	// opcode
+	reg16(com, hcom, lcom);
+	opCode* opTab;
+	opCode* op;
+	// flags (bits)
+//	cpuFlags f;
+	// common registers block
+	xreg32 regs[64];
+	// TODO: common flags (unnamed, must be defined same way as registers). replace cpuFlags with it
+	bool flags[64];
+	// temp
+	unsigned char tmp;
+	unsigned char tmpb;
+	reg16(tmpw,htw,ltw);
+	reg16(twrd,hwr,lwr);
+	int tmpi;
+	jmp_buf jbuf;
+	// type-depended internal flags (do something to unname that)
 	unsigned halt:1;		// cpu halted, undo on interrput
 	unsigned resPV:1;		// Z80: reset PV flag on INT
 	unsigned noint:1;		// Z80: don't handle INT after EI
@@ -196,40 +244,7 @@ struct CPU {
 	unsigned dihalt:1;		// LR35902: HALT when DI: repeat next opcode
 	unsigned sta:1;			// MOS6502: don't add 1T on (ABSX,ABSY,INDY)
 	unsigned nod:2;			// MOS6502: ignore flag D in ADC/SBC; PDP11: write flags
-
-	unsigned lib:1;			// cpu core from exernal lib
-	char* libname;
-	void* libhnd;			// lib handler (dlopen)
-
-	int type;			// cpu type id
-	int gen;			// cpu generation (for x86: 0-8086, 1-80186, 2-80286 etc)
-
-	int intrq;			// interrupts request. each bit for each INT type, 1 = requested
-	int inten;			// interrupts enabled mask
-	unsigned short intvec;
-	int errcod;			// 80286: interrupt error code (-1 if not present)
-
-	int adr;
-// z80, lr35902, i8080, 6502 registers
-//	unsigned char regI;
-//	unsigned char regR;
-//	unsigned char regR7;
-#if 0
-	union {
-		unsigned int f;		// 32-bit value
-		z80flag_t fz;		// bits for Z80
-		lrflag_t fl;		// bits for LR35902
-		mosflag_t fm;		// bits for MOS6502
-		i80flag_t fi;		// bits for i8080
-		vm1flag_t fv;		// bits for 1801vm1
-		x86flag_t fx;		// bits for 80286
-	};
-#else
-	cpuFlags f;
-#endif
-	unsigned int f_;
-
-// 80286 registers
+// x86/87
 	unsigned wrd:1;		// i/o: out word
 	unsigned short msw;
 	// segment registers (+hidden parts)
@@ -252,7 +267,6 @@ struct CPU {
 	unsigned char mod;	// 80286: mod byte (EA/reg)
 	struct {xSegPtr seg; reg16(adr,adrh,adrl); unsigned reg:1; unsigned cnt:5;} ea;
 	int rep;		// 80286: repeat condition id
-	jmp_buf jbuf;
 	// callbacks, depend on x86 mode (real/prt)
 	unsigned char(*x86fetch)(CPU*);
 	unsigned char(*x86mrd)(CPU*,xSegPtr,int,unsigned short);
@@ -261,41 +275,6 @@ struct CPU {
 	unsigned mcir:3;
 	unsigned vsel:4;
 	xTimer timer;
-
-// external callbacks
-	cbmr mrd;
-	cbmw mwr;
-	cbir ird;
-	cbiw iwr;
-	cbiack xack;
-	cbirq xirq;
-	void* xptr;
-
-// opcode
-	reg16(com, hcom, lcom);
-	opCode* opTab;
-	opCode* op;
-
-// polymorph callbacks (depends on type)
-	void (*reset)(CPU*);
-	int (*exec)(CPU*);
-	xAsmScan (*asmbl)(int, const char*, char*);
-	xMnem (*mnem)(CPU*, int, cbdmr, void*);
-	void (*getregs)(CPU*, xRegBunch*);
-	void (*setregs)(CPU*, xRegBunch);
-
-	struct cpuCore* core;
-// common registers block (for future)
-	xreg32 regs[64];
-	// NOTE: find da wae to aliases like 'cpu->bc => cpu->regs[1].w' without #define
-// temp
-	int t;			// ticks counter
-	unsigned short oldpc;
-	unsigned char tmp;
-	unsigned char tmpb;
-	PAIR(tmpw,htw,ltw);
-	PAIR(twrd,hwr,lwr);
-	int tmpi;
 };
 
 struct cpuCore {

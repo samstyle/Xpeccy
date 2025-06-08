@@ -202,7 +202,7 @@ void mosop0B(CPU* cpu) {
 	cpu->tmp &= cpu->regA;
 	MFLAGZN(cpu->tmp);
 	//cpu->f = (cpu->f & ~MFC) | ((cpu->tmp & 0x80) ? MFC : 0);
-	cpu->f.c = !!(cpu->tmp & 0x80);
+	cpu->flgC = !!(cpu->tmp & 0x80);
 }
 
 // nop abs nn
@@ -233,7 +233,7 @@ void mosop0F(CPU* cpu) {
 void mosop10(CPU* cpu) {
 	mosGetImm(cpu->tmp);
 	//if (cpu->f & MFN) return;
-	if (!cpu->f.n) {
+	if (!cpu->flgN) {
 		MJR(cpu->tmp);
 	}
 }
@@ -283,7 +283,7 @@ void mosop17(CPU* cpu) {
 // clc : C=0
 void mosop18(CPU* cpu) {
 	//cpu->f &= ~MFC;
-	cpu->f.c = 0;
+	cpu->flgC = 0;
 }
 
 // ora abs,y nn
@@ -384,8 +384,8 @@ void mosop27(CPU* cpu) {
 void mosop28(CPU* cpu) {
 	cpu->tmpb = cpu->mrd(cpu->regPC, 0, cpu->xptr);
 	mos_set_flag(cpu, m6502_pop(cpu));
-	cpu->f.b = 0;
-	cpu->f.f5 = 1;
+	cpu->flgB = 0;
+	cpu->flgF5 = 1;
 }
 
 // and n
@@ -433,7 +433,7 @@ void mosop2F(CPU* cpu) {
 void mosop30(CPU* cpu) {
 	mosGetImm(cpu->tmp);
 	//if (cpu->f & MFN) {
-	if (cpu->f.n) {
+	if (cpu->flgN) {
 		MJR(cpu->tmp);
 	}
 }
@@ -483,7 +483,7 @@ void mosop37(CPU* cpu) {
 // sec
 void mosop38(CPU* cpu) {
 	//cpu->f |= MFC;
-	cpu->f.c = 1;
+	cpu->flgC = 1;
 }
 
 // and abs,y nn
@@ -530,7 +530,7 @@ void mosop3F(CPU* cpu) {
 // rti
 void mosop40(CPU* cpu) {
 	mos_set_flag(cpu, m6502_pop(cpu)); //  cpu->mrd(cpu->regSP, 0, cpu->xptr));
-	cpu->f.f5 = 1;
+	cpu->flgF5 = 1;
 	cpu->regPCl = m6502_pop(cpu);
 	cpu->regPCh = m6502_pop(cpu);
 }
@@ -632,7 +632,7 @@ void mosop4F(CPU* cpu) {
 void mosop50(CPU* cpu) {
 	mosGetImm(cpu->tmp);
 	//if (cpu->f & MFV) return;
-	if (!cpu->f.v) {
+	if (!cpu->flgV) {
 		MJR(cpu->tmp);
 	}
 }
@@ -682,7 +682,7 @@ void mosop57(CPU* cpu) {
 // cli
 void mosop58(CPU* cpu) {
 //	cpu->f &= ~MFI;
-	cpu->f.i = 0;
+	cpu->flgI = 0;
 //	cpu->inten |= MOS6502_INT_IRQ;
 	cpu->noint = 1;
 }
@@ -805,10 +805,10 @@ void mosop6B(CPU* cpu) {
 	cpu->regA = (cpu->regA << 1) | ((cpu->regA & 0x80) ? 1 : 0);
 	MFLAGZN(cpu->regA);
 	//cpu->f &= ~(MFV | MFC);
-	//cpu->f.v = 0;
-	//cpu->f.c = 0;
-	cpu->f.v = (((cpu->regA >> 6) ^ (cpu->regA >> 5)) & 1); // cpu->f |= MFV;
-	cpu->f.c = !!(cpu->regA & 0x40);
+	//cpu->flgV = 0;
+	//cpu->flgC = 0;
+	cpu->flgV = (((cpu->regA >> 6) ^ (cpu->regA >> 5)) & 1); // cpu->f |= MFV;
+	cpu->flgC = !!(cpu->regA & 0x40);
 	//if (cpu->a & 0x40) cpu->f |= MFC;
 }
 
@@ -844,7 +844,7 @@ void mosop6F(CPU* cpu) {
 void mosop70(CPU* cpu) {
 	mosGetImm(cpu->tmp);
 	//if (cpu->f & MFV) {
-	if (cpu->f.v) {
+	if (cpu->flgV) {
 		MJR(cpu->tmp);
 	}
 }
@@ -894,7 +894,7 @@ void mosop77(CPU* cpu) {
 // sei
 void mosop78(CPU* cpu) {
 //	cpu->f |= MFI;
-	cpu->f.i = 1;
+	cpu->flgI = 1;
 //	cpu->inten &= ~MOS6502_INT_IRQ;
 }
 
@@ -1035,7 +1035,7 @@ void mosop8F(CPU* cpu) {
 void mosop90(CPU* cpu) {
 	mosGetImm(cpu->tmp);
 	//if (cpu->f & MFC) return;
-	if (!cpu->f.c) {
+	if (!cpu->flgC) {
 		MJR(cpu->tmp);
 	}
 }
@@ -1248,7 +1248,7 @@ void mosopAF(CPU* cpu) {
 void mosopB0(CPU* cpu) {
 	mosGetImm(cpu->tmp);
 	//if (cpu->f & MFC) {
-	if (cpu->f.c) {
+	if (cpu->flgC) {
 		MJR(cpu->tmp);
 	}
 }
@@ -1302,7 +1302,7 @@ void mosopB7(CPU* cpu) {
 // clv
 void mosopB8(CPU* cpu) {
 	// cpu->f &= ~MFV;
-	cpu->f.v = 0;
+	cpu->flgV = 0;
 }
 
 // lda abs,y nn
@@ -1464,7 +1464,7 @@ void mosopCF(CPU* cpu) {
 void mosopD0(CPU* cpu) {
 	mosGetImm(cpu->tmp);
 	//if (cpu->f & MFZ) return;
-	if (!cpu->f.z) {
+	if (!cpu->flgZ) {
 		MJR(cpu->tmp);
 	}
 }
@@ -1516,7 +1516,7 @@ void mosopD7(CPU* cpu) {
 // cld
 void mosopD8(CPU* cpu) {
 //	cpu->f &= ~MFD;
-	cpu->f.d = 0;
+	cpu->flgD = 0;
 }
 
 // cmp abs,y nn
@@ -1664,7 +1664,7 @@ void mosopEF(CPU* cpu) {
 void mosopF0(CPU* cpu) {
 	mosGetImm(cpu->tmp);
 	//if (cpu->f & MFZ) {
-	if (cpu->f.z) {
+	if (cpu->flgZ) {
 		MJR(cpu->tmp);
 	}
 }
@@ -1716,7 +1716,7 @@ void mosopF7(CPU* cpu) {
 // sed
 void mosopF8(CPU* cpu) {
 	//cpu->f |= MFD;
-	cpu->f.d = 1;
+	cpu->flgD = 1;
 }
 
 // sbc abs,y nn

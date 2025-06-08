@@ -14,18 +14,18 @@ extern opCode ddcbTab[256];
 extern opCode fdcbTab[256];
 
 void z80_set_flag(CPU* cpu, int v) {
-	cpu->f.c = (v & 1);
-	cpu->f.n = !!(v & 2);
-	cpu->f.pv = !!(v & 4);
-	cpu->f.f3 = !!(v & 8);
-	cpu->f.h = !!(v & 16);
-	cpu->f.f5 = !!(v & 32);
-	cpu->f.z = !!(v & 64);
-	cpu->f.s = !!(v & 128);
+	cpu->flgC = (v & 1);
+	cpu->flgN = !!(v & 2);
+	cpu->flgPV = !!(v & 4);
+	cpu->flgF3 = !!(v & 8);
+	cpu->flgH = !!(v & 16);
+	cpu->flgF5 = !!(v & 32);
+	cpu->flgZ = !!(v & 64);
+	cpu->flgS = !!(v & 128);
 }
 
 int z80_get_flag(CPU* cpu) {
-	return cpu->f.c | (cpu->f.n << 1) | (cpu->f.pv << 2) | (cpu->f.f3 << 3) | (cpu->f.h << 4) | (cpu->f.f5 << 5) | (cpu->f.z << 6) | (cpu->f.s << 7);
+	return cpu->flgC | (cpu->flgN << 1) | (cpu->flgPV << 2) | (cpu->flgF3 << 3) | (cpu->flgH << 4) | (cpu->flgF5 << 5) | (cpu->flgZ << 6) | (cpu->flgS << 7);
 }
 
 void z80_call(CPU*, unsigned short);
@@ -33,15 +33,15 @@ void z80_call(CPU*, unsigned short);
 
 void z80_reset(CPU* cpu) {
 	cpu->regPC = 0;
-	cpu->f.iff1 = 0;
-	cpu->f.iff2 = 0;
-	cpu->f.im = 0;
+	cpu->flgIFF1 = 0;
+	cpu->flgIFF2 = 0;
+	cpu->regIM = 0;
 	cpu->regBC = cpu->regDE = cpu->regHL = 0xffff;
 	cpu->regA = 0xff;
 	z80_set_flag(cpu, 0xff);
 	cpu->regBCa = cpu->regDEa = cpu->regHLa = 0xffff;
 	cpu->regAa = 0xff;
-	cpu->f_ = 0xff;
+	cpu->regFa = 0xff;
 	cpu->regIX = cpu->regIY = 0xffff;
 	cpu->regSP = 0xffff;
 	cpu->regI = cpu->regR = cpu->regR7 = 0;
@@ -92,17 +92,17 @@ int z80_int(CPU* cpu) {
 	int res = 0;
 	if (cpu->wait) return res;
 	if (cpu->intrq & Z80_INT) {		// int
-		if (cpu->f.iff1 && !cpu->noint && cpu->ack) {
-			cpu->f.iff1 = 0;
-			cpu->f.iff2 = 0;
+		if (cpu->flgIFF1 && !cpu->noint && cpu->ack) {
+			cpu->flgIFF1 = 0;
+			cpu->flgIFF2 = 0;
 			if (cpu->halt) {
 				cpu->regPC++;
 				cpu->halt = 0;
 			} else if (cpu->resPV) {
-				cpu->f.pv = 0;
+				cpu->flgPV = 0;
 			}
 			cpu->opTab = npTab;
-			switch(cpu->f.im) {
+			switch(cpu->regIM) {
 				case 0:
 					cpu->t = 2;
 					cpu->op = &cpu->opTab[cpu->xack(cpu->xptr)];
@@ -138,8 +138,8 @@ int z80_int(CPU* cpu) {
 	} else if (cpu->intrq & Z80_NMI) {			// nmi
 		if (!cpu->noint) {
 			cpu->regR++;
-			cpu->f.iff2 = cpu->f.iff1;
-			cpu->f.iff1 = 0;
+			cpu->flgIFF2 = cpu->flgIFF1;
+			cpu->flgIFF1 = 0;
 			cpu->t = 5;
 			z80_push(cpu, cpu->regPC);
 			cpu->regPC = 0x0066;
@@ -249,10 +249,10 @@ xMnem z80_mnem(CPU* cpu, int qadr, cbdmr mrd, void* data) {
 			mn.cond = 1;
 			// mn.met = (cpu->f & z80_cnd[(op >> 4) & 3]) ? 0 : 1;
 			switch((op >> 4) & 3) {
-				case 0: mn.met = !cpu->f.z; break;
-				case 1: mn.met = !cpu->f.c; break;
-				case 2: mn.met = !cpu->f.pv; break;
-				case 3: mn.met = !cpu->f.s; break;
+				case 0: mn.met = !cpu->flgZ; break;
+				case 1: mn.met = !cpu->flgC; break;
+				case 2: mn.met = !cpu->flgPV; break;
+				case 3: mn.met = !cpu->flgS; break;
 			}
 			if (op & 8)
 				mn.met ^= 1;
@@ -262,7 +262,7 @@ xMnem z80_mnem(CPU* cpu, int qadr, cbdmr mrd, void* data) {
 		} else if ((op & 0xe7) == 0x20) {							// jr cc
 			mn.cond = 1;
 			//mn.met = (cpu->f & z80_cnd[(op >> 4) & 1] ? 0 : 1);
-			mn.met = (op & 0x10) ? !cpu->f.z : !cpu->f.c;
+			mn.met = (op & 0x10) ? !cpu->flgZ : !cpu->flgC;
 			if (op & 8)
 				mn.met ^= 1;
 		}
@@ -333,9 +333,9 @@ xRegDsc z80RegTab[] = {
 	{Z80_REG_I, "I", REG_BYTE, offsetof(CPU, regI)},
 	{Z80_REG_R, "R", REG_BYTE, offsetof(CPU, regR)},
 	{REG_EMPTY, "A", REG_BYTE, offsetof(CPU, regA)},
-	{REG_EMPTY, "F", REG_32, offsetof(CPU, f)},
+	{REG_EMPTY, "F", REG_32, 0},
 	{REG_EMPTY, "A'", REG_BYTE, offsetof(CPU, regAa)},
-	{REG_EMPTY, "F'", REG_32, offsetof(CPU, f_)},
+	{REG_EMPTY, "F'", REG_32, offsetof(CPU, regFa)},
 #ifdef ISDEBUG
 	{REG_MPTR, "WZ", REG_WORD | REG_RDMP, offsetof(CPU, regWZ)},
 #endif
@@ -364,7 +364,7 @@ void z80_get_regs(CPU* cpu, xRegBunch* bunch) {
 			case Z80_REG_DE: reg.value = cpu->regDE; break;
 			case Z80_REG_HL: reg.value = cpu->regHL; break;
 			case Z80_REG_AFA: rx.h = cpu->regAa;
-					rx.l = cpu->f_;
+					rx.l = cpu->regFa;
 					reg.value = rx.w;
 					break;
 			case Z80_REG_BCA: reg.value = cpu->regBCa; break;
@@ -405,7 +405,7 @@ void z80_set_regs(CPU* cpu, xRegBunch bunch) {
 			case Z80_REG_HL: cpu->regHL = rd->value; break;
 			case Z80_REG_AFA: rx.w = rd->value;
 					cpu->regAa = rx.h;
-					cpu->f_ = rx.l;
+					cpu->regFa = rx.l;
 					break;
 			case Z80_REG_BCA: cpu->regBCa = rd->value; break;
 			case Z80_REG_DEA: cpu->regDEa = rd->value; break;
@@ -424,5 +424,5 @@ void z80_set_regs(CPU* cpu, xRegBunch bunch) {
 }
 
 // test:
-static cpuCore z80core = {CPU_Z80, 0,"Z80ext", z80RegTab, NULL, z80_reset, z80_exec, z80_asm, z80_mnem, z80_get_regs, z80_set_regs};
+static cpuCore z80core = {CPU_Z80, 0,"Z80ext", z80RegTab, NULL, z80_reset, z80_exec, z80_asm, z80_mnem, z80_get_regs, z80_set_regs, z80_get_flag, z80_set_flag};
 EXPORTDLL cpuCore* getCore() {return &z80core;}

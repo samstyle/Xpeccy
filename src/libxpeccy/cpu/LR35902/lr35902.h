@@ -9,6 +9,12 @@
 #define FLC 0x10
 */
 
+#define flgC	flags[4]
+#define flgH	flags[5]
+#define flgN	flags[6]
+#define flgZ	flags[7]
+#define flgIFF1	flags[32]
+
 #define regA regs[0].l
 #define regBC regs[1].w
 #define regB regs[1].h
@@ -37,11 +43,14 @@
 #define regI regs[9].l
 #define regR regs[9].h
 #define regR7 regs[9].ih
+#define regFa regs[10].i
+#define regIM regs[11].l	// im mode
 #define regAa regs[0].h
 #define regBCa regs[1].ih
 #define regDEa regs[2].ih
 #define regHLa regs[3].ih
 
+/*
 #ifdef WORDS_BIG_ENDIAN
 typedef struct {
 	unsigned _nu:24;
@@ -61,6 +70,7 @@ typedef struct {
 	unsigned _nu:24;	// padding
 } lrflag_t;
 #endif
+*/
 
 enum {
 	LR_REG_PC = 1,

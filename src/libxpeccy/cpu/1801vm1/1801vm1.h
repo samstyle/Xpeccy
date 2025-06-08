@@ -17,6 +17,15 @@ enum {
 #define regWZ regs[8].w
 #define regRN(_n) regs[_n].w
 
+#define flgC	flags[0]
+#define flgV	flags[1]
+#define flgZ	flags[2]
+#define flgN	flags[3]
+#define flgT	flags[4]
+#define flgF7	flags[7]
+#define flgF10	flags[10]
+#define flgF11	flags[11]
+
 // external signals, working by IOWR
 enum {
 	PDP11_INIT = 1
@@ -33,6 +42,7 @@ enum {
 #define PDP_F11 (1 << 11)
 */
 
+/*
 #ifdef WORDS_LITTLE_ENDIAN
 typedef struct {
 	unsigned c:1;
@@ -62,6 +72,7 @@ typedef struct {
 	unsigned c:1;
 } vm1flag_t;
 #endif
+*/
 
 typedef struct {
 	unsigned short mask;

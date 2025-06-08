@@ -14,25 +14,25 @@ extern const unsigned char FVsubTab[8];
 // cpu->f = (cpu->f & Z80_FC) | Z80_FH | (sz53pTab[val & (0x01 << bit)] & ~(Z80_F5 | Z80_F3)) | ((val & (1 << bit)) & (Z80_F5 | Z80_F3));}
 #define BIT(bit,val) {\
 	cpu->tmp = val & (1 << bit);\
-	cpu->f.s = !!(cpu->tmp & 0x80);\
-	cpu->f.z = !cpu->tmp;\
-	cpu->f.f5 = !!(cpu->tmp & 0x20);\
-	cpu->f.h = 1;\
-	cpu->f.f3 = !!(cpu->tmp & 0x08);\
-	cpu->f.pv = cpu->f.z;\
-	cpu->f.n = 0;\
+	cpu->flgS = !!(cpu->tmp & 0x80);\
+	cpu->flgZ = !cpu->tmp;\
+	cpu->flgF5 = !!(cpu->tmp & 0x20);\
+	cpu->flgH = 1;\
+	cpu->flgF3 = !!(cpu->tmp & 0x08);\
+	cpu->flgPV = cpu->flgZ;\
+	cpu->flgN = 0;\
 }
 
 // cpu->f = (cpu->f & Z80_FC) | Z80_FH | (sz53pTab[val & (1 << bit)] & ~(Z80_F5 | Z80_F3)) | (cpu->hptr & (Z80_F5 | Z80_F3));}
 #define BITM(bit,val) {\
 	cpu->tmp = val & (1 << bit);\
-	cpu->f.s = !!(cpu->tmp & 0x80);\
-	cpu->f.z = !cpu->tmp;\
-	cpu->f.f5 = !!(cpu->regWZh & 0x20);\
-	cpu->f.h = 1;\
-	cpu->f.f3 = !!(cpu->regWZh & 0x08);\
-	cpu->f.pv = cpu->f.z;\
-	cpu->f.n = 0;\
+	cpu->flgS = !!(cpu->tmp & 0x80);\
+	cpu->flgZ = !cpu->tmp;\
+	cpu->flgF5 = !!(cpu->regWZh & 0x20);\
+	cpu->flgH = 1;\
+	cpu->flgF3 = !!(cpu->regWZh & 0x08);\
+	cpu->flgPV = cpu->flgZ;\
+	cpu->flgN = 0;\
 }
 
 //#define SET(bit,val) {val |= (1 << bit);}
