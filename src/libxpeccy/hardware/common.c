@@ -119,12 +119,12 @@ void zx_irq(Computer* comp, int t) {
 			if (comp->contMem) {
 				xAdr xa = mem_get_xadr(comp->mem, comp->cpu->adr);
 				if (xa.type == MEM_RAM) {
-					comp->cpu->wait = !!vid_wait(comp->vid, xa.abs);
+					comp->cpu->flgWAIT = !!vid_wait(comp->vid, xa.abs);
 				} else {
-					comp->cpu->wait = 0;
+					comp->cpu->flgWAIT = 0;
 				}
 			} else {
-				comp->cpu->wait = 0;
+				comp->cpu->flgWAIT = 0;
 			}
 			break;
 	}

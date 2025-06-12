@@ -563,7 +563,7 @@ void iop_72(CPU* cpu) {cpu->t += 3; cpu->mwr(cpu->regHL, cpu->regD, cpu->xptr);}
 void iop_73(CPU* cpu) {cpu->t += 3; cpu->mwr(cpu->regHL, cpu->regE, cpu->xptr);}
 void iop_74(CPU* cpu) {cpu->t += 3; cpu->mwr(cpu->regHL, cpu->regH, cpu->xptr);}
 void iop_75(CPU* cpu) {cpu->t += 3; cpu->mwr(cpu->regHL, cpu->regL, cpu->xptr);}
-void iop_76(CPU* cpu) {cpu->regPC--; cpu->halt = 1;}
+void iop_76(CPU* cpu) {cpu->regPC--; cpu->flgHALT = 1;}
 void iop_77(CPU* cpu) {cpu->t += 3; cpu->mwr(cpu->regHL, cpu->regA, cpu->xptr);}
 // 78..7f: mov regA,x
 void iop_78(CPU* cpu) {cpu->regA = cpu->regB;}

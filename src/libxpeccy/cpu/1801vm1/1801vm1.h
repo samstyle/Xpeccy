@@ -14,8 +14,11 @@ enum {
 	PDP11_REGF
 };
 
-#define regWZ regs[8].w
 #define regRN(_n) regs[_n].w
+#define regWZ regs[8].w
+#define regMCIR	regs[9].l
+#define regVCEL regs[9].h
+#define regNOD	regs[9].ih
 
 #define flgC	flags[0]
 #define flgV	flags[1]
@@ -40,38 +43,6 @@ enum {
 #define PDP_F7	(1 << 7)
 #define PDP_F10	(1 << 10)
 #define PDP_F11 (1 << 11)
-*/
-
-/*
-#ifdef WORDS_LITTLE_ENDIAN
-typedef struct {
-	unsigned c:1;
-	unsigned v:1;
-	unsigned z:1;
-	unsigned n:1;
-	unsigned t:1;
-	unsigned _nu5:2;
-	unsigned f7:1;
-	unsigned _nu8:2;
-	unsigned f10:1;
-	unsigned f11:1;
-	unsigned _nu:20;
-} vm1flag_t;
-#else
-typedef struct {
-	unsigned _nu:20;
-	unsigned f11:1;
-	unsigned f10:1;
-	unsigned _nu8:2;
-	unsigned f7:1;
-	unsigned _nu5:2;
-	unsigned t:1;
-	unsigned n:1;
-	unsigned z:1;
-	unsigned v:1;
-	unsigned c:1;
-} vm1flag_t;
-#endif
 */
 
 typedef struct {

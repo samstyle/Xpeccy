@@ -86,6 +86,7 @@ typedef struct {
 	unsigned firstRun:1;
 	unsigned ddpal:1;		// ATM2+: use ddp palette
 	unsigned z_i:1;			// ATM2+: unblock VSYNC INT
+	unsigned speed:1;		// turbo cpu frq
 
 	unsigned rom:1;			// b4,7ffd
 	unsigned dos:1;			// BDI dos
@@ -229,7 +230,7 @@ typedef struct {
 	} nes;
 	struct {
 		unsigned boot:1;	// boot rom on
-//		unsigned inpint:1;	// button pressed: request interrupt
+		unsigned speedrq:1;	// cpu speed change request @ next STOP
 		int buttons;
 		struct {
 			struct {

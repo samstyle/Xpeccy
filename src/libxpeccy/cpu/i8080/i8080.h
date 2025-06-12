@@ -23,7 +23,7 @@
 #define flgF5	flags[5]
 #define flgZ	flags[6]
 #define flgS	flags[7]
-#define flgIFF1	flags[32]
+#define flgIFF1	flags[8]
 
 #define regA regs[0].l
 #define regBC regs[1].w
@@ -53,34 +53,6 @@ enum {
 	I8080_REG_DE,
 	I8080_REG_HL,
 };
-
-/*
-#ifdef WORDS_LITTLE_ENDIAN
-typedef struct {
-	unsigned c:1;
-	unsigned f1:1;
-	unsigned p:1;
-	unsigned f3:1;
-	unsigned a:1;
-	unsigned f5:1;
-	unsigned z:1;
-	unsigned s:1;
-	unsigned _nu:24;
-} i80flag_t;
-#else
-typedef struct {
-	unsigned _nu:24;
-	unsigned s:1;
-	unsigned z:1;
-	unsigned f5:1;
-	unsigned a:1;
-	unsigned f3:1;
-	unsigned p:1;
-	unsigned f1:1;
-	unsigned c:1;
-} i80flag_t;
-#endif
-*/
 
 void i8080_reset(CPU*);
 int i8080_exec(CPU*);

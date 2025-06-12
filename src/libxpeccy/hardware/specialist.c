@@ -109,7 +109,7 @@ void spc_reset(Computer* comp) {
 	ppi_reset(comp->ppi);
 	comp->vid->mrd = spc_vid_rd;
 	vid_set_mode(comp->vid, VID_SPCLST);
-	comp->cpu->reset(comp->cpu);
+	cpu_reset(comp->cpu);
 	// kbdReleaseAll(comp->keyb);
 	comp->rom = 1;
 }

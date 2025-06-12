@@ -1,4 +1,5 @@
 #include "filetypes.h"
+#include "libxpeccy/cpu/1801vm1/1801vm1.h"
 
 int loadBIN(Computer* comp, const char* name, int drv) {
 	FILE* file = fopen(name, "rb");
@@ -14,7 +15,7 @@ int loadBIN(Computer* comp, const char* name, int drv) {
 		err = ERR_RAW_LONG;
 	} else {
 //		fread(buf, len, 1, file);
-		comp->cpu->nod = 3;	// words
+		comp->cpu->regNOD = 3;	// words
 		while (len > 0) {
 			val = fgetw(file);
 			memWr(comp->mem, adr, val);

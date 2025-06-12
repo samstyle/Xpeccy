@@ -102,11 +102,11 @@ cbcpu i286_0f00_tab[8] = {
 };
 
 void i286_0F00(CPU* cpu) {
-	if (!(cpu->msw & I286_FPE)) {
+	if (!(cpu->regMSW & I286_FPE)) {
 		THROW(I286_INT_UD);
 	} else {
 		i286_rd_ea(cpu, 1);
-		i286_0f00_tab[(cpu->mod >> 3) & 7](cpu);
+		i286_0f00_tab[(cpu->regMOD >> 3) & 7](cpu);
 	}
 }
 
@@ -170,15 +170,15 @@ void i286_0F013(CPU* cpu) {
 	}
 }
 
-// 0f 01 /4 smsw ew	[ea] = msw
+// 0f 01 /4 smsw ew	[ea] = regMSW
 void i286_0F014(CPU* cpu) {
-	i286_wr_ea(cpu, cpu->msw, 1);
+	i286_wr_ea(cpu, cpu->regMSW, 1);
 }
 
-// 0f 01 /6 lmsw ew	msw = [ea]
+// 0f 01 /6 lmsw ew	regMSW = [ea]
 void i286_0F016(CPU* cpu) {
-	cpu->msw = (cpu->msw & 1) | cpu->tmpw;		// can't set real mode by software
-	if (cpu->msw & I286_FPE) {
+	cpu->regMSW = (cpu->regMSW & 1) | cpu->tmpw;		// can't set real mode by software
+	if (cpu->regMSW & I286_FPE) {
 		x86_set_mode(cpu, X86_PROT);
 	}
 }
@@ -190,12 +190,12 @@ cbcpu i286_0f01_tab[8] = {
 
 void i286_0F01(CPU* cpu) {
 	i286_rd_ea(cpu, 1);
-	i286_0f01_tab[(cpu->mod >> 3) & 7](cpu);
+	i286_0f01_tab[(cpu->regMOD >> 3) & 7](cpu);
 }
 
 // 0F 02 /r : lar rw,ew		rw = (seg.descriptor flags << 8)
 void i286_0F02(CPU* cpu) {
-	if (!(cpu->msw & I286_FPE)) {
+	if (!(cpu->regMSW & I286_FPE)) {
 		THROW(I286_INT_UD);		// not present in real mode
 	} else {
 		i286_rd_ea(cpu, 1);
@@ -215,7 +215,7 @@ void i286_0F02(CPU* cpu) {
 
 // 0F 03 /r : lsl rw,ew		rw = seg.descriptor limit
 void i286_0F03(CPU* cpu) {
-	if (!(cpu->msw & I286_FPE)) {
+	if (!(cpu->regMSW & I286_FPE)) {
 		THROW(I286_INT_UD);		// not present in treal mode
 	} else {
 		i286_rd_ea(cpu, 1);
@@ -234,7 +234,7 @@ void i286_0F03(CPU* cpu) {
 
 // 0F 06: clts			clear task segment flag
 void i286_0F06(CPU* cpu) {
-	cpu->msw &= ~I286_FTS;
+	cpu->regMSW &= ~I286_FTS;
 }
 
 opCode i286_0f_tab[256] = {

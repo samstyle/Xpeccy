@@ -113,7 +113,7 @@ GSound* gsCreate() {
 	memset(res,0x00,sizeof(GSound));
 	res->cpu = cpuCreate(CPU_Z80, gsmemrd, gsmemwr, gsiord, gsiowr, gsintrq, gs_xirq, res);
 	res->cpu->inten = 0;
-	res->cpu->ack = 1;
+	res->cpu->flgACK = 1;
 	res->mem = memCreate();
 	memSetSize(res->mem, MEM_2M, MEM_32K);
 	memSetBank(res->mem, 0x00, MEM_ROM, 0, MEM_16K, NULL, NULL, NULL);
@@ -138,7 +138,7 @@ void gsDestroy(GSound* gs) {
 
 void gsReset(GSound* gs) {
 	if (!gs->reset) return;
-	gs->cpu->reset(gs->cpu);
+	cpu_reset(gs->cpu);
 }
 
 #if GS_FLUSH
@@ -152,7 +152,7 @@ void gsFlush(GSound* gs) {
 	if (!gs->enable) return;
 	int res;
 	while (gs->time > 0) {
-		res = gs->cpu->exec(gs->cpu);
+		res = cpu_exec(gs->cpu);
 		gs->time -= res * gs->ns_per_tick;
 		gs->cnt += res;
 		if (gs->cnt > 320) {	// 12MHz CLK, 37.5KHz INT -> int in each 320 ticks

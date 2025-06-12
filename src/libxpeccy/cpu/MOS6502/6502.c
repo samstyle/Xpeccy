@@ -21,7 +21,7 @@ int mos_get_flag(CPU* cpu) {
 }
 
 void m6502_reset(CPU* cpu) {
-	cpu->lock = 0;
+	cpu->flgLOCK = 0;
 	cpu->intrq = 0;
 	cpu->inten = MOS6502_INT_IRQ | MOS6502_INT_NMI;	// brk/nmi enabled. irq is allways enabled, controlled by I flag
 	cpu->regS = 0xfd;				// segment 01xx is stack
@@ -76,20 +76,20 @@ int m6502_int(CPU* cpu) {
 
 int m6502_exec(CPU* cpu) {
 	int res = 0;
-	if (cpu->lock) return 1;
+	if (cpu->flgLOCK) return 1;
 	unsigned char com;
 	cpu->intrq &= cpu->inten;
 //	if (cpu->f & MFI)
 	if (cpu->flgI)
 		cpu->intrq &= ~MOS6502_INT_IRQ;
-	if (cpu->intrq && !cpu->noint) {
+	if (cpu->intrq && !cpu->flgNOINT) {
 		res = m6502_int(cpu);
 	} else {
-		cpu->noint = 0;
+		cpu->flgNOINT = 0;
 		com = cpu->mrd(cpu->regPC++, 1, cpu->xptr);
 		opCode* op = &mosTab[com];
 		cpu->t = op->t;
-		cpu->sta = op->flag & OF_EXT;
+		cpu->flgSTA = op->flag & OF_EXT;
 		op->exec(cpu);
 		res = cpu->t;
 	}

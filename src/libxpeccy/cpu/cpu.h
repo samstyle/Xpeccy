@@ -118,16 +118,8 @@ typedef struct {
 	char arg[8][256];
 } xAsmScan;
 
-//#include "Z80/z80.h"
-//#include "LR35902/lr35902.h"
-//#include "MOS6502/6502.h"
-//#include "1801vm1/1801vm1.h"
-//#include "i8080/i8080.h"
-//#include "i80286/i80286.h"
-
 typedef struct {
 	int idx;			// 'visible' value
-//	unsigned char flag;		// access flag
 	unsigned pl:2;			// priv.level
 	unsigned ar:5;			// type
 	unsigned ext:1;			// code is conforming | data is growing from limit to FFFF
@@ -140,35 +132,6 @@ typedef struct {
 	unsigned base:24;		// segment base addr
 	unsigned short limit;		// segment size in bytes
 } xSegPtr;				// aka segment table descriptor
-
-typedef struct {
-	unsigned c:1;		// all: carry
-	unsigned n:1;		// z80: substraction, lr: negative
-	unsigned p:1;		// mostly: parity
-	unsigned o:1;		// x86: overflow
-	unsigned v:1;		// vm1/2: overflow
-	unsigned pv:1;		// z80: parity/overflow
-	unsigned h:1;		// all: half-carry
-	unsigned a:1;		// x86: half-carry
-	unsigned z:1;		// all: zero
-	unsigned s:1;		// all: sign
-	unsigned b:1;		// 6502: break;
-	unsigned t:1;		// vm1,x86: trap
-	unsigned i:1;		// x86, 6502: interrrupt
-	unsigned d:1;		// x86: direction, 6502:bcd mode
-	union {
-		unsigned ip:2;		// x86: iopl
-		unsigned im:2;		// z80: int mode
-	};
-	unsigned iff1:1;	// z80:interrupt flags
-	unsigned iff2:1;
-	unsigned f1:1;		// i8080: unnamed flag b1
-	unsigned f3:1;		// z80: f3
-	unsigned f5:1;		// z80: f5
-	unsigned f7:1;		// vm1: unnamed flags
-	unsigned f10:1;
-	unsigned f11:1;
-} cpuFlags;
 
 enum {
 	CPU_NONE = 0,		// dummy
@@ -183,13 +146,20 @@ enum {
 	CPU_VM2
 };
 
+#define flgHALT	flags[63]		// cpu halted, undo on interrput
+#define flgResPV flags[62]		// Z80: reset PV flag on INT
+#define flgNOINT flags[61]		// Z80: don't handle INT after EI
+#define flgWAIT	flags[60]		// ALL: WAIT signal (dummy 1T)
+#define flgACK	flags[59]		// Z80: acknowledge INT after execution (prevent last-1T INT)
+#define flgLOCK flags[58]		// LR35902: CPU locked
+
 struct CPU {
 	// common part
 	int type;			// cpu type id
 	int gen;			// cpu generation (for x86: 0-8086, 1-80186, 2-80286 etc)
 	int intrq;			// interrupts request. each bit for each INT type, 1 = requested
 	int inten;			// interrupts enabled mask
-	unsigned short intvec;		// interrupt vector (internal/external)
+	int intvec;		// interrupt vector (internal/external)
 	int errcod;			// error code (-1 if not present)
 	int adr;			// address bus for using from outside
 	int t;				// ticks counter
@@ -206,20 +176,12 @@ struct CPU {
 	cbiack xack;			// interrupt vector acknowledge
 	cbirq xirq;			// send signal
 	void* xptr;			// pointer to external data (almost always Computer*)
-	// polymorph callbacks (depends on type)
-	void (*reset)(CPU*);		// TODO: remove callbacks, cuz it exists inside cpuCore
-	int (*exec)(CPU*);
-	xAsmScan (*asmbl)(int, const char*, char*);
-	xMnem (*mnem)(CPU*, int, cbdmr, void*);
-	void (*getregs)(CPU*, xRegBunch*);
-	void (*setregs)(CPU*, xRegBunch);
+	// core: runtime callbacks (depends on type)
 	struct cpuCore* core;
 	// opcode
 	reg16(com, hcom, lcom);
 	opCode* opTab;
 	opCode* op;
-	// flags (bits)
-//	cpuFlags f;
 	// common registers block
 	xreg32 regs[64];
 	// TODO: common flags (unnamed, must be defined same way as registers). replace cpuFlags with it
@@ -230,23 +192,10 @@ struct CPU {
 	reg16(tmpw,htw,ltw);
 	reg16(twrd,hwr,lwr);
 	int tmpi;
-	jmp_buf jbuf;
-	// type-depended internal flags (do something to unname that)
-	unsigned halt:1;		// cpu halted, undo on interrput
-	unsigned resPV:1;		// Z80: reset PV flag on INT
-	unsigned noint:1;		// Z80: don't handle INT after EI
-	unsigned wait:1;		// ALL: WAIT signal (dummy 1T)
-	unsigned ack:1;			// Z80: acknowledge INT after execution (prevent last-1T INT)
-	unsigned lock:1;		// LR35902: CPU locked
-	unsigned stop:1;		// LR35902: CPU stoped, unlock on keypress
-	unsigned speed:1;		// LR35902: double speed mode (TODO)
-	unsigned speedrq:1;		// LR35902: request speed change after STOP command
-	unsigned dihalt:1;		// LR35902: HALT when DI: repeat next opcode
-	unsigned sta:1;			// MOS6502: don't add 1T on (ABSX,ABSY,INDY)
-	unsigned nod:2;			// MOS6502: ignore flag D in ADC/SBC; PDP11: write flags
+	jmp_buf jbuf;			// for throws
+// internal timer (for vm1/2)
+	xTimer timer;
 // x86/87
-	unsigned wrd:1;		// i/o: out word
-	unsigned short msw;
 	// segment registers (+hidden parts)
 	xSegPtr cs;		// cs value,flag,base,limit
 	xSegPtr ss;		// ss value,flag,base,limit
@@ -259,22 +208,12 @@ struct CPU {
 	xSegPtr seg;		// operating segment (for EA and 'replace segment' prefixes)
 	xSegPtr gate;		// gate for far jmp/call/int
 	xSegPtr tmpdr;
-	long double x87reg[9];	// x87 registers, [8] is readed from memory converted value
-	unsigned x87top:3;	// x87 top of stack pos (0-7)
-	unsigned short x87cr;	// x87 control register
-	unsigned short x87sr;	// x87 status register
-	unsigned short x87tw;	// x87 tag word
-	unsigned char mod;	// 80286: mod byte (EA/reg)
 	struct {xSegPtr seg; reg16(adr,adrh,adrl); unsigned reg:1; unsigned cnt:5;} ea;
-	int rep;		// 80286: repeat condition id
+	long double x87reg[9];	// x87 registers, [8] is readed from memory converted value
 	// callbacks, depend on x86 mode (real/prt)
 	unsigned char(*x86fetch)(CPU*);
 	unsigned char(*x86mrd)(CPU*,xSegPtr,int,unsigned short);
 	void(*x86mwr)(CPU*,xSegPtr,int,unsigned short,int);
-// pdp registers
-	unsigned mcir:3;
-	unsigned vsel:4;
-	xTimer timer;
 };
 
 struct cpuCore {
@@ -297,7 +236,9 @@ typedef struct cpuCore cpuCore;
 CPU* cpuCreate(int,cbmr,cbmw,cbir,cbiw,cbiack,cbirq,void*);
 void cpuDestroy(CPU*);
 int cpu_set_type(CPU*, const char*, const char*, const char*);
-//int cpuSetType(CPU*, int);
+
+void cpu_reset(CPU*);
+int cpu_exec(CPU*);
 
 // built-in cores tab
 extern cpuCore cpuTab[];

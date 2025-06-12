@@ -21,6 +21,8 @@
 #define flgF5	flags[5]
 #define flgV	flags[6]
 #define flgN	flags[7]
+#define flgND	flags[8]	// ignore D flag in ADC/SBC
+#define flgSTA	flags[9]	// don't add 1T on (ABSX,ABSY,INDY)
 
 enum {
 	M6502_REG_PC = 1,
@@ -38,33 +40,7 @@ enum {
 //#define MFD 0x08	// bcd mode
 //#define MFI 0x04	// interrupt mask
 //#define MFZ 0x02	// zero
-// #define MFC 0x01	// carry
-
-/*
-#ifdef WORDS_LITTLE_ENDIAN
-typedef struct {
-	unsigned c:1;
-	unsigned z:1;
-	unsigned i:1;
-	unsigned d:1;
-	unsigned b:1;
-	unsigned f5:1;
-	unsigned v:1;
-	unsigned n:1;
-} mosflag_t;
-#else
-typedef struct {
-	unsigned n:1;
-	unsigned v:1;
-	unsigned f5:1;
-	unsigned b:1;
-	unsigned d:1;
-	unsigned i:1;
-	unsigned z:1;
-	unsigned c:1;
-} mosflag_t;
-#endif
-*/
+//#define MFC 0x01	// carry
 
 #define MOS6502_INT_NMI	1
 #define MOS6502_INT_RES	2

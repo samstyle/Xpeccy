@@ -532,7 +532,7 @@ void npr72(CPU* cpu) {z80_mwr(cpu, cpu->regHL, cpu->regD);}
 void npr73(CPU* cpu) {z80_mwr(cpu, cpu->regHL, cpu->regE);}
 void npr74(CPU* cpu) {z80_mwr(cpu, cpu->regHL, cpu->regH);}
 void npr75(CPU* cpu) {z80_mwr(cpu, cpu->regHL, cpu->regL);}
-void npr76(CPU* cpu) {cpu->halt = 1; cpu->regPC--;}
+void npr76(CPU* cpu) {cpu->flgHALT = 1; cpu->regPC--;}
 void npr77(CPU* cpu) {z80_mwr(cpu, cpu->regHL, cpu->regA);}
 // 78..7f	ld regA,r		4 [3rd]
 void npr78(CPU* cpu) {cpu->regA = cpu->regB;}
@@ -1002,7 +1002,7 @@ void nprFA(CPU* cpu) {
 void nprFB(CPU* cpu) {
 	cpu->flgIFF1 = 1;
 	cpu->flgIFF2 = 1;
-	cpu->noint = 1;
+	cpu->flgNOINT = 1;
 	cpu->inten |= Z80_INT;
 }
 

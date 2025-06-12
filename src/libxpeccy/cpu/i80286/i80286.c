@@ -60,7 +60,7 @@ int x86_get_flag(CPU* cpu) {
 void i286_reset(CPU* cpu) {
 	x86_set_mode(cpu, X86_REAL);
 	x86_set_flag(cpu, 0x0002);
-	cpu->msw = 0xfff0;
+	cpu->regMSW = 0xfff0;
 	switch (cpu->gen) {
 		case 0:
 		case 1:
@@ -78,15 +78,15 @@ void i286_reset(CPU* cpu) {
 	cpu->idtr = i286_cash_seg(cpu, 0x0000);
 	cpu->intrq = 0;
 
-	cpu->x87top = 0;
+	cpu->regX87top = 0;
 }
 
 // REAL mode:
 
 
 void i286_int_real(CPU* cpu, int vec) {
-	if (cpu->halt) {
-		cpu->halt = 0;
+	if (cpu->flgHALT) {
+		cpu->flgHALT = 0;
 		cpu->regIP++;
 	}
 	i286_push(cpu, x86_get_flag(cpu));
@@ -115,8 +115,8 @@ void i286_int_prt(CPU* cpu, int vec) {
 	if (cpu->idtr.limit < (vec & 0xfff8)) {		// check idtr limit
 		THROW_EC(I286_INT_GP, cpu->idtr.idx);
 	} else if (cpu->flgI) {
-		if (cpu->halt) {
-			cpu->halt = 0;
+		if (cpu->flgHALT) {
+			cpu->flgHALT = 0;
 			cpu->regIP++;
 		}
 		PAIR(w,h,l)seg;
@@ -209,7 +209,7 @@ void i286_int_prt(CPU* cpu, int vec) {
 }
 
 void i286_interrupt(CPU* cpu, int vec) {
-	if (cpu->msw & I286_FPE) {
+	if (cpu->regMSW & I286_FPE) {
 		i286_int_prt(cpu, vec);
 	} else {
 		i286_int_real(cpu, vec);
@@ -234,8 +234,8 @@ int i286_exec(CPU* cpu) {
 	cpu->t = 0;
 	cpu->opTab = i80286_tab;
 	cpu->seg.idx = -1;
-	cpu->lock = 0;
-	cpu->rep = I286_REP_NONE;
+	cpu->flgLOCK = 0;
+	cpu->regREP = I286_REP_NONE;
 	cpu->oldpc = cpu->regIP;
 
 	int val = setjmp(cpu->jbuf);	// set THROW return point (val = err.code)
@@ -540,7 +540,7 @@ xRegDsc i286RegTab[] = {
 	{I286_SS, "SS", REG_WORD|REG_SEG, offsetof(CPU, ss)},
 	{I286_DS, "DS", REG_WORD|REG_SEG, offsetof(CPU, ds)},
 	{I286_ES, "ES", REG_WORD|REG_SEG, offsetof(CPU, es)},
-	{I286_MSW, "MSW", REG_RO|REG_WORD, offsetof(CPU, msw)},
+	{I286_MSW, "MSW", REG_RO|REG_32, offsetof(CPU, regMSW)},
 	{I286_LDT, "LDT", REG_RO|REG_24, offsetof(CPU, ldtr)},
 	{I286_GDT, "GDT", REG_RO|REG_24, offsetof(CPU, gdtr)},
 	{I286_IDT, "IDT", REG_RO|REG_24, offsetof(CPU, idtr)},
@@ -596,7 +596,7 @@ void i286_get_regs(CPU* cpu, xRegBunch* bnch) {
 			case I286_SS: val = cpu->ss.idx; bas = cpu->ss.base; break;
 			case I286_DS: val = cpu->ds.idx; bas = cpu->ds.base; break;
 			case I286_ES: val = cpu->es.idx; bas = cpu->es.base; break;
-			case I286_MSW: val = cpu->msw; break;
+			case I286_MSW: val = cpu->regMSW; break;
 			case I286_GDT: val = cpu->gdtr.base; break;
 			case I286_LDT: val = cpu->ldtr.base; break;
 			case I286_IDT: val = cpu->idtr.base; break;

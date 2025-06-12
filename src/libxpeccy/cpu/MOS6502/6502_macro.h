@@ -51,7 +51,7 @@
 	cpu->tmpw = _ac + _op + cpu->regE;\
 	/*cpu->f &= ~(MFV | MFC | MFZ | MFN));*/\
 	cpu->flgZ = !(cpu->tmpw & 0xff);/*if (!(cpu->tmpw & 0xff)) cpu->f |= MFZ;*/\
-	if (/*(cpu->f & MFD)*/ cpu->flgD && !cpu->nod) {\
+	if (/*(cpu->f & MFD)*/ cpu->flgD && !cpu->flgND) {\
 		if ((_ac & 0x0f) + (_op & 0x0f) + cpu->regE > 9) cpu->tmpw += 6;\
 		cpu->flgN = !!(cpu->tmpw & 0x80); /*if (cpu->tmpw & 0x80) cpu->f |= MFN;*/\
 		cpu->flgV = !((_ac ^ _op) & 0x80) && ((_ac ^ cpu->tmpw) & 0x80); /* cpu->f |= MFV;*/\
@@ -71,7 +71,7 @@
 	cpu->flgN = !!(cpu->tmpw & 0x80); /*if (cpu->tmpw & 0x80) cpu->f |= MFN;*/\
 	cpu->flgZ = !(cpu->tmpw & 0xff); /*if (!(cpu->tmpw & 0xff)) cpu->f |= MFZ;*/\
 	cpu->flgV = ((cpu->tmpw ^ _ac) & 0x80) && ((_ac ^ _op) & 0x80); /*cpu->f |= MFV;*/\
-	if (/*(cpu->f & MFD)*/ cpu->flgD && !cpu->nod) {\
+	if (/*(cpu->f & MFD)*/ cpu->flgD && !cpu->flgND) {\
 		if (((_ac & 0x0f) - cpu->regE) < (_op & 0x0f)) cpu->tmpw -= 6;\
 		if (cpu->tmpw > 0x99) cpu->tmpw -= 0x60;\
 	}\

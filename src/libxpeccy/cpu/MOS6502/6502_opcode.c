@@ -63,7 +63,7 @@ void mosGetABSXw(CPU* cpu) {
 	cpu->regWZh = cpu->mrd(cpu->regPC++, 0, cpu->xptr);
 	cpu->tmp = cpu->regWZh;
 	cpu->regWZ += cpu->regX;
-	if ((cpu->regWZh != cpu->tmp) && !cpu->sta)
+	if ((cpu->regWZh != cpu->tmp) && !cpu->flgSTA)
 		cpu->t++;
 }
 
@@ -78,7 +78,7 @@ void mosGetABSYw(CPU* cpu) {
 	cpu->regWZh = cpu->mrd(cpu->regPC++, 0, cpu->xptr);
 	cpu->tmp = cpu->regWZh;
 	cpu->regWZ += cpu->regY;
-	if ((cpu->regWZh != cpu->tmp) && !cpu->sta)
+	if ((cpu->regWZh != cpu->tmp) && !cpu->flgSTA)
 		cpu->t++;
 }
 
@@ -114,7 +114,7 @@ void mosGetINDYw(CPU* cpu) {
 	cpu->regWZl = cpu->tmp;
 	cpu->tmp = cpu->regWZh;
 	cpu->regWZ += cpu->regY;
-	if ((cpu->regWZh != cpu->tmp) && !cpu->sta)
+	if ((cpu->regWZh != cpu->tmp) && !cpu->flgSTA)
 		cpu->t++;
 }
 
@@ -143,7 +143,7 @@ void mosop01(CPU* cpu) {
 }
 
 void mosop02(CPU* cpu) {
-	cpu->lock = 1;
+	cpu->flgLOCK = 1;
 }
 
 // slo ind,x n
@@ -245,7 +245,7 @@ void mosop11(CPU* cpu) {
 }
 
 void mosop12(CPU* cpu) {
-	cpu->lock = 1;
+	cpu->flgLOCK = 1;
 }
 
 // slo ind,y n
@@ -343,7 +343,7 @@ void mosop21(CPU* cpu) {
 }
 
 void mosop22(CPU* cpu) {
-	cpu->lock = 1;
+	cpu->flgLOCK = 1;
 }
 
 // rla ind,x n
@@ -445,7 +445,7 @@ void mosop31(CPU* cpu) {
 }
 
 void mosop32(CPU* cpu) {
-	cpu->lock = 1;
+	cpu->flgLOCK = 1;
 }
 
 // rla ind,y n
@@ -542,7 +542,7 @@ void mosop41(CPU* cpu) {
 }
 
 void mosop42(CPU* cpu) {
-	cpu->lock = 1;
+	cpu->flgLOCK = 1;
 }
 
 // sre ind,x n
@@ -644,7 +644,7 @@ void mosop51(CPU* cpu) {
 }
 
 void mosop52(CPU* cpu) {
-	cpu->lock = 1;
+	cpu->flgLOCK = 1;
 }
 
 // sre ind,y n
@@ -684,7 +684,7 @@ void mosop58(CPU* cpu) {
 //	cpu->f &= ~MFI;
 	cpu->flgI = 0;
 //	cpu->inten |= MOS6502_INT_IRQ;
-	cpu->noint = 1;
+	cpu->flgNOINT = 1;
 }
 
 // eor abs,y nn
@@ -742,7 +742,7 @@ void mosop61(CPU* cpu) {
 }
 
 void mosop62(CPU* cpu) {
-	cpu->lock = 1;
+	cpu->flgLOCK = 1;
 }
 
 // rra ind,x n
@@ -856,7 +856,7 @@ void mosop71(CPU* cpu) {
 }
 
 void mosop72(CPU* cpu) {
-	cpu->lock = 1;
+	cpu->flgLOCK = 1;
 }
 
 // rra ind,y n
@@ -1047,7 +1047,7 @@ void mosop91(CPU* cpu) {
 }
 
 void mosop92(CPU* cpu) {
-	cpu->lock = 1;
+	cpu->flgLOCK = 1;
 }
 
 // axa ind,y n
@@ -1261,7 +1261,7 @@ void mosopB1(CPU* cpu) {
 }
 
 void mosopB2(CPU* cpu) {
-	cpu->lock = 1;
+	cpu->flgLOCK = 1;
 }
 
 void mosopB3(CPU* cpu) {
@@ -1476,7 +1476,7 @@ void mosopD1(CPU* cpu) {
 }
 
 void mosopD2(CPU* cpu) {
-	cpu->lock = 1;
+	cpu->flgLOCK = 1;
 }
 
 // dcp ind,y nn
@@ -1676,7 +1676,7 @@ void mosopF1(CPU* cpu) {
 }
 
 void mosopF2(CPU* cpu) {
-	cpu->lock = 1;
+	cpu->flgLOCK = 1;
 }
 
 // isb ind,y n

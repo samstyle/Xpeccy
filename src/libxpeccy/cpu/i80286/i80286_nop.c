@@ -63,20 +63,20 @@
 // NOTE: x86 parity counts on LSB
 
 int i286_check_segment_limit(CPU* cpu, xSegPtr* seg, unsigned short adr) {
-	if (!(cpu->msw & I286_FPE)) return 1;
+	if (!(cpu->regMSW & I286_FPE)) return 1;
 	if (seg->limit < adr) return 0;
 	return 1;
 }
 
 int i286_check_segment_exec(CPU* cpu, xSegPtr* seg) {
-	if (!(cpu->msw & I286_FPE)) return 1;
+	if (!(cpu->regMSW & I286_FPE)) return 1;
 	if (!(seg->ar & 0x10)) return 0;	// system segment
 	if (!(seg->ar & 0x08)) return 0;	// data segment
 	return 1;				// code segment
 }
 
 int i286_check_segment_rd(CPU* cpu, xSegPtr* seg) {
-	if (!(cpu->msw & I286_FPE)) return 1;
+	if (!(cpu->regMSW & I286_FPE)) return 1;
 	if (!(seg->ar & 0x10)) return 0;	// system segment
 	if (!(seg->ar & 0x08)) return 1;	// data segment
 	if (seg->ar & 2) return 1;		// readable code segment
@@ -84,7 +84,7 @@ int i286_check_segment_rd(CPU* cpu, xSegPtr* seg) {
 }
 
 int i286_check_segment_wr(CPU* cpu, xSegPtr* seg) {
-	if (!(cpu->msw & I286_FPE)) return 1;
+	if (!(cpu->regMSW & I286_FPE)) return 1;
 	if (!(seg->ar & 0x10)) return 0;	// system segment
 	if (seg->ar & 0x08) return 0;		// code segment
 	if (seg->ar & 0x02) return 1;		// writeable data segment
@@ -146,7 +146,7 @@ void i286_mwr_real(CPU* cpu, xSegPtr seg, int rpl, unsigned short adr, int val) 
 // stack (TODO: real/prt mode stack rd/wr procedures)
 
 void i286_push(CPU* cpu, unsigned short w) {
-	if ((cpu->msw & I286_FPE) && (cpu->regSP < 2)) {
+	if ((cpu->regMSW & I286_FPE) && (cpu->regSP < 2)) {
 		THROW(I286_INT_SS);
 	}
 	cpu->regSP -= 2;
@@ -155,7 +155,7 @@ void i286_push(CPU* cpu, unsigned short w) {
 }
 
 unsigned short i286_pop(CPU* cpu) {
-	if ((cpu->msw & I286_FPE) && (cpu->regSP + 2 > cpu->ss.limit)) {
+	if ((cpu->regMSW & I286_FPE) && (cpu->regSP + 2 > cpu->ss.limit)) {
 		THROW(I286_INT_SS);
 	}
 	PAIR(w,h,l) rx;
@@ -219,9 +219,9 @@ unsigned short i286_ird(CPU* cpu, int adr) {
 }
 
 void i286_iwr(CPU* cpu, int adr, int val, int w) {
-	cpu->wrd = !!w;
+	cpu->flgWRD = !!w;
 	cpu_iwr(cpu, adr, val);
-	cpu->wrd = 0;
+	cpu->flgWRD = 0;
 }
 
 // set cpu mode
@@ -299,7 +299,7 @@ xSegPtr i286_cash_seg(CPU* cpu, unsigned short val) {
 	int adr;
 	unsigned short lim;
 	p.idx = val;
-	if (cpu->msw & I286_FPE) {
+	if (cpu->regMSW & I286_FPE) {
 		if (val & 4) {
 			adr = cpu->ldtr.base;
 			lim = cpu->ldtr.limit;
@@ -380,7 +380,7 @@ void i286_switch_task(CPU* cpu, int tsss, int nest, int iret) {
 				if (nest) {
 					cpu->flgN = 1;
 				}
-				cpu->msw |= I286_FTS;
+				cpu->regMSW |= I286_FTS;
 				// load ldt, then ss,cs,ds,es
 				cpu->ldtr = i286_cash_seg(cpu, i286_sys_mrdw(cpu, cpu->tsdr, 42));
 				cpu->es = i286_cash_seg(cpu, i286_sys_mrdw(cpu, cpu->tsdr, 34));
@@ -419,7 +419,7 @@ void i286_check_gate(CPU* cpu, int ip, int sn) {
 	int rpl = sn & 3;
 	int dpl = cpu->ea.seg.pl;
 	int cpl = cpu->cs.pl;
-	if (cpu->msw & I286_FPE) {			// protected mode
+	if (cpu->regMSW & I286_FPE) {			// protected mode
 		if ((sn & 0xfff8) == 0) {		// segment 0 -> #GP(0)
 			THROW_EC(I286_INT_GP, 0);
 		} else if (cpu->ea.seg.ar & 0x10) {	// segment is code/data
@@ -529,17 +529,17 @@ void i286_check_gate(CPU* cpu, int ip, int sn) {
 // protected mode checks
 
 int i286_check_iopl(CPU* cpu) {		// CPL <= IOPL
-	if (!(cpu->msw & I286_FPE)) return 1;	// real mode
+	if (!(cpu->regMSW & I286_FPE)) return 1;	// real mode
 	// int iopl = (cpu->f >> 12) & 3;
 	return (cpu->cs.pl <= cpu->regIOPL) ? 1 : 0;
 }
 
-// mod r/m
+// regMOD r/m
 
 int i286_get_reg(CPU* cpu, int wrd) {
 	int res = -1;
 	if (wrd) {
-		switch((cpu->mod >> 3) & 7) {
+		switch((cpu->regMOD >> 3) & 7) {
 			case 0: res = cpu->regAX; break;
 			case 1: res = cpu->regCX; break;
 			case 2: res = cpu->regDX; break;
@@ -551,7 +551,7 @@ int i286_get_reg(CPU* cpu, int wrd) {
 		}
 		res &= 0xffff;
 	} else {
-		switch((cpu->mod >> 3) & 7) {
+		switch((cpu->regMOD >> 3) & 7) {
 			case 0: res = cpu->regAL; break;
 			case 1: res = cpu->regCL; break;
 			case 2: res = cpu->regDL; break;
@@ -569,7 +569,7 @@ int i286_get_reg(CPU* cpu, int wrd) {
 void i286_set_reg(CPU* cpu, int val, int wrd) {
 	if (wrd) {
 		val &= 0xffff;
-		switch((cpu->mod >> 3) & 7) {
+		switch((cpu->regMOD >> 3) & 7) {
 			case 0: cpu->regAX = val; break;
 			case 1: cpu->regCX = val; break;
 			case 2: cpu->regDX = val; break;
@@ -581,7 +581,7 @@ void i286_set_reg(CPU* cpu, int val, int wrd) {
 		}
 	} else {
 		val &= 0xff;
-		switch((cpu->mod >> 3) & 7) {
+		switch((cpu->regMOD >> 3) & 7) {
 			case 0: cpu->regAL = val; break;
 			case 1: cpu->regCL = val; break;
 			case 2: cpu->regDL = val; break;
@@ -594,17 +594,17 @@ void i286_set_reg(CPU* cpu, int val, int wrd) {
 	}
 }
 
-// read mod, calculate effective address in cpu->tmpi, set register N to cpu->twrd/ltw
-// modbyte: [7.6:mod][5.4.3:regN][2.1.0:adr/reg]
+// read regMOD, calculate effective address in cpu->tmpi, set register N to cpu->twrd/ltw
+// modbyte: [7.6:regMOD][5.4.3:regN][2.1.0:adr/reg]
 // TODO: tmpi is still using somewhere (?)
 void i286_get_ea(CPU* cpu, int wrd) {
 	cpu->tmpw = 0;	// = disp
-	cpu->mod = i286_rd_imm(cpu);
+	cpu->regMOD = i286_rd_imm(cpu);
 	cpu->twrd = i286_get_reg(cpu, wrd);
-	if ((cpu->mod & 0xc0) == 0xc0) {		// ea is register
+	if ((cpu->regMOD & 0xc0) == 0xc0) {		// ea is register
 		cpu->ea.reg = 1;
 		if (wrd) {
-			switch(cpu->mod & 7) {
+			switch(cpu->regMOD & 7) {
 				case 0: cpu->tmpw = cpu->regAX; break;
 				case 1: cpu->tmpw = cpu->regCX; break;
 				case 2: cpu->tmpw = cpu->regDX; break;
@@ -616,7 +616,7 @@ void i286_get_ea(CPU* cpu, int wrd) {
 			}
 		} else {
 			cpu->htw = 0;
-			switch(cpu->mod & 7) {
+			switch(cpu->regMOD & 7) {
 				case 0: cpu->ltw = cpu->regAL; break;
 				case 1: cpu->ltw = cpu->regCL; break;
 				case 2: cpu->ltw = cpu->regDL; break;
@@ -630,13 +630,13 @@ void i286_get_ea(CPU* cpu, int wrd) {
 		cpu->tmpi = -1;		// reg
 	} else {					// ea is memory
 		cpu->ea.reg = 0;
-		if ((cpu->mod & 0xc0) == 0x40) {
+		if ((cpu->regMOD & 0xc0) == 0x40) {
 			cpu->ltw = i286_rd_imm(cpu);
 			cpu->htw = (cpu->ltw & 0x80) ? 0xff : 0x00;
-		} else if ((cpu->mod & 0xc0) == 0x80) {
+		} else if ((cpu->regMOD & 0xc0) == 0x80) {
 			cpu->tmpw = i286_rd_immw(cpu);
 		}
-		switch(cpu->mod & 0x07) {
+		switch(cpu->regMOD & 0x07) {
 			case 0: cpu->ea.adr = cpu->regBX + cpu->regSI + cpu->tmpw;
 				cpu->ea.seg = cpu->ds;
 				break;
@@ -655,7 +655,7 @@ void i286_get_ea(CPU* cpu, int wrd) {
 			case 5: cpu->ea.adr = cpu->regDI + cpu->tmpw;
 				cpu->ea.seg = cpu->ds;	// TODO: or es in some opcodes (not overrideable)
 				break;
-			case 6:	if (cpu->mod & 0xc0) {
+			case 6:	if (cpu->regMOD & 0xc0) {
 					cpu->ea.adr = cpu->regBP + cpu->tmpw;
 					cpu->ea.seg = cpu->ss;
 				} else {
@@ -680,11 +680,11 @@ void i286_rd_ea(CPU* cpu, int wrd) {
 	}
 }
 
-// must be called after i286_rd_ea, cpu->ea must be calculated, cpu->mod setted
+// must be called after i286_rd_ea, cpu->ea must be calculated, cpu->regMOD setted
 void i286_wr_ea(CPU* cpu, int val, int wrd) {
 	if (cpu->ea.reg) {		// this is a reg
 		if (wrd) {
-			switch(cpu->mod & 7) {
+			switch(cpu->regMOD & 7) {
 				case 0: cpu->regAX = val & 0xffff; break;
 				case 1: cpu->regCX = val & 0xffff; break;
 				case 2: cpu->regDX = val & 0xffff; break;
@@ -695,7 +695,7 @@ void i286_wr_ea(CPU* cpu, int val, int wrd) {
 				case 7: cpu->regDI = val & 0xffff; break;
 			}
 		} else {
-			switch(cpu->mod & 7) {
+			switch(cpu->regMOD & 7) {
 				case 0: cpu->regAL = val & 0xff; break;
 				case 1: cpu->regCL = val & 0xff; break;
 				case 2: cpu->regDL = val & 0xff; break;
@@ -1473,11 +1473,11 @@ void i286_op6B(CPU* cpu) {
 	i286_set_reg(cpu, cpu->tmpi & 0xffff, 1);
 }
 
-// rep opcode template
-// note: repz/repnz both working as rep
+// regREP opcode template
+// note: repz/repnz both working as regREP
 
 void i286_rep(CPU* cpu, cbcpu foo) {
-	if (cpu->rep == I286_REP_NONE) {
+	if (cpu->regREP == I286_REP_NONE) {
 		foo(cpu);
 	} else {
 		if (cpu->regCX) {
@@ -1584,7 +1584,7 @@ void i286_op7F(CPU* cpu) {i286_jr(cpu, !cpu->flgZ && !(cpu->flgS ^ cpu->flgO));}
 void i286_op80(CPU* cpu) {
 	i286_rd_ea(cpu, 0);
 	cpu->tmpb = i286_rd_imm(cpu);
-	switch((cpu->mod >> 3) & 7) {
+	switch((cpu->regMOD >> 3) & 7) {
 		case 0: cpu->tmpb = i286_add8(cpu, cpu->ltw, cpu->tmpb, 0); break;		// add
 		case 1: cpu->tmpb = i286_or8(cpu, cpu->ltw, cpu->tmpb); break;			// or
 		case 2: cpu->tmpb = i286_add8(cpu, cpu->ltw, cpu->tmpb, cpu->flgC);		// adc
@@ -1596,12 +1596,12 @@ void i286_op80(CPU* cpu) {
 		case 7: cpu->tmpb = i286_sub8(cpu, cpu->ltw, cpu->tmpb, 0); break;		// cmp
 		case 6: cpu->tmpb = i286_xor8(cpu, cpu->ltw, cpu->tmpb); break;			// xor
 	}
-	if ((cpu->mod & 0x38) != 0x38)		// CMP drop result of SUB
+	if ((cpu->regMOD & 0x38) != 0x38)		// CMP drop result of SUB
 		i286_wr_ea(cpu, cpu->tmpb, 0);
 }
 
 void i286_alu16(CPU* cpu) {
-	switch((cpu->mod >> 3) & 7) {
+	switch((cpu->regMOD >> 3) & 7) {
 		case 0: cpu->twrd = i286_add16(cpu, cpu->tmpw, cpu->twrd, 0); break;
 		case 1: cpu->twrd = i286_or16(cpu, cpu->tmpw, cpu->twrd); break;
 		case 2: cpu->twrd = i286_add16(cpu, cpu->tmpw, cpu->twrd, cpu->flgC);
@@ -1613,7 +1613,7 @@ void i286_alu16(CPU* cpu) {
 		case 7: cpu->twrd = i286_sub16(cpu, cpu->tmpw, cpu->twrd, 0); break;
 		case 6: cpu->twrd = i286_xor16(cpu, cpu->tmpw, cpu->twrd); break;
 	}
-	if ((cpu->mod & 0x38) != 0x38)		// cmp
+	if ((cpu->regMOD & 0x38) != 0x38)		// cmp
 		i286_wr_ea(cpu, cpu->twrd, 1);
 }
 
@@ -1689,10 +1689,10 @@ void i286_op8B(CPU* cpu) {
 	i286_set_reg(cpu, cpu->tmpw, 1);
 }
 
-// 8c,mod: mov ew,[es,cs,ss,ds]	TODO: ignore N.bit2?
+// 8c,regMOD: mov ew,[es,cs,ss,ds]	TODO: ignore N.bit2?
 void i286_op8C(CPU* cpu) {
 	i286_get_ea(cpu, 1);
-	switch((cpu->mod & 0x18) >> 3) {
+	switch((cpu->regMOD & 0x18) >> 3) {
 		case 0: cpu->twrd = cpu->es.idx; break;
 		case 1: cpu->twrd = cpu->cs.idx; break;
 		case 2: cpu->twrd = cpu->ss.idx; break;
@@ -1711,10 +1711,10 @@ void i286_op8D(CPU* cpu) {
 	}
 }
 
-// 8e,mod: mov [es,not cs,ss,ds],ew
+// 8e,regMOD: mov [es,not cs,ss,ds],ew
 void i286_op8E(CPU* cpu) {
 	i286_rd_ea(cpu, 1);
-	switch((cpu->mod & 0x38) >> 3) {
+	switch((cpu->regMOD & 0x38) >> 3) {
 		case 0:	cpu->es = i286_cash_seg(cpu, cpu->tmpw); break;
 		case 1: break;
 		case 2: cpu->ss = i286_cash_seg(cpu, cpu->tmpw); break;
@@ -1797,7 +1797,7 @@ void i286_op99(CPU* cpu) {
 
 // callf to ncs:nip
 void i286_callf(CPU* cpu, int nip, int ncs) {
-	if (cpu->msw & I286_FPE) {
+	if (cpu->regMSW & I286_FPE) {
 		i286_check_gate(cpu, nip, ncs);		// ea.seg:ea.adr is new destination
 		if (cpu->ea.reg) {		// call gate?
 			if (cpu->ea.seg.pl < cpu->cs.pl) {	// more priv
@@ -1849,11 +1849,11 @@ void i286_op9A(CPU* cpu) {
 // 9b: wait
 void i286_op9B(CPU* cpu) {
 	// wait for busy=0
-	if (cpu->msw & I286_FMP) {
+	if (cpu->regMSW & I286_FMP) {
 		THROW(I286_INT_NM);		// int 7
-	} else if ((cpu->msw & I286_FTS) && (cpu->msw & I286_FMP)) {
+	} else if ((cpu->regMSW & I286_FTS) && (cpu->regMSW & I286_FMP)) {
 		THROW(I286_INT_NM);		// int 7
-	} else if (cpu->x87sr & 0x80) {
+	} else if (cpu->regX87sr & 0x80) {
 		THROW(I286_INT_MF);		// int 16
 	}
 }
@@ -1875,7 +1875,7 @@ void i286_op9D(CPU* cpu) {
 	int on = cpu->flgN;
 	int oi = cpu->flgI;
 	int oip = cpu->regIOPL;
-	if (cpu->msw & I286_FPE) {
+	if (cpu->regMSW & I286_FPE) {
 		//cpu->f = (cpu->f & (I286_FN | I286_FIP | I286_FI)) | (cpu->tmpw & ~(I286_FN | I286_FIP | I286_FI));
 		x86_set_flag(cpu, cpu->tmpw);
 		cpu->flgN = on;
@@ -1993,14 +1993,14 @@ void i286_opA5(CPU* cpu) {
 
 // check condition for repz/repnz for cmps/scas opcodes
 void i286_rep_fz(CPU* cpu, cbcpu foo) {
-	if (cpu->rep == I286_REP_NONE) {
+	if (cpu->regREP == I286_REP_NONE) {
 		foo(cpu);
 	} else if (cpu->regCX) {
 		cpu->regCX--;
 		foo(cpu);
-		if ((cpu->rep == I286_REPZ) && cpu->flgZ && cpu->regCX) {
+		if ((cpu->regREP == I286_REPZ) && cpu->flgZ && cpu->regCX) {
 			cpu->regIP = cpu->oldpc;
-		} else if ((cpu->rep == I286_REPNZ) && !cpu->flgZ && cpu->regCX) {
+		} else if ((cpu->regREP == I286_REPNZ) && !cpu->flgZ && cpu->regCX) {
 			cpu->regIP = cpu->oldpc;
 		}
 	}
@@ -2167,7 +2167,7 @@ void i286_rotsh8(CPU* cpu, int cnt) {
 	// cpu->ltw = ea.byte, result should be back in cpu->ltw. flags is setted
 	cnt &= 0x1f;		// only 5 bits is counted
 	cpu->t += cnt;		// 1T for each iteration
-	cb286rot8 foo = i286_rot8_tab[(cpu->mod >> 3) & 7];
+	cb286rot8 foo = i286_rot8_tab[(cpu->regMOD >> 3) & 7];
 	if (foo) {
 		while (cnt) {
 			cpu->ltw = foo(cpu, cpu->ltw);
@@ -2179,7 +2179,7 @@ void i286_rotsh8(CPU* cpu, int cnt) {
 void i286_rotsh16(CPU* cpu, int cnt) {
 	cnt &= 0x1f;
 	cpu->t += cpu->tmpb;
-	cb286rot16 foo = i286_rot16_tab[(cpu->mod >> 3) & 7];
+	cb286rot16 foo = i286_rot16_tab[(cpu->regMOD >> 3) & 7];
 	if (foo) {
 		while (cnt) {
 			cpu->tmpw = foo(cpu, cpu->tmpw);
@@ -2316,7 +2316,7 @@ void i286_opCE(CPU* cpu) {
 
 // cf: iret	pop ip,cs,flag
 void i286_opCF(CPU* cpu) {
-	if (cpu->msw & I286_FPE) {		// protected
+	if (cpu->regMSW & I286_FPE) {		// protected
 		xSegPtr seg;
 		if (cpu->flgN) {
 			int tss = i286_sys_mrdw(cpu, cpu->tsdr, 0);	// back link
@@ -2468,9 +2468,9 @@ extern void x87_exec(CPU*);
 
 void i286_fpu(CPU* cpu) {
 	i286_get_ea(cpu, 1);
-	if (cpu->msw & I286_FEM) {
+	if (cpu->regMSW & I286_FEM) {
 		THROW(I286_INT_NM);
-	} else if (cpu->x87sr & 0x80) {		// x87 exception
+	} else if (cpu->regX87sr & 0x80) {		// x87 exception
 		THROW(I286_INT_MF);
 	} else {
 //		printf("%.8X : x87 : %.2X %.2X\n", cpu->cs.base + cpu->oldpc, cpu->com, cpu->mod);
@@ -2541,7 +2541,7 @@ void i286_opE9(CPU* cpu) {
 
 // common: jmpf to ncs:nip using gates in protected mode
 void i286_jmpf(CPU* cpu, int nip, int ncs) {
-	if (cpu->msw & I286_FPE) {		// protected
+	if (cpu->regMSW & I286_FPE) {		// protected
 		i286_check_gate(cpu, nip, ncs);
 		cpu->regIP = cpu->ea.adr;
 		cpu->cs = cpu->ea.seg;
@@ -2585,9 +2585,9 @@ void i286_opEF(CPU* cpu) {
 	i286_iwr(cpu, cpu->regDX, cpu->regAX, 1);
 }
 
-// f0: lock prefix (for multi-CPU)
+// f0: flgLOCK prefix (for multi-CPU)
 void i286_opF0(CPU* cpu) {
-	cpu->lock = 1;
+	cpu->flgLOCK = 1;
 }
 
 // f1: undef, doesn't cause interrupt
@@ -2595,22 +2595,22 @@ void i286_opF1(CPU* cpu) {}
 
 // f2: REPNZ prefix for scas/cmps: repeat until Z=1
 void i286_opF2(CPU* cpu) {
-	cpu->rep = I286_REPNZ;
+	cpu->regREP = I286_REPNZ;
 }
 
 // f3: REPZ prefix for scas/cmps: repeat until Z=0
 // f3: REP prefix for ins/movs/outs/stos: cx--,repeat if cx!=0
 void i286_opF3(CPU* cpu) {
-	cpu->rep = I286_REPZ;
+	cpu->regREP = I286_REPZ;
 }
 
-// f4: hlt	halt until interrupt
+// f4: hlt	flgHALT until interrupt
 void i286_opF4(CPU* cpu) {
 	if (!((cpu->intrq & cpu->inten) && cpu->flgI)) {
-		cpu->halt = 1;
+		cpu->flgHALT = 1;
 		cpu->regIP = cpu->oldpc;
 	} else {
-		cpu->halt = 0;
+		cpu->flgHALT = 0;
 	}
 }
 
@@ -2686,7 +2686,7 @@ cbcpu i286_F6_tab[8] = {
 
 void i286_opF6(CPU* cpu) {
 	i286_rd_ea(cpu, 0);
-	i286_F6_tab[(cpu->mod >> 3) & 7](cpu);
+	i286_F6_tab[(cpu->regMOD >> 3) & 7](cpu);
 }
 
 // f7,mod:
@@ -2758,7 +2758,7 @@ cbcpu i286_F7_tab[8] = {
 
 void i286_opF7(CPU* cpu) {
 	i286_rd_ea(cpu, 1);
-	i286_F7_tab[(cpu->mod >> 3) & 7](cpu);
+	i286_F7_tab[(cpu->regMOD >> 3) & 7](cpu);
 }
 
 // f8: clc
@@ -2804,7 +2804,7 @@ void i286_opFD(CPU* cpu) {
 // fe: inc/dec ea.byte
 void i286_opFE(CPU* cpu) {
 	i286_rd_ea(cpu, 0);
-	switch((cpu->mod >> 3) & 7) {
+	switch((cpu->regMOD >> 3) & 7) {
 		case 0: cpu->ltw = i286_inc8(cpu, cpu->ltw);
 			i286_wr_ea(cpu, cpu->ltw, 0);
 			break;
@@ -2817,7 +2817,7 @@ void i286_opFE(CPU* cpu) {
 // ff: extend ops ea.word
 void i286_opFF(CPU* cpu) {
 	i286_rd_ea(cpu, 1);
-	switch((cpu->mod >> 3) & 7) {
+	switch((cpu->regMOD >> 3) & 7) {
 		case 0: cpu->tmpw = i286_inc16(cpu, cpu->tmpw);
 			i286_wr_ea(cpu, cpu->tmpw, 1);
 			break;	// inc ew

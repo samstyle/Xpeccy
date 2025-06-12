@@ -280,7 +280,7 @@ void ibm_outVGA(Computer* comp, int adr, int val) {
 //	if (((adr & 0x3f8) == 0x3d0) && !(comp->vid->reg[0x42] & 1)) return;
 //	printf("VGA wr %.3X,%.2X\n",adr,val);
 	adr &= 0x3ff;
-	if (comp->cpu->wrd) {
+	if (comp->cpu->flgWRD) {
 		vga_wr(comp->vid, adr & ~1, val & 0xff);
 		vga_wr(comp->vid, adr | 1, (val >> 8) & 0xff);
 	} else {
@@ -607,7 +607,7 @@ void ibm_irq(Computer* comp, int t) {
 				comp->beep->lev = comp->pit->ch2.out;
 			}
 			break;		// reg61.bit2: enable pit.ch2.out->speaker
-		case IRQ_RESET: comp->cpu->reset(comp->cpu); break;
+		case IRQ_RESET: cpu_reset(comp->cpu); break;
 		case IRQ_BRK: comp->brk = 1; comp->brkt = -1; break;		// debug: any device breakpoint
 	}
 }

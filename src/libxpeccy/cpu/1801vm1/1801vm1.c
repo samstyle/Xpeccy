@@ -22,22 +22,22 @@ int pdp_get_flag(CPU* cpu) {
 	return cpu->flgC | (cpu->flgV << 1) | (cpu->flgZ << 2) | (cpu->flgN << 3) | (cpu->flgT << 4) | (cpu->flgF7 << 7) | (cpu->flgF10 << 10) | (cpu->flgF11 << 11);
 }
 
-// nod: b0:write MSB(1)/LSB(0)
+// regNOD: b0:write MSB(1)/LSB(0)
 void pdp_wrb(CPU* cpu, int adr, int val) {	// val is 00..FF
 	if (adr & 1) {
-		cpu->nod = 2;			// MSB
+		cpu->regNOD = 2;			// MSB
 		val = (val << 8) & 0xff00;	// move LSB to MSB in val
 	} else {
-		cpu->nod = 1;			// LSB
+		cpu->regNOD = 1;			// LSB
 		val &= 0xff;
 	}
 	adr &= ~1;
 	cpu->mwr(adr, val, cpu->xptr);
 }
 
-// nod = 3: write both bytes
+// regNOD = 3: write both bytes
 void pdp_wr(CPU* cpu, int adr, int val) {
-	cpu->nod = 3;
+	cpu->regNOD = 3;
 	adr &= ~1;
 //	if (adr == 0177130) printf("vm wr %.4X,%.4X\n",adr, val);
 	cpu->mwr(adr, val, cpu->xptr);
@@ -65,8 +65,8 @@ void pdp11_reset(CPU* cpu) {
 	pdp_set_flag(cpu, 0x300); //cpu->f = 0x300;			// b8,9 = 11, cpu0
 	cpu->intrq = 0;
 	cpu->inten = PDP_INT_IRQ2 | PDP_INT_VIRQ;
-	cpu->wait = 0;
-	cpu->halt = 0;
+	cpu->flgWAIT = 0;
+	cpu->flgHALT = 0;
 	cpu->timer.flag = 0x01;
 }
 
@@ -81,8 +81,8 @@ unsigned short pdp_pop(CPU* cpu) {
 	return res;
 }
 
-// TODO: some traps will decrease R7 by 2. depends on mcir
-// mcir 010,100: decrease R7
+// TODO: some traps will decrease R7 by 2. depends on regMCIR
+// regMCIR 010,100: decrease R7
 // 000: waiting for INT
 // 001: no INT
 // 01x: halt, irq1, double error, b0:don't R7-=2
@@ -90,10 +90,10 @@ unsigned short pdp_pop(CPU* cpu) {
 // 11x: reset cpu
 
 void pdp_trap(CPU* cpu, unsigned short adr) {
-	if ((cpu->mcir == 2) || (cpu->mcir == 4)) {
+	if ((cpu->regMCIR == 2) || (cpu->regMCIR == 4)) {
 		cpu->regRN(7) -= 2;
 	}
-	if ((cpu->mcir & 6) == 2) {		// irq1, halt
+	if ((cpu->regMCIR & 6) == 2) {		// irq1, halt
 		pdp_wr(cpu, 0177676, pdp_get_flag(cpu));
 		pdp_wr(cpu, 0177674, cpu->regRN(7));
 	} else {
@@ -102,47 +102,47 @@ void pdp_trap(CPU* cpu, unsigned short adr) {
 	}
 	cpu->regRN(7) = pdp_rd(cpu, adr);
 	pdp_set_flag(cpu, pdp_rd(cpu, adr+2));
-	cpu->mcir = 1;
+	cpu->regMCIR = 1;
 }
 
 int pdp11_int(CPU* cpu) {
 	int res = 10;
 	cpu->intrq &= cpu->inten;
-	if (cpu->intrq && cpu->wait) {
-		cpu->wait = 0;
+	if (cpu->intrq && cpu->flgWAIT) {
+		cpu->flgWAIT = 0;
 		cpu->regRN(7) += 2;
 	}
 	if (cpu->intrq & PDP_INT_IRQ1) {
 		cpu->intrq &= ~PDP_INT_IRQ1;
 		if (!cpu->flgF10) {
-			cpu->mcir = 3;
+			cpu->regMCIR = 3;
 			// pdp_trap(cpu, 0160002);
 		}
 	} else if (cpu->intrq & PDP_INT_IRQ2) {
 		cpu->intrq &= ~PDP_INT_IRQ2;
 		if (!cpu->flgF7) {
-			cpu->mcir = 5;
+			cpu->regMCIR = 5;
 			pdp_trap(cpu, 0100);			// #40 = 100(8)
 			//cpu->wait = 0;
 		}
 	} else if (cpu->intrq & PDP_INT_IRQ3) {
 		cpu->intrq &= ~PDP_INT_IRQ3;
 		if (!cpu->flgF7) {
-			cpu->mcir = 5;
+			cpu->regMCIR = 5;
 			pdp_trap(cpu, 0270);			// #b8 = 270(8)
 			//cpu->wait = 0;
 		}
 	} else if (cpu->intrq & PDP_INT_VIRQ) {
 		cpu->intrq &= ~PDP_INT_VIRQ;
 		//if (!cpu->flgF7) {
-			cpu->mcir = 5;
+			cpu->regMCIR = 5;
 			pdp_trap(cpu, cpu->intvec);
 			//cpu->wait = 0;
 		//}
 	} else if (cpu->intrq & PDP_INT_TIMER) {		// timer
 		cpu->intrq &= ~PDP_INT_TIMER;
 		if (!cpu->flgF7) {
-			cpu->mcir = 5;
+			cpu->regMCIR = 5;
 			//pdp_trap(cpu, 0270);
 			//cpu->wait = 0;
 		}
@@ -263,8 +263,8 @@ static int twres;
 void pdp_undef(CPU* cpu) {
 	printf("undef command %.4X : %.4X\n", cpu->regRN(7) - 2, cpu->com);
 //	cpu->xirq(IRQ_BRK, cpu->xptr);
-	cpu->mcir = 5;
-	cpu->vsel = 2;
+	cpu->regMCIR = 5;
+	cpu->regVCEL = 2;
 	pdp_trap(cpu, 010);
 }
 
@@ -279,10 +279,10 @@ void pdp_halt(CPU* cpu) {
 //	pdp_trap(cpu, 0160002);
 }
 
-// 0001:wait
+// 0001:flgWAIT
 void pdp_wait(CPU* cpu) {
 	// cpu->mcir = 0;
-	cpu->wait = 1;
+	cpu->flgWAIT = 1;
 	cpu->regRN(7) -= 2;
 //	cpu->regPC = cpu->regRN(7);
 }
@@ -299,23 +299,23 @@ void pdp_rti(CPU* cpu) {
 //	cpu->f &= 0xff;
 	if (cpu->flgT) {
 		cpu->flgT = 0;		// RTI/RTT clears T-flag
-		cpu->mcir = 5;
-		cpu->vsel = 3;
+		cpu->regMCIR = 5;
+		cpu->regVCEL = 3;
 		pdp_trap(cpu, 014);
 	}
 }
 
 // 0003:bpt
 void pdp_bpt(CPU* cpu) {
-	cpu->mcir = 5;
-	cpu->vsel = 3;
+	cpu->regMCIR = 5;
+	cpu->regVCEL = 3;
 	pdp_trap(cpu, 014);		// 14(8) = 12(10)
 }
 
 // 0004:iot
 void pdp_iot(CPU* cpu) {
-	cpu->mcir = 5;
-	cpu->vsel = 1;
+	cpu->regMCIR = 5;
+	cpu->regVCEL = 1;
 	pdp_trap(cpu, 020);		// 20(8) = 16(10)
 }
 
@@ -373,8 +373,8 @@ void pdp_000x(CPU* cpu) {
 void pdp_jmp(CPU* cpu) {
 	twres = pdp_adr(cpu, cpu->com, 0);
 	if (twres < 0) {
-		cpu->mcir = 5;
-		cpu->vsel = 4;
+		cpu->regMCIR = 5;
+		cpu->regVCEL = 4;
 		pdp_trap(cpu, 4);
 	} else {
 		cpu->regRN(7) = twres & 0xffff;
@@ -508,8 +508,8 @@ void pdp_07xx(CPU* cpu) {
 void pdp_jsr(CPU* cpu) {
 	twres = pdp_adr(cpu, cpu->com, 0);
 	if (twres < 0) {		// addr type 0: exception
-		cpu->mcir = 5;
-		cpu->vsel = 4;
+		cpu->regMCIR = 5;
+		cpu->regVCEL = 4;
 		pdp_trap(cpu, 4);
 	} else {
 		// cpu->mcir = 4;
@@ -798,15 +798,15 @@ void pdp_87xx(CPU* cpu) {
 
 // emt
 void pdp_88xx(CPU* cpu) {
-	cpu->mcir = 5;
-	cpu->vsel = 6;
+	cpu->regMCIR = 5;
+	cpu->regVCEL = 6;
 	pdp_trap(cpu, 24);	// 30(8) = 24(10)
 }
 
 // trap
 void pdp_89xx(CPU* cpu) {
-	cpu->mcir = 5;
-	cpu->vsel = 12;
+	cpu->regMCIR = 5;
+	cpu->regVCEL = 12;
 	pdp_trap(cpu, 28);	// 34(8) = 28(10)
 }
 

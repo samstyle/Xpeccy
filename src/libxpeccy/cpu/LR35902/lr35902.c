@@ -24,11 +24,11 @@ void lr_reset(CPU* cpu) {
 	cpu->regA = 0xff;
 	lr_set_flag(cpu, 0xff);
 	cpu->regSP = 0xffff;
-	cpu->lock = 0;
+	cpu->flgLOCK = 0;
 	cpu->flgIFF1 = 0;
 	cpu->intrq = 0;
-	cpu->halt = 0;
-	cpu->stop = 0;
+	cpu->flgHALT = 0;
+	cpu->flgSTOP = 0;
 	cpu->intrq = 0;
 	cpu->inten = 0;
 	// not necessary
@@ -52,11 +52,11 @@ void z80_push(CPU*, unsigned short);
 void z80_call(CPU*, unsigned short);
 
 int lr_int(CPU* cpu) {
-	if (cpu->halt) {		// free HALT anyway
-		cpu->halt = 0;
+	if (cpu->flgHALT) {		// free HALT anyway
+		cpu->flgHALT = 0;
 		cpu->regPC++;
 		if (!cpu->flgIFF1) {
-			cpu->dihalt = 1;
+			cpu->flgDIHALT = 1;
 			cpu->tmpw = cpu->regPC;		// tmpw doesn't used on LR35902, store PC there
 		}
 	}
@@ -81,7 +81,7 @@ int lr_exec(CPU* cpu) {
 	int res = 0;
 	if ((cpu->intrq & cpu->inten) && cpu->flgIFF1) {
 		res = lr_int(cpu);
-	} else if (cpu->lock) {
+	} else if (cpu->flgLOCK) {
 		res = 1;
 	} else {
 		cpu->t = 0;
@@ -92,8 +92,8 @@ int lr_exec(CPU* cpu) {
 			cpu->t += cpu->op->t;
 			cpu->op->exec(cpu);
 		} while (cpu->op->flag & OF_PREFIX);
-		if (cpu->dihalt) {		// LR35902 bug (?) : repeat opcode after HALT with disabled interrupts (DI)
-			cpu->dihalt = 0;
+		if (cpu->flgDIHALT) {		// LR35902 bug (?) : repeat opcode after HALT with disabled interrupts (DI)
+			cpu->flgDIHALT = 0;
 			cpu->regPC = cpu->tmpw;
 		}
 		res = cpu->t;

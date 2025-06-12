@@ -61,7 +61,7 @@ int gbIORd(Computer* comp, int port) {
 // GBC
 		case 0x4d:
 			res = res & 1;
-			if (comp->cpu->speed)
+			if (comp->speed)
 				res |= 0x80;
 			break;
 		case 0x4f:
@@ -393,7 +393,7 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 // GBC
 //	cpu speed
 		case 0x4d:
-			comp->cpu->speedrq = (val & 1);
+			comp->gb.speedrq = (val & 1);
 			break;
 //	memory mapping
 		case 0x4f:				// VRAM bank (8000..9fff)
@@ -642,12 +642,12 @@ void gbcSync(Computer* comp, int ns) {
 		}
 	}
 	// cpu speed change
-	if (comp->cpu->stop && comp->cpu->speedrq) {
-		comp->cpu->stop = 0;
+	if (comp->cpu->flgSTOP && comp->gb.speedrq) {
+		comp->cpu->flgSTOP = 0;
 		comp->cpu->regPC++;
-		comp->cpu->speedrq = 0;
-		comp->cpu->speed ^= 1;
-		compSetTurbo(comp, comp->cpu->speed ? 2.0 : 1.0);
+		comp->gb.speedrq = 0;
+		comp->speed ^= 1;
+		compSetTurbo(comp, comp->speed ? 2.0 : 1.0);
 	}
 	// interrupts
 	if (comp->vid->vbstrb) {

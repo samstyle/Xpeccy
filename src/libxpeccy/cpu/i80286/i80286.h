@@ -28,8 +28,16 @@
 #define regIP regs[7].w
 #define regBP regs[8].w
 #define regIOPL regs[9].l
+#define regMSW	regs[10].i
+#define regREP	regs[11].l	// repeat condition
+#define regMOD	regs[11].h	// mod byte (EA/reg)
+// x87 registers
+#define regX87top regs[16].l	// x87 top of stack pos (0-7)
+#define regX87cr regs[16].ih	// x87 control register
+#define regX87sr regs[17].w	// x87 status register
+#define regX87tw regs[17].ih	// x87 tag word
 
-// TODO: segment registers:
+// TODO: (?) segment registers:
 //	regs[n].i = base addr
 //	regs[n+1].i = limit
 //	regs[n+2].ih = index
@@ -60,53 +68,13 @@
 #define flgD	flags[10]
 #define flgO	flags[11]
 #define flgN	flags[15]
+#define flgWRD	flags[32]
 
 enum {
 	X86_REAL = 0,
-	X86_PROT
+	X86_PROT,
+	X86_VIRT8086
 };
-
-/*
-#ifdef WORDS_LITTLE_ENDIAN
-typedef struct {
-	unsigned c:1;
-	unsigned f1:1;
-	unsigned p:1;
-	unsigned f3:1;
-	unsigned a:1;
-	unsigned f5:1;
-	unsigned z:1;
-	unsigned s:1;
-	unsigned t:1;
-	unsigned i:1;
-	unsigned d:1;
-	unsigned o:1;
-	unsigned iopl:2;
-	unsigned n:1;
-	unsigned md:1;
-	unsigned _nu:16;
-} x86flag_t;
-#else
-typedef struct {
-	unsigned _nu:16;
-	unsigned md:1;
-	unsigned n:1;
-	unsigned iopl:2;
-	unsigned o:1;
-	unsigned d:1;
-	unsigned i:1;
-	unsigned t:1;
-	unsigned s:1;
-	unsigned z:1;
-	unsigned f5:1;
-	unsigned a:1;
-	unsigned f3:1;
-	unsigned p:1;
-	unsigned f1:1;
-	unsigned c:1;
-} x86flag_t;
-#endif
-*/
 
 // msw
 #define I286_FPE 0x0001	// protected mode

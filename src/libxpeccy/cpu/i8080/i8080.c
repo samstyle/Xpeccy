@@ -29,9 +29,9 @@ void i8080_reset(CPU* cpu) {
 
 int i8080_int(CPU* cpu) {
 	cpu->flgIFF1 = 0;
-	if (cpu->halt) {
+	if (cpu->flgHALT) {
 		cpu->regPC++;
-		cpu->halt = 0;
+		cpu->flgHALT = 0;
 	}
 	cpu->t = 2 + 5;			// 2 extra + 5 on RST38 fetch
 	i8080_tab[0xff].exec(cpu);	// +3 +3 execution. 13 total

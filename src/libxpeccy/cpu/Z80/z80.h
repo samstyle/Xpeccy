@@ -45,36 +45,8 @@
 #define flgF5	flags[5]
 #define flgZ	flags[6]
 #define flgS	flags[7]
-#define flgIFF1	flags[32]
-#define flgIFF2	flags[33]
-
-/*
-#ifdef WORDS_BIG_ENDIAN
-typedef struct {
-	unsigned _nu:24;		// not used (padding to 32 bits)
-	unsigned s:1;
-	unsigned z:1;
-	unsigned f5:1;
-	unsigned h:1;
-	unsigned f3:1;
-	unsigned pv:1;
-	unsigned n:1;
-	unsigned c:1;
-} z80flag_t;
-#else
-typedef struct {
-	unsigned c:1;
-	unsigned n:1;
-	unsigned pv:1;
-	unsigned f3:1;
-	unsigned h:1;
-	unsigned f5:1;
-	unsigned z:1;
-	unsigned s:1;
-	unsigned _nu:24;		// not used (padding to 32 bits)
-} z80flag_t;
-#endif
-*/
+#define flgIFF1	flags[8]
+#define flgIFF2	flags[9]
 
 #include "z80_macro.h"
 

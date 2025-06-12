@@ -13,7 +13,9 @@
 #define flgH	flags[5]
 #define flgN	flags[6]
 #define flgZ	flags[7]
-#define flgIFF1	flags[32]
+#define flgIFF1	flags[8]
+#define flgDIHALT flags[9]		// HALT when DI: repeat next opcode
+#define flgSTOP flags[10]		// LR35902: CPU stoped, unlock on keypress
 
 #define regA regs[0].l
 #define regBC regs[1].w
@@ -49,28 +51,6 @@
 #define regBCa regs[1].ih
 #define regDEa regs[2].ih
 #define regHLa regs[3].ih
-
-/*
-#ifdef WORDS_BIG_ENDIAN
-typedef struct {
-	unsigned _nu:24;
-	unsigned z:1;
-	unsigned n:1;
-	unsigned h:1;
-	unsigned c:1;
-	unsigned _nu0:4;
-} lrflags_t;
-#else
-typedef struct {
-	unsigned _nu0:4;	// b0..3 not used
-	unsigned c:1;
-	unsigned h:1;
-	unsigned n:1;
-	unsigned z:1;
-	unsigned _nu:24;	// padding
-} lrflag_t;
-#endif
-*/
 
 enum {
 	LR_REG_PC = 1,

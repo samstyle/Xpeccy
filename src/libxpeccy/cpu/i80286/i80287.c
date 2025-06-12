@@ -63,9 +63,9 @@ extern void i286_get_ea(CPU*, int);
 // if unmasked error occurs, ERROR signal activated. when 286 executed WAIT or ESCAPE, this signal will cause X86_INT_MF
 void x87_error(CPU* cpu, int m) {
 	m &= 0x3f;
-	if (~cpu->x87cr & m) {		// if not masked (1 = masked)
-		cpu->x87sr |= m;
-		cpu->x87sr |= 0x80;
+	if (~cpu->regX87cr & m) {		// if not masked (1 = masked)
+		cpu->regX87sr |= m;
+		cpu->regX87sr |= 0x80;
 	}
 }
 
@@ -165,7 +165,7 @@ double x87_rd_op(CPU* cpu, int t) {
 }
 
 double x87_round(CPU* cpu, double v) {
-	switch((cpu->x87cr >> 10) & 3) {
+	switch((cpu->regX87cr >> 10) & 3) {
 		case 0:			// to nearest
 			v = round(v);
 			break;
@@ -276,28 +276,28 @@ void x87_wr_op(CPU* cpu, double v, int t) {
 // 00:valid, 01:zero, 10:Nan,Infinity,Denormal,Undefined, 11:empty
 int x87_get_tag(CPU* cpu, int n) {
 	n = (n & 7) << 1;
-	return (cpu->x87tw >> n) & 3;
+	return (cpu->regX87tw >> n) & 3;
 }
 
 void x87_set_tag(CPU* cpu, int n, int t) {
 	n = (n & 7) << 1;
 	unsigned short msk = ~(3 << n);
 	t = (t & 3) << n;
-	cpu->x87tw = (cpu->x87tw & msk) | t;
+	cpu->regX87tw = (cpu->regX87tw & msk) | t;
 }
 
 // TODO: NaN, infinity
 void x87_set_reg(CPU* cpu, int n, long double v) {
-	n = (cpu->x87top + n) & 7;
+	n = (cpu->regX87top + n) & 7;
 	cpu->x87reg[n] = v;
 	x87_set_tag(cpu, n, (v == 0) ? 1 : 0);
 }
 
-#define x87_pop cpu->x87top++
-#define x87_push cpu->x87top--
+#define x87_pop cpu->regX87top++
+#define x87_push cpu->regX87top--
 
-#define X87ST0		cpu->x87reg[cpu->x87top]
-#define X87ST(_n)	cpu->x87reg[(cpu->x87top + (_n)) & 7]
+#define X87ST0		cpu->x87reg[cpu->regX87top & 7]
+#define X87ST(_n)	cpu->x87reg[(cpu->regX87top + (_n)) & 7]
 
 // FLD/FILD
 
@@ -389,12 +389,12 @@ void x87_fsin(CPU* cpu) {
 void x87_fptan(CPU* cpu) {
 	long double v = X87ST0;
 	if (v < pow(2.0,63)) {
-		cpu->x87sr &= ~X87F_C2;
+		cpu->regX87sr &= ~X87F_C2;
 		X87ST0 = tan(v);
 		x87_push;
 		X87ST0 = 1.0;
 	} else {
-		cpu->x87sr |= X87F_C2;
+		cpu->regX87sr |= X87F_C2;
 	}
 }
 
@@ -450,15 +450,15 @@ void x87_fmul_m(CPU* cpu) {
 // FCOM/FCOMP/FCOMPP
 
 void x87_comp_8(CPU* cpu) {
-	cpu->x87sr &= ~X87F_C1;			// c1 = 0
+	cpu->regX87sr &= ~X87F_C1;			// c1 = 0
 	if (X87ST0 > X87ST(8)) {
-		cpu->x87sr &= ~(X87F_C0 | X87F_C2 | X87F_C3);	// 000
+		cpu->regX87sr &= ~(X87F_C0 | X87F_C2 | X87F_C3);	// 000
 	} else if (X87ST0 < X87ST(8)) {
-		cpu->x87sr &= ~(X87F_C2 | X87F_C3);		// 001
-		cpu->x87sr |= X87F_C0;
+		cpu->regX87sr &= ~(X87F_C2 | X87F_C3);		// 001
+		cpu->regX87sr |= X87F_C0;
 	} else {
-		cpu->x87sr &= ~(X87F_C0 | X87F_C2);		// 100
-		cpu->x87sr |= X87F_C3;
+		cpu->regX87sr &= ~(X87F_C0 | X87F_C2);		// 100
+		cpu->regX87sr |= X87F_C3;
 	}
 }
 
@@ -492,19 +492,19 @@ void x87_ftst(CPU* cpu) {
 
 void x87_fxam(CPU* cpu) {
 	double v = X87ST0;
-	cpu->x87sr &= (X87F_C0 | X87F_C1 | X87F_C2 | X87F_C3);
+	cpu->regX87sr &= (X87F_C0 | X87F_C1 | X87F_C2 | X87F_C3);
 	if (v < 0) {
-		cpu->x87sr |= X87F_C1;
+		cpu->regX87sr |= X87F_C1;
 	}
-	switch(x87_get_tag(cpu, cpu->x87top)) {		// get tag of ST0
+	switch(x87_get_tag(cpu, cpu->regX87top)) {		// get tag of ST0
 		case 0:
-		case 1: cpu->x87sr |= v ? X87F_C2 : X87F_C3;	// C2 (normal), C3 (zero)
+		case 1: cpu->regX87sr |= v ? X87F_C2 : X87F_C3;	// C2 (normal), C3 (zero)
 			break;
 		case 2:						// Nan,infinity
-			cpu->x87sr |= X87F_C0;
+			cpu->regX87sr |= X87F_C0;
 			// set C2 if infinity
 			break;
-		case 3: cpu->x87sr |= (X87F_C0 | X87F_C3);	// empty
+		case 3: cpu->regX87sr |= (X87F_C0 | X87F_C3);	// empty
 			break;
 	}
 }
@@ -561,9 +561,9 @@ void x87_fprem(CPU* cpu) {
 // system
 
 void x87_finit(CPU* cpu) {
-	cpu->x87cr = 0x37f;
-	cpu->x87sr = 0;
-	cpu->x87tw = 0xffff;
+	cpu->regX87cr = 0x37f;
+	cpu->regX87sr = 0;
+	cpu->regX87tw = 0xffff;
 }
 
 void x87_wr_word(CPU* cpu, xSegPtr seg, unsigned short adr, int v) {
@@ -573,11 +573,11 @@ void x87_wr_word(CPU* cpu, xSegPtr seg, unsigned short adr, int v) {
 
 void x87_fstenv(CPU* cpu) {
 	int adr = cpu->ea.adr;
-	cpu->x87sr &= ~(7 << 11);
-	cpu->x87sr |= ((cpu->x87top & 7) << 11);
-	x87_wr_word(cpu, cpu->ea.seg, adr, cpu->x87cr);
-	x87_wr_word(cpu, cpu->ea.seg, adr+2, cpu->x87sr);
-	x87_wr_word(cpu, cpu->ea.seg, adr+4, cpu->x87tw);
+	cpu->regX87sr &= ~(7 << 11);
+	cpu->regX87sr |= ((cpu->regX87top & 7) << 11);
+	x87_wr_word(cpu, cpu->ea.seg, adr, cpu->regX87cr);
+	x87_wr_word(cpu, cpu->ea.seg, adr+2, cpu->regX87sr);
+	x87_wr_word(cpu, cpu->ea.seg, adr+4, cpu->regX87tw);
 	x87_wr_word(cpu, cpu->ea.seg, adr+6, cpu->regIP);
 	x87_wr_word(cpu, cpu->ea.seg, adr+8, cpu->cs.idx);
 	x87_wr_word(cpu, cpu->ea.seg, adr+10, cpu->ea.adr);
@@ -586,13 +586,13 @@ void x87_fstenv(CPU* cpu) {
 
 void x87_fldenv(CPU* cpu) {
 	int adr = cpu->ea.adr;
-	cpu->x87cr = x87_rd_cnt(cpu, 2) & 0xffff; cpu->ea.adr += 2;
-	cpu->x87sr = x87_rd_cnt(cpu, 2) & 0xffff; cpu->ea.adr += 2;
-	cpu->x87tw = x87_rd_cnt(cpu, 2) & 0xffff; cpu->ea.adr += 2;
+	cpu->regX87cr = x87_rd_cnt(cpu, 2) & 0xffff; cpu->ea.adr += 2;
+	cpu->regX87sr = x87_rd_cnt(cpu, 2) & 0xffff; cpu->ea.adr += 2;
+	cpu->regX87tw = x87_rd_cnt(cpu, 2) & 0xffff; cpu->ea.adr += 2;
 	cpu->tmpw = x87_rd_cnt(cpu, 2) & 0xffff; cpu->ea.adr += 2;
 	cpu->tmpw = x87_rd_cnt(cpu, 2) & 0xffff; cpu->ea.adr += 2;
 	cpu->tmpw = x87_rd_cnt(cpu, 2) & 0xffff;
-	cpu->x87top = (cpu->x87sr >> 11) & 7;
+	cpu->regX87top = (cpu->regX87sr >> 11) & 7;
 	cpu->ea.adr = adr;
 }
 
@@ -619,26 +619,26 @@ void x87_frstr(CPU* cpu) {
 }
 
 void x87_fldcw(CPU* cpu) {
-	cpu->x87cr = x87_rd_cnt(cpu, 2) & 0xffff;
+	cpu->regX87cr = x87_rd_cnt(cpu, 2) & 0xffff;
 }
 
 void x87_fstcw(CPU* cpu) {
-	x87_wr_word(cpu, cpu->ea.seg, cpu->ea.adr, cpu->x87cr);
+	x87_wr_word(cpu, cpu->ea.seg, cpu->ea.adr, cpu->regX87cr);
 }
 
 void x87_fstsw_ax(CPU* cpu) {
-	cpu->x87sr &= ~(7 << 11);
-	cpu->x87sr |= ((cpu->x87top & 7) << 11);
-	cpu->regAX = cpu->x87sr;
+	cpu->regX87sr &= ~(7 << 11);
+	cpu->regX87sr |= ((cpu->regX87top & 7) << 11);
+	cpu->regAX = cpu->regX87sr;
 }
 
 // clear exceptions
 void x87_fclex(CPU* cpu) {
-	cpu->x87sr &= ~0x80ff;	// b15, b7:0 = 0
+	cpu->regX87sr &= ~0x80ff;	// b15, b7:0 = 0
 }
 
-void x87_fdecstp(CPU* cpu) {cpu->x87top--;}
-void x87_fincstp(CPU* cpu) {cpu->x87top++;}
+void x87_fdecstp(CPU* cpu) {cpu->regX87top--;}
+void x87_fincstp(CPU* cpu) {cpu->regX87top++;}
 
 void x87_fxtract(CPU* cpu) {
 	long long s = 0;
@@ -800,7 +800,7 @@ x87opCode x87tab[] = {
 // cpu->com = D8..DF
 void x87_exec(CPU* cpu) {
 	cpu->hcom = cpu->com & 7;
-	cpu->lcom = cpu->mod;
+	cpu->lcom = cpu->regMOD;
 	int idx = -1;
 	int work = 1;
 	do {

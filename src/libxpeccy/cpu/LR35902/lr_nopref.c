@@ -216,9 +216,9 @@ void lrnop0F(CPU* cpu) {
 	// cpu->f |= (cpu->a & (F5 | F3));
 }
 
-// 10	stop		0
+// 10	flgSTOP		0
 void lrnop10(CPU* cpu) {
-	cpu->stop = 1;
+	cpu->flgSTOP = 1;
 	cpu->regPC--;
 }
 
@@ -576,7 +576,7 @@ void lrnop72(CPU* cpu) {lr_mwr(cpu, cpu->regHL,cpu->regD);}
 void lrnop73(CPU* cpu) {lr_mwr(cpu, cpu->regHL,cpu->regE);}
 void lrnop74(CPU* cpu) {lr_mwr(cpu, cpu->regHL,cpu->regH);}
 void lrnop75(CPU* cpu) {lr_mwr(cpu, cpu->regHL,cpu->regL);}
-void lrnop76(CPU* cpu) {cpu->halt = 1; cpu->regPC--;}
+void lrnop76(CPU* cpu) {cpu->flgHALT = 1; cpu->regPC--;}
 void lrnop77(CPU* cpu) {lr_mwr(cpu, cpu->regHL,cpu->regA);}
 // 78..7f	ld regA,r		4 [3rd]
 void lrnop78(CPU* cpu) {cpu->regA = cpu->regB;}
@@ -1006,9 +1006,9 @@ void lrnopFF(CPU* cpu) {
 	lr_call(cpu, 0x38);
 }
 
-// any missing opcode : lock-up CPU
+// any missing opcode : flgLOCK-up CPU
 void lrnLock(CPU* cpu) {
-	cpu->lock = 1;
+	cpu->flgLOCK = 1;
 	cpu->regPC--;
 }
 

@@ -6,11 +6,28 @@
 #include "cpu.h"
 
 // TODO: cpu headers must be included cuz of callbacks, but flgX redefinition occurs
+// buuuuuuuuut it doesn't matter from here  (no flgX macros used)
+// undef redefined flgX after including
 #include "1801vm1/1801vm1.h"
+#undef flgZ
 #include "i8080/i8080.h"
+#undef flgT
+#undef flgN
 #include "i80286/i80286.h"
+#undef flgC
+#undef flgN
+#undef flgZ
 #include "LR35902/lr35902.h"
+#undef flgC
+#undef flgZ
+#undef flgI
+#undef flgD
+#undef flgV
+#undef flgN
 #include "MOS6502/6502.h"
+#undef flgN
+#undef flgH
+#undef flgZ
 #include "Z80/z80.h"
 
 // common
@@ -61,6 +78,8 @@ void nil_set_regs(CPU* cpu, xRegBunch bunch) {}
 int nil_get_flag(CPU* cpu) {return 0;}
 void nil_set_flag(CPU* cpu, int v) {}
 
+cpuCore dumCore = {CPU_NONE, 0, "none", nil_reg_tab, NULL, nil_reset, nil_exec, nil_asm, nil_mnem, nil_get_regs, nil_set_regs, nil_get_flag, nil_set_flag};
+
 extern xRegDsc z80RegTab[];
 extern xRegDsc m6502RegTab[];
 extern xRegDsc lrRegTab[];
@@ -93,12 +112,6 @@ void cpuSetCore(CPU* cpu, cpuCore* core) {
 	cpu->core = core;
 	cpu->type = core->type;
 	cpu->gen = core->gen;
-	cpu->reset = core->reset;
-	cpu->exec = core->exec;
-	cpu->asmbl = core->asmbl;
-	cpu->mnem = core->mnem;
-	cpu->getregs = core->getregs;
-	cpu->setregs = core->setregs;
 	if (core->init) {
 		core->init(cpu);
 	}
@@ -181,6 +194,8 @@ int cpuSetType(CPU* cpu, int type) {
 			cpu->lib = 0;
 		}
 		cpuSetCore(cpu, core);
+	} else {
+		cpuSetCore(cpu, &dumCore);
 	}
 	return core ? 1 : 0;
 }
@@ -219,6 +234,18 @@ void cpuDestroy(CPU* cpu) {
 	free(cpu);
 }
 
+void cpu_reset(CPU* cpu) {
+	if (!cpu->core) return;
+	if (!cpu->core->reset) return;
+	cpu->core->reset(cpu);
+}
+
+int cpu_exec(CPU* cpu) {
+	if (!cpu->core) return 1;
+	if (!cpu->core->exec) return 1;
+	return cpu->core->exec(cpu);
+}
+
 // disasm
 
 static const char halfByte[] = "0123456789ABCDEF";
@@ -239,7 +266,7 @@ xMnem cpuDisasm(CPU* cpu, int adr, char* buf, cbdmr mrd, void* data) {
 //		strcpy(buf, "undef");
 //		mn.len = 1;
 //	} else {
-		mn = cpu->mnem(cpu, adr, mrd, data);
+		mn = cpu->core->mnem(cpu, adr, mrd, data);
 		// mn.oadr = -1;
 		adr += mn.len;
 		tmp = mrd((adr - 2) & 0xffff, data);
@@ -403,7 +430,7 @@ int cpuAsm(CPU* cpu, const char* com, char* buf, unsigned short adr) {
 		ptr++;
 	}
 
-	xAsmScan res = cpu->asmbl(adr, cbuf, buf);
+	xAsmScan res = cpu->core->asmbl(adr, cbuf, buf);
 	if (res.match) {
 		ptr = res.ptr;
 		zptr = res.op->mnem;
@@ -481,7 +508,7 @@ xRegBunch cpuGetRegs(CPU* cpu) {
 	}
 	bunch.flags = dumFlags;
 	//memcpy(bunch.flags, "--------", 8);
-	if (cpu->getregs) cpu->getregs(cpu, &bunch);
+	if (cpu->core->getregs) cpu->core->getregs(cpu, &bunch);
 	return bunch;
 }
 
@@ -568,5 +595,7 @@ bool cpu_set_reg(CPU* cpu, const char* name, int val) {
 }
 
 void cpuSetRegs(CPU* cpu, xRegBunch bunch) {
-	cpu->setregs(cpu, bunch);
+	if (cpu->core->setregs) {
+		cpu->core->setregs(cpu, bunch);
+	}
 }

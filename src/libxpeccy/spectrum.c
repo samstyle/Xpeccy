@@ -491,7 +491,7 @@ void compReset(Computer* comp,int res) {
 	comp->cpu->cs.base = 0;		// for all except i80286
 	comp->cpu->ss.base = 0;
 	comp->cpu->cs.limit = 0xffff;
-	comp->cpu->reset(comp->cpu);
+	cpu_reset(comp->cpu);
 }
 
 // cpu freq
@@ -511,7 +511,7 @@ void compSetBaseFrq(Computer* comp, double frq) {
 
 void compSetTurbo(Computer* comp, double mult) {
 	comp->frqMul = mult;
-	comp->cpu->speed = (mult > 1) ? 1 : 0;
+	comp->speed = (mult > 1) ? 1 : 0;
 	comp_update_timings(comp);
 }
 
@@ -537,7 +537,7 @@ int compSetHardware(Computer* comp, const char* name) {
 	}
 	if (hw == NULL) return 0;
 	comp->hw = hw;
-	comp->cpu->nod = 0;
+//	comp->cpu->nod = 0;
 	comp->vid->mrd = vid_mrd_cb;
 	comp->tape->xen = 0;
 	mem_set_bus(comp->mem, hw->adrbus);
@@ -571,7 +571,7 @@ int compExec(Computer* comp) {
 // start
 	res4 = 0;
 // exec cpu opcode OR handle interrupt. get T states back
-	res2 = comp->cpu->exec(comp->cpu);
+	res2 = cpu_exec(comp->cpu);
 // scorpion WAIT: add 1T to odd-T command
 	if (comp->evenM1 && (res2 & 1))
 		res2++;
@@ -588,7 +588,7 @@ int compExec(Computer* comp) {
 		if (comp->hw->grp == HWG_ZX) {
 			if (res2 > res4 + 1)
 				vid_sync(comp->vid, (res2 - res4 - 1) * comp->nsPerTick);
-			comp->cpu->ack = comp->vid->intFRAME ? 1 : 0;
+			comp->cpu->flgACK = comp->vid->intFRAME ? 1 : 0;
 			vid_sync(comp->vid, comp->nsPerTick);
 		} else {
 			vid_sync(comp->vid, (res2 - res4) * comp->nsPerTick);
@@ -632,11 +632,11 @@ int compExec(Computer* comp) {
 		if (comp->intStrobe)
 			comp->intStrobe = 0;
 	}
-
-	if (comp->cpu->halt && !comp->halt) {
+	// TODO: cpu->xirq on enter-to-halt & exit-from-halt instead of this:
+	if (comp->cpu->flgHALT && !comp->halt) {
 		comp->halt = 1;
 		comp->hCount = comp->frmtCount;
-	} else if (!comp->cpu->halt && comp->halt) {
+	} else if (!comp->cpu->flgHALT && comp->halt) {
 		comp->halt = 0;
 	}
 // sync hardware

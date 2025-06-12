@@ -154,7 +154,7 @@ void ed57(CPU* cpu) {
 	cpu->flgF3 = !!(cpu->regA & 0x08);
 	cpu->flgPV = cpu->flgIFF2;
 	cpu->flgN = 0;
-	cpu->resPV = 1;			// if INT coming after this opcode, reset PV flag
+	cpu->flgResPV = 1;			// if INT coming after this opcode, reset PV flag
 }
 
 // 58	in regE,(c)	4 4in		regWZ = port + 1
@@ -206,7 +206,7 @@ void ed5F(CPU* cpu) {
 	cpu->flgF3 = !!(cpu->regA & 0x08);
 	cpu->flgPV = cpu->flgIFF2;
 	cpu->flgN = 0;
-	cpu->resPV = 1;
+	cpu->flgResPV = 1;
 }
 
 // 60	in regH,(c)	4 4in		regWZ = port + 1

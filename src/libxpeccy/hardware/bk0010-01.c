@@ -76,10 +76,10 @@ int bk_scr_rd(Computer* comp, int adr) {
 }
 
 void bk_scr_wr(Computer* comp, int adr, int val) {
-	if (comp->cpu->nod & 1) {
+	if (comp->cpu->regNOD & 1) {
 		comp->vid->sc.y = val & 0xff;
 	}
-	if (comp->cpu->nod & 2) {
+	if (comp->cpu->regNOD & 2) {
 		comp->vid->cutscr = (val & 0x0200) ? 0 : 1;
 	}
 }
@@ -109,21 +109,21 @@ int bk_tfl_rd(Computer* comp, int adr) {
 }
 
 void bk_tiv_wr(Computer* comp, int adr, int val) {
-	if (comp->cpu->nod & 1)
+	if (comp->cpu->regNOD & 1)
 		comp->cpu->timer.ivl = val & 0xff;
-	if (comp->cpu->nod & 2)
+	if (comp->cpu->regNOD & 2)
 		comp->cpu->timer.ivh = (val >> 8) & 0xff;
 }
 
 void bk_tva_wr(Computer* comp, int adr, int val) {
-	if (comp->cpu->nod & 1)
+	if (comp->cpu->regNOD & 1)
 		comp->cpu->timer.vl = val & 0xff;
-	if (comp->cpu->nod & 2)
+	if (comp->cpu->regNOD & 2)
 		comp->cpu->timer.vh = (val >> 8) & 0xff;
 }
 
 void bk_tfl_wr(Computer* comp, int adr, int val) {
-	if (comp->cpu->nod & 1) {
+	if (comp->cpu->regNOD & 1) {
 		comp->cpu->timer.flag = val & 0xff;
 		comp->cpu->timer.per = 128;
 		if (val & 0x40) comp->cpu->timer.per <<= 2;	// div 4
@@ -163,7 +163,7 @@ int bk_sys_rd(Computer* comp, int adr) {
 // b4: TL in/out
 // b6: beeper
 void bk_sys_wr(Computer* comp, int adr, int val) {
-	if (comp->cpu->nod & 1) {
+	if (comp->cpu->regNOD & 1) {
 		// b7: tape motor control (1:stop, 0:play)
 		if (!(val & 0x80) && !comp->tape->on) {
 			tapPlay(comp->tape);
@@ -218,7 +218,7 @@ void bk11_sys_wr(Computer* comp, int adr, int val) {
 		}
 		comp->reg[2] = (val >> 12) & 7;			// ram b12,13,14 @ #4000
 		bk11_mem_map(comp);
-	} else if (comp->cpu->nod == 3) {
+	} else if (comp->cpu->regNOD == 3) {
 		// b7: tape motor control (1:stop, 0:play)
 		if (!(val & 0x80) && !comp->tape->on) {
 			tapPlay(comp->tape);
@@ -293,18 +293,18 @@ int bk11_io_rd(int adr, void* ptr) {
 
 void bk_io_wr(int adr, int val, void* ptr) {
 	Computer* comp = (Computer*)ptr;
-	if (comp->cpu->nod & 1)		// LSB
+	if (comp->cpu->regNOD & 1)		// LSB
 		comp->iomap[(adr & ~1) & 0xffff] = val & 0xff;
-	if (comp->cpu->nod & 2)		// MSB
+	if (comp->cpu->regNOD & 2)		// MSB
 		comp->iomap[(adr | 1) & 0xffff] = (val >> 8) & 0xff;
 	hwOut(bk_io_tab, comp, adr & ~1, val, 1);
 }
 
 void bk11_io_wr(int adr, int val, void* ptr) {
 	Computer* comp = (Computer*)ptr;
-	if (comp->cpu->nod & 1)		// LSB
+	if (comp->cpu->regNOD & 1)		// LSB
 		comp->iomap[(adr & ~1) & 0xffff] = val & 0xff;
-	if (comp->cpu->nod & 2)		// MSB
+	if (comp->cpu->regNOD & 2)		// MSB
 		comp->iomap[(adr | 1) & 0xffff] = (val >> 8) & 0xff;
 	hwOut(bk11_io_tab, comp, adr & ~1, val, 1);
 }
@@ -325,9 +325,9 @@ void bk_ram_wr(int adr, int val, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 	comp->cpu->t += 2;
 	int fadr = mem_get_phys_adr(comp->mem, adr);	// = comp->mem->map[(adr >> 8) & 0xff].num << 8) | (adr & 0xff);
-	if (comp->cpu->nod & 1)
+	if (comp->cpu->regNOD & 1)
 		comp->mem->ramData[(fadr & ~1) & comp->mem->ramMask] = val & 0xff;
-	if (comp->cpu->nod & 2)
+	if (comp->cpu->regNOD & 2)
 		comp->mem->ramData[(fadr | 1) & comp->mem->ramMask] = (val >> 8) & 0xff;
 }
 
@@ -437,7 +437,7 @@ void bk_reset(Computer* comp) {
 	comp->reg[0] = 1;
 	comp->reg[1] = 0x80;
 	comp->reg[0xb2] = 0x40;
-	comp->cpu->reset(comp->cpu);
+	cpu_reset(comp->cpu);
 	comp->vid->curscr = 0;
 	comp->vid->paln = 0;
 	vid_set_mode(comp->vid, VID_BK_BW);
@@ -455,7 +455,7 @@ void bk11_reset(Computer* comp) {
 	}
 	comp->reg[0] = 1;
 	comp->reg[1] = 0x80;
-	comp->cpu->reset(comp->cpu);
+	cpu_reset(comp->cpu);
 //	comp->vid->curscr = 0;
 	comp->vid->paln = 0;
 	vid_set_mode(comp->vid, VID_BK_BW);

@@ -45,10 +45,10 @@ void z80_reset(CPU* cpu) {
 	cpu->regIX = cpu->regIY = 0xffff;
 	cpu->regSP = 0xffff;
 	cpu->regI = cpu->regR = cpu->regR7 = 0;
-	cpu->halt = 0;
+	cpu->flgHALT = 0;
 	cpu->intrq = 0;
 	cpu->inten = Z80_NMI;	// NMI allways enabled, INT is controlled by ei/di
-	cpu->wait = 0;
+	cpu->flgWAIT = 0;
 }
 
 // https://sinclair.wiki.zxnet.co.uk/wiki/Contended_memory
@@ -60,7 +60,7 @@ int z80_mrdx(CPU* cpu, int adr, int m1) {
 	do {
 		cpu->t++;	// T2 while wait
 		cpu->xirq(IRQ_CPU_SYNC, cpu->xptr);
-	} while (cpu->wait);
+	} while (cpu->flgWAIT);
 	int r = cpu->mrd(adr, m1, cpu->xptr) & 0xff;
 	cpu->t++;		// T3
 	return r;
@@ -81,7 +81,7 @@ void z80_mwr(CPU *cpu, int adr, int data) {
 	do {
 		cpu->t++;	// T2 while wait
 		cpu->xirq(IRQ_CPU_SYNC, cpu->xptr);
-	} while (cpu->wait);
+	} while (cpu->flgWAIT);
 	cpu->mwr(adr, data, cpu->xptr);
 	cpu->t++;		// T3
 }
@@ -90,15 +90,15 @@ void z80_mwr(CPU *cpu, int adr, int data) {
 
 int z80_int(CPU* cpu) {
 	int res = 0;
-	if (cpu->wait) return res;
+	if (cpu->flgWAIT) return res;
 	if (cpu->intrq & Z80_INT) {		// int
-		if (cpu->flgIFF1 && !cpu->noint && cpu->ack) {
+		if (cpu->flgIFF1 && !cpu->flgNOINT && cpu->flgACK) {
 			cpu->flgIFF1 = 0;
 			cpu->flgIFF2 = 0;
-			if (cpu->halt) {
+			if (cpu->flgHALT) {
 				cpu->regPC++;
-				cpu->halt = 0;
-			} else if (cpu->resPV) {
+				cpu->flgHALT = 0;
+			} else if (cpu->flgResPV) {
 				cpu->flgPV = 0;
 			}
 			cpu->opTab = npTab;
@@ -136,7 +136,7 @@ int z80_int(CPU* cpu) {
 			cpu->intrq &= ~Z80_INT;
 		}
 	} else if (cpu->intrq & Z80_NMI) {			// nmi
-		if (!cpu->noint) {
+		if (!cpu->flgNOINT) {
 			cpu->regR++;
 			cpu->flgIFF2 = cpu->flgIFF1;
 			cpu->flgIFF1 = 0;
@@ -156,8 +156,8 @@ int z80_exec(CPU* cpu) {
 	if (cpu->intrq & cpu->inten) {
 		res = z80_int(cpu);
 	}
-	cpu->resPV = 0;
-	cpu->noint = 0;
+	cpu->flgResPV = 0;
+	cpu->flgNOINT = 0;
 	if (!res) {
 		cpu->t = 0;
 		cpu->opTab = npTab;
