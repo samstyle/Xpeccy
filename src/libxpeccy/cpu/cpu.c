@@ -507,7 +507,6 @@ xRegBunch cpuGetRegs(CPU* cpu) {
 		bunch.regs[i].type = 0;
 	}
 	bunch.flags = dumFlags;
-	//memcpy(bunch.flags, "--------", 8);
 	if (cpu->core->getregs) cpu->core->getregs(cpu, &bunch);
 	return bunch;
 }
@@ -521,7 +520,7 @@ int reg_get_value(CPU* cpu, xRegDsc* dsc) {
 	} else {
 		void* ptr = ((void*)cpu) + dsc->offset;
 		switch(dsc->type & REG_TMASK) {
-			// case REG_BIT: res = (*(unsigned char*)ptr) & 1; break;
+			case REG_BIT: res = !!(*(bool*)ptr); break;
 			case REG_BYTE: res = (*(unsigned char*)ptr) & 0xff; break;
 			case REG_WORD: res = (*(unsigned short*)ptr) & 0xffff; break;
 			case REG_24: res = (*(int*)ptr) & 0xffffff; break;
@@ -582,6 +581,7 @@ bool cpu_set_reg(CPU* cpu, const char* name, int val) {
 			ptr = ((void*)cpu) + rt[i].offset;
 			work = 0;
 			switch(rt[i].type & REG_TMASK) {
+				case REG_BIT: *(bool*)ptr = !!val; break;
 				case REG_BYTE: *(unsigned char*)ptr = val & 0xff; break;
 				case REG_WORD: *(unsigned short*)ptr = val & 0xffff; break;
 				case REG_24: *(int*)ptr = val & 0xffffff; break;

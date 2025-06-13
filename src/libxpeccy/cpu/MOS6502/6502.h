@@ -48,13 +48,21 @@ enum {
 
 void m6502_reset(CPU*);
 int m6502_exec(CPU*);
-int m6502_int(CPU*);
 
 xMnem m6502_mnem(CPU*, int, cbdmr, void*);
 xAsmScan m6502_asm(int, const char*, char*);
-
 void m6502_get_regs(CPU*, xRegBunch*);
 void m6502_set_regs(CPU*, xRegBunch);
-
 void mos_set_flag(CPU*, int);
 int mos_get_flag(CPU*);
+// alu
+unsigned char mos_ora(CPU*, unsigned char, unsigned char);
+unsigned char mos_and(CPU*, unsigned char, unsigned char);
+unsigned char mos_eor(CPU*, unsigned char, unsigned char);
+unsigned char mos_adc(CPU*, unsigned char, unsigned char);
+unsigned char mos_sbc(CPU*, unsigned char, unsigned char);
+void mos_cmp(CPU*, unsigned char, unsigned char);
+unsigned char mos_asl(CPU*, unsigned char);
+unsigned char mos_rol(CPU*, unsigned char);
+unsigned char mos_lsr(CPU*, unsigned char);
+unsigned char mos_ror(CPU*, unsigned char);

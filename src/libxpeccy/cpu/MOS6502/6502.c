@@ -89,7 +89,7 @@ int m6502_exec(CPU* cpu) {
 		com = cpu->mrd(cpu->regPC++, 1, cpu->xptr);
 		opCode* op = &mosTab[com];
 		cpu->t = op->t;
-		cpu->flgSTA = op->flag & OF_EXT;
+		cpu->flgSTA = !!(op->flag & OF_EXT);
 		op->exec(cpu);
 		res = cpu->t;
 	}

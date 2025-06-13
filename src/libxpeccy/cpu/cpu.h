@@ -146,12 +146,13 @@ enum {
 	CPU_VM2
 };
 
-#define flgHALT	flags[63]		// cpu halted, undo on interrput
-#define flgResPV flags[62]		// Z80: reset PV flag on INT
-#define flgNOINT flags[61]		// Z80: don't handle INT after EI
-#define flgWAIT	flags[60]		// ALL: WAIT signal (dummy 1T)
-#define flgACK	flags[59]		// Z80: acknowledge INT after execution (prevent last-1T INT)
-#define flgLOCK flags[58]		// LR35902: CPU locked
+#define flgTMP flags[63]
+#define flgHALT	flags[62]		// cpu halted, undo on interrput
+#define flgResPV flags[61]		// Z80: reset PV flag on INT
+#define flgNOINT flags[60]		// Z80: don't handle INT after EI
+#define flgWAIT	flags[59]		// ALL: WAIT signal (dummy 1T)
+#define flgACK	flags[58]		// Z80: acknowledge INT after execution (prevent last-1T INT)
+#define flgLOCK flags[57]		// LR35902: CPU locked
 
 struct CPU {
 	// common part

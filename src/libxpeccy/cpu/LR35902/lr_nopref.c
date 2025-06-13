@@ -216,7 +216,7 @@ void lrnop0F(CPU* cpu) {
 	// cpu->f |= (cpu->a & (F5 | F3));
 }
 
-// 10	flgSTOP		0
+// 10	stop		0
 void lrnop10(CPU* cpu) {
 	cpu->flgSTOP = 1;
 	cpu->regPC--;
@@ -1006,7 +1006,7 @@ void lrnopFF(CPU* cpu) {
 	lr_call(cpu, 0x38);
 }
 
-// any missing opcode : flgLOCK-up CPU
+// any missing opcode : lock-up CPU
 void lrnLock(CPU* cpu) {
 	cpu->flgLOCK = 1;
 	cpu->regPC--;

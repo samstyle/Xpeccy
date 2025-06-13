@@ -139,7 +139,7 @@ void mosop00(CPU* cpu) {
 // ora ind,x n : 6T
 void mosop01(CPU* cpu) {
 	mosGetINDX(cpu);
-	MORA(cpu->tmp);
+	cpu->regA = mos_ora(cpu, cpu->regA, cpu->tmp);
 }
 
 void mosop02(CPU* cpu) {
@@ -149,9 +149,9 @@ void mosop02(CPU* cpu) {
 // slo ind,x n
 void mosop03(CPU* cpu) {
 	mosGetINDX(cpu);
-	MASL(cpu->tmp);
+	cpu->tmp = mos_asl(cpu, cpu->tmp);
 	cpu->mwr(cpu->regWZ, cpu->tmp, cpu->xptr);
-	MORA(cpu->tmp);
+	cpu->regA = mos_ora(cpu, cpu->regA, cpu->tmp);
 }
 
 // *nop zp n
@@ -162,13 +162,13 @@ void mosop04(CPU* cpu) {
 // ora zp n : 3T
 void mosop05(CPU* cpu) {
 	mosGetZP(cpu);
-	MORA(cpu->tmp);
+	cpu->regA = mos_ora(cpu, cpu->regA, cpu->tmp);
 }
 
 // asl zp,n
 void mosop06(CPU* cpu) {
 	mosGetZP(cpu);
-	MASL(cpu->tmp);
+	cpu->tmp = mos_asl(cpu, cpu->tmp);
 	cpu->mwr(cpu->regWZ, cpu->tmp, cpu->xptr);
 }
 
@@ -176,7 +176,7 @@ void mosop06(CPU* cpu) {
 // = asl zp n + ora zp n
 void mosop07(CPU* cpu) {
 	mosop06(cpu);
-	MORA(cpu->tmp);
+	cpu->regA = mos_ora(cpu, cpu->regA, cpu->tmp);
 }
 
 // php = push f
@@ -188,12 +188,12 @@ void mosop08(CPU* cpu) {
 // ora n
 void mosop09(CPU* cpu) {
 	mosGetImm(cpu->tmp);
-	MORA(cpu->tmp);
+	cpu->regA = mos_ora(cpu, cpu->regA, cpu->tmp);
 }
 
 // asl regA
 void mosop0A(CPU* cpu) {
-	MASL(cpu->regA);
+	cpu->regA = mos_asl(cpu, cpu->regA);
 }
 
 // *anc n = A & n : N,Z flags, C=N
@@ -213,20 +213,20 @@ void mosop0C(CPU* cpu) {
 // ora abs nn
 void mosop0D(CPU* cpu) {
 	mosGetABS(cpu);
-	MORA(cpu->tmp);
+	cpu->regA = mos_ora(cpu, cpu->regA, cpu->tmp);
 }
 
 // asl abs nn
 void mosop0E(CPU* cpu) {
 	mosGetABS(cpu);
-	MASL(cpu->tmp);
+	cpu->tmp = mos_asl(cpu, cpu->tmp);
 	cpu->mwr(cpu->regWZ, cpu->tmp, cpu->xptr);
 }
 
 // slo abs nn
 void mosop0F(CPU* cpu) {
 	mosop0E(cpu);
-	MORA(cpu->tmp);
+	cpu->regA = mos_ora(cpu, cpu->regA, cpu->tmp);
 }
 
 // bpl e = jr p,e
@@ -241,7 +241,7 @@ void mosop10(CPU* cpu) {
 // ora ind,y n
 void mosop11(CPU* cpu) {
 	mosGetINDY(cpu);
-	MORA(cpu->tmp);
+	cpu->regA = mos_ora(cpu, cpu->regA, cpu->tmp);
 }
 
 void mosop12(CPU* cpu) {
@@ -251,9 +251,9 @@ void mosop12(CPU* cpu) {
 // slo ind,y n
 void mosop13(CPU* cpu) {
 	mosGetINDY(cpu);
-	MASL(cpu->tmp);
+	cpu->tmp = mos_asl(cpu, cpu->tmp);
 	cpu->mwr(cpu->regWZ, cpu->tmp, cpu->xptr);
-	MORA(cpu->tmp);
+	cpu->regA = mos_ora(cpu, cpu->regA, cpu->tmp);
 }
 
 // nop zp,x n
@@ -264,20 +264,20 @@ void mosop14(CPU* cpu) {
 // ora zp,x n
 void mosop15(CPU* cpu) {
 	mosGetZPX(cpu);
-	MORA(cpu->tmp);
+	cpu->regA = mos_ora(cpu, cpu->regA, cpu->tmp);
 }
 
 // asl zp,x n
 void mosop16(CPU* cpu) {
 	mosGetZPX(cpu);
-	MASL(cpu->tmp);
+	cpu->tmp = mos_asl(cpu, cpu->tmp);
 	cpu->mwr(cpu->regWZ, cpu->tmp, cpu->xptr);
 }
 
 // slo zp,x n
 void mosop17(CPU* cpu) {
 	mosop16(cpu);
-	MORA(cpu->tmp);
+	cpu->regA = mos_ora(cpu, cpu->regA, cpu->tmp);
 }
 
 // clc : C=0
@@ -289,7 +289,7 @@ void mosop18(CPU* cpu) {
 // ora abs,y nn
 void mosop19(CPU* cpu) {
 	mosGetABSY(cpu);
-	MORA(cpu->tmp);
+	cpu->regA = mos_ora(cpu, cpu->regA, cpu->tmp);
 }
 
 void mosop1A(CPU* cpu) {
@@ -298,9 +298,9 @@ void mosop1A(CPU* cpu) {
 // slo abs,y nn
 void mosop1B(CPU* cpu) {
 	mosGetABSY(cpu);
-	MASL(cpu->tmp);
+	cpu->tmp = mos_asl(cpu, cpu->tmp);
 	cpu->mwr(cpu->regWZ, cpu->tmp, cpu->xptr);
-	MORA(cpu->tmp);
+	cpu->regA = mos_ora(cpu, cpu->regA, cpu->tmp);
 }
 
 // nop abs,x nn
@@ -311,20 +311,20 @@ void mosop1C(CPU* cpu) {
 // ora abs,x nn
 void mosop1D(CPU* cpu) {
 	mosGetABSX(cpu);
-	MORA(cpu->tmp);
+	cpu->regA = mos_ora(cpu, cpu->regA, cpu->tmp);
 }
 
 // asl abs,x nn
 void mosop1E(CPU* cpu) {
 	mosGetABSX(cpu);
-	MASL(cpu->tmp);
+	cpu->tmp = mos_asl(cpu, cpu->tmp);
 	cpu->mwr(cpu->regWZ, cpu->tmp, cpu->xptr);
 }
 
 // slo abs,x nn
 void mosop1F(CPU* cpu) {
 	mosop1E(cpu);
-	MORA(cpu->tmp);
+	cpu->regA = mos_ora(cpu, cpu->regA, cpu->tmp);
 }
 
 // jsr nn = call nn
@@ -339,7 +339,7 @@ void mosop20(CPU* cpu) {
 // and ind,x n
 void mosop21(CPU* cpu) {
 	mosGetINDX(cpu);
-	MAND(cpu->tmp);
+	cpu->regA = mos_and(cpu, cpu->regA, cpu->tmp);
 }
 
 void mosop22(CPU* cpu) {
@@ -350,9 +350,9 @@ void mosop22(CPU* cpu) {
 // = rol + and
 void mosop23(CPU* cpu) {
 	mosGetINDX(cpu);
-	MROL(cpu->tmp);
+	cpu->tmp = mos_rol(cpu, cpu->tmp);
 	cpu->mwr(cpu->regWZ, cpu->tmp, cpu->xptr);
-	MAND(cpu->tmp);
+	cpu->regA = mos_and(cpu, cpu->regA, cpu->tmp);
 }
 
 // bit zp n
@@ -364,20 +364,20 @@ void mosop24(CPU* cpu) {
 // and zp n
 void mosop25(CPU* cpu) {
 	mosGetZP(cpu);
-	MAND(cpu->tmp);
+	cpu->regA = mos_and(cpu, cpu->regA, cpu->tmp);
 }
 
 // rol zp n
 void mosop26(CPU* cpu) {
 	mosGetZP(cpu);
-	MROL(cpu->tmp);
+	cpu->tmp = mos_rol(cpu, cpu->tmp);
 	cpu->mwr(cpu->regWZ, cpu->tmp, cpu->xptr);
 }
 
 // rla zp n
 void mosop27(CPU* cpu) {
 	mosop26(cpu);
-	MAND(cpu->tmp);
+	cpu->regA = mos_and(cpu, cpu->regA, cpu->tmp);
 }
 
 // plp = pop f
@@ -391,12 +391,12 @@ void mosop28(CPU* cpu) {
 // and n
 void mosop29(CPU* cpu) {
 	mosGetImm(cpu->tmp);
-	MAND(cpu->tmp);
+	cpu->regA = mos_and(cpu, cpu->regA, cpu->tmp);
 }
 
 // rol regA
 void mosop2A(CPU* cpu) {
-	MROL(cpu->regA);
+	cpu->regA = mos_rol(cpu, cpu->regA);
 }
 
 // 2b = 0b = anc n
@@ -413,20 +413,20 @@ void mosop2C(CPU* cpu) {
 // and abs nn
 void mosop2D(CPU* cpu) {
 	mosGetABS(cpu);
-	MAND(cpu->tmp);
+	cpu->regA = mos_and(cpu, cpu->regA, cpu->tmp);
 }
 
 // rol abs nn
 void mosop2E(CPU* cpu) {
 	mosGetABS(cpu);
-	MROL(cpu->tmp);
+	cpu->tmp = mos_rol(cpu, cpu->tmp);
 	cpu->mwr(cpu->regWZ, cpu->tmp, cpu->xptr);
 }
 
 // rla abs nn
 void mosop2F(CPU* cpu) {
 	mosop2E(cpu);
-	MAND(cpu->tmp);
+	cpu->regA = mos_and(cpu, cpu->regA, cpu->tmp);
 }
 
 // bmi e = jr m,e
@@ -441,7 +441,7 @@ void mosop30(CPU* cpu) {
 // and ind,y n
 void mosop31(CPU* cpu) {
 	mosGetINDY(cpu);
-	MAND(cpu->tmp);
+	cpu->regA = mos_and(cpu, cpu->regA, cpu->tmp);
 }
 
 void mosop32(CPU* cpu) {
@@ -451,9 +451,9 @@ void mosop32(CPU* cpu) {
 // rla ind,y n
 void mosop33(CPU* cpu) {
 	mosGetINDY(cpu);
-	MROL(cpu->tmp);
+	cpu->tmp = mos_rol(cpu, cpu->tmp);
 	cpu->mwr(cpu->regWZ, cpu->tmp, cpu->xptr);
-	MAND(cpu->tmp);
+	cpu->regA = mos_and(cpu, cpu->regA, cpu->tmp);
 }
 
 // = 14
@@ -464,20 +464,20 @@ void mosop34(CPU* cpu) {
 // and zp,x n
 void mosop35(CPU* cpu) {
 	mosGetZPX(cpu);
-	MAND(cpu->tmp);
+	cpu->regA = mos_and(cpu, cpu->regA, cpu->tmp);
 }
 
 // rol zp,x n
 void mosop36(CPU* cpu) {
 	mosGetZPX(cpu);
-	MROL(cpu->tmp);
+	cpu->tmp = mos_rol(cpu, cpu->tmp);
 	cpu->mwr(cpu->regWZ, cpu->tmp, cpu->xptr);
 }
 
 // rla zp,x n
 void mosop37(CPU* cpu) {
 	mosop36(cpu);
-	MAND(cpu->tmp);
+	cpu->regA = mos_and(cpu, cpu->regA, cpu->tmp);
 }
 
 // sec
@@ -489,7 +489,7 @@ void mosop38(CPU* cpu) {
 // and abs,y nn
 void mosop39(CPU* cpu) {
 	mosGetABSY(cpu);
-	MAND(cpu->tmp);
+	cpu->regA = mos_and(cpu, cpu->regA, cpu->tmp);
 }
 
 void mosop3A(CPU* cpu) {
@@ -498,9 +498,9 @@ void mosop3A(CPU* cpu) {
 // rla abs,y nn
 void mosop3B(CPU* cpu) {
 	mosGetABSY(cpu);
-	MROL(cpu->tmp);
+	cpu->tmp = mos_rol(cpu, cpu->tmp);
 	cpu->mwr(cpu->regWZ, cpu->tmp, cpu->xptr);
-	MAND(cpu->tmp);
+	cpu->regA = mos_and(cpu, cpu->regA, cpu->tmp);
 }
 
 // = 1c
@@ -511,20 +511,20 @@ void mosop3C(CPU* cpu) {
 // and abs,x nn
 void mosop3D(CPU* cpu) {
 	mosGetABSX(cpu);
-	MAND(cpu->tmp);
+	cpu->regA = mos_and(cpu, cpu->regA, cpu->tmp);
 }
 
 // rol abs,x nn
 void mosop3E(CPU* cpu) {
 	mosGetABSX(cpu);
-	MROL(cpu->tmp);
+	cpu->tmp = mos_rol(cpu, cpu->tmp);
 	cpu->mwr(cpu->regWZ, cpu->tmp, cpu->xptr);
 }
 
 // rla abs,x nn
 void mosop3F(CPU* cpu) {
 	mosop3E(cpu);
-	MAND(cpu->tmp);
+	cpu->regA = mos_and(cpu, cpu->regA, cpu->tmp);
 }
 
 // rti
@@ -538,7 +538,7 @@ void mosop40(CPU* cpu) {
 // eor ind,x n
 void mosop41(CPU* cpu) {
 	mosGetINDX(cpu);
-	MEOR(cpu->tmp);
+	cpu->regA = mos_eor(cpu, cpu->regA, cpu->tmp);
 }
 
 void mosop42(CPU* cpu) {
@@ -548,9 +548,9 @@ void mosop42(CPU* cpu) {
 // sre ind,x n
 void mosop43(CPU* cpu) {
 	mosGetINDX(cpu);
-	MLSR(cpu->tmp);
+	cpu->tmp = mos_lsr(cpu, cpu->tmp);
 	cpu->mwr(cpu->regWZ, cpu->tmp, cpu->xptr);
-	MEOR(cpu->tmp);
+	cpu->regA = mos_eor(cpu, cpu->regA, cpu->tmp);
 }
 
 // *nop zp n
@@ -561,13 +561,13 @@ void mosop44(CPU* cpu) {
 // eor zp n
 void mosop45(CPU* cpu) {
 	mosGetZP(cpu);
-	MEOR(cpu->tmp);
+	cpu->regA = mos_eor(cpu, cpu->regA, cpu->tmp);
 }
 
 // lsr zp n
 void mosop46(CPU* cpu) {
 	mosGetZP(cpu);
-	MLSR(cpu->tmp);
+	cpu->tmp = mos_lsr(cpu, cpu->tmp);
 	cpu->mwr(cpu->regWZ, cpu->tmp, cpu->xptr);
 }
 
@@ -575,7 +575,7 @@ void mosop46(CPU* cpu) {
 // = lsr + eor
 void mosop47(CPU* cpu) {
 	mosop46(cpu);
-	MEOR(cpu->tmp);
+	cpu->regA = mos_eor(cpu, cpu->regA, cpu->tmp);
 }
 
 // pha : push regA
@@ -586,12 +586,12 @@ void mosop48(CPU* cpu) {
 // eor n
 void mosop49(CPU* cpu) {
 	mosGetImm(cpu->tmp);
-	MEOR(cpu->tmp);
+	cpu->regA = mos_eor(cpu, cpu->regA, cpu->tmp);
 }
 
 // lsr regA
 void mosop4A(CPU* cpu) {
-	MLSR(cpu->regA);
+	cpu->regA = mos_lsr(cpu, cpu->regA);
 }
 
 // *asr n
@@ -599,7 +599,7 @@ void mosop4A(CPU* cpu) {
 void mosop4B(CPU* cpu) {
 	mosGetImm(cpu->tmp);
 	cpu->regA &= cpu->tmp;
-	MLSR(cpu->regA);
+	cpu->tmp = mos_lsr(cpu, cpu->regA);
 }
 
 // jmp nn
@@ -612,20 +612,20 @@ void mosop4C(CPU* cpu) {
 // eor abs nn
 void mosop4D(CPU* cpu) {
 	mosGetABS(cpu);
-	MEOR(cpu->tmp);
+	cpu->regA = mos_eor(cpu, cpu->regA, cpu->tmp);
 }
 
 // lsr abs nn
 void mosop4E(CPU* cpu) {
 	mosGetABS(cpu);
-	MLSR(cpu->tmp);
+	cpu->tmp = mos_lsr(cpu, cpu->tmp);
 	cpu->mwr(cpu->regWZ, cpu->tmp, cpu->xptr);
 }
 
 // sre abs nn
 void mosop4F(CPU* cpu) {
 	mosop4E(cpu);
-	MEOR(cpu->tmp);
+	cpu->regA = mos_eor(cpu, cpu->regA, cpu->tmp);
 }
 
 // bvc e (v = 0)
@@ -640,7 +640,7 @@ void mosop50(CPU* cpu) {
 // eor ind,y n
 void mosop51(CPU* cpu) {
 	mosGetINDY(cpu);
-	MEOR(cpu->tmp);
+	cpu->regA = mos_eor(cpu, cpu->regA, cpu->tmp);
 }
 
 void mosop52(CPU* cpu) {
@@ -650,9 +650,9 @@ void mosop52(CPU* cpu) {
 // sre ind,y n
 void mosop53(CPU* cpu) {
 	mosGetINDY(cpu);
-	MLSR(cpu->tmp);
+	cpu->tmp = mos_lsr(cpu, cpu->tmp);
 	cpu->mwr(cpu->regWZ, cpu->tmp, cpu->xptr);
-	MEOR(cpu->tmp);
+	cpu->regA = mos_eor(cpu, cpu->regA, cpu->tmp);
 }
 
 // = 14
@@ -663,20 +663,20 @@ void mosop54(CPU* cpu) {
 // eor zp,x n
 void mosop55(CPU* cpu) {
 	mosGetZPX(cpu);
-	MEOR(cpu->tmp);
+	cpu->regA = mos_eor(cpu, cpu->regA, cpu->tmp);
 }
 
 // lsr zp,x n
 void mosop56(CPU* cpu) {
 	mosGetZPX(cpu);
-	MLSR(cpu->tmp);
+	cpu->tmp = mos_lsr(cpu, cpu->tmp);
 	cpu->mwr(cpu->regWZ, cpu->tmp, cpu->xptr);
 }
 
 // sre zp,x n
 void mosop57(CPU* cpu) {
 	mosop56(cpu);
-	MEOR(cpu->tmp);
+	cpu->regA = mos_eor(cpu, cpu->regA, cpu->tmp);
 }
 
 // cli
@@ -690,7 +690,7 @@ void mosop58(CPU* cpu) {
 // eor abs,y nn
 void mosop59(CPU* cpu) {
 	mosGetABSY(cpu);
-	MEOR(cpu->tmp);
+	cpu->regA = mos_eor(cpu, cpu->regA, cpu->tmp);
 }
 
 void mosop5A(CPU* cpu) {
@@ -699,9 +699,9 @@ void mosop5A(CPU* cpu) {
 // sre abs,y nn
 void mosop5B(CPU* cpu) {
 	mosGetABSY(cpu);
-	MLSR(cpu->tmp);
+	cpu->tmp = mos_lsr(cpu, cpu->tmp);
 	cpu->mwr(cpu->regWZ, cpu->tmp, cpu->xptr);
-	MEOR(cpu->tmp);
+	cpu->regA = mos_eor(cpu, cpu->regA, cpu->tmp);
 }
 
 // = 1c
@@ -712,20 +712,20 @@ void mosop5C(CPU* cpu) {
 // eor abs,x nn
 void mosop5D(CPU* cpu) {
 	mosGetABSX(cpu);
-	MEOR(cpu->tmp);
+	cpu->regA = mos_eor(cpu, cpu->regA, cpu->tmp);
 }
 
 // lsr abs,x nn
 void mosop5E(CPU* cpu) {
 	mosGetABSX(cpu);
-	MLSR(cpu->tmp);
+	cpu->tmp = mos_lsr(cpu, cpu->tmp);
 	cpu->mwr(cpu->regWZ, cpu->tmp, cpu->xptr);
 }
 
 // sre abs,x nn
 void mosop5F(CPU* cpu) {
 	mosop5E(cpu);
-	MEOR(cpu->tmp);
+	cpu->regA = mos_eor(cpu, cpu->regA, cpu->tmp);
 }
 
 // rts
@@ -738,7 +738,7 @@ void mosop60(CPU* cpu) {
 // adc ind,x n
 void mosop61(CPU* cpu) {
 	mosGetINDX(cpu);
-	MADC(cpu->regA, cpu->tmp);
+	cpu->regA = mos_adc(cpu, cpu->regA, cpu->tmp);
 }
 
 void mosop62(CPU* cpu) {
@@ -748,9 +748,9 @@ void mosop62(CPU* cpu) {
 // rra ind,x n
 void mosop63(CPU* cpu) {
 	mosGetINDX(cpu);
-	MROR(cpu->tmp);
+	cpu->tmp = mos_ror(cpu, cpu->tmp);
 	cpu->mwr(cpu->regWZ, cpu->tmp, cpu->xptr);
-	MADC(cpu->regA, cpu->tmp);
+	cpu->regA = mos_adc(cpu, cpu->regA, cpu->tmp);
 }
 
 // *nop zp n
@@ -761,13 +761,13 @@ void mosop64(CPU* cpu) {
 // adc zp n
 void mosop65(CPU* cpu) {
 	mosGetZP(cpu);
-	MADC(cpu->regA, cpu->tmp);
+	cpu->regA = mos_adc(cpu, cpu->regA, cpu->tmp);
 }
 
 // ror zp n
 void mosop66(CPU* cpu) {
 	mosGetZP(cpu);
-	MROR(cpu->tmp);
+	cpu->tmp = mos_ror(cpu, cpu->tmp);
 	cpu->mwr(cpu->regWZ, cpu->tmp, cpu->xptr);
 }
 
@@ -775,7 +775,7 @@ void mosop66(CPU* cpu) {
 // = ror + adc
 void mosop67(CPU* cpu) {
 	mosop66(cpu);
-	MADC(cpu->regA, cpu->tmp);
+	cpu->regA = mos_adc(cpu, cpu->regA, cpu->tmp);
 }
 
 // pla = pop regA
@@ -788,12 +788,12 @@ void mosop68(CPU* cpu) {
 // adc n
 void mosop69(CPU* cpu) {
 	mosGetImm(cpu->tmp);
-	MADC(cpu->regA, cpu->tmp);
+	cpu->regA = mos_adc(cpu, cpu->regA, cpu->tmp);
 }
 
 // ror regA
 void mosop6A(CPU* cpu) {
-	MROR(cpu->regA);
+	cpu->regA = mos_ror(cpu, cpu->regA);
 }
 
 // *arr n
@@ -824,20 +824,20 @@ void mosop6C(CPU* cpu) {
 // adc abs nn
 void mosop6D(CPU* cpu) {
 	mosGetABS(cpu);
-	MADC(cpu->regA, cpu->tmp);
+	cpu->regA = mos_adc(cpu, cpu->regA, cpu->tmp);
 }
 
 // ror abs nn
 void mosop6E(CPU* cpu) {
 	mosGetABS(cpu);
-	MROR(cpu->tmp);
+	cpu->tmp = mos_ror(cpu, cpu->tmp);
 	cpu->mwr(cpu->regWZ, cpu->tmp, cpu->xptr);
 }
 
 // rra abs nn
 void mosop6F(CPU* cpu) {
 	mosop6E(cpu);
-	MADC(cpu->regA, cpu->tmp);
+	cpu->regA = mos_adc(cpu, cpu->regA, cpu->tmp);
 }
 
 // bvs e (v = 1)
@@ -852,7 +852,7 @@ void mosop70(CPU* cpu) {
 // 71: adc ind,y n
 void mosop71(CPU* cpu) {
 	mosGetINDY(cpu);
-	MADC(cpu->regA, cpu->tmp);
+	cpu->regA = mos_adc(cpu, cpu->regA, cpu->tmp);
 }
 
 void mosop72(CPU* cpu) {
@@ -862,9 +862,9 @@ void mosop72(CPU* cpu) {
 // rra ind,y n
 void mosop73(CPU* cpu) {
 	mosGetINDY(cpu);
-	MROR(cpu->tmp);
+	cpu->tmp = mos_ror(cpu, cpu->tmp);
 	cpu->mwr(cpu->regWZ, cpu->tmp, cpu->xptr);
-	MADC(cpu->regA, cpu->tmp);
+	cpu->regA = mos_adc(cpu, cpu->regA, cpu->tmp);
 }
 
 // = 14
@@ -875,20 +875,20 @@ void mosop74(CPU* cpu) {
 // adc zp,x n
 void mosop75(CPU* cpu) {
 	mosGetZPX(cpu);
-	MADC(cpu->regA, cpu->tmp);
+	cpu->regA = mos_adc(cpu, cpu->regA, cpu->tmp);
 }
 
 // ror zp,x n
 void mosop76(CPU* cpu) {
 	mosGetZPX(cpu);
-	MROR(cpu->tmp);
+	cpu->tmp = mos_ror(cpu, cpu->tmp);
 	cpu->mwr(cpu->regWZ, cpu->tmp, cpu->xptr);
 }
 
 // rra zp,x n
 void mosop77(CPU* cpu) {
 	mosop76(cpu);
-	MADC(cpu->regA, cpu->tmp);
+	cpu->regA = mos_adc(cpu, cpu->regA, cpu->tmp);
 }
 
 // sei
@@ -901,7 +901,7 @@ void mosop78(CPU* cpu) {
 // 79: adc abs,y nn
 void mosop79(CPU* cpu) {
 	mosGetABSY(cpu);
-	MADC(cpu->regA, cpu->tmp);
+	cpu->regA = mos_adc(cpu, cpu->regA, cpu->tmp);
 }
 
 void mosop7A(CPU* cpu) {
@@ -910,9 +910,9 @@ void mosop7A(CPU* cpu) {
 // rra abs,y nn
 void mosop7B(CPU* cpu) {
 	mosGetABSY(cpu);
-	MROR(cpu->tmp);
+	cpu->tmp = mos_ror(cpu, cpu->tmp);
 	cpu->mwr(cpu->regWZ, cpu->tmp, cpu->xptr);
-	MADC(cpu->regA, cpu->tmp);
+	cpu->regA = mos_adc(cpu, cpu->regA, cpu->tmp);
 }
 
 // = 1c
@@ -923,20 +923,20 @@ void mosop7C(CPU* cpu) {
 // adc abs,x nn
 void mosop7D(CPU* cpu) {
 	mosGetABSX(cpu);
-	MADC(cpu->regA, cpu->tmp);
+	cpu->regA = mos_adc(cpu, cpu->regA, cpu->tmp);
 }
 
 // ror abs,x nn
 void mosop7E(CPU* cpu) {
 	mosGetABSX(cpu);
-	MROR(cpu->tmp);
+	cpu->tmp = mos_ror(cpu, cpu->tmp);
 	cpu->mwr(cpu->regWZ, cpu->tmp, cpu->xptr);
 }
 
 // rra abs,x nn
 void mosop7F(CPU* cpu) {
 	mosop7E(cpu);
-	MADC(cpu->regA, cpu->tmp);
+	cpu->regA = mos_adc(cpu, cpu->regA, cpu->tmp);
 }
 
 // nop n
@@ -1359,13 +1359,13 @@ void mosopBF(CPU* cpu) {
 // cpy n
 void mosopC0(CPU* cpu) {
 	mosGetImm(cpu->tmp);
-	MCMP(cpu->regY, cpu->tmp);
+	mos_cmp(cpu, cpu->regY, cpu->tmp);
 }
 
 // cmp ind,x n
 void mosopC1(CPU* cpu) {
 	mosGetINDX(cpu);
-	MCMP(cpu->regA, cpu->tmp);
+	mos_cmp(cpu, cpu->regA, cpu->tmp);
 }
 
 void mosopC2(CPU* cpu) {
@@ -1377,19 +1377,19 @@ void mosopC3(CPU* cpu) {
 	cpu->tmp--;
 	MFLAGZN(cpu->tmp);
 	cpu->mwr(cpu->regWZ, cpu->tmp, cpu->xptr);
-	MCMP(cpu->regA, cpu->tmp);
+	mos_cmp(cpu, cpu->regA, cpu->tmp);
 }
 
 // cpy zp n
 void mosopC4(CPU* cpu) {
 	mosGetZP(cpu);
-	MCMP(cpu->regY, cpu->tmp);
+	mos_cmp(cpu, cpu->regY, cpu->tmp);
 }
 
 // cmp zp n
 void mosopC5(CPU* cpu) {
 	mosGetZP(cpu);
-	MCMP(cpu->regA, cpu->tmp);
+	mos_cmp(cpu, cpu->regA, cpu->tmp);
 }
 
 // dec zp n
@@ -1404,7 +1404,7 @@ void mosopC6(CPU* cpu) {
 // dec (mem) + cp (mem)
 void mosopC7(CPU* cpu) {
 	mosopC6(cpu);	// dec zp n
-	MCMP(cpu->regA, cpu->tmp);
+	mos_cmp(cpu, cpu->regA, cpu->tmp);
 }
 
 // iny
@@ -1416,7 +1416,7 @@ void mosopC8(CPU* cpu) {
 // cmp n
 void mosopC9(CPU* cpu) {
 	mosGetImm(cpu->tmp);
-	MCMP(cpu->regA, cpu->tmp);
+	mos_cmp(cpu, cpu->regA, cpu->tmp);
 }
 
 // dex
@@ -1431,19 +1431,19 @@ void mosopCB(CPU* cpu) {
 	mosGetImm(cpu->tmp);
 	cpu->regX &= cpu->regA;
 	MFLAGZN(cpu->regX);
-	MSBC(cpu->regX, cpu->tmp);
+	cpu->regA = mos_sbc(cpu, cpu->regX, cpu->tmp);
 }
 
 // cpy abs nn
 void mosopCC(CPU* cpu) {
 	mosGetABS(cpu);
-	MCMP(cpu->regY, cpu->tmp);
+	mos_cmp(cpu, cpu->regY, cpu->tmp);
 }
 
 // cmp abs nn
 void mosopCD(CPU* cpu) {
 	mosGetABS(cpu);
-	MCMP(cpu->regA, cpu->tmp);
+	mos_cmp(cpu, cpu->regA, cpu->tmp);
 }
 
 // dec abs nn
@@ -1457,7 +1457,7 @@ void mosopCE(CPU* cpu) {
 // dcp abs nn
 void mosopCF(CPU* cpu) {
 	mosopCE(cpu);
-	MCMP(cpu->regA, cpu->tmp);
+	mos_cmp(cpu, cpu->regA, cpu->tmp);
 }
 
 // bne e = jr nz,e
@@ -1472,7 +1472,7 @@ void mosopD0(CPU* cpu) {
 // cmp ind,y n
 void mosopD1(CPU* cpu) {
 	mosGetINDY(cpu);
-	MCMP(cpu->regA, cpu->tmp);
+	mos_cmp(cpu, cpu->regA, cpu->tmp);
 }
 
 void mosopD2(CPU* cpu) {
@@ -1485,7 +1485,7 @@ void mosopD3(CPU* cpu) {
 	cpu->tmp--;
 	MFLAGZN(cpu->tmp);
 	cpu->mwr(cpu->regWZ, cpu->tmp, cpu->xptr);
-	MCMP(cpu->regA, cpu->tmp);
+	mos_cmp(cpu, cpu->regA, cpu->tmp);
 }
 
 // = 14
@@ -1496,7 +1496,7 @@ void mosopD4(CPU* cpu) {
 // cmp zp,x n
 void mosopD5(CPU* cpu) {
 	mosGetZPX(cpu);
-	MCMP(cpu->regA, cpu->tmp);
+	mos_cmp(cpu, cpu->regA, cpu->tmp);
 }
 
 // dec zp,x n
@@ -1510,7 +1510,7 @@ void mosopD6(CPU* cpu) {
 // dcp zp,x n
 void mosopD7(CPU* cpu) {
 	mosopD6(cpu);
-	MCMP(cpu->regA, cpu->tmp);
+	mos_cmp(cpu, cpu->regA, cpu->tmp);
 }
 
 // cld
@@ -1522,7 +1522,7 @@ void mosopD8(CPU* cpu) {
 // cmp abs,y nn
 void mosopD9(CPU* cpu) {
 	mosGetABSY(cpu);
-	MCMP(cpu->regA, cpu->tmp);
+	mos_cmp(cpu, cpu->regA, cpu->tmp);
 }
 
 void mosopDA(CPU* cpu) {
@@ -1534,7 +1534,7 @@ void mosopDB(CPU* cpu) {
 	cpu->tmp--;
 	MFLAGZN(cpu->tmp);
 	cpu->mwr(cpu->regWZ, cpu->tmp, cpu->xptr);
-	MCMP(cpu->regA, cpu->tmp);
+	mos_cmp(cpu, cpu->regA, cpu->tmp);
 }
 
 // = 1c
@@ -1545,7 +1545,7 @@ void mosopDC(CPU* cpu) {
 // cmp abs,x nn
 void mosopDD(CPU* cpu) {
 	mosGetABSX(cpu);
-	MCMP(cpu->regA, cpu->tmp);
+	mos_cmp(cpu, cpu->regA, cpu->tmp);
 }
 
 // dec abs,x nn
@@ -1559,19 +1559,19 @@ void mosopDE(CPU* cpu) {
 // dcp abs,x nn
 void mosopDF(CPU* cpu) {
 	mosopDE(cpu);
-	MCMP(cpu->regA, cpu->tmp);
+	mos_cmp(cpu, cpu->regA, cpu->tmp);
 }
 
 // cpx n
 void mosopE0(CPU* cpu) {
 	mosGetImm(cpu->tmp);
-	MCMP(cpu->regX, cpu->tmp);
+	mos_cmp(cpu, cpu->regX, cpu->tmp);
 }
 
 // sbc ind,x n
 void mosopE1(CPU* cpu) {
 	mosGetINDX(cpu);
-	MSBC(cpu->regA, cpu->tmp);
+	cpu->regA = mos_sbc(cpu, cpu->regA, cpu->tmp);
 }
 
 void mosopE2(CPU* cpu) {
@@ -1583,19 +1583,19 @@ void mosopE3(CPU* cpu) {
 	cpu->tmp++;
 	MFLAGZN(cpu->tmp);
 	cpu->mwr(cpu->regWZ, cpu->tmp, cpu->xptr);
-	MSBC(cpu->regA, cpu->tmp);
+	cpu->regA = mos_sbc(cpu, cpu->regA, cpu->tmp);
 }
 
 // cpx zp n
 void mosopE4(CPU* cpu) {
 	mosGetZP(cpu);
-	MCMP(cpu->regX, cpu->tmp);
+	mos_cmp(cpu, cpu->regX, cpu->tmp);
 }
 
 // sbc zp n
 void mosopE5(CPU* cpu) {
 	mosGetZP(cpu);
-	MSBC(cpu->regA, cpu->tmp);
+	cpu->regA = mos_sbc(cpu, cpu->regA, cpu->tmp);
 }
 
 // inc zp n
@@ -1610,7 +1610,7 @@ void mosopE6(CPU* cpu) {
 // = inc zp n + sbc zp n
 void mosopE7(CPU* cpu) {
 	mosopE6(cpu);
-	MSBC(cpu->regA, cpu->tmp);
+	cpu->regA = mos_sbc(cpu, cpu->regA, cpu->tmp);
 }
 
 // inx
@@ -1622,7 +1622,7 @@ void mosopE8(CPU* cpu) {
 // sbc n
 void mosopE9(CPU* cpu) {
 	mosGetImm(cpu->tmp);
-	MSBC(cpu->regA, cpu->tmp);
+	cpu->regA = mos_sbc(cpu, cpu->regA, cpu->tmp);
 }
 
 // nop
@@ -1637,13 +1637,13 @@ void mosopEB(CPU* cpu) {
 // cpx abs nn
 void mosopEC(CPU* cpu) {
 	mosGetABS(cpu);
-	MCMP(cpu->regX, cpu->tmp);
+	mos_cmp(cpu, cpu->regX, cpu->tmp);
 }
 
 // sbc abs nn
 void mosopED(CPU* cpu) {
 	mosGetABS(cpu);
-	MSBC(cpu->regA, cpu->tmp);
+	cpu->regA = mos_sbc(cpu, cpu->regA, cpu->tmp);
 }
 
 // inc abs nn
@@ -1657,7 +1657,7 @@ void mosopEE(CPU* cpu) {
 // isb abs nn
 void mosopEF(CPU* cpu) {
 	mosopEE(cpu);
-	MSBC(cpu->regA, cpu->tmp);
+	cpu->regA = mos_sbc(cpu, cpu->regA, cpu->tmp);
 }
 
 // beq e = jr z,e
@@ -1672,7 +1672,7 @@ void mosopF0(CPU* cpu) {
 // sbc ind,y n
 void mosopF1(CPU* cpu) {
 	mosGetINDY(cpu);
-	MSBC(cpu->regA, cpu->tmp);
+	cpu->regA = mos_sbc(cpu, cpu->regA, cpu->tmp);
 }
 
 void mosopF2(CPU* cpu) {
@@ -1685,7 +1685,7 @@ void mosopF3(CPU* cpu) {
 	cpu->tmp++;
 	MFLAGZN(cpu->tmp);
 	cpu->mwr(cpu->regWZ, cpu->tmp, cpu->xptr);
-	MSBC(cpu->regA, cpu->tmp);
+	cpu->regA = mos_sbc(cpu, cpu->regA, cpu->tmp);
 }
 
 // = 14
@@ -1696,7 +1696,7 @@ void mosopF4(CPU* cpu) {
 // sbc zp,x n
 void mosopF5(CPU* cpu) {
 	mosGetZPX(cpu);
-	MSBC(cpu->regA, cpu->tmp);
+	cpu->regA = mos_sbc(cpu, cpu->regA, cpu->tmp);
 }
 
 // inc zp,x n
@@ -1710,7 +1710,7 @@ void mosopF6(CPU* cpu) {
 // isb zp,x n
 void mosopF7(CPU* cpu) {
 	mosopF6(cpu);
-	MSBC(cpu->regA, cpu->tmp);
+	cpu->regA = mos_sbc(cpu, cpu->regA, cpu->tmp);
 }
 
 // sed
@@ -1722,7 +1722,7 @@ void mosopF8(CPU* cpu) {
 // sbc abs,y nn
 void mosopF9(CPU* cpu) {
 	mosGetABSY(cpu);
-	MSBC(cpu->regA, cpu->tmp);
+	cpu->regA = mos_sbc(cpu, cpu->regA, cpu->tmp);
 }
 
 void mosopFA(CPU* cpu) {
@@ -1734,7 +1734,7 @@ void mosopFB(CPU* cpu) {
 	cpu->tmp++;
 	MFLAGZN(cpu->tmp);
 	cpu->mwr(cpu->regWZ, cpu->tmp, cpu->xptr);
-	MSBC(cpu->regA, cpu->tmp);
+	cpu->regA = mos_sbc(cpu, cpu->regA, cpu->tmp);
 }
 
 // = 1c
@@ -1745,7 +1745,7 @@ void mosopFC(CPU* cpu) {
 // sbc abs,x nn
 void mosopFD(CPU* cpu) {
 	mosGetABSX(cpu);
-	MSBC(cpu->regA, cpu->tmp);
+	cpu->regA = mos_sbc(cpu, cpu->regA, cpu->tmp);
 }
 
 // inc abs,x nn
@@ -1759,7 +1759,7 @@ void mosopFE(CPU* cpu) {
 // isb abs,x nn
 void mosopFF(CPU* cpu) {
 	mosopFE(cpu);
-	MSBC(cpu->regA, cpu->tmp);
+	cpu->regA = mos_sbc(cpu, cpu->regA, cpu->tmp);
 }
 
 opCode mosTab[256] = {
