@@ -128,7 +128,7 @@ void DebugWin::start() {
 	if (comp->hw->grp != tabMode) {
 		onPrfChange();		// update tabs
 	}
-	chLayout();
+//	chLayout();
 	if (!comp->vid->tail)
 		vid_dark_tail(comp->vid);
 
@@ -224,14 +224,6 @@ void DebugWin::onPrfChange() {
 	wid_vmem_dump->setVMem(conf.prof.cur->zx->vid->ram);
 
 	wid_dump->setBase(comp->hw->base, comp->hw->id);
-	// TODO: move imm/iff1/iff2 in registers
-	bool z80like = (comp->cpu->type == CPU_Z80);
-	z80like |= (comp->cpu->type == CPU_LR35902);
-	z80like |= (comp->cpu->type == CPU_I8080);
-	ui_cpu.labIMM->setVisible(z80like); ui_cpu.boxIM->setVisible(z80like);
-	ui_cpu.labIFF1->setVisible(z80like); ui_cpu.flagIFF1->setVisible(z80like);
-	ui_cpu.labIFF2->setVisible(z80like); ui_cpu.flagIFF2->setVisible(z80like);
-
 	wid_brk->moved();
 
 	fillAll();
@@ -251,6 +243,7 @@ DebugWin::DebugWin(QWidget* par):QMainWindow(par) {
 	QWidget* wid_cpu = new QWidget;
 	QWidget* wid_dasm = new QWidget;
 	ui_cpu.setupUi(wid_cpu);
+
 	ui_asm.setupUi(wid_dasm);
 	QHBoxLayout* lay = new QHBoxLayout;
 	lay->addWidget(wid_cpu);
@@ -328,17 +321,22 @@ DebugWin::DebugWin(QWidget* par):QMainWindow(par) {
 		lab = new xLabel;
 		lab->id = i;
 		lab->setVisible(false);
+		lab->setProperty("isbit", false);
 		xhs = new xHexSpin;
 		xhs->setXFlag(XHS_BGR | XHS_DEC | XHS_FILL);
 		xhs->setVisible(false);
 		xhs->setFrame(false);
 		xhs->setFixedWidth(60);
 		xhs->setAlignment(Qt::AlignCenter);
+		qcb = new QCheckBox;
+		qcb->setVisible(false);
 		dbgRegLabs.append(lab);
 		dbgRegEdit.append(xhs);
+		dbgRegBits.append(qcb);
 		ui_cpu.formRegs->insertRow(i, lab, xhs);
 		connect(lab, &xLabel::clicked, this, &DebugWin::regClick);
 		connect(xhs, &xHexSpin::textChanged, this, &DebugWin::setCPU);
+		connect(qcb, SIGNAL(toggled(bool)), this, SLOT(setCPU()));
 	}
 // create flags group (for cpu->f, 16 bit max)
 	flagrp = new QButtonGroup;
@@ -480,9 +478,6 @@ DebugWin::DebugWin(QWidget* par):QMainWindow(par) {
 
 //	connect (ui.tbSaveVRam, SIGNAL(released()), this, SLOT(saveVRam()));
 // registers
-	connect(ui_cpu.boxIM,SIGNAL(valueChanged(int)),this,SLOT(setCPU()));
-	connect(ui_cpu.flagIFF1,SIGNAL(stateChanged(int)),this,SLOT(setCPU()));
-	connect(ui_cpu.flagIFF2,SIGNAL(stateChanged(int)),this,SLOT(setCPU()));
 //	connect(ui.flagGroup,SIGNAL(buttonClicked(int)),this,SLOT(setFlags()));
 
 	block = 0;
@@ -888,20 +883,8 @@ void DebugWin::setScrAtr(int adr, int atr) {
 
 // ...
 
+// NOTE: called from start()
 void DebugWin::chLayout() {
-	switch (conf.prof.cur->zx->cpu->type) {
-		case CPU_Z80:
-			ui_cpu.boxIM->setEnabled(true);
-			break;
-		case CPU_LR35902:
-			ui_cpu.boxIM->setEnabled(false);
-			break;
-		case CPU_6502:
-			ui_cpu.boxIM->setEnabled(false);
-			break;
-		default:
-			break;
-	}
 }
 
 int dbg_get_reg_adr(CPU* cpu, xRegister* reg) {
@@ -994,34 +977,58 @@ void DebugWin::fillCPU() {
 //	Computer* comp = conf.prof.cur->zx;
 	CPU* cpu = conf.prof.cur->zx->cpu;
 	xRegBunch bunch = cpuGetRegs(cpu);
+	xRegister* rp;
 	int i;
+	int t;
+	bool f;
 	for (i = 0; i < dbgRegLabs.size(); i++) {
-		switch (bunch.regs[i].id) {
+		rp = &bunch.regs[i];
+		switch (rp->id) {
 			case REG_EMPTY:
 			case REG_NONE:
 				dbgRegLabs[i]->setVisible(false);
 				dbgRegEdit[i]->setVisible(false);
+				dbgRegBits[i]->setVisible(false);
 				break;
 			default:
-				dbgRegLabs[i]->setText(bunch.regs[i].name);
-				dbgRegEdit[i]->setProperty("regid", bunch.regs[i].id);
-				switch (bunch.regs[i].type & REG_TMASK) {
-					case REG_BIT: dbgRegEdit[i]->setMax(1); break;
+				dbgRegLabs[i]->setText(rp->name);
+				t = rp->type & REG_TMASK;
+				switch (t) {
+					case REG_2: dbgRegEdit[i]->setMax(2); break;
 					case REG_BYTE: dbgRegEdit[i]->setMax(0xff); break;
 					case REG_24: dbgRegEdit[i]->setMax(0xffffff); break;
 					default: dbgRegEdit[i]->setMax(0xffff); break;
 				}
-				dbgRegEdit[i]->setReadOnly(bunch.regs[i].type & REG_RO);
-				dbgRegEdit[i]->setValue(bunch.regs[i].value);
-				dbgRegEdit[i]->setVisible(true);
+				f = !!(rp->type & REG_RO);
 				dbgRegLabs[i]->setVisible(true);
+				// NOTE: setWidget return a error if a cell is occuped
+				if (t == REG_BIT) {
+					if (!dbgRegLabs[i]->property("isbit").toBool()) {
+						ui_cpu.formRegs->takeRow(i);
+						ui_cpu.formRegs->insertRow(i, dbgRegLabs[i], dbgRegBits[i]);
+						dbgRegLabs[i]->setProperty("isbit", true);
+					}
+					dbgRegBits[i]->setCheckable(!f);		// if read only
+					dbgRegBits[i]->setChecked(rp->value);
+					dbgRegBits[i]->setProperty("regid", rp->id);
+					dbgRegBits[i]->setVisible(true);
+					dbgRegEdit[i]->setVisible(false);
+				} else {
+					if (dbgRegLabs[i]->property("isbit").toBool()) {
+						ui_cpu.formRegs->takeRow(i);
+						ui_cpu.formRegs->insertRow(i, dbgRegLabs[i], dbgRegEdit[i]);
+						dbgRegLabs[i]->setProperty("isbit", false);
+					}
+					dbgRegEdit[i]->setProperty("regid", rp->id);
+					dbgRegEdit[i]->setValue(rp->value);
+					dbgRegEdit[i]->setReadOnly(f);
+					dbgRegEdit[i]->setVisible(true);
+					dbgRegBits[i]->setVisible(false);
+				}
 				break;
 		}
 	}
 	fillFlags(bunch.flags);
-	ui_cpu.boxIM->setValue(cpu->regIM);
-	ui_cpu.flagIFF1->setChecked(cpu->flgIFF1);
-	ui_cpu.flagIFF2->setChecked(cpu->flgIFF2);
 	fillStack();
 	block = 0;
 }
@@ -1045,7 +1052,7 @@ void DebugWin::setCPU() {
 	int i = 0;
 	xRegBunch bunch;
 	foreach(xHexSpin* xhs, dbgRegEdit) {
-		if (xhs->isEnabled()) {
+		if (xhs->isVisible()) {
 			bunch.regs[i].id = xhs->property("regid").toInt();
 			bunch.regs[i].value = xhs->getValue() & 0xffff;
 			i++;
@@ -1053,10 +1060,16 @@ void DebugWin::setCPU() {
 			bunch.regs[i].id = REG_NONE;
 		}
 	}
+	foreach(QCheckBox* xcb, dbgRegBits) {
+		if (xcb->isVisible()) {
+			bunch.regs[i].id = xcb->property("regid").toInt();
+			bunch.regs[i].value = xcb->isChecked();
+			i++;
+		} else {
+			bunch.regs[i].id = REG_NONE;
+		}
+	}
 	cpuSetRegs(cpu, bunch);
-	cpu->regIM = ui_cpu.boxIM->value() & 3;
-	cpu->flgIFF1 = ui_cpu.flagIFF1->isChecked();// ? 1 : 0;
-	cpu->flgIFF2 = ui_cpu.flagIFF2->isChecked();// ? 1 : 0;
 	fillFlags(NULL);
 	fillStack();
 	fillDisasm();

@@ -32,6 +32,7 @@ typedef struct {
 #define REG_MPTR	-2
 
 #define REG_BIT		1
+#define REG_2		2
 #define REG_BYTE	8
 #define REG_WORD	16
 #define REG_24		24

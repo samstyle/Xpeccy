@@ -64,7 +64,10 @@ enum {
 	Z80_REG_IX,
 	Z80_REG_IY,
 	Z80_REG_I,
-	Z80_REG_R
+	Z80_REG_R,
+	Z80_REG_IM,
+	Z80_FLG_IFF1,
+	Z80_FLG_IFF2
 };
 
 #define Z80_INT	1

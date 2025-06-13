@@ -339,6 +339,9 @@ xRegDsc z80RegTab[] = {
 #ifdef ISDEBUG
 	{REG_MPTR, "WZ", REG_WORD | REG_RDMP, offsetof(CPU, regWZ)},
 #endif
+	{Z80_REG_IM, "IM", REG_2, offsetof(CPU, regIM)},
+	{Z80_FLG_IFF1, "IFF1", REG_BIT, offsetof(CPU, flgIFF1)},
+	{Z80_FLG_IFF2, "IFF2", REG_BIT, offsetof(CPU, flgIFF2)},
 	{REG_NONE, "", 0, 0}
 };
 
@@ -373,7 +376,10 @@ void z80_get_regs(CPU* cpu, xRegBunch* bunch) {
 			case Z80_REG_IX: reg.value = cpu->regIX; break;
 			case Z80_REG_IY: reg.value = cpu->regIY; break;
 			case Z80_REG_I: reg.value = cpu->regI; break;
-			case Z80_REG_R:reg.value = (cpu->regR & 0x7f) | (cpu->regR7 & 0x80); break;
+			case Z80_REG_R: reg.value = (cpu->regR & 0x7f) | (cpu->regR7 & 0x80); break;
+			case Z80_REG_IM: reg.value = cpu->regIM & 3; break;
+			case Z80_FLG_IFF1: reg.value = cpu->flgIFF1; break;
+			case Z80_FLG_IFF2: reg.value = cpu->flgIFF2; break;
 			case REG_MPTR: reg.value = cpu->regWZ; break;
 		}
 		if (reg.id != REG_EMPTY) {
@@ -417,6 +423,9 @@ void z80_set_regs(CPU* cpu, xRegBunch bunch) {
 				cpu->regR = rd->value;
 				cpu->regR7 = rd->value & 0x80;
 				break;
+			case Z80_REG_IM: cpu->regIM = (rd->value & 2) ? 2 : rd->value & 1; break;
+			case Z80_FLG_IFF1: cpu->flgIFF1 = !!rd->value; break;
+			case Z80_FLG_IFF2: cpu->flgIFF2 = !!rd->value; break;
 			case REG_MPTR: cpu->regWZ = rd->value; break;
 			case REG_NONE: idx = 100; break;
 		}

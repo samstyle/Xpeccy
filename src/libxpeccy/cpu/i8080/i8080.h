@@ -52,6 +52,7 @@ enum {
 	I8080_REG_BC,
 	I8080_REG_DE,
 	I8080_REG_HL,
+	I8080_FLG_IFF
 };
 
 void i8080_reset(CPU*);

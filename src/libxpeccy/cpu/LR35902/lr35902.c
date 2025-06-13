@@ -195,6 +195,7 @@ xRegDsc lrRegTab[] = {
 	{LR_REG_DE, "DE", REG_WORD | REG_RDMP, offsetof(CPU, regDE)},
 	{LR_REG_HL, "HL", REG_WORD | REG_RDMP, offsetof(CPU, regHL)},
 	{LR_REG_SP, "SP", REG_WORD | REG_RDMP, offsetof(CPU, regSP)},
+	{LR_FLG_IFF, "IFF", REG_BIT, offsetof(CPU, flgIFF1)},
 	{REG_EMPTY, "A", REG_BYTE, offsetof(CPU, regA)},
 	{REG_EMPTY, "F", REG_32, 0},
 	{REG_NONE, "", 0, 0}

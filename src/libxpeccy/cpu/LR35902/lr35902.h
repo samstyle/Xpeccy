@@ -58,7 +58,8 @@ enum {
 	LR_REG_AF,
 	LR_REG_BC,
 	LR_REG_DE,
-	LR_REG_HL
+	LR_REG_HL,
+	LR_FLG_IFF
 };
 
 void lr_reset(CPU*);

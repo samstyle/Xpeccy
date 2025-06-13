@@ -105,6 +105,7 @@ xRegDsc i8080RegTab[] = {
 	{I8080_REG_DE, "DE", REG_WORD | REG_RDMP, offsetof(CPU, regDE)},
 	{I8080_REG_HL, "HL", REG_WORD | REG_RDMP, offsetof(CPU, regHL)},
 	{I8080_REG_SP, "SP", REG_WORD | REG_RDMP, offsetof(CPU, regSP)},
+	{I8080_FLG_IFF, "IFF", REG_BIT, offsetof(CPU, flgIFF1)},
 	{REG_EMPTY, "A", REG_BYTE, offsetof(CPU, regA)},
 	{REG_EMPTY, "F", REG_32, 0},
 	{REG_NONE, "", 0, 0}
