@@ -992,11 +992,13 @@ void DebugWin::fillCPU() {
 				break;
 			default:
 				dbgRegLabs[i]->setText(rp->name);
+				dbgRegLabs[i]->setProperty("regid", rp->id);
 				t = rp->type & REG_TMASK;
 				switch (t) {
 					case REG_2: dbgRegEdit[i]->setMax(2); break;
 					case REG_BYTE: dbgRegEdit[i]->setMax(0xff); break;
 					case REG_24: dbgRegEdit[i]->setMax(0xffffff); break;
+					case REG_32: dbgRegEdit[i]->setMax(0xffffffff); break;
 					default: dbgRegEdit[i]->setMax(0xffff); break;
 				}
 				f = !!(rp->type & REG_RO);
@@ -1010,7 +1012,6 @@ void DebugWin::fillCPU() {
 					}
 					dbgRegBits[i]->setCheckable(!f);		// if read only
 					dbgRegBits[i]->setChecked(rp->value);
-					dbgRegBits[i]->setProperty("regid", rp->id);
 					dbgRegBits[i]->setVisible(true);
 					dbgRegEdit[i]->setVisible(false);
 				} else {
@@ -1019,7 +1020,6 @@ void DebugWin::fillCPU() {
 						ui_cpu.formRegs->insertRow(i, dbgRegLabs[i], dbgRegEdit[i]);
 						dbgRegLabs[i]->setProperty("isbit", false);
 					}
-					dbgRegEdit[i]->setProperty("regid", rp->id);
 					dbgRegEdit[i]->setValue(rp->value);
 					dbgRegEdit[i]->setReadOnly(f);
 					dbgRegEdit[i]->setVisible(true);
@@ -1051,19 +1051,14 @@ void DebugWin::setCPU() {
 	CPU* cpu = comp->cpu;
 	int i = 0;
 	xRegBunch bunch;
-	foreach(xHexSpin* xhs, dbgRegEdit) {
-		if (xhs->isVisible()) {
-			bunch.regs[i].id = xhs->property("regid").toInt();
-			bunch.regs[i].value = xhs->getValue() & 0xffff;
-			i++;
-		} else {
-			bunch.regs[i].id = REG_NONE;
-		}
-	}
-	foreach(QCheckBox* xcb, dbgRegBits) {
-		if (xcb->isVisible()) {
-			bunch.regs[i].id = xcb->property("regid").toInt();
-			bunch.regs[i].value = xcb->isChecked();
+	foreach(xLabel* xlb, dbgRegLabs) {
+		if (xlb->isVisible()) {
+			bunch.regs[i].id = xlb->property("regid").toInt();
+			if (xlb->property("isbit").toBool()) {
+				bunch.regs[i].value = dbgRegBits[i]->isChecked();
+			} else {
+				bunch.regs[i].value = dbgRegEdit[i]->getValue();
+			}
 			i++;
 		} else {
 			bunch.regs[i].id = REG_NONE;
