@@ -44,6 +44,7 @@ class xDisasmModel : public xTableModel {
 		int asmadr;			// full memory address
 	signals:
 		void rqRefill();
+		void s_comenter();
 		void s_adrch(int, int);
 	public slots:
 		int update_lst();
@@ -71,6 +72,7 @@ class xDisasmTable : public QTableView {
 		void t_update(int, int);
 		void setAdr(int, int = 0);
 		void setAdrX(int);
+		void rowDown();
 	private:
 		int markAdr;
 		xDisasmModel* model;

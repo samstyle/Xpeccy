@@ -772,7 +772,7 @@ bool xDisasmModel::setData(const QModelIndex& cidx, const QVariant& val, int rol
 				dasmwr(comp, adr + idx, buf[idx]);
 				idx++;
 			}
-			emit rqRefill();
+			emit s_comenter();
 			break;
 	}
 	update_lst();
@@ -785,8 +785,10 @@ xDisasmTable::xDisasmTable(QWidget* p):QTableView(p) {
 	//cptr = NULL;
 	model = new xDisasmModel();
 	setModel(model);
+	connect(model, SIGNAL(s_comenter()), this, SLOT(rowDown()));
 	connect(model, SIGNAL(s_adrch(int, int)), this, SLOT(t_update(int, int)));
-	connect(model, SIGNAL(rqRefill()), this, SIGNAL(rqRefill()));
+	connect(model, SIGNAL(rqRefill()), this, SIGNAL(rqRefill()));		// for updating other widgets
+	connect(model, SIGNAL(rqRefill()), this, SLOT(updContent()));		// for updating itself
 }
 
 void xDisasmTable::resizeEvent(QResizeEvent* ev) {
@@ -880,16 +882,23 @@ void xDisasmTable::t_update(int oadr, int nadr) {
 		history.append(oadr);
 	}
 	updContent();
-/*
-	for(int r = 0; r < rows(); r++) {
-		if (model->dasm[r].adr == (nadr & 0xffff)) {
-			setCurrentIndex(model->index(r, 0));
-			r = rows();
-		}
-	}
-*/
 	if (oadr != nadr)
 		emit s_adrch(nadr);
+}
+
+void xDisasmTable::rowDown() {
+	updContent();
+	QModelIndex idx = currentIndex();
+	int row = idx.row();
+	int col = idx.column();
+	if (row < model->rowCount() - 1) {
+		idx = model->index(row + 1, col);
+		setCurrentIndex(idx);
+		selectionModel()->select(idx, QItemSelectionModel::ClearAndSelect);
+	} else {
+		scrolDn();
+	}
+	emit rqRefill();
 }
 
 void xDisasmTable::copyToCbrd() {

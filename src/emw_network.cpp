@@ -203,7 +203,7 @@ void MainWin::socketRead() {
 	} else {
 		sock->write("Unrecognized command\r\n");
 	}
-	if (com != "quit")
+	if (sock->isOpen())
 		sock->write("> ");
 }
 

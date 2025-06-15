@@ -430,7 +430,7 @@ DebugWin::DebugWin(QWidget* par):QMainWindow(par) {
 	connect(ui_asm.cbAccT, &QCheckBox::toggled, this, &DebugWin::resetTCount);
 	connect(ui_asm.actMapingClear, &QAction::triggered, this, &DebugWin::mapClear);
 	connect(ui_asm.dasmTable, &xDisasmTable::customContextMenuRequested, this, &DebugWin::putBreakPoint);
-	connect(ui_asm.dasmTable, &xDisasmTable::rqRefill, this, &DebugWin::fillDisasm);
+	//connect(ui_asm.dasmTable, &xDisasmTable::rqRefill, this, &DebugWin::fillDisasm);		// must update internally
 	connect(ui_asm.dasmTable, &xDisasmTable::rqRefill, wid_dump, &xDumpWidget::draw);
 	connect(ui_asm.dasmTable, &xDisasmTable::rqRefill, wid_zxscr, &xZXScrWidget::draw);
 	connect(ui_asm.dasmTable, &xDisasmTable::rqRefill, wid_brk, &xBreakWidget::draw);
