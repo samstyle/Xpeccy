@@ -264,6 +264,7 @@ int cpu_mrd(CPU*, int);
 void cpu_mwr(CPU*, int, int);
 int cpu_ird(CPU*, int);
 void cpu_iwr(CPU*, int, int);
+void cpu_irq(CPU*, int);
 
 #ifdef __cplusplus
 }

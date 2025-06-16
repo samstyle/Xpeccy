@@ -46,6 +46,7 @@ void z80_reset(CPU* cpu) {
 	cpu->regSP = 0xffff;
 	cpu->regI = cpu->regR = cpu->regR7 = 0;
 	cpu->flgHALT = 0;
+	cpu_irq(cpu, IRQ_CPU_HALT_E);
 	cpu->intrq = 0;
 	cpu->inten = Z80_NMI;	// NMI allways enabled, INT is controlled by ei/di
 	cpu->flgWAIT = 0;
@@ -98,6 +99,7 @@ int z80_int(CPU* cpu) {
 			if (cpu->flgHALT) {
 				cpu->regPC++;
 				cpu->flgHALT = 0;
+				cpu_irq(cpu, IRQ_CPU_HALT_E);
 			} else if (cpu->flgResPV) {
 				cpu->flgPV = 0;
 			}

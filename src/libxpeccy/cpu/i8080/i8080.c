@@ -32,6 +32,7 @@ int i8080_int(CPU* cpu) {
 	if (cpu->flgHALT) {
 		cpu->regPC++;
 		cpu->flgHALT = 0;
+		cpu_irq(cpu, IRQ_CPU_HALT_E);
 	}
 	cpu->t = 2 + 5;			// 2 extra + 5 on RST38 fetch
 	i8080_tab[0xff].exec(cpu);	// +3 +3 execution. 13 total

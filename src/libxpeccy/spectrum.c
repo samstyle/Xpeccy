@@ -290,10 +290,22 @@ void comp_irq(int t, void* ptr) {
 			comp->brk = 1;
 			comp->brkt = -1;
 			break;
-		default:
-			if (comp->hw->irq) comp->hw->irq(comp, t);
+		case IRQ_CPU_HALT:
+			comp->halt = 1;
+			comp->hCount = comp->frmtCount;			// fix T counter from INT to start of HALT
+			break;
+		case IRQ_CPU_HALT_E:
+			comp->halt = 0;
+			break;
+		case IRQ_VID_INT:
+			comp->fCount = comp->vid->nsPerFrame / comp->nsPerTick;		// fixed each frame (but depends on cpu freq @ int)
+			comp->frmtCount = 0;
+			if (!comp->halt) {
+				comp->hCount = comp->fCount;		// if not HALT-ed during frame, count all ticks
+			}
 			break;
 	}
+	if (comp->hw->irq) comp->hw->irq(comp, t);
 }
 
 // new (for future use)
@@ -614,31 +626,7 @@ int compExec(Computer* comp) {
 // execution completed : get eated time & translate signals
 	nsTime = comp->vid->time;
 	comp->tickCount += res2;
-	// TODO: reset frmtCount @ INT strobe, but not @ end of opcode
-	if (comp->vid->intFRAME) {
-		if (!comp->intStrobe) {
-			comp->frmtCount += comp->vid->intTime / comp->nsPerTick;		// ticks from command start to INT
-			comp->intStrobe = 1;
-			comp->fCount = comp->frmtCount;			// fix ticks @ frame
-			if (!comp->halt) {
-				comp->hCount = comp->fCount;		// if not HALT-ed
-			}
-			comp->frmtCount = (nsTime - comp->vid->intTime) / comp->nsPerTick;	// ticks from INT to command end
-		} else {
-			comp->frmtCount += res2;
-		}
-	} else {
-		comp->frmtCount += res2;
-		if (comp->intStrobe)
-			comp->intStrobe = 0;
-	}
-	// TODO: cpu->xirq on enter-to-halt & exit-from-halt instead of this:
-	if (comp->cpu->flgHALT && !comp->halt) {
-		comp->halt = 1;
-		comp->hCount = comp->frmtCount;
-	} else if (!comp->cpu->flgHALT && comp->halt) {
-		comp->halt = 0;
-	}
+	comp->frmtCount += res2;
 // sync hardware
 	if (comp->hw->sync)
 		comp->hw->sync(comp, nsTime);

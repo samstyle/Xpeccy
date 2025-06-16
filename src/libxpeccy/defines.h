@@ -19,7 +19,8 @@
 
 // interrupt types
 enum {
-	IRQ_VID_INT = 1,// video
+	IRQ_BRK = 1,	// common: call deBUGa
+	IRQ_VID_INT,	// video
 	IRQ_VID_INT_E,
 	IRQ_VID_FRAME,
 	IRQ_VID_VBLANK,
@@ -27,7 +28,8 @@ enum {
 	IRQ_RZX_INT,
 	IRQ_DMA,
 	IRQ_CPU_SYNC,	// sync cpu ticks
-//	IRQ_CPU_CONT,	// contention sync
+	IRQ_CPU_HALT,	// enter halt cycle
+	IRQ_CPU_HALT_E,	// exit halt cycle
 	IRQ_FDC,	// ibm
 	IRQ_FDC_RD,
 	IRQ_FDC_WR,
@@ -47,7 +49,6 @@ enum {
 	IRQ_PIT_CH1,
 	IRQ_PIT_CH2,
 	IRQ_APU,	// nes
-	IRQ_BRK,
 	IRQ_CIA1,	// commodore
 	IRQ_CIA2,
 	IRQ_VIC,

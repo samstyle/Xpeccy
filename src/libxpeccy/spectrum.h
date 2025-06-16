@@ -157,18 +157,12 @@ typedef struct {
 
 #endif
 
-	int tickCount;
-	int frmtCount;
-	int hCount;		// T before HALT
+	int tickCount;		// accumulate T
+	int frmtCount;		// accumulate T, but reset each INT
+	int hCount;		// T before HALT = frmtCount @ HALT
 	int fCount;		// T in last frame
 	int nsPerTick;
 
-//	unsigned char p7FFD;		// stored port out
-//	unsigned char p1FFD;
-//	unsigned char pEFF7;
-//	unsigned char pDFFD;
-//	unsigned char p77hi;
-//	unsigned char prt2;		// scorpion ProfROM layer (0..3)
 	unsigned char reg[256];		// internal registers
 	unsigned char iomap[0x10000];
 	unsigned short wdata;
