@@ -46,7 +46,6 @@ void z80_reset(CPU* cpu) {
 	cpu->regSP = 0xffff;
 	cpu->regI = cpu->regR = cpu->regR7 = 0;
 	cpu->flgHALT = 0;
-	cpu_irq(cpu, IRQ_CPU_HALT_E);
 	cpu->intrq = 0;
 	cpu->inten = Z80_NMI;	// NMI allways enabled, INT is controlled by ei/di
 	cpu->flgWAIT = 0;
@@ -99,7 +98,6 @@ int z80_int(CPU* cpu) {
 			if (cpu->flgHALT) {
 				cpu->regPC++;
 				cpu->flgHALT = 0;
-				cpu_irq(cpu, IRQ_CPU_HALT_E);
 			} else if (cpu->flgResPV) {
 				cpu->flgPV = 0;
 			}
@@ -318,13 +316,13 @@ xAsmScan z80_asm(int adr, const char* cbuf, char* buf) {
 // registers
 
 xRegDsc z80RegTab[] = {
-	{Z80_REG_PC, "PC", REG_WORD | REG_RDMP, offsetof(CPU, regPC)},
+	{Z80_REG_PC, "PC", REG_WORD | REG_RDMP | REG_PC, offsetof(CPU, regPC)},
 	{Z80_REG_AF, "AF", REG_WORD, 0},
 	{Z80_REG_BC, "BC", REG_WORD | REG_RDMP, offsetof(CPU, regBC)},
 	{Z80_REG_DE, "DE", REG_WORD | REG_RDMP, offsetof(CPU, regDE)},
 	{Z80_REG_HL, "HL", REG_WORD | REG_RDMP, offsetof(CPU, regHL)},
 
-	{Z80_REG_SP, "SP", REG_WORD | REG_RDMP, offsetof(CPU, regSP)},
+	{Z80_REG_SP, "SP", REG_WORD | REG_RDMP | REG_SP, offsetof(CPU, regSP)},
 	{Z80_REG_AFA, "AF'", REG_WORD, 0},
 	{Z80_REG_BCA, "BC'", REG_WORD | REG_RDMP, offsetof(CPU, regBCa)},
 	{Z80_REG_DEA, "DE'", REG_WORD | REG_RDMP, offsetof(CPU, regDEa)},

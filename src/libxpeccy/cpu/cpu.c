@@ -600,3 +600,21 @@ void cpuSetRegs(CPU* cpu, xRegBunch bunch) {
 		cpu->core->setregs(cpu, bunch);
 	}
 }
+
+int cpu_get_onmsk(CPU* cpu, int msk) {
+	int i = 0;
+	int res = -1;
+	int work = 1;
+	xRegDsc* rt = cpu->core->rdsctab;
+	while (work && (rt[i].id != REG_NONE)) {
+		if (rt[i].type & msk) {
+			res = reg_get_value(cpu, &rt[i]);
+			work = 0;
+		}
+		i++;
+	}
+	return res;
+}
+
+int cpu_get_sp(CPU* cpu) {return cpu_get_onmsk(cpu, REG_SP);}
+int cpu_get_pc(CPU* cpu) {return cpu_get_onmsk(cpu, REG_PC);}

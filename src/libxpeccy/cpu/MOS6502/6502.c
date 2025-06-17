@@ -24,8 +24,7 @@ void m6502_reset(CPU* cpu) {
 	cpu->flgLOCK = 0;
 	cpu->intrq = 0;
 	cpu->inten = MOS6502_INT_IRQ | MOS6502_INT_NMI;	// brk/nmi enabled. irq is allways enabled, controlled by I flag
-	cpu->regS = 0xfd;				// segment 01xx is stack
-	// cpu->f = MF5 | MFI;
+	cpu->regSP = 0x01fd;				// segment 01xx is stack
 	cpu->flgF5 = 1;
 	cpu->flgI = 1;
 	cpu->regA = 0;
@@ -37,13 +36,13 @@ void m6502_reset(CPU* cpu) {
 }
 
 void m6502_push(CPU* cpu, int v) {
-	cpu->mwr(cpu->regS | 0x100, v & 0xff, cpu->xptr);
+	cpu->mwr(cpu->regSP, v & 0xff, cpu->xptr);
 	cpu->regS--;
 }
 
 int m6502_pop(CPU* cpu) {
 	cpu->regS++;
-	return cpu->mrd(cpu->regS | 0x100, 0, cpu->xptr) & 0xff;
+	return cpu->mrd(cpu->regSP, 0, cpu->xptr) & 0xff;
 }
 
 void m6502_push_int(CPU* cpu) {
@@ -146,12 +145,13 @@ xAsmScan m6502_asm(int a, const char* cbuf, char* buf) {
 }
 
 xRegDsc m6502RegTab[] = {
-	{M6502_REG_PC, "PC", REG_WORD | REG_RDMP, offsetof(CPU, regPC)},
+	{M6502_REG_PC, "PC", REG_WORD | REG_RDMP | REG_PC, offsetof(CPU, regPC)},
 	{M6502_REG_A, "A", REG_BYTE, offsetof(CPU, regA)},
 	{M6502_REG_X, "X", REG_BYTE, offsetof(CPU, regX)},
 	{M6502_REG_Y, "Y", REG_BYTE, offsetof(CPU, regY)},
 	{M6502_REG_S, "S", REG_BYTE, offsetof(CPU, regS)},
 	{M6502_REG_F, "P", REG_32, 0},
+	{REG_EMPTY, "SP", REG_WORD | REG_SP, offsetof(CPU, regSP)},
 	{REG_NONE, "", 0, 0}
 };
 

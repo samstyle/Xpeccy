@@ -527,8 +527,8 @@ xMnem i286_mnem(CPU* cpu, int sadr, cbdmr mrd, void* data) {
 // asm
 
 xRegDsc i286RegTab[] = {
-	{I286_IP, "IP", REG_WORD | REG_RDMP, offsetof(CPU, regIP)},
-	{I286_SP, "SP", REG_WORD | REG_RDMP, offsetof(CPU, regSP)},
+	{I286_IP, "IP", REG_WORD | REG_RDMP | REG_PC, offsetof(CPU, regIP)},
+	{I286_SP, "SP", REG_WORD | REG_RDMP | REG_SP, offsetof(CPU, regSP)},
 	{I286_BP, "BP", REG_WORD | REG_RDMP, offsetof(CPU, regBP)},
 	{I286_SI, "SI", REG_WORD | REG_RDMP, offsetof(CPU, regSI)},
 	{I286_DI, "DI", REG_WORD | REG_RDMP, offsetof(CPU, regDI)},

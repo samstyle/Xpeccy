@@ -41,6 +41,8 @@ typedef struct {
 #define REG_RO		0x100	// protect from changes in deBUGa
 #define REG_SEG		0x200	// register is segment
 #define REG_RDMP	0x400	// use register as line addr for regs-dump in deBUGa (new widget)
+#define REG_PC		0x800	// register is execution pointer (pc, ip)
+#define REG_SP		0x1000	// register is stack (sp)
 
 typedef struct {
 	int id;
@@ -253,6 +255,8 @@ xRegBunch cpuGetRegs(CPU*);
 xRegister cpuGetReg(CPU*, int);
 void cpuSetRegs(CPU*, xRegBunch);
 int cpu_get_reg(CPU*, const char*, bool*);
+int cpu_get_pc(CPU*);
+int cpu_get_sp(CPU*);
 bool cpu_set_reg(CPU*, const char*, int);
 int cpu_get_flag(CPU*);
 void cpu_set_flag(CPU*, int);

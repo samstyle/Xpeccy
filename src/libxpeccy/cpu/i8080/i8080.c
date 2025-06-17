@@ -32,7 +32,6 @@ int i8080_int(CPU* cpu) {
 	if (cpu->flgHALT) {
 		cpu->regPC++;
 		cpu->flgHALT = 0;
-		cpu_irq(cpu, IRQ_CPU_HALT_E);
 	}
 	cpu->t = 2 + 5;			// 2 extra + 5 on RST38 fetch
 	i8080_tab[0xff].exec(cpu);	// +3 +3 execution. 13 total
@@ -100,12 +99,12 @@ xMnem i8080_mnem(CPU* cpu, int qadr, cbdmr mrd, void* data) {
 }
 
 xRegDsc i8080RegTab[] = {
-	{I8080_REG_PC, "PC", REG_WORD | REG_RDMP, offsetof(CPU, regPC)},
+	{I8080_REG_PC, "PC", REG_WORD | REG_RDMP | REG_PC, offsetof(CPU, regPC)},
 	{I8080_REG_AF, "AF", REG_WORD, 0},
 	{I8080_REG_BC, "BC", REG_WORD | REG_RDMP, offsetof(CPU, regBC)},
 	{I8080_REG_DE, "DE", REG_WORD | REG_RDMP, offsetof(CPU, regDE)},
 	{I8080_REG_HL, "HL", REG_WORD | REG_RDMP, offsetof(CPU, regHL)},
-	{I8080_REG_SP, "SP", REG_WORD | REG_RDMP, offsetof(CPU, regSP)},
+	{I8080_REG_SP, "SP", REG_WORD | REG_RDMP | REG_SP, offsetof(CPU, regSP)},
 	{I8080_FLG_IFF, "IFF", REG_BIT, offsetof(CPU, flgIFF1)},
 	{REG_EMPTY, "A", REG_BYTE, offsetof(CPU, regA)},
 	{REG_EMPTY, "F", REG_32, 0},

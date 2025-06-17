@@ -8,11 +8,7 @@
 
 static int nsTime;
 static int res2;
-int res4 = 0;		// save last T synced with video (last is res2-res4
-
-#ifndef RUNTIME_IO
-#define RUNTIME_IO 1
-#endif
+int res4 = 0;		// save last T synced with video (last is res2-res4)
 
 unsigned char* comp_get_memcell_flag_ptr(Computer* comp, int adr) {
 	unsigned char* res = NULL;
@@ -242,7 +238,6 @@ int iord(int port, void* ptr) {
 
 void iowr(int port, int val, void* ptr) {
 	Computer* comp = (Computer*)ptr;
-#if RUNTIME_IO
 	comp->bdiz = (comp->dos && (comp->dif->type == DIF_BDI)) ? 1 : 0;
 	if (comp->hw->grp == HWG_ZX) {
 		// sync video to current T
@@ -265,11 +260,6 @@ void iowr(int port, int val, void* ptr) {
 		zxSetUlaPalete(comp);
 		comp->vid->ula->palchan = 0;
 	}
-#else
-// store adr & data, real writing will be later
-	comp->padr = port;
-	comp->pval = val;
-#endif
 // brk
 	if (comp->brkIOMap[port] & MEM_BRK_WR) {
 		comp->brk = 1;
@@ -291,16 +281,12 @@ void comp_irq(int t, void* ptr) {
 			comp->brkt = -1;
 			break;
 		case IRQ_CPU_HALT:
-			comp->halt = 1;
 			comp->hCount = comp->frmtCount;			// fix T counter from INT to start of HALT
-			break;
-		case IRQ_CPU_HALT_E:
-			comp->halt = 0;
 			break;
 		case IRQ_VID_INT:
 			comp->fCount = comp->vid->nsPerFrame / comp->nsPerTick;		// fixed each frame (but depends on cpu freq @ int)
 			comp->frmtCount = 0;
-			if (!comp->halt) {
+			if (!comp->cpu->flgHALT) {
 				comp->hCount = comp->fCount;		// if not HALT-ed during frame, count all ticks
 			}
 			break;
@@ -595,7 +581,6 @@ int compExec(Computer* comp) {
 		}
 	}
 #endif
-#if RUNTIME_IO
 	if (res2 > res4) {
 		if (comp->hw->grp == HWG_ZX) {
 			if (res2 > res4 + 1)
@@ -606,23 +591,6 @@ int compExec(Computer* comp) {
 			vid_sync(comp->vid, (res2 - res4) * comp->nsPerTick);
 		}
 	}
-#else
-	// out @ last tick
-	vidSync(comp->vid,(res2 - res4 - 1) * comp->nsPerTick);			// 3T
-	if (comp->padr) {
-		comp->bdiz = (comp->dos && (comp->dif->type == DIF_BDI)) ? 1 : 0;
-		if (comp->hw->out)
-			comp->hw->out(comp, comp->padr, comp->pval);
-		comp->padr = 0;
-		if (comp->vid->ula->palchan) {
-			zxSetUlaPalete(comp);
-			comp->vid->ula->palchan = 0;
-		}
-	}
-	// TODO: zx - if INT is inactive at last tick, don't acknowledge it at the end of cycle
-	comp->cpu->ack = comp->vid->intFRAME ? 1 : 0;
-	vidSync(comp->vid, comp->nsPerTick);					// 1T
-#endif
 // execution completed : get eated time & translate signals
 	nsTime = comp->vid->time;
 	comp->tickCount += res2;

@@ -6,6 +6,8 @@
 #define regX regs[4].l
 #define regY regs[5].l
 #define regS regs[6].l		// stack = 0x100 | regS
+#define regSPh regs[6].h
+#define regSP regs[6].w
 #define regPC regs[7].w
 #define regPCh regs[7].h
 #define regPCl regs[7].l

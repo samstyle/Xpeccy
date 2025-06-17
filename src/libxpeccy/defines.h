@@ -29,7 +29,6 @@ enum {
 	IRQ_DMA,
 	IRQ_CPU_SYNC,	// sync cpu ticks
 	IRQ_CPU_HALT,	// enter halt cycle
-	IRQ_CPU_HALT_E,	// exit halt cycle
 	IRQ_FDC,	// ibm
 	IRQ_FDC_RD,
 	IRQ_FDC_WR,

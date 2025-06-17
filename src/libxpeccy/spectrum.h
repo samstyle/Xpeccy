@@ -82,7 +82,7 @@ typedef struct {
 	unsigned frmStrobe:1;		// new frame started
 	unsigned intStrobe:1;		// int front
 	unsigned nmiRequest:1;		// Magic button pressed
-	unsigned halt:1;		// strobe of CPU HALT instruction
+//	unsigned halt:1;		// strobe of CPU HALT instruction
 	unsigned firstRun:1;
 	unsigned ddpal:1;		// ATM2+: use ddp palette
 	unsigned z_i:1;			// ATM2+: unblock VSYNC INT
@@ -172,8 +172,8 @@ typedef struct {
 	unsigned char brkAdrMap[MEM_64K];	// adr brk
 	unsigned char brkIOMap[MEM_64K];	// io brk
 
-	int padr;
-	int pval;
+//	int padr;
+//	int pval;
 	PPI* ppi;
 	struct {
 		unsigned char evoBF;		// PentEvo rw ports

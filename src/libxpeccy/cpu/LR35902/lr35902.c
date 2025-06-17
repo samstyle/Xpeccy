@@ -189,12 +189,12 @@ xMnem lr_mnem(CPU* cpu, int qadr, cbdmr mrd, void* data) {
 // registers
 
 xRegDsc lrRegTab[] = {
-	{LR_REG_PC, "PC", REG_WORD | REG_RDMP, offsetof(CPU, regPC)},
+	{LR_REG_PC, "PC", REG_WORD | REG_RDMP | REG_PC, offsetof(CPU, regPC)},
 	{LR_REG_AF, "AF", REG_WORD, 0},
 	{LR_REG_BC, "BC", REG_WORD | REG_RDMP, offsetof(CPU, regBC)},
 	{LR_REG_DE, "DE", REG_WORD | REG_RDMP, offsetof(CPU, regDE)},
 	{LR_REG_HL, "HL", REG_WORD | REG_RDMP, offsetof(CPU, regHL)},
-	{LR_REG_SP, "SP", REG_WORD | REG_RDMP, offsetof(CPU, regSP)},
+	{LR_REG_SP, "SP", REG_WORD | REG_RDMP | REG_SP, offsetof(CPU, regSP)},
 	{LR_FLG_IFF, "IFF", REG_BIT, offsetof(CPU, flgIFF1)},
 	{REG_EMPTY, "A", REG_BYTE, offsetof(CPU, regA)},
 	{REG_EMPTY, "F", REG_32, 0},

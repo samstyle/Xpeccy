@@ -1461,8 +1461,8 @@ xRegDsc pdp11RegTab[] = {
 	{PDP11_REG3, "R3", REG_WORD | REG_RDMP, offsetof(CPU, regRN(3))},
 	{PDP11_REG4, "R4", REG_WORD | REG_RDMP, offsetof(CPU, regRN(4))},
 	{PDP11_REG5, "R5", REG_WORD | REG_RDMP, offsetof(CPU, regRN(5))},
-	{PDP11_REG6, "SP", REG_WORD | REG_RDMP, offsetof(CPU, regRN(6))},
-	{PDP11_REG7, "PC", REG_WORD | REG_RDMP, offsetof(CPU, regRN(7))},
+	{PDP11_REG6, "SP", REG_WORD | REG_RDMP | REG_SP, offsetof(CPU, regRN(6))},
+	{PDP11_REG7, "PC", REG_WORD | REG_RDMP | REG_PC, offsetof(CPU, regRN(7))},
 	{PDP11_REGF, "PSW", REG_32, 0},
 	{REG_NONE, "", 0, 0}
 };

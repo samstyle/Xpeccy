@@ -426,6 +426,7 @@ xBreakWidget::xBreakWidget(QString i, QString t, QWidget* p):xDockWidget(i,t,p) 
 	connect(ui.tbBrkOpen, &QToolButton::clicked, this, &xBreakWidget::openBrk);
 	connect(ui.tbBrkSave, &QToolButton::clicked, this, &xBreakWidget::saveBrk);
 	connect(ui.bpList, &xBreakTable::rqDisasm, this, &xBreakWidget::rqDisasm);
+	connect(ui.bpList, &xBreakTable::rqDasmDump, this, &xBreakWidget::updated);
 	connect(ui.brkActReset, &QAction::triggered, this, &xBreakWidget::resetBrk);
 }
 

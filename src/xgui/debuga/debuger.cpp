@@ -144,7 +144,7 @@ void DebugWin::start() {
 	show();
 // fillall redrawing all vivisble widgets
 	if (!fillAll()) {
-		ui_asm.dasmTable->setAdr(comp->cpu->regPC + comp->cpu->cs.base);
+		ui_asm.dasmTable->setAdr(cpu_get_pc(comp->cpu) + comp->cpu->cs.base);
 		// fillDisasm();
 	}
 //	wid_zxscr->draw();
@@ -622,7 +622,7 @@ void DebugWin::doStep() {
 		tCount = comp->tickCount;
 	compExec(comp);
 	if (!fillAll()) {
-		ui_asm.dasmTable->setAdr(comp->cpu->regPC + comp->cpu->cs.base);
+		ui_asm.dasmTable->setAdr(cpu_get_pc(comp->cpu) + comp->cpu->cs.base);
 		//fillDisasm();
 	}
 }
@@ -659,7 +659,7 @@ void DebugWin::reload() {
 	Computer* comp = conf.prof.cur->zx;
 	if (comp->mem->snapath) {
 		load_file(comp, comp->mem->snapath, FG_SNAPSHOT, 0);
-		ui_asm.dasmTable->setAdr(comp->cpu->regPC + comp->cpu->cs.base);
+		ui_asm.dasmTable->setAdr(cpu_get_pc(comp->cpu) + comp->cpu->cs.base);
 	}
 	qDebug() << conf.labpath;
 	if (!conf.labpath.isEmpty()) {
@@ -682,13 +682,14 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 	dasmData drow;
 	QModelIndex idx;
 	Computer* comp = conf.prof.cur->zx;
+	int pc = cpu_get_pc(comp->cpu);
 	switch (key) {
 		case XCUT_OPTIONS:
 			emit wannaOptions();
 			break;
 		case XCUT_LOAD:
 			load_file(comp, NULL, FG_ALL, -1);
-			ui_asm.dasmTable->setAdr(comp->cpu->regPC + comp->cpu->cs.base);
+			ui_asm.dasmTable->setAdr(pc + comp->cpu->cs.base);
 			//fillAll();
 			activateWindow();
 			break;
@@ -704,9 +705,9 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 			}
 			break;
 		case XCUT_STEPOVER:
-			len = dasmSome(comp, comp->cpu->regPC + comp->cpu->cs.base, drow);
+			len = dasmSome(comp, pc + comp->cpu->cs.base, drow);
 			if (drow.oflag & OF_SKIPABLE) {
-				ptr = getBrkPtr(comp, comp->cpu->regPC + comp->cpu->cs.base + len);
+				ptr = getBrkPtr(comp, pc + comp->cpu->cs.base + len);
 				*ptr |= MEM_BRK_TFETCH;
 				stop();
 			} else {
@@ -729,7 +730,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 			rzxStop(comp);
 			compReset(comp, RES_DEFAULT);
 			if (!fillAll()) {
-				ui_asm.dasmTable->setAdr(comp->cpu->regPC + comp->cpu->cs.base);
+				ui_asm.dasmTable->setAdr(pc + comp->cpu->cs.base);
 				//fillDisasm();
 			}
 			break;
@@ -776,7 +777,7 @@ void DebugWin::customEvent(QEvent* ev) {
 	switch(ev->type()) {
 		case DBG_EVENT_STEP:
 			if ((traceType == DBG_TRACE_LOG) && logfile.isOpen()) {
-				dasmSome(comp, comp->cpu->regPC + comp->cpu->cs.base, tracemnm);
+				dasmSome(comp, cpu_get_pc(comp->cpu) + comp->cpu->cs.base, tracemnm);
 				doStep();
 				traceregs = cpuGetRegs(comp->cpu);
 				tracestr = tracemnm.command.leftJustified(24,' ');
@@ -806,7 +807,7 @@ void DebugWin::customEvent(QEvent* ev) {
 						stopTrace();
 					break;
 				case DBG_TRACE_HERE:
-					if (comp->cpu->regPC == traceAdr)
+					if (cpu_get_pc(comp->cpu) == traceAdr)
 						stopTrace();
 					break;
 			}
@@ -905,7 +906,7 @@ void DebugWin::regClick(QMouseEvent* ev) {
 	xRegBunch bunch = cpuGetRegs(comp->cpu);
 	xRegister reg = bunch.regs[id];
 	int adr = dbg_get_reg_adr(comp->cpu, &reg);
-	qDebug() << adr;
+	//qDebug() << adr;
 	switch (ev->button()) {
 		case Qt::RightButton:
 			//ui.dumpTable->setAdr(adr);
@@ -1244,7 +1245,7 @@ void DebugWin::mapAuto() {
 
 void DebugWin::fillStack() {
 	Computer* comp = conf.prof.cur->zx;
-	int adr = comp->cpu->regSP + comp->cpu->ss.base;
+	int adr = cpu_get_sp(comp->cpu) + comp->cpu->ss.base;
 	QString str;
 	for (int i = -2; i < 10; i+=2) {
 		str.append(gethexbyte(rdbyte(adr+i+1, comp)));

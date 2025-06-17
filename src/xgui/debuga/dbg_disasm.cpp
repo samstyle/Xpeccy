@@ -387,7 +387,7 @@ QList<dasmData> getDisasm(Computer* comp, int& adr) {
 //	int wid;
 	// 0:adr
 	QString lab;
-	xadr = mem_get_xadr(comp->mem, comp->cpu->regPC + comp->cpu->cs.base);
+	xadr = mem_get_xadr(comp->mem, cpu_get_pc(comp->cpu) + comp->cpu->cs.base);
 	int abs = xadr.abs;		// remember pc cell
 	int pct = xadr.type;
 	switch (mode) {
@@ -513,10 +513,11 @@ int xDisasmModel::update_lst() {
 	int res = fill();
 	int i;
 	Computer* comp = conf.prof.cur->zx;
-	xMnem mnm = cpuDisasm(comp->cpu, comp->cpu->regPC + comp->cpu->cs.base, NULL, dasmrd, conf.prof.cur->zx);
+	int pc = cpu_get_pc(comp->cpu);
+	xMnem mnm = cpuDisasm(comp->cpu, pc + comp->cpu->cs.base, NULL, dasmrd, conf.prof.cur->zx);
 	if (mnm.cond && mnm.met) {
 		for (i = 0; i < dasm.size(); i++) {
-			if ((dasm[i].adr == mnm.oadr) && (mnm.oadr != conf.prof.cur->zx->cpu->regPC)) {
+			if ((dasm[i].adr == mnm.oadr) && (mnm.oadr != pc)) {
 				dasm[i].icon = QString(":/images/arrleft.png");
 			}
 		}
@@ -945,6 +946,8 @@ void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 		key = shortcut_check(SCG_DISASM, QKeySequence(ev->key()));
 	if (key < 0)
 		key = ev->key();
+	Computer* comp = conf.prof.cur->zx;
+	int pc = cpu_get_pc(comp->cpu);
 	switch (key) {
 		case Qt::Key_Up:
 			if ((ev->modifiers() & Qt::ControlModifier) || (idx.row() == 0)) {
@@ -962,7 +965,7 @@ void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 			break;
 		case Qt::Key_PageUp:
 			for (i = 0; i < rows() - 1; i++) {
-				model->asmadr = getPrevAdr(conf.prof.cur->zx, model->asmadr);
+				model->asmadr = getPrevAdr(comp, model->asmadr);
 			}
 			updContent();
 			emit s_adrch(model->asmadr);
@@ -974,15 +977,15 @@ void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 			break;
 		case XCUT_TOPC:
 			if (mode != XVIEW_CPU) break;
-			if (!conf.prof.cur->zx) break;
-			setAdr(conf.prof.cur->zx->cpu->regPC + conf.prof.cur->zx->cpu->cs.base, 0);
+			if (!comp) break;
+			setAdr(pc + comp->cpu->cs.base, 0);
 			break;
 		case XCUT_SETPC:
 			if (mode != XVIEW_CPU) break;
-			if (!conf.prof.cur->zx) break;
-			i = getData(idx.row(), 0, Qt::UserRole).toInt() - conf.prof.cur->zx->cpu->cs.base;
-			if ((i >= 0) && (i <= conf.prof.cur->zx->cpu->cs.limit)) {
-				conf.prof.cur->zx->cpu->regPC = i;
+			if (!comp) break;
+			i = getData(idx.row(), 0, Qt::UserRole).toInt() - comp->cpu->cs.base;
+			if ((i >= 0) && (i <= comp->cpu->cs.limit)) {
+				pc = i;
 				emit rqRefillAll();
 			}
 			break;
@@ -996,16 +999,16 @@ void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 				bpt = 0;
 			} else {
 				bpr = BRK_MEMCELL;
-				xadr = mem_get_xadr(conf.prof.cur->zx->mem, adr);
+				xadr = mem_get_xadr(comp->mem, adr);
 				switch(xadr.type) {
 					case MEM_RAM: bpt = MEM_BRK_RAM;
-						adr = xadr.abs & conf.prof.cur->zx->mem->ramMask;
+						adr = xadr.abs & comp->mem->ramMask;
 						break;
 					case MEM_ROM: bpt = MEM_BRK_ROM;
-						adr = xadr.abs & conf.prof.cur->zx->mem->romMask;
+						adr = xadr.abs & comp->mem->romMask;
 						break;
 					default: bpt = MEM_BRK_SLT;
-						adr = xadr.abs & conf.prof.cur->zx->slot->memMask;
+						adr = xadr.abs & comp->slot->memMask;
 						break;
 				}
 				// adr = xadr.abs;
@@ -1019,6 +1022,7 @@ void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 				bpt |= MEM_BRK_FETCH;
 			}
 			brkXor(bpr, bpt, adr, -1, 1);
+			updContent();
 			emit rqRefill();
 			break;
 		case XCUT_JUMPTO:
