@@ -7,6 +7,12 @@
 // dot: 25.175MHz (~40 ns/dot)
 // timer: cpu/128
 
+#define reg00	reg[0]
+#define reg01	reg[1]
+#define reg02	reg[2]
+#define regCE	reg[0xce]
+#define regB2	reg[0xb2]
+
 // hdd
 // ffe0	: wr:com rd:status (7)
 // ffe1 : #17
@@ -53,10 +59,10 @@ int bk_kbd_rd(Computer* comp, int adr) {
 }
 
 void bk11_kbd_wr(Computer* comp, int adr, int val) {
-	comp->reg[0xb2] = (val >> 8) & 0xff;
+	comp->regB2 = (val >> 8) & 0xff;
 // b8-11 = palette
 	comp->vid->paln = ((val >> 6) & 0x3c);	// to bits 2..5
-// b14: system timer off (vblank 50Hz ? ) = reg[0xb2].bit6
+// b14: system timer off (vblank 50Hz ? ) = regB2.bit6
 //	if (val & 0x4000) {
 //		comp->cpu->inten &= ~PDP_INT_IRQ2;
 //	} else {
@@ -87,7 +93,8 @@ void bk_scr_wr(Computer* comp, int adr, int val) {
 // pc/psw
 
 int bk_str_rd(Computer* comp, int adr) {
-	comp->wdata = (comp->iomap[adr & ~1] & 0xff) | ((comp->iomap[adr | 1] << 8) & 0xff00);
+	comp->wdata = (adr & 2) ? comp->cpu->reg177676 : comp->cpu->reg177674;
+	// comp->wdata = (comp->iomap[adr & ~1] & 0xff) | ((comp->iomap[adr | 1] << 8) & 0xff00);
 	return 0;
 }
 
@@ -143,9 +150,9 @@ int bk_fcc_rd(Computer* comp, int adr) {
 int bk_sys_rd(Computer* comp, int adr) {
 	comp->wdata = 0x8000;		// 8000 for 0010
 	// comp->wdata |= 0x80;		// TL ready
-	if (comp->reg[0xce]) {		// b2: write to system port flag
+	if (comp->regCE) {		// b2: write to system port flag
 		comp->wdata |= 4;
-		comp->reg[0xce] = 0;	// reset on reading
+		comp->regCE = 0;	// reset on reading
 	}
 	// b5: tape signal
 	if (comp->tape->on && !comp->tape->rec && (comp->tape->volPlay & 0x80)) {
@@ -175,7 +182,7 @@ void bk_sys_wr(Computer* comp, int adr, int val) {
 		// b6 : tape rec (main)
 		comp->tape->levRec = (val & 0x40) ? 1 : 0;
 		// b4: TL write
-		comp->reg[0xce] = 1;	// write to system port
+		comp->regCE = 1;	// write to system port
 	}
 }
 
@@ -185,9 +192,9 @@ void bk_sys_wr(Computer* comp, int adr, int val) {
 int bk11_sys_rd(Computer* comp, int adr) {
 	comp->wdata = 0xc000;
 	// comp->wdata |= 0x80;		// TL ready
-	if (comp->reg[0xce]) {		// b2: write to system port flag
+	if (comp->regCE) {		// b2: write to system port flag
 		comp->wdata |= 4;
-		comp->reg[0xce] = 0;	// reset on reading
+		comp->regCE = 0;	// reset on reading
 	}
 	// b5: tape signal
 	if (comp->tape->on && !comp->tape->rec && (comp->tape->volPlay & 0x80)) {
@@ -209,14 +216,14 @@ void bk11_sys_wr(Computer* comp, int adr, int val) {
 	if (val & (1 << 11)) {			// b11 set
 		// printf("rom bits: %i.%i.x.%i.%i\n",!!(val & 0x10),!!(val & 8),!!(val & 2), !!(val & 1));
 		if (val & 0x1b) {			// b0,1,3,4: rom 0,1,2,3 @ #8000
-			if (val & 0x01) comp->reg[1] = 0x80;
-			if (val & 0x02) comp->reg[1] = 0x81;
-			if (val & 0x08) comp->reg[1] = 0x82;
-			if (val & 0x10) comp->reg[1] = 0x83;
+			if (val & 0x01) comp->reg01 = 0x80;
+			if (val & 0x02) comp->reg01 = 0x81;
+			if (val & 0x08) comp->reg01 = 0x82;
+			if (val & 0x10) comp->reg01 = 0x83;
 		} else {
-			comp->reg[1] = (val >> 8) & 7;		// ram b8,9,10 @ #8000 (reg[1].b7=0:ram)
+			comp->reg01 = (val >> 8) & 7;		// ram b8,9,10 @ #8000 (reg01.b7=0:ram)
 		}
-		comp->reg[2] = (val >> 12) & 7;			// ram b12,13,14 @ #4000
+		comp->reg02 = (val >> 12) & 7;			// ram b12,13,14 @ #4000
 		bk11_mem_map(comp);
 	} else if (comp->cpu->regNOD == 3) {
 		// b7: tape motor control (1:stop, 0:play)
@@ -230,7 +237,7 @@ void bk11_sys_wr(Computer* comp, int adr, int val) {
 		// b6 : tape rec (main)
 		comp->tape->levRec = (val & 0x40) ? 1 : 0;
 		// b4: TL write
-		comp->reg[0xce] = 1;	// write to system port
+		comp->regCE = 1;	// write to system port
 	}
 }
 
@@ -253,7 +260,7 @@ static xPort bk_io_tab[] = {
 	{0xfffe, 0xffb0, 2, 2, 2, bk_kbf_rd, bk_kbf_wr},	// 177660: keyflag
 	{0xfffe, 0xffb2, 2, 2, 2, bk_kbd_rd, NULL},		// 177662: keycode / video ctrl
 	{0xfffe, 0xffb4, 2, 2, 2, bk_scr_rd, bk_scr_wr},	// 177664: scroller
-	{0xfffc, 0xffbc, 2, 2, 2, bk_str_rd, NULL},		// 177704: storage (pc/psw)
+	{0xfffc, 0xffbc, 2, 2, 2, bk_str_rd, NULL},		// 177674/6: storage (pc/psw)
 	{0xfffe, 0xffc6, 2, 2, 2, bk_tiv_rd, bk_tiv_wr},	// 177706: timer
 	{0xfffe, 0xffc8, 2, 2, 2, bk_tva_rd, bk_tva_wr},	// 177710
 	{0xfffe, 0xffca, 2, 2, 2, bk_tfl_rd, bk_tfl_wr},	// 177712
@@ -267,7 +274,7 @@ static xPort bk11_io_tab[] = {
 	{0xfffe, 0xffb0, 2, 2, 2, bk_kbf_rd, bk_kbf_wr},	// 177660: keyflag
 	{0xfffe, 0xffb2, 2, 2, 2, bk_kbd_rd, bk11_kbd_wr},	// 177662: keycode / video ctrl
 	{0xfffe, 0xffb4, 2, 2, 2, bk_scr_rd, bk_scr_wr},	// 177664: scroller
-	{0xfffc, 0xffbc, 2, 2, 2, bk_str_rd, NULL},		// 177704: storage (pc/psw)
+	{0xfffc, 0xffbc, 2, 2, 2, bk_str_rd, NULL},		// 177674/6: storage (pc/psw)
 	{0xfffe, 0xffc6, 2, 2, 2, bk_tiv_rd, bk_tiv_wr},	// 177706: timer
 	{0xfffe, 0xffc8, 2, 2, 2, bk_tva_rd, bk_tva_wr},	// 177710
 	{0xfffe, 0xffca, 2, 2, 2, bk_tfl_rd, bk_tfl_wr},	// 177712
@@ -293,19 +300,19 @@ int bk11_io_rd(int adr, void* ptr) {
 
 void bk_io_wr(int adr, int val, void* ptr) {
 	Computer* comp = (Computer*)ptr;
-	if (comp->cpu->regNOD & 1)		// LSB
-		comp->iomap[(adr & ~1) & 0xffff] = val & 0xff;
-	if (comp->cpu->regNOD & 2)		// MSB
-		comp->iomap[(adr | 1) & 0xffff] = (val >> 8) & 0xff;
+//	if (comp->cpu->regNOD & 1)		// LSB
+//		comp->iomap[(adr & ~1) & 0xffff] = val & 0xff;
+//	if (comp->cpu->regNOD & 2)		// MSB
+//		comp->iomap[(adr | 1) & 0xffff] = (val >> 8) & 0xff;
 	hwOut(bk_io_tab, comp, adr & ~1, val, 1);
 }
 
 void bk11_io_wr(int adr, int val, void* ptr) {
 	Computer* comp = (Computer*)ptr;
-	if (comp->cpu->regNOD & 1)		// LSB
-		comp->iomap[(adr & ~1) & 0xffff] = val & 0xff;
-	if (comp->cpu->regNOD & 2)		// MSB
-		comp->iomap[(adr | 1) & 0xffff] = (val >> 8) & 0xff;
+//	if (comp->cpu->regNOD & 1)		// LSB
+//		comp->iomap[(adr & ~1) & 0xffff] = val & 0xff;
+//	if (comp->cpu->regNOD & 2)		// MSB
+//		comp->iomap[(adr | 1) & 0xffff] = (val >> 8) & 0xff;
 	hwOut(bk11_io_tab, comp, adr & ~1, val, 1);
 }
 
@@ -348,7 +355,7 @@ void bk_rom_wr(int adr, int val, void* ptr) {
 }
 
 void bk_sync(Computer* comp, int ns) {
-//	if ((comp->vid->newFrame) && (comp->reg[0xb2] & 0x40)) {	// b14,177662 = 50Hz int
+//	if ((comp->vid->newFrame) && (comp->regB2 & 0x40)) {	// b14,177662 = 50Hz int
 //		comp->cpu->intrq |= PDP_INT_IRQ2;
 //	}
 	tapSync(comp->tape, ns);
@@ -385,11 +392,11 @@ void bk_mem_map(Computer* comp) {
 
 void bk11_mem_map(Computer* comp) {
 	memSetBank(comp->mem, 0x00, MEM_RAM, 6, MEM_16K, bk_ram_rd, bk_ram_wr, comp);		// page 6 (0) @ 0x0000
-	memSetBank(comp->mem, 0x40, MEM_RAM, comp->reg[2] & 7, MEM_16K, bk_ram_rd, bk_ram_wr, comp);	// ram page @ 0x4000
-	if (comp->reg[1] & 0x80) {									// ram/rom @ 0x8000
-		memSetBank(comp->mem, 0x80, MEM_ROM, comp->reg[1] & 3, MEM_16K, bk_rom_rd, bk_rom_wr, comp);
+	memSetBank(comp->mem, 0x40, MEM_RAM, comp->reg02 & 7, MEM_16K, bk_ram_rd, bk_ram_wr, comp);	// ram page @ 0x4000
+	if (comp->reg01 & 0x80) {									// ram/rom @ 0x8000
+		memSetBank(comp->mem, 0x80, MEM_ROM, comp->reg01 & 3, MEM_16K, bk_rom_rd, bk_rom_wr, comp);
 	} else {
-		memSetBank(comp->mem, 0x80, MEM_RAM, comp->reg[1] & 7, MEM_16K,  bk_ram_rd, bk_ram_wr, comp);
+		memSetBank(comp->mem, 0x80, MEM_RAM, comp->reg01 & 7, MEM_16K,  bk_ram_rd, bk_ram_wr, comp);
 	}
 	memSetBank(comp->mem, 0xc0, MEM_ROM, 4, MEM_8K,  bk_rom_rd, bk_rom_wr, comp);		// monitor
 	if (comp->dif->type == DIF_SMK512) {
@@ -434,9 +441,9 @@ void bk_reset(Computer* comp) {
 	for (int i = 0; i < 0x40; i++) {
 		vid_set_col(comp->vid, i, bk_pal[i]);
 	}
-	comp->reg[0] = 1;
-	comp->reg[1] = 0x80;
-	comp->reg[0xb2] = 0x40;
+	comp->reg00 = 1;
+	comp->reg01 = 0x80;
+	comp->regB2 = 0x40;
 	cpu_reset(comp->cpu);
 	comp->vid->curscr = 0;
 	comp->vid->paln = 0;
@@ -453,8 +460,8 @@ void bk11_reset(Computer* comp) {
 	for (int i = 0; i < 0x40; i++) {
 		vid_set_col(comp->vid, i, bk_pal[i]);
 	}
-	comp->reg[0] = 1;
-	comp->reg[1] = 0x80;
+	comp->reg00 = 1;
+	comp->reg01 = 0x80;
 	cpu_reset(comp->cpu);
 //	comp->vid->curscr = 0;
 	comp->vid->paln = 0;
@@ -482,7 +489,7 @@ void bk_irq(Computer* comp, int val) {
 			comp->keyb->drq = 0;
 			break;
 		case IRQ_VID_FRAME:
-			if (!(comp->reg[0xb2] & 0x40)) {
+			if (!(comp->regB2 & 0x40)) {
 				comp->cpu->intrq |= PDP_INT_IRQ2;
 			}
 			break;

@@ -94,8 +94,10 @@ void pdp_trap(CPU* cpu, unsigned short adr) {
 		cpu->regRN(7) -= 2;
 	}
 	if ((cpu->regMCIR & 6) == 2) {		// irq1, halt
-		pdp_wr(cpu, 0177676, pdp_get_flag(cpu));
-		pdp_wr(cpu, 0177674, cpu->regRN(7));
+		//pdp_wr(cpu, 0177676, pdp_get_flag(cpu));
+		//pdp_wr(cpu, 0177674, cpu->regRN(7));
+		cpu->reg177676 = pdp_get_flag(cpu);
+		cpu->reg177674 = cpu->regRN(7);
 	} else {
 		pdp_push(cpu, pdp_get_flag(cpu));
 		pdp_push(cpu, cpu->regRN(7));

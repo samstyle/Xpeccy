@@ -47,6 +47,7 @@
 #define flgS	flags[7]
 #define flgIFF1	flags[8]
 #define flgIFF2	flags[9]
+#define flgResPV flags[10]		// reset PV flag on INT
 
 #include "z80_macro.h"
 

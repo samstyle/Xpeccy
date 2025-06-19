@@ -6,6 +6,8 @@
 
 clock_t tClock;
 
+#define	reg61	reg[0x61]
+
 // ibm pc/at
 // 00000..9FFFF : ram
 // A0000..BFFFF : video
@@ -147,7 +149,7 @@ int ibm_inKbd(Computer* comp, int adr) {
 			res = ps2c_rd(comp->ps2c, PS2_RDATA);
 			break;
 		case 1:
-			res = comp->reg[0x61] & 0x1f;		// b0..3 is copied, b4 is 'mem refresh'
+			res = comp->reg61 & 0x1f;		// b0..3 is copied, b4 is 'mem refresh'
 			if (comp->pit->ch2.out && (res & 8)) res |= 0x20;	// b5: timer2 output
 			break;
 		case 4:
@@ -163,7 +165,7 @@ void ibm_outKbd(Computer* comp, int adr, int val) {
 			ps2c_wr(comp->ps2c, PS2_RDATA, val);
 			break;
 		case 1:
-			comp->reg[0x61] = val & 0xff;
+			comp->reg61 = val & 0xff;
 			pit_gate(comp->pit, 2, val & 1);			// b0: pit ch2 gate
 			if (val & 0x80) {
 				comp->keyb->outbuf = 0;
@@ -213,24 +215,24 @@ int ibm_in71(Computer* comp, int adr) {
 	return cmos_rd(&comp->cmos, CMOS_DATA);
 }
 
-// chipset
+// chipset (reg 256..511)
 
 void ibm_outCHP(Computer* comp, int adr, int val) {
 	if (adr & 1) {
-		comp->prt2 = comp->reg[comp->p7FFD];
-		comp->reg[comp->p7FFD] = val & 0xff;
-		if ((comp->p7FFD == 0x87) && !(comp->prt2 & 1) && (val & 1)) {
+		comp->prt2 = comp->reg[comp->idx | 0x100];
+		comp->reg[comp->idx | 0x100] = val & 0xff;
+		if ((comp->idx == 0x87) && !(comp->prt2 & 1) && (val & 1)) {	// 0x87 b0 0->1 = reset
 			compReset(comp, RES_DEFAULT);
 		}
 	} else {
-		comp->p7FFD = val & 0xff;	// index
+		comp->idx = val & 0xff;	// index
 	}
 }
 
 int ibm_inCHP(Computer* comp, int adr) {
 	int res = -1;
 	if (adr & 1) {
-		res = comp->reg[comp->p7FFD] & 0xff;
+		res = comp->reg[comp->idx | 0x100] & 0xff;
 	}
 	return res;
 }
@@ -602,8 +604,8 @@ void ibm_irq(Computer* comp, int t) {
 		case IRQ_SLAVE_PIC: pic_int(comp->mpic, 2); break;		// slave pic -> master pic int2
 		case IRQ_MASTER_PIC: comp->cpu->intrq |= I286_INT; break;	// cpu will read int-vector by calling ibm_ack
 		case IRQ_PIT_CH0: pic_int(comp->mpic, 0); break;		// master pic int0 - timer
-		case IRQ_PIT_CH1: comp->reg[0x61] ^= 0x10; break;
-		case IRQ_PIT_CH2: if (comp->reg[0x61] & 2) {
+		case IRQ_PIT_CH1: comp->reg61 ^= 0x10; break;
+		case IRQ_PIT_CH2: if (comp->reg61 & 2) {
 				comp->beep->lev = comp->pit->ch2.out;
 			}
 			break;		// reg61.bit2: enable pit.ch2.out->speaker

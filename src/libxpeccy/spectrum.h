@@ -68,12 +68,12 @@ typedef struct {
 	unsigned char* ptr;
 } bpChecker;
 
-#define p7FFD	iomap[0]
-#define p1FFD	iomap[1]
-#define pEFF7	iomap[2]
-#define pDFFD	iomap[3]
-#define p77hi	iomap[4]
-#define prt2	iomap[5]
+#define p7FFD	reg[0]
+#define p1FFD	reg[1]
+#define pEFF7	reg[2]
+#define pDFFD	reg[3]
+#define p77hi	reg[4]
+#define prt2	reg[5]
 
 typedef struct {
 	unsigned brk:1;			// breakpoint
@@ -163,8 +163,7 @@ typedef struct {
 	int fCount;		// T in last frame
 	int nsPerTick;
 
-	unsigned char reg[256];		// internal registers
-	unsigned char iomap[0x10000];
+	unsigned char reg[512];		// internal registers
 	unsigned short wdata;
 	memEntry memMap[16];			// memory map for ATM2, PentEvo
 	unsigned char brkRamMap[MEM_4M];	// ram brk/type : b0..3:brk flags, b4..7:type
@@ -172,8 +171,6 @@ typedef struct {
 	unsigned char brkAdrMap[MEM_64K];	// adr brk
 	unsigned char brkIOMap[MEM_64K];	// io brk
 
-//	int padr;
-//	int pval;
 	PPI* ppi;
 	struct {
 		unsigned char evoBF;		// PentEvo rw ports
@@ -259,6 +256,7 @@ typedef struct {
 // ibm
 	unsigned a20gate:1;
 	unsigned char post;
+	unsigned char idx;
 	PIT* pit;		// timer
 	PIC* mpic;		// master pic
 	PIC* spic;		// slave pic

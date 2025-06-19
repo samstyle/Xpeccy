@@ -19,6 +19,8 @@ enum {
 #define regMCIR	regs[9].l
 #define regVCEL regs[9].h
 #define regNOD	regs[9].ih
+#define reg177674 regs[10].w
+#define reg177676 regs[10].ih
 
 #define flgC	flags[0]
 #define flgV	flags[1]

@@ -39,6 +39,8 @@ void xThread::stop() {
 #endif
 }
 
+// TODO: do cpu_set_pc instead of comp->regPC=...
+
 void xThread::tap_catch_load(Computer* comp) {
 	int blk = comp->tape->block;
 	if (blk >= comp->tape->blkCount) return;
@@ -110,13 +112,14 @@ void xThread::emuCycle(Computer* comp) {
 			sndNs += tm;
 			wavNs += tm;
 			// tape trap
+			int pc = cpu_get_pc(comp->cpu);
 			if ((comp->hw->grp == HWG_ZX) && (comp->mem->map[0].type == MEM_ROM) && comp->rom && !comp->dos && !comp->ext) {
-				if ((comp->cpu->regPC == 0x56c) || (comp->cpu->regPC == 0x5e7)) {	// load: ix:addr, de:len (0x580 ?) 56c/559
+				if ((pc == 0x56c) || (pc == 0x5e7)) {	// load: ix:addr, de:len (0x580 ?) 56c/559
 					tap_catch_load(comp);
-				} else if (comp->cpu->regPC == 0x4d0) {				// save: ix:addr, de:len, a:block type(b7), hl:pilot len (1f80/0c98)?
+				} else if (pc == 0x4d0) {				// save: ix:addr, de:len, a:block type(b7), hl:pilot len (1f80/0c98)?
 					tap_catch_save(comp);
 				}
-				if (conf.tape.autostart && !conf.tape.fast && ((comp->cpu->regPC == 0x5df) || (comp->cpu->regPC == 0x53a))) {
+				if (conf.tape.autostart && !conf.tape.fast && ((pc == 0x5df) || (pc == 0x53a))) {
 					comp->tape->sigLen = 1e6;
 					tapNextBlock(comp->tape);
 					tapStop(comp->tape);
@@ -147,13 +150,7 @@ void xThread::emuCycle(Computer* comp) {
 			emit s_frame();
 		}
 #if LOG_OUTPUT
-		if (comp->hw->id == HW_IBM_PC) {
-			if (comp->cpu->pc == 0xac2b) {
-				fprintf(file, "cx=%.4X di=%.4X -> ",comp->cpu->cx, comp->cpu->di);
-			} else if (comp->cpu->pc == 0xac3b) {
-				fprintf(file, "%.4X\n", comp->cpu->di);
-			}
-		}
+// ...
 #endif
 		if (comp->brk) {
 			// printf("brkt = %i, brka = %X\n", comp->brkt, comp->brka);
@@ -161,7 +158,7 @@ void xThread::emuCycle(Computer* comp) {
 				conf.emu.pause |= PR_DEBUG;
 				emit dbgRequest();
 			} else {
-				xBrkPoint* ptr = brk_find(comp->brkt, comp->brka);		// TODO: brk catched, but not found?
+				xBrkPoint* ptr = brk_find(comp->brkt, comp->brka);
 				if (ptr) {
 					QString fnams;
 					QFile file;
@@ -185,12 +182,6 @@ void xThread::emuCycle(Computer* comp) {
 							emit dbgRequest();
 							break;
 					}
-//					if (!comp->brk && ptr->fetch) {		// to skip fetch-brk and don't stop again (bad idea)
-//						tm = !!comp->debug;
-//						comp->debug = 1;
-//						compExec(comp);
-//						comp->debug = !!tm;
-//					}
 				} else {
 					comp->brk = 0;
 				}
