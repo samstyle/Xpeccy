@@ -514,13 +514,13 @@ xRegBunch cpuGetRegs(CPU* cpu) {
 
 int reg_get_value(CPU* cpu, xRegDsc* dsc) {
 	int res = -1;
-	if (dsc->type & REG_SEG) {
+	if (dsc->flag & REG_SEG) {
 		res = ((xSegPtr*)((cpu + dsc->offset)))->idx & 0xffff;
 	} else if (dsc->offset == 0) {		// is flag
 		res = cpu_get_flag(cpu);
 	} else {
 		void* ptr = ((void*)cpu) + dsc->offset;
-		switch(dsc->type & REG_TMASK) {
+		switch(dsc->type) {
 			case REG_BIT: res = !!(*(bool*)ptr); break;
 			case REG_BYTE: res = (*(unsigned char*)ptr) & 0xff; break;
 			case REG_WORD: res = (*(unsigned short*)ptr) & 0xffff; break;
@@ -541,6 +541,7 @@ xRegister cpuGetReg(CPU* cpu, int id) {
 		if (rt[i].id == id) {
 			reg.id = id;
 			reg.type = rt[i].type;
+			reg.flag = rt[i].flag;
 			reg.name = rt[i].name;
 			reg.value = reg_get_value(cpu, &rt[i]);		// TODO: for segments - value=selector, base=address
 			reg.base = 0;
@@ -578,10 +579,10 @@ bool cpu_set_reg(CPU* cpu, const char* name, int val) {
 	void* ptr;
 	xRegDsc* rt = cpu->core->rdsctab;
 	while (work && (rt[i].id != REG_NONE)) {
-		if (!strcmp(name, rt[i].name) && (rt[i].offset != 0) && !(rt[i].type & REG_SEG)) {	// TODO: offset==0 -> setflag
+		if (!strcmp(name, rt[i].name) && (rt[i].offset != 0) && !(rt[i].flag & REG_SEG)) {	// TODO: offset==0 -> setflag (no it's not: AF for example)
 			ptr = ((void*)cpu) + rt[i].offset;
 			work = 0;
-			switch(rt[i].type & REG_TMASK) {
+			switch(rt[i].type) {
 				case REG_BIT: *(bool*)ptr = !!val; break;
 				case REG_BYTE: *(unsigned char*)ptr = val & 0xff; break;
 				case REG_WORD: *(unsigned short*)ptr = val & 0xffff; break;
@@ -607,7 +608,7 @@ int cpu_get_onmsk(CPU* cpu, int msk) {
 	int work = 1;
 	xRegDsc* rt = cpu->core->rdsctab;
 	while (work && (rt[i].id != REG_NONE)) {
-		if (rt[i].type & msk) {
+		if (rt[i].flag & msk) {
 			res = reg_get_value(cpu, &rt[i]);
 			work = 0;
 		}

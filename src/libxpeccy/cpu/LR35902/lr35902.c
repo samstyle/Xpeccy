@@ -189,16 +189,16 @@ xMnem lr_mnem(CPU* cpu, int qadr, cbdmr mrd, void* data) {
 // registers
 
 xRegDsc lrRegTab[] = {
-	{LR_REG_PC, "PC", REG_WORD | REG_RDMP | REG_PC, offsetof(CPU, regPC)},
-	{LR_REG_AF, "AF", REG_WORD, 0},
-	{LR_REG_BC, "BC", REG_WORD | REG_RDMP, offsetof(CPU, regBC)},
-	{LR_REG_DE, "DE", REG_WORD | REG_RDMP, offsetof(CPU, regDE)},
-	{LR_REG_HL, "HL", REG_WORD | REG_RDMP, offsetof(CPU, regHL)},
-	{LR_REG_SP, "SP", REG_WORD | REG_RDMP | REG_SP, offsetof(CPU, regSP)},
-	{LR_FLG_IFF, "IFF", REG_BIT, offsetof(CPU, flgIFF1)},
-	{REG_EMPTY, "A", REG_BYTE, offsetof(CPU, regA)},
-	{REG_EMPTY, "F", REG_32, 0},
-	{REG_NONE, "", 0, 0}
+	{LR_REG_PC, "PC", REG_WORD, REG_RDMP | REG_PC, offsetof(CPU, regPC)},
+	{LR_REG_AF, "AF", REG_WORD, 0, 0},
+	{LR_REG_BC, "BC", REG_WORD, REG_RDMP, offsetof(CPU, regBC)},
+	{LR_REG_DE, "DE", REG_WORD, REG_RDMP, offsetof(CPU, regDE)},
+	{LR_REG_HL, "HL", REG_WORD, REG_RDMP, offsetof(CPU, regHL)},
+	{LR_REG_SP, "SP", REG_WORD, REG_RDMP | REG_SP, offsetof(CPU, regSP)},
+	{LR_FLG_IFF, "IFF", REG_BIT, 0, offsetof(CPU, flgIFF1)},
+	{REG_EMPTY, "A", REG_BYTE, 0, offsetof(CPU, regA)},
+	{REG_EMPTY, "F", REG_32, 0, 0},
+	{REG_NONE, "", 0, 0, 0}
 };
 
 static char* lrFlags = "ZNHC----";
@@ -210,6 +210,7 @@ void lr_get_regs(CPU* cpu, xRegBunch* bunch) {
 		bunch->regs[idx].id = lrRegTab[idx].id;
 		bunch->regs[idx].name = lrRegTab[idx].name;
 		bunch->regs[idx].type = lrRegTab[idx].type;
+		bunch->regs[idx].flag = lrRegTab[idx].flag;
 		switch(lrRegTab[idx].id) {
 			case LR_REG_PC: bunch->regs[idx].value = cpu->regPC; break;
 			case LR_REG_SP: bunch->regs[idx].value = cpu->regSP; break;

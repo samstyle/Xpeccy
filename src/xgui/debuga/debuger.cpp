@@ -785,7 +785,7 @@ void DebugWin::customEvent(QEvent* ev) {
 					if (i!=0) tracestr.append(" ");
 					if (traceregs.regs[i].id != REG_EMPTY) {			// mustn't be visible
 						tracestr.append(traceregs.regs[i].name).append(":");
-						switch(traceregs.regs[i].type & REG_TMASK) {
+						switch(traceregs.regs[i].type) {
 							case REG_BIT: tracestr.append(traceregs.regs[i].value ? "1" : "0"); break;
 							case REG_BYTE: tracestr.append(gethexbyte(traceregs.regs[i].value)); break;
 							case REG_WORD: tracestr.append(gethexword(traceregs.regs[i].value)); break;
@@ -889,7 +889,7 @@ void DebugWin::chLayout() {
 
 int dbg_get_reg_adr(CPU* cpu, xRegister* reg) {
 	int a = reg->value;
-	if (reg->type & REG_SEG) {
+	if (reg->flag & REG_SEG) {
 		a = reg->base;
 	} else if (cpu->type == CPU_I80286) {
 		a += reg->base;
@@ -993,7 +993,7 @@ void DebugWin::fillCPU() {
 			default:
 				dbgRegLabs[i]->setText(rp->name);
 				dbgRegLabs[i]->setProperty("regid", rp->id);
-				t = rp->type & REG_TMASK;
+				t = rp->type;
 				switch (t) {
 					case REG_2: dbgRegEdit[i]->setMax(2); break;
 					case REG_BYTE: dbgRegEdit[i]->setMax(0xff); break;
@@ -1001,7 +1001,7 @@ void DebugWin::fillCPU() {
 					case REG_32: dbgRegEdit[i]->setMax(0xffffffff); break;
 					default: dbgRegEdit[i]->setMax(0xffff); break;
 				}
-				f = !!(rp->type & REG_RO);
+				f = !!(rp->flag & REG_RO);
 				dbgRegLabs[i]->setVisible(true);
 				// NOTE: setWidget return a error if a cell is occuped
 				if (t == REG_BIT) {

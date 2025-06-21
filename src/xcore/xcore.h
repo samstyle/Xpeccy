@@ -108,6 +108,14 @@ QString gethex6(int);
 QString gethexint(int);
 
 typedef struct {
+	int err;
+	int value;
+	const char* ptr;
+} xResult;
+
+xResult xEval(const char*, int = 0);
+
+typedef struct {
 	unsigned b:1;
 	int i;
 	double d;

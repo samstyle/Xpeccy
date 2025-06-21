@@ -1457,16 +1457,16 @@ int pdp11_exec(CPU* cpu) {
 // registers
 
 xRegDsc pdp11RegTab[] = {
-	{PDP11_REG0, "R0", REG_WORD | REG_RDMP, offsetof(CPU, regRN(0))},
-	{PDP11_REG1, "R1", REG_WORD | REG_RDMP, offsetof(CPU, regRN(1))},
-	{PDP11_REG2, "R2", REG_WORD | REG_RDMP, offsetof(CPU, regRN(2))},
-	{PDP11_REG3, "R3", REG_WORD | REG_RDMP, offsetof(CPU, regRN(3))},
-	{PDP11_REG4, "R4", REG_WORD | REG_RDMP, offsetof(CPU, regRN(4))},
-	{PDP11_REG5, "R5", REG_WORD | REG_RDMP, offsetof(CPU, regRN(5))},
-	{PDP11_REG6, "SP", REG_WORD | REG_RDMP | REG_SP, offsetof(CPU, regRN(6))},
-	{PDP11_REG7, "PC", REG_WORD | REG_RDMP | REG_PC, offsetof(CPU, regRN(7))},
-	{PDP11_REGF, "PSW", REG_32, 0},
-	{REG_NONE, "", 0, 0}
+	{PDP11_REG0, "R0", REG_WORD, REG_RDMP, offsetof(CPU, regRN(0))},
+	{PDP11_REG1, "R1", REG_WORD, REG_RDMP, offsetof(CPU, regRN(1))},
+	{PDP11_REG2, "R2", REG_WORD, REG_RDMP, offsetof(CPU, regRN(2))},
+	{PDP11_REG3, "R3", REG_WORD, REG_RDMP, offsetof(CPU, regRN(3))},
+	{PDP11_REG4, "R4", REG_WORD, REG_RDMP, offsetof(CPU, regRN(4))},
+	{PDP11_REG5, "R5", REG_WORD, REG_RDMP, offsetof(CPU, regRN(5))},
+	{PDP11_REG6, "SP", REG_WORD, REG_RDMP | REG_SP, offsetof(CPU, regRN(6))},
+	{PDP11_REG7, "PC", REG_WORD, REG_RDMP | REG_PC, offsetof(CPU, regRN(7))},
+	{PDP11_REGF, "PSW", REG_32, 0, 0},
+	{REG_NONE, "", 0, 0, 0}
 };
 
 static char* regNames[8] = {"R0","R1","R2","R3","R4","R5","SP","PC"};
@@ -1494,6 +1494,7 @@ void pdp11_get_regs(CPU* cpu, xRegBunch* bunch) {
 		bunch->regs[idx].id = pdp11RegTab[idx].id;
 		bunch->regs[idx].name = pdp11RegTab[idx].name;
 		bunch->regs[idx].type = pdp11RegTab[idx].type;
+		bunch->regs[idx].flag = pdp11RegTab[idx].flag;
 		bunch->regs[idx].value = pdp_get_reg(cpu, pdp11RegTab[idx].id);
 		idx++;
 	}

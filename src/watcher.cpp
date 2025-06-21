@@ -6,12 +6,6 @@
 
 // expression evaluation
 
-typedef struct {
-	int err;
-	int value;
-	const char* ptr;
-} xResult;
-
 bool isDigit(char c, int base) {
 	if (c < '0') return 0;
 	if (c <= '9') {
@@ -34,8 +28,6 @@ bool isLetter(char c) {
 	return (c <= 'z');
 }
 
-xResult xEval(const char*, int);
-
 // return:
 //	res.value = value of number/register/label
 //	res.err = 1 if error
@@ -57,6 +49,7 @@ xResult getOperand(const char* ptr) {
 	int base = conf.prof.cur->zx->hw->base;
 	QString str;
 
+	// TODO: bc, de recognized as numbers in hex
 	if (isDigit(c, base)) {	// number
 		if ((c == '0') && (*(res.ptr + 1) == 'x')) {		// 0x... - hex
 			res.ptr += 2;
@@ -146,7 +139,7 @@ xResult getOperand(const char* ptr) {
 // b1: stop on ] with pointer increment
 // b2: stop on ),],+,- and don't increment pointer
 
-xResult xEval(const char* ptr, int f = 0) {
+xResult xEval(const char* ptr, int f) {
 	xResult res = getOperand(ptr);
 	xResult op;
 	int exit = 0;

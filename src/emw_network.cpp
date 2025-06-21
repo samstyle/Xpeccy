@@ -83,7 +83,7 @@ void MainWin::socketRead() {
 	} else if (com == "getreg") {
 		if (prm.size() > 1) {
 			val = cpu_get_reg(comp->cpu, prm[1].toUpper().toLocal8Bit().data(), &f);
-			if (f) {
+			if (!f) {
 				sock->write(QString::number(val, 16).toUpper().toUtf8());
 				sock->write("\r\n");
 			} else {
@@ -103,8 +103,9 @@ void MainWin::socketRead() {
 			if ((reg.id != REG_NONE) && (reg.id != REG_EMPTY)) {
 				sock->write(reg.name);
 				sock->write(" : ");
-				switch(reg.type & REG_TMASK) {
+				switch(reg.type) {
 					case REG_BIT: sock->write(reg.value ? "1" : "0"); break;
+					case REG_2: sock->write(gethexbyte(reg.value & 3).toUtf8()); break;
 					case REG_BYTE: sock->write(gethexbyte(reg.value).toUtf8()); break;
 					case REG_WORD: sock->write(gethexword(reg.value).toUtf8()); break;
 					case REG_24: sock->write(gethex6(reg.value).toUtf8()); break;
@@ -113,6 +114,16 @@ void MainWin::socketRead() {
 				}
 				sock->write("\r\n");
 			}
+		}
+	} else if (com == "eval") {
+		if (prm.size() > 1) {
+			xResult xr = xEval(prm[1].toLocal8Bit().data());
+			if (xr.err) {
+				sock->write("Syntax error");
+			} else {
+				sock->write(gethexint(xr.value).toUtf8());
+			}
+			sock->write("\r\n");
 		}
 	} else if (com == "load") {
 		if (prm.size() > 1) {

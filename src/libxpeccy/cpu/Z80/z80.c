@@ -316,33 +316,33 @@ xAsmScan z80_asm(int adr, const char* cbuf, char* buf) {
 // registers
 
 xRegDsc z80RegTab[] = {
-	{Z80_REG_PC, "PC", REG_WORD | REG_RDMP | REG_PC, offsetof(CPU, regPC)},
-	{Z80_REG_AF, "AF", REG_WORD, 0},
-	{Z80_REG_BC, "BC", REG_WORD | REG_RDMP, offsetof(CPU, regBC)},
-	{Z80_REG_DE, "DE", REG_WORD | REG_RDMP, offsetof(CPU, regDE)},
-	{Z80_REG_HL, "HL", REG_WORD | REG_RDMP, offsetof(CPU, regHL)},
+	{Z80_REG_PC, "PC", REG_WORD, REG_RDMP | REG_PC, offsetof(CPU, regPC)},
+	{Z80_REG_AF, "AF", REG_WORD, 0, 0},
+	{Z80_REG_BC, "BC", REG_WORD, REG_RDMP, offsetof(CPU, regBC)},
+	{Z80_REG_DE, "DE", REG_WORD, REG_RDMP, offsetof(CPU, regDE)},
+	{Z80_REG_HL, "HL", REG_WORD, REG_RDMP, offsetof(CPU, regHL)},
 
-	{Z80_REG_SP, "SP", REG_WORD | REG_RDMP | REG_SP, offsetof(CPU, regSP)},
-	{Z80_REG_AFA, "AF'", REG_WORD, 0},
-	{Z80_REG_BCA, "BC'", REG_WORD | REG_RDMP, offsetof(CPU, regBCa)},
-	{Z80_REG_DEA, "DE'", REG_WORD | REG_RDMP, offsetof(CPU, regDEa)},
-	{Z80_REG_HLA, "HL'", REG_WORD | REG_RDMP, offsetof(CPU, regHLa)},
+	{Z80_REG_SP, "SP", REG_WORD, REG_RDMP | REG_SP, offsetof(CPU, regSP)},
+	{Z80_REG_AFA, "AF'", REG_WORD, 0, 0},
+	{Z80_REG_BCA, "BC'", REG_WORD, REG_RDMP, offsetof(CPU, regBCa)},
+	{Z80_REG_DEA, "DE'", REG_WORD, REG_RDMP, offsetof(CPU, regDEa)},
+	{Z80_REG_HLA, "HL'", REG_WORD, REG_RDMP, offsetof(CPU, regHLa)},
 
-	{Z80_REG_IX, "IX", REG_WORD | REG_RDMP, offsetof(CPU, regIX)},
-	{Z80_REG_IY, "IY", REG_WORD | REG_RDMP, offsetof(CPU, regIY)},
-	{Z80_REG_I, "I", REG_BYTE, offsetof(CPU, regI)},
-	{Z80_REG_R, "R", REG_BYTE, offsetof(CPU, regR)},
-	{REG_EMPTY, "A", REG_BYTE, offsetof(CPU, regA)},
-	{REG_EMPTY, "F", REG_32, 0},
-	{REG_EMPTY, "A'", REG_BYTE, offsetof(CPU, regAa)},
-	{REG_EMPTY, "F'", REG_32, offsetof(CPU, regFa)},
+	{Z80_REG_IX, "IX", REG_WORD, REG_RDMP, offsetof(CPU, regIX)},
+	{Z80_REG_IY, "IY", REG_WORD, REG_RDMP, offsetof(CPU, regIY)},
+	{Z80_REG_I, "I", REG_BYTE, 0, offsetof(CPU, regI)},
+	{Z80_REG_R, "R", REG_BYTE, 0, offsetof(CPU, regR)},
+	{REG_EMPTY, "A", REG_BYTE, 0, offsetof(CPU, regA)},
+	{REG_EMPTY, "F", REG_32, 0, 0},
+	{REG_EMPTY, "A'", REG_BYTE, 0, offsetof(CPU, regAa)},
+	{REG_EMPTY, "F'", REG_32, 0, offsetof(CPU, regFa)},
 #ifdef ISDEBUG
-	{REG_MPTR, "WZ", REG_WORD | REG_RDMP, offsetof(CPU, regWZ)},
+	{REG_MPTR, "WZ", REG_WORD, REG_RDMP, offsetof(CPU, regWZ)},
 #endif
-	{Z80_REG_IM, "IM", REG_2, offsetof(CPU, regIM)},
-	{Z80_FLG_IFF1, "IFF1", REG_BIT, offsetof(CPU, flgIFF1)},
-	{Z80_FLG_IFF2, "IFF2", REG_BIT, offsetof(CPU, flgIFF2)},
-	{REG_NONE, "", 0, 0}
+	{Z80_REG_IM, "IM", REG_2, 0, offsetof(CPU, regIM)},
+	{Z80_FLG_IFF1, "IFF1", REG_BIT, 0, offsetof(CPU, flgIFF1)},
+	{Z80_FLG_IFF2, "IFF2", REG_BIT, 0, offsetof(CPU, flgIFF2)},
+	{REG_NONE, "", 0, 0, 0}
 };
 
 static char* z80Flags = "SZ5H3PNC";
@@ -356,6 +356,7 @@ void z80_get_regs(CPU* cpu, xRegBunch* bunch) {
 		reg.id = z80RegTab[idx].id;
 		reg.name = z80RegTab[idx].name;
 		reg.type = z80RegTab[idx].type;
+		reg.flag = z80RegTab[idx].flag;
 		switch(z80RegTab[idx].id) {
 			case Z80_REG_PC: reg.value = cpu->regPC; break;
 			case Z80_REG_SP: reg.value = cpu->regSP; break;
@@ -380,7 +381,7 @@ void z80_get_regs(CPU* cpu, xRegBunch* bunch) {
 			case Z80_REG_IM: reg.value = cpu->regIM & 3; break;
 			case Z80_FLG_IFF1: reg.value = cpu->flgIFF1; break;
 			case Z80_FLG_IFF2: reg.value = cpu->flgIFF2; break;
-			case REG_MPTR: reg.value = cpu->regWZ; break;
+			case Z80_REG_WZ: reg.value = cpu->regWZ; break;
 		}
 		if (reg.id != REG_EMPTY) {
 			bunch->regs[bidx] = reg;
@@ -426,7 +427,7 @@ void z80_set_regs(CPU* cpu, xRegBunch bunch) {
 			case Z80_REG_IM: cpu->regIM = (rd->value & 2) ? 2 : rd->value & 1; break;
 			case Z80_FLG_IFF1: cpu->flgIFF1 = !!rd->value; break;
 			case Z80_FLG_IFF2: cpu->flgIFF2 = !!rd->value; break;
-			case REG_MPTR: cpu->regWZ = rd->value; break;
+			case Z80_REG_WZ: cpu->regWZ = rd->value; break;
 			case REG_NONE: idx = 100; break;
 		}
 	}

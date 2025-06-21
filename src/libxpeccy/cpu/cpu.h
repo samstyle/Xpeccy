@@ -27,26 +27,28 @@ typedef struct {
 	const char* mnem;
 } xMnem;
 
-#define REG_NONE	0
-#define REG_EMPTY	-1
-#define REG_MPTR	-2
-
+// special register id
+#define REG_NONE	0		// end of table
+#define REG_EMPTY	-1		// don't show in debuga, but is a register
+// register type
 #define REG_BIT		1
-#define REG_2		2
+#define REG_2		2		// special type, values 0,1,2 (z80 interrupt mode)
 #define REG_BYTE	8
 #define REG_WORD	16
 #define REG_24		24
 #define REG_32		32
-#define REG_TMASK	0xff
-#define REG_RO		0x100	// protect from changes in deBUGa
-#define REG_SEG		0x200	// register is segment
-#define REG_RDMP	0x400	// use register as line addr for regs-dump in deBUGa (new widget)
-#define REG_PC		0x800	// register is execution pointer (pc, ip)
-#define REG_SP		0x1000	// register is stack (sp)
+//#define REG_TMASK	0xff
+// register flags
+#define REG_RO		1	// protect from changes in deBUGa
+#define REG_SEG		(1<<1)	// register is segment
+#define REG_RDMP	(1<<2)	// use register as line addr for regs-dump in deBUGa (new widget)
+#define REG_PC		(1<<3)	// register is execution pointer (pc, ip)
+#define REG_SP		(1<<4)	// register is stack (sp)
 
 typedef struct {
 	int id;
 	int type;
+	int flag;
 	const char* name;
 	int value;	// register value (selector)
 	int base;	// base address for segment register
@@ -61,6 +63,7 @@ typedef struct {
 	int id;
 	const char* name;
 	int type;
+	int flag;
 	size_t offset;		// = offsetof(CPU, <member>), e.g offsetof(CPU, pc)
 } xRegDsc;
 

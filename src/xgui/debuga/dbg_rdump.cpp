@@ -38,7 +38,7 @@ void xRDumpModel::refill() {
 	xRegBunch rz = cpuGetRegs(conf.prof.cur->zx->cpu);
 	regs.clear();
 	for (int i = 0; (i < 32) && (rz.regs[i].id != REG_NONE); i++) {
-		if (rz.regs[i].type & REG_RDMP) {
+		if (rz.regs[i].flag & REG_RDMP) {
 			regs.append(rz.regs[i]);
 		}
 	}

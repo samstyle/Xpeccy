@@ -145,14 +145,14 @@ xAsmScan m6502_asm(int a, const char* cbuf, char* buf) {
 }
 
 xRegDsc m6502RegTab[] = {
-	{M6502_REG_PC, "PC", REG_WORD | REG_RDMP | REG_PC, offsetof(CPU, regPC)},
-	{M6502_REG_A, "A", REG_BYTE, offsetof(CPU, regA)},
-	{M6502_REG_X, "X", REG_BYTE, offsetof(CPU, regX)},
-	{M6502_REG_Y, "Y", REG_BYTE, offsetof(CPU, regY)},
-	{M6502_REG_S, "S", REG_BYTE, offsetof(CPU, regS)},
-	{M6502_REG_F, "P", REG_32, 0},
-	{REG_EMPTY, "SP", REG_WORD | REG_SP, offsetof(CPU, regSP)},
-	{REG_NONE, "", 0, 0}
+	{M6502_REG_PC, "PC", REG_WORD, REG_RDMP | REG_PC, offsetof(CPU, regPC)},
+	{M6502_REG_A, "A", REG_BYTE, 0, offsetof(CPU, regA)},
+	{M6502_REG_X, "X", REG_BYTE, 0, offsetof(CPU, regX)},
+	{M6502_REG_Y, "Y", REG_BYTE, 0, offsetof(CPU, regY)},
+	{M6502_REG_S, "S", REG_BYTE, 0, offsetof(CPU, regS)},
+	{M6502_REG_F, "P", REG_32, 0, 0},
+	{REG_EMPTY, "SP", REG_WORD, REG_RDMP | REG_SP, offsetof(CPU, regSP)},
+	{REG_NONE, "", 0, 0, 0}
 };
 
 static char* mosFlags = "NV-BDIZC";
@@ -163,6 +163,7 @@ void m6502_get_regs(CPU* cpu, xRegBunch* bunch) {
 		bunch->regs[idx].id = m6502RegTab[idx].id;
 		bunch->regs[idx].name = m6502RegTab[idx].name;
 		bunch->regs[idx].type = m6502RegTab[idx].type;
+		bunch->regs[idx].flag = m6502RegTab[idx].flag;
 		switch(m6502RegTab[idx].id) {
 			case M6502_REG_PC: bunch->regs[idx].value = cpu->regPC; break;
 			case M6502_REG_S: bunch->regs[idx].value = cpu->regS; break;
