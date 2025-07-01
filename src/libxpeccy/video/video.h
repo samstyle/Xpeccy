@@ -113,14 +113,11 @@ struct Video {
 	unsigned upd:1;
 	unsigned tail:1;
 	unsigned cutscr:1;
-	unsigned irq:1;		// C64 vic-ii ints (TODO: remove)
 	unsigned linedbl:1;	// lines doubler
 
 	unsigned hblank:1;	// HBlank signal
-	unsigned hbstrb:1;	// HBlank strobe 0->1
 	unsigned hsync:1;	// HSync (pc)
 	unsigned vblank:1;	// VBlank signal
-	unsigned vbstrb:1;	// VBlank strobe 0->1
 	unsigned vsync:1;	// VSync (pc)
 
 	unsigned hbrd:1;	// border.H
@@ -349,6 +346,7 @@ void vidDestroy(Video*);
 
 void vid_reset(Video*);
 void vid_sync(Video*,int);
+void vid_irq(Video*, int);
 void vid_set_mode(Video*,int);
 void vid_reset_ray(Video*);
 void vid_set_ray(Video*, int);

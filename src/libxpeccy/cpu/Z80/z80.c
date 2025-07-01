@@ -337,7 +337,7 @@ xRegDsc z80RegTab[] = {
 	{REG_EMPTY, "A'", REG_BYTE, 0, offsetof(CPU, regAa)},
 	{REG_EMPTY, "F'", REG_32, 0, offsetof(CPU, regFa)},
 #ifdef ISDEBUG
-	{REG_MPTR, "WZ", REG_WORD, REG_RDMP, offsetof(CPU, regWZ)},
+	{Z80_REG_WZ, "WZ", REG_WORD, REG_RDMP, offsetof(CPU, regWZ)},
 #endif
 	{Z80_REG_IM, "IM", REG_2, 0, offsetof(CPU, regIM)},
 	{Z80_FLG_IFF1, "IFF1", REG_BIT, 0, offsetof(CPU, flgIFF1)},

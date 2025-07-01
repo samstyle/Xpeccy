@@ -26,7 +26,7 @@
 	val = (val >> 1) | (cpu->flgC ? 0x80 : 0);\
 	cpu->flgN = 0;\
 	cpu->flgH = 0;\
-	cpu->flgC = val & 1;\
+	cpu->flgC = cpu->tmp & 1;\
 	cpu->flgZ = !val;\
 }
 

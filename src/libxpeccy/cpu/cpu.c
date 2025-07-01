@@ -232,6 +232,7 @@ CPU* cpuCreate(int type, cbmr fmr, cbmw fmw, cbir fir, cbiw fiw, cbiack frq, cbi
 }
 
 void cpuDestroy(CPU* cpu) {
+	if (cpu->lib) cpu_close_lib(cpu);
 	free(cpu);
 }
 

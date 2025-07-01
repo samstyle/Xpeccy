@@ -507,7 +507,6 @@ void gbSlotWr(int adr, int val, void* data) {
 }
 
 // 8000..9fff : video mem (bank 0,1 gbc)
-// a000..bfff : external ram
 
 int gbvRd(int adr, void* data) {
 	Computer* comp = (Computer*)data;
@@ -538,6 +537,18 @@ void gbvWr(int adr, int val, void* data) {
 	}
 }
 
+// a000..bfff : external ram
+
+int gbsrRd(int adr, void* data) {
+	Computer* comp = (Computer*)data;
+	return sltRead(comp->slot, SLT_PRG, adr);
+}
+
+void gbsrWr(int adr, int val, void* data) {
+	Computer* comp = (Computer*)data;
+	sltWrite(comp->slot, SLT_PRG, adr, val);
+}
+
 // c000..ffff : internal ram, oem, iomap, int mask
 
 // C000..DFFF : RAM1 : C000..CFFF page 0, D000..DFFF page X
@@ -548,18 +559,39 @@ void gbvWr(int adr, int val, void* data) {
 // FF80..FFFE : RAM2
 // FFFF..FFFF : INT mask
 
+int gbRamAdr(Computer* comp, int adr) {
+	adr &= 0x1fff;
+	if (adr & 0x1000) {
+		adr = (comp->gb.wbank << 12) | (adr & 0xfff);
+	}
+	return adr;
+}
+
+int gbRamRd(int adr, void* data) {
+	Computer* comp = (Computer*)data;
+	adr = gbRamAdr(comp, adr);
+	return comp->mem->ramData[adr];
+}
+
+void gbRamWr(int adr, int val, void* data) {
+	Computer* comp = (Computer*)data;
+	adr = gbRamAdr(comp, adr);
+	comp->mem->ramData[adr] = val & 0xff;
+}
+
 int gbrRd(int adr, void* data) {
 	Computer* comp = (Computer*)data;
 	unsigned char res = 0xff;
-	if (adr < 0xfe00) {
-		adr &= 0x1fff;						// 8K, [e000...fdff] -> [c000..ddff]
-		if (adr & 0x1000) {					// high 4K -> WRAM page X
-			adr =(comp->gb.wbank << 12) | (adr & 0xfff);
-			res = comp->mem->ramData[adr];
-		} else {						// low 4K -> WRAM page 0
-			res = comp->mem->ramData[adr & 0xfff];
-		}
-	} else if (adr < 0xfea0) {					// video oam not accessible @ mode 2
+//	if (adr < 0xfe00) {
+//		adr &= 0x1fff;						// 8K, [e000...fdff] -> [c000..ddff]
+//		if (adr & 0x1000) {					// high 4K -> WRAM page X
+//			adr =(comp->gb.wbank << 12) | (adr & 0xfff);
+//			res = comp->mem->ramData[adr];
+//		} else {						// low 4K -> WRAM page 0
+//			res = comp->mem->ramData[adr & 0xfff];
+//		}
+//	} else
+	if (adr < 0xfea0) {					// video oam not accessible @ mode 2
 		if (comp->vid->gbcmode != 2)
 			res = comp->vid->oam[adr & 0xff];
 	} else if (adr < 0xff00) {
@@ -576,15 +608,16 @@ int gbrRd(int adr, void* data) {
 
 void gbrWr(int adr, int val, void* data) {
 	Computer* comp = (Computer*)data;
-	if (adr < 0xfe00) {
-		adr &= 0x1fff;
-		if (adr & 0x1000) {					// high 4K -> WRAM page
-			adr = (comp->gb.wbank << 12) | (adr & 0xfff);
-			comp->mem->ramData[adr] = val;
-		} else {
-			comp->mem->ramData[adr & 0xfff] = val;
-		}
-	} else if (adr < 0xfea0) {					// video oam not accessible @ mode 2
+//	if (adr < 0xfe00) {
+//		adr &= 0x1fff;
+//		if (adr & 0x1000) {					// high 4K -> WRAM page
+//			adr = (comp->gb.wbank << 12) | (adr & 0xfff);
+//			comp->mem->ramData[adr] = val;
+//		} else {
+//			comp->mem->ramData[adr & 0xfff] = val;
+//		}
+//	} else
+	if (adr < 0xfea0) {					// video oam not accessible @ mode 2
 		if (comp->vid->gbcmode != 2)
 			comp->vid->oam[adr & 0xff] = val;
 	} else if (adr < 0xff00) {
@@ -601,10 +634,12 @@ void gbrWr(int adr, int val, void* data) {
 // maper
 
 void gbMaper(Computer* comp) {
-	memSetBank(comp->mem, 0x00, MEM_SLOT, 0, MEM_16K, gbSlotRd, gbSlotWr, comp);
-	memSetBank(comp->mem, 0x40, MEM_SLOT, comp->slot->memMap[0], MEM_16K, gbSlotRd, gbSlotWr, comp);
-	memSetBank(comp->mem, 0x80, MEM_EXT, 0, MEM_16K, gbvRd, gbvWr, comp);	// VRAM (8K), slot ram (8K)
-	memSetBank(comp->mem, 0xc0, MEM_EXT, 1, MEM_16K, gbrRd, gbrWr, comp);	// internal RAM/OAM/IOMap
+	memSetBank(comp->mem, 0x00, MEM_SLOT, 0, MEM_32K, gbSlotRd, gbSlotWr, comp);
+//	memSetBank(comp->mem, 0x40, MEM_SLOT, comp->slot->memMap[0], MEM_16K, gbSlotRd, gbSlotWr, comp);
+	memSetBank(comp->mem, 0x80, MEM_EXT, 0, MEM_8K, gbvRd, gbvWr, comp);		// VRAM (8K)
+	memSetBank(comp->mem, 0xa0, MEM_SLOT, 0, MEM_8K, gbsrRd, gbsrWr, comp);		// slot ram (8K)
+	memSetBank(comp->mem, 0xc0, MEM_RAM, 0, MEM_16K, gbRamRd, gbRamWr, comp);	// internal ram1
+	memSetBank(comp->mem, 0xfe, MEM_EXT, 1, MEM_512, gbrRd, gbrWr, comp);		// OAM/IOMap/ram2
 }
 
 int gbMemRd(Computer* comp, int adr, int m1) {
@@ -650,10 +685,7 @@ void gbcSync(Computer* comp, int ns) {
 		compSetTurbo(comp, comp->speed ? 2.0 : 1.0);
 	}
 	// interrupts
-	if (comp->vid->vbstrb) {
-//		comp->vid->vbstrb = 0;
-//		req |= 1;
-	} else if (comp->vid->intrq) {
+	if (comp->vid->intrq) {
 		comp->vid->intrq = 0;
 		req |= 2;
 	} else if (comp->gb.timer.t.intrq) {
@@ -671,6 +703,7 @@ void gbcSync(Computer* comp, int ns) {
 void gbc_irq(Computer* comp, int t) {
 	switch (t) {
 		case IRQ_VID_VBLANK: comp->cpu->intrq |= 1; break;		// @ comp->vid->vbstrb
+		// case IRQ_VID_INT: comp->cpu->intrq |= 2; break;			// video int (hblank, vblank or selected line)
 		case IRQ_KBD: comp->cpu->intrq |= 16; break;
 	}
 }

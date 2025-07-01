@@ -937,18 +937,26 @@ static xVideoMode vidModeTab[] = {
 	{VID_UNKNOWN, NULL, vidDrawBorder, NULL, NULL, NULL}
 };
 
+void vid_set_core(Video* vid, xVideoMode* xvm) {
+	vid->cbDot = vid->noScreen ? vidDrawBorder : xvm->cbDot;
+	vid->cbHBlank = xvm->cbHBlank;
+	vid->cbFrame = xvm->cbFrame;
+	vid->cbLine = xvm->cbLine;
+	if (xvm->init)
+		xvm->init(vid);
+}
+
 void vid_set_mode(Video* vid, int mode) {
 	vid->vmode = mode;
 	int i = 0;
 	while ((vidModeTab[i].id != VID_UNKNOWN) && (vidModeTab[i].id != mode)) {
 		i++;
 	}
-	vid->cbDot = vid->noScreen ? vidDrawBorder : vidModeTab[i].cbDot;
-	vid->cbHBlank = vidModeTab[i].cbHBlank;
-	vid->cbFrame = vidModeTab[i].cbFrame;
-	vid->cbLine = vidModeTab[i].cbLine;
-	if (vidModeTab[i].init)
-		vidModeTab[i].init(vid);
+	vid_set_core(vid, &vidModeTab[i]);
+}
+
+void vid_irq(Video* vid, int id) {
+	vid->xirq(id, vid->xptr);
 }
 
 void vid_tick(Video* vid) {
@@ -975,7 +983,7 @@ void vid_tick(Video* vid) {
 	vid->ray.xs++;
 	if (vid->ray.x >= vid->full.x) {			// new line
 		vid->hblank = 0;
-		vid->hbstrb = 0;
+//		vid->hbstrb = 0;
 		vid->ray.x = 0;
 		vid->ray.xs = -vid->bord.x;
 		vid->ray.ys++;
@@ -986,7 +994,7 @@ void vid_tick(Video* vid) {
 		if ((vid->ray.y >= vid->lcut.y) && (vid->ray.y < vid->rcut.y))
 			vid_line(vid);
 		vid->hblank = 1;
-		vid->hbstrb = 1;
+//		vid->hbstrb = 1;
 		vid->ray.xb = 0;
 		vid->ray.y++;
 		vid->ray.yb++;
@@ -994,7 +1002,7 @@ void vid_tick(Video* vid) {
 			vid_frame(vid);
 			vid->lcnt = 0;
 			vid->vblank = 0;
-			vid->vbstrb = 0;
+//			vid->vbstrb = 0;
 			vid->ray.y = 0;
 			vid->tsconf.scrLine = 0;
 			vid->fcnt++;
@@ -1007,7 +1015,7 @@ void vid_tick(Video* vid) {
 		if (vid->ray.y == vid->vend.y) {		// vblank start
 			vid->xirq(IRQ_VID_VBLANK, vid->xptr);
 			vid->vblank = 1;
-			vid->vbstrb = 1;
+//			vid->vbstrb = 1;
 			vid->ray.yb = 0;
 			vid->idx = 0;
 		}

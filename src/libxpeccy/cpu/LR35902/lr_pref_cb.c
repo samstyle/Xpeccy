@@ -57,15 +57,22 @@ void lrcb2D(CPU* cpu) {SRAX(cpu->regL);}
 void lrcb2E(CPU* cpu) {cpu->tmpb = lr_mrd(cpu, cpu->regHL); cpu->t++; SRAX(cpu->tmpb); lr_mwr(cpu, cpu->regHL, cpu->tmpb);}
 void lrcb2F(CPU* cpu) {SRAX(cpu->regA);}
 // 30..37	swap
-inline unsigned char lr_swaph(unsigned char v) {return ((v & 0x0f) << 4) | ((v & 0xf0) >> 4);}
-void lrcb30(CPU* cpu) {cpu->regB = lr_swaph(cpu->regB);}
-void lrcb31(CPU* cpu) {cpu->regC = lr_swaph(cpu->regC);}
-void lrcb32(CPU* cpu) {cpu->regD = lr_swaph(cpu->regD);}
-void lrcb33(CPU* cpu) {cpu->regE = lr_swaph(cpu->regE);}
-void lrcb34(CPU* cpu) {cpu->regH = lr_swaph(cpu->regH);}
-void lrcb35(CPU* cpu) {cpu->regL = lr_swaph(cpu->regL);}
-void lrcb36(CPU* cpu) {cpu->tmpb = lr_mrd(cpu, cpu->regHL); cpu->t++; cpu->tmpb = lr_swaph(cpu->tmpb); lr_mwr(cpu, cpu->regHL, cpu->tmpb);}
-void lrcb37(CPU* cpu) {cpu->regA = lr_swaph(cpu->regA);}
+inline unsigned char lr_swaph(CPU* cpu, unsigned char v) {
+	v = ((v & 0x0f) << 4) | ((v & 0xf0) >> 4);
+	cpu->flgC = 0;
+	cpu->flgN = 0;
+	cpu->flgH = 0;
+	cpu->flgZ = !v;
+	return v;
+}
+void lrcb30(CPU* cpu) {cpu->regB = lr_swaph(cpu, cpu->regB);}
+void lrcb31(CPU* cpu) {cpu->regC = lr_swaph(cpu, cpu->regC);}
+void lrcb32(CPU* cpu) {cpu->regD = lr_swaph(cpu, cpu->regD);}
+void lrcb33(CPU* cpu) {cpu->regE = lr_swaph(cpu, cpu->regE);}
+void lrcb34(CPU* cpu) {cpu->regH = lr_swaph(cpu, cpu->regH);}
+void lrcb35(CPU* cpu) {cpu->regL = lr_swaph(cpu, cpu->regL);}
+void lrcb36(CPU* cpu) {cpu->tmpb = lr_mrd(cpu, cpu->regHL); cpu->t++; cpu->tmpb = lr_swaph(cpu, cpu->tmpb); lr_mwr(cpu, cpu->regHL, cpu->tmpb);}
+void lrcb37(CPU* cpu) {cpu->regA = lr_swaph(cpu, cpu->regA);}
 // 38..3f	srl
 void lrcb38(CPU* cpu) {SRLX(cpu->regB);}
 void lrcb39(CPU* cpu) {SRLX(cpu->regC);}
