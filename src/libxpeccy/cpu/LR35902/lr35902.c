@@ -32,13 +32,13 @@ void lr_reset(CPU* cpu) {
 	cpu->intrq = 0;
 	cpu->inten = 0;
 	// not necessary
-	cpu->regIM = 0;
-	cpu->regBCa = cpu->regDEa = cpu->regHLa = 0xffff;
-	cpu->regAa = 0xff;
-	cpu->regFa = 0xff;
-	cpu->regIX = cpu->regIY = 0xffff;
-	cpu->regI = cpu->regR = 0xff;
-	cpu->regR7 = 0x80;
+//	cpu->regIM = 0;
+//	cpu->regBCa = cpu->regDEa = cpu->regHLa = 0xffff;
+//	cpu->regAa = 0xff;
+//	cpu->regFa = 0xff;
+//	cpu->regIX = cpu->regIY = 0xffff;
+//	cpu->regI = cpu->regR = 0xff;
+//	cpu->regR7 = 0x80;
 }
 
 typedef struct {

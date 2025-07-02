@@ -31,13 +31,13 @@ void lr_push(CPU* cpu, unsigned short w) {
 	lr_mwr(cpu, --cpu->regSP, p.l); // MEMWR(--cpu->sp, p.l, 3);
 }
 
-// regWZ = ret adr
+// wz = ret adr
 void lr_ret(CPU* cpu) {
 	cpu->regPC = lr_pop(cpu);
 	cpu->regWZ = cpu->regPC;
 }
 
-// regWZ = call adr
+// wz = call adr
 void lr_call(CPU* cpu, unsigned short a) {
 	lr_push(cpu, cpu->regPC);
 	cpu->regWZ = a;
@@ -138,29 +138,29 @@ void lrnop01(CPU* cpu) {
 	cpu->regB = lr_mrd(cpu, cpu->regPC++);
 }
 
-// 02	ld (regBC),regA	4 3wr		regWZ = (regA << 8) | ((regBC + 1) & 0xff)
+// 02	ld (bc),a	4 3wr
 void lrnop02(CPU* cpu) {
 	cpu->regWZ = cpu->regBC;
 	lr_mwr(cpu, cpu->regWZ++, cpu->regA);
 	cpu->regWZh = cpu->regA;
 }
 
-// 03	inc regBC		6
+// 03	inc bc		6
 void lrnop03(CPU* cpu) {
 	cpu->regBC++;
 }
 
-// 04	inc regB		4
+// 04	inc b		4
 void lrnop04(CPU* cpu) {
-	cpu->regB = lr_inc8(cpu, cpu->regB); //INCL(cpu->b);
+	cpu->regB = lr_inc8(cpu, cpu->regB);
 }
 
-// 05	dec regB		4
+// 05	dec b		4
 void lrnop05(CPU* cpu) {
-	cpu->regB = lr_dec8(cpu, cpu->regB); //DECL(cpu->b);
+	cpu->regB = lr_dec8(cpu, cpu->regB);
 }
 
-// 06	ld regB,n		4 3rd
+// 06	ld b,n		4 3rd
 void lrnop06(CPU* cpu) {
 	cpu->regB = lr_mrd(cpu, cpu->regPC++);
 }
@@ -172,7 +172,6 @@ void lrnop07(CPU* cpu) {
 	cpu->flgH = 0;
 	cpu->flgN = 0;
 	cpu->flgZ = 0;
-	//cpu->f = (cpu->f & FLZ) | ((cpu->a & 1) ? FLC : 0);
 }
 
 // 08	ld (nn),sp		4 4rd 4rd 4wr 4wr
@@ -183,46 +182,44 @@ void lrnop08(CPU* cpu) {
 	lr_mwr(cpu, cpu->regWZ++, cpu->regSPh); cpu->t++;
 }
 
-// 09	add regHL,regBC	11		mptr = regHL+1 before adding
+// 09	add hl,bc	11
 void lrnop09(CPU* cpu) {
-	cpu->regHL = lr_add16(cpu, cpu->regHL, cpu->regBC); //ADDL16(cpu->hl, cpu->bc);
+	cpu->regHL = lr_add16(cpu, cpu->regHL, cpu->regBC);
 }
 
-// 0A	ld regA,(regBC)	4 3rd		regWZ = regBC+1
+// 0A	ld a,(bc)	4 3rd
 void lrnop0A(CPU* cpu) {
 	cpu->regWZ = cpu->regBC;
 	cpu->regA = lr_mrd(cpu, cpu->regWZ++);
 }
 
-// 0B	dec regBC		6
+// 0B	dec bc		6
 void lrnop0B(CPU* cpu) {
 	cpu->regBC--;
 }
 
-// 0C	inc regC		4
+// 0C	inc c		4
 void lrnop0C(CPU* cpu) {
-	cpu->regC = lr_inc8(cpu, cpu->regC); //INCL(cpu->c);
+	cpu->regC = lr_inc8(cpu, cpu->regC);
 }
 
-// 0D	dec regC		4
+// 0D	dec c		4
 void lrnop0D(CPU* cpu) {
-	cpu->regC = lr_dec8(cpu, cpu->regC); //DECL(cpu->c);
+	cpu->regC = lr_dec8(cpu, cpu->regC);
 }
 
-// 0E	ld regC,n		4 3rd
+// 0E	ld c,n		4 3rd
 void lrnop0E(CPU* cpu) {
 	cpu->regC = lr_mrd(cpu, cpu->regPC++);
 }
 
 // 0F	rrca		4
 void lrnop0F(CPU* cpu) {
-	// cpu->f = (cpu->f & FLZ) | ((cpu->a & 1) ? FLC : 0);
 	cpu->flgZ = 0;
 	cpu->flgN = 0;
 	cpu->flgH = 0;
 	cpu->flgC = cpu->regA & 1;
 	cpu->regA = (cpu->regA >> 1) | (cpu->regA << 7);
-	// cpu->f |= (cpu->a & (F5 | F3));
 }
 
 // 10	stop		0
@@ -237,29 +234,29 @@ void lrnop11(CPU* cpu) {
 	cpu->regD = lr_mrd(cpu, cpu->regPC++);
 }
 
-// 12	ld (regDE),regA	4 3wr		regWZ = (regA << 8) | ((regDE + 1) & 0xff)
+// 12	ld (de),a	4 3wr
 void lrnop12(CPU* cpu) {
 	cpu->regWZ = cpu->regDE;
 	lr_mwr(cpu, cpu->regWZ++, cpu->regA);
 	cpu->regWZh = cpu->regA;
 }
 
-// 13	inc regDE		6
+// 13	inc de		6
 void lrnop13(CPU* cpu) {
 	cpu->regDE++;
 }
 
-// 14	inc regD		4
+// 14	inc d		4
 void lrnop14(CPU* cpu) {
-	cpu->regD = lr_inc8(cpu, cpu->regD); //INCL(cpu->d);
+	cpu->regD = lr_inc8(cpu, cpu->regD);
 }
 
-// 15	dec regD		4
+// 15	dec d		4
 void lrnop15(CPU* cpu) {
-	cpu->regD = lr_dec8(cpu, cpu->regD); //DECL(cpu->d);
+	cpu->regD = lr_dec8(cpu, cpu->regD);
 }
 
-// 16	ld regD,n		4 3rd
+// 16	ld d,n		4 3rd
 void lrnop16(CPU* cpu) {
 	cpu->regD = lr_mrd(cpu, cpu->regPC++);
 }
@@ -268,7 +265,6 @@ void lrnop16(CPU* cpu) {
 void lrnop17(CPU* cpu) {
 	cpu->tmp = cpu->regA;
 	cpu->regA = (cpu->regA << 1) | cpu->flgC;
-	//cpu->f = (cpu->f & FLZ) | ((cpu->tmp & 0x80) ? FLC : 0);
 	cpu->flgZ = 0;
 	cpu->flgN = 0;
 	cpu->flgH = 0;
@@ -283,33 +279,33 @@ void lrnop18(CPU* cpu) {
 	cpu->t += 5;
 }
 
-// 19	add regHL,regDE	11	mptr = regHL+1 before adding
+// 19	add hl,de	11
 void lrnop19(CPU* cpu) {
 	cpu->regHL = lr_add16(cpu, cpu->regHL, cpu->regDE); //ADDL16(cpu->hl,cpu->de);
 }
 
-// 1A	ld regA,(regDE)	4 3rd	regWZ = regDE + 1
+// 1A	ld a,(de)	4 3rd
 void lrnop1A(CPU* cpu) {
 	cpu->regA = lr_mrd(cpu, cpu->regDE);
 	cpu->regWZ = cpu->regDE + 1;
 }
 
-// 1B	dec regDE		6
+// 1B	dec de		6
 void lrnop1B(CPU* cpu) {
 	cpu->regDE--;
 }
 
-// 1C	inc regE		4
+// 1C	inc e		4
 void lrnop1C(CPU* cpu) {
 	cpu->regE = lr_inc8(cpu, cpu->regE); //INCL(cpu->e);
 }
 
-// 1D	dec regE		4
+// 1D	dec e		4
 void lrnop1D(CPU* cpu) {
 	cpu->regE = lr_dec8(cpu, cpu->regE); //DECL(cpu->e);
 }
 
-// 1E	ld regE,n		4 3rd
+// 1E	ld e,n		4 3rd
 void lrnop1E(CPU* cpu) {
 	cpu->regE = lr_mrd(cpu, cpu->regPC++);
 }
@@ -341,27 +337,27 @@ void lrnop21(CPU* cpu) {
 	cpu->regH = lr_mrd(cpu, cpu->regPC++);
 }
 
-// 22	ldi (regHL),regA		4 4wr
+// 22	ldi (hl),a		4 4wr
 void lrnop22(CPU* cpu) {
 	lr_mwr(cpu, cpu->regHL++, cpu->regA); cpu->t++;
 }
 
-// 23	inc regHL		6
+// 23	inc hl		6
 void lrnop23(CPU* cpu) {
 	cpu->regHL++;
 }
 
-// 24	inc regH		4
+// 24	inc h		4
 void lrnop24(CPU* cpu) {
 	cpu->regH = lr_inc8(cpu, cpu->regH); //INCL(cpu->h);
 }
 
-// 25	dec regH		4
+// 25	dec h		4
 void lrnop25(CPU* cpu) {
 	cpu->regH = lr_dec8(cpu, cpu->regH); //DECL(cpu->h);
 }
 
-// 26	ld regH,n		4 3rd
+// 26	ld h,n		4 3rd
 void lrnop26(CPU* cpu) {
 	cpu->regH = lr_mrd(cpu, cpu->regPC++);
 }
@@ -387,32 +383,32 @@ void lrnop28(CPU* cpu) {
 	}
 }
 
-// 29	add regHL,regHL	11
+// 29	add hl,hl	11
 void lrnop29(CPU* cpu) {
-	cpu->regHL = lr_add16(cpu, cpu->regHL, cpu->regHL); //ADDL16(cpu->hl,cpu->hl);
+	cpu->regHL = lr_add16(cpu, cpu->regHL, cpu->regHL);
 }
 
-// 2A	ldi regA,(regHL)	4 4rd
+// 2A	ldi a,(hl)	4 4rd
 void lrnop2A(CPU* cpu) {
 	cpu->regA = lr_mrd(cpu, cpu->regHL++); cpu->t++;
 }
 
-// 2B	dec regHL		6
+// 2B	dec hl		6
 void lrnop2B(CPU* cpu) {
 	cpu->regHL--;
 }
 
-// 2C	inc regL		4
+// 2C	inc l		4
 void lrnop2C(CPU* cpu) {
 	cpu->regL = lr_inc8(cpu, cpu->regL); //INCL(cpu->l);
 }
 
-// 2D	dec regL		4
+// 2D	dec l		4
 void lrnop2D(CPU* cpu) {
 	cpu->regL = lr_dec8(cpu, cpu->regL); //DECL(cpu->l);
 }
 
-// 2E	ld regL,n		4 3rd
+// 2E	ld l,n		4 3rd
 void lrnop2E(CPU* cpu) {
 	cpu->regL = lr_mrd(cpu, cpu->regPC++);
 }
@@ -451,7 +447,7 @@ void lrnop33(CPU* cpu) {
 	cpu->regSP++;
 }
 
-// 34	inc (regHL)	4 3rd 4wr
+// 34	inc (hl)	4 3rd 4wr
 void lrnop34(CPU* cpu) {
 	cpu->tmpb = lr_mrd(cpu, cpu->regHL);
 	cpu->tmpb = lr_inc8(cpu, cpu->tmpb); //INCL(cpu->tmpb);
@@ -459,7 +455,7 @@ void lrnop34(CPU* cpu) {
 	lr_mwr(cpu, cpu->regHL, cpu->tmpb);
 }
 
-// 35	dec (regHL)	4 3rd 4wr
+// 35	dec (hl)	4 3rd 4wr
 void lrnop35(CPU* cpu) {
 	cpu->tmpb = lr_mrd(cpu, cpu->regHL);
 	cpu->tmpb = lr_dec8(cpu, cpu->tmpb); //DECL(cpu->tmpb);
@@ -467,7 +463,7 @@ void lrnop35(CPU* cpu) {
 	lr_mwr(cpu, cpu->regHL, cpu->tmpb);
 }
 
-// 36	ld (regHL),n	4 3rd 3wr
+// 36	ld (hl),n	4 3rd 3wr
 void lrnop36(CPU* cpu) {
 	cpu->tmp = lr_mrd(cpu, cpu->regPC++);
 	lr_mwr(cpu, cpu->regHL, cpu->tmp);
@@ -490,40 +486,39 @@ void lrnop38(CPU* cpu) {
 	}
 }
 
-// 39	add regHL,regSP	11
+// 39	add hl,sp	11
 void lrnop39(CPU* cpu) {
-	cpu->regHL = lr_add16(cpu, cpu->regHL, cpu->regSP); //ADDL16(cpu->hl,cpu->sp);
+	cpu->regHL = lr_add16(cpu, cpu->regHL, cpu->regSP);
 }
 
-// 3A	ldd regA,(regHL)	4 4rd
+// 3A	ldd a,(hl)	4 4rd
 void lrnop3A(CPU* cpu) {
 	cpu->regA = lr_mrd(cpu, cpu->regHL--);
 	cpu->t++;
 }
 
-// 3B	dec regSP		6
+// 3B	dec sp		6
 void lrnop3B(CPU* cpu) {
 	cpu->regSP--;
 }
 
-// 3C	inc regA		4
+// 3C	inc a		4
 void lrnop3C(CPU* cpu) {
-	cpu->regA = lr_inc8(cpu, cpu->regA); //INCL(cpu->a);
+	cpu->regA = lr_inc8(cpu, cpu->regA);
 }
 
-// 3D	dec regA		4
+// 3D	dec a		4
 void lrnop3D(CPU* cpu) {
-	cpu->regA = lr_dec8(cpu, cpu->regA); //DECL(cpu->a);
+	cpu->regA = lr_dec8(cpu, cpu->regA);
 }
 
-// 3E	ld regA,n		4 3rd
+// 3E	ld a,n		4 3rd
 void lrnop3E(CPU* cpu) {
 	cpu->regA = lr_mrd(cpu, cpu->regPC++);
 }
 
 // 3F	ccf		4
 void lrnop3F(CPU* cpu) {
-	//cpu->f = (cpu->f & FLZ) | ((cpu->f & FLC ) ? FLH : FLC);
 	cpu->flgH = 0;
 	cpu->flgN = 0;
 	cpu->flgC ^= 1;
@@ -538,7 +533,7 @@ void lrnop44(CPU* cpu) {cpu->regB = cpu->regH;}
 void lrnop45(CPU* cpu) {cpu->regB = cpu->regL;}
 void lrnop46(CPU* cpu) {cpu->regB = lr_mrd(cpu,cpu->regHL);}
 void lrnop47(CPU* cpu) {cpu->regB = cpu->regA;}
-// 48..4f	ld regC,r		4 [3rd]
+// 48..4f	ld c,r		4 [3rd]
 void lrnop48(CPU* cpu) {cpu->regC = cpu->regB;}
 void lrnop49(CPU* cpu) {}
 void lrnop4A(CPU* cpu) {cpu->regC = cpu->regD;}
@@ -547,7 +542,7 @@ void lrnop4C(CPU* cpu) {cpu->regC = cpu->regH;}
 void lrnop4D(CPU* cpu) {cpu->regC = cpu->regL;}
 void lrnop4E(CPU* cpu) {cpu->regC = lr_mrd(cpu,cpu->regHL);}
 void lrnop4F(CPU* cpu) {cpu->regC = cpu->regA;}
-// 50..57	ld regD,r		4 [3rd]
+// 50..57	ld d,r		4 [3rd]
 void lrnop50(CPU* cpu) {cpu->regD = cpu->regB;}
 void lrnop51(CPU* cpu) {cpu->regD = cpu->regC;}
 void lrnop52(CPU* cpu) {}
@@ -556,7 +551,7 @@ void lrnop54(CPU* cpu) {cpu->regD = cpu->regH;}
 void lrnop55(CPU* cpu) {cpu->regD = cpu->regL;}
 void lrnop56(CPU* cpu) {cpu->regD = lr_mrd(cpu,cpu->regHL);}
 void lrnop57(CPU* cpu) {cpu->regD = cpu->regA;}
-// 58..5f	ld regE,r		4 [3rd]
+// 58..5f	ld e,r		4 [3rd]
 void lrnop58(CPU* cpu) {cpu->regE = cpu->regB;}
 void lrnop59(CPU* cpu) {cpu->regE = cpu->regC;}
 void lrnop5A(CPU* cpu) {cpu->regE = cpu->regD;}
@@ -565,7 +560,7 @@ void lrnop5C(CPU* cpu) {cpu->regE = cpu->regH;}
 void lrnop5D(CPU* cpu) {cpu->regE = cpu->regL;}
 void lrnop5E(CPU* cpu) {cpu->regE = lr_mrd(cpu,cpu->regHL);}
 void lrnop5F(CPU* cpu) {cpu->regE = cpu->regA;}
-// 60..67	ld regH,r		4 [3rd]
+// 60..67	ld h,r		4 [3rd]
 void lrnop60(CPU* cpu) {cpu->regH = cpu->regB;}
 void lrnop61(CPU* cpu) {cpu->regH = cpu->regC;}
 void lrnop62(CPU* cpu) {cpu->regH = cpu->regD;}
@@ -574,7 +569,7 @@ void lrnop64(CPU* cpu) {}
 void lrnop65(CPU* cpu) {cpu->regH = cpu->regL;}
 void lrnop66(CPU* cpu) {cpu->regH = lr_mrd(cpu,cpu->regHL);}
 void lrnop67(CPU* cpu) {cpu->regH = cpu->regA;}
-// 68..6f	ld regL,r		4 [3rd]
+// 68..6f	ld l,r		4 [3rd]
 void lrnop68(CPU* cpu) {cpu->regL = cpu->regB;}
 void lrnop69(CPU* cpu) {cpu->regL = cpu->regC;}
 void lrnop6A(CPU* cpu) {cpu->regL = cpu->regD;}
@@ -583,7 +578,7 @@ void lrnop6C(CPU* cpu) {cpu->regL = cpu->regH;}
 void lrnop6D(CPU* cpu) {}
 void lrnop6E(CPU* cpu) {cpu->regL = lr_mrd(cpu,cpu->regHL);}
 void lrnop6F(CPU* cpu) {cpu->regL = cpu->regA;}
-// 70..77	ld (regHL),r	4 3wr
+// 70..77	ld (hl),r	4 3wr
 void lrnop70(CPU* cpu) {lr_mwr(cpu, cpu->regHL,cpu->regB);}
 void lrnop71(CPU* cpu) {lr_mwr(cpu, cpu->regHL,cpu->regC);}
 void lrnop72(CPU* cpu) {lr_mwr(cpu, cpu->regHL,cpu->regD);}
@@ -592,7 +587,7 @@ void lrnop74(CPU* cpu) {lr_mwr(cpu, cpu->regHL,cpu->regH);}
 void lrnop75(CPU* cpu) {lr_mwr(cpu, cpu->regHL,cpu->regL);}
 void lrnop76(CPU* cpu) {cpu->flgHALT = 1; cpu->regPC--;}
 void lrnop77(CPU* cpu) {lr_mwr(cpu, cpu->regHL,cpu->regA);}
-// 78..7f	ld regA,r		4 [3rd]
+// 78..7f	ld a,r		4 [3rd]
 void lrnop78(CPU* cpu) {cpu->regA = cpu->regB;}
 void lrnop79(CPU* cpu) {cpu->regA = cpu->regC;}
 void lrnop7A(CPU* cpu) {cpu->regA = cpu->regD;}
@@ -601,7 +596,7 @@ void lrnop7C(CPU* cpu) {cpu->regA = cpu->regH;}
 void lrnop7D(CPU* cpu) {cpu->regA = cpu->regL;}
 void lrnop7E(CPU* cpu) {cpu->regA = lr_mrd(cpu, cpu->regHL);}
 void lrnop7F(CPU* cpu) {}
-// 80..87	add regA,r		4 [3rd]
+// 80..87	add a,r		4 [3rd]
 void lrnop80(CPU* cpu) {cpu->regA = lr_add8(cpu, cpu->regA, cpu->regB, 0);} //ADDL(cpu->b);}
 void lrnop81(CPU* cpu) {cpu->regA = lr_add8(cpu, cpu->regA, cpu->regC, 0);} //ADDL(cpu->c);}
 void lrnop82(CPU* cpu) {cpu->regA = lr_add8(cpu, cpu->regA, cpu->regD, 0);} //ADDL(cpu->d);}
@@ -610,7 +605,7 @@ void lrnop84(CPU* cpu) {cpu->regA = lr_add8(cpu, cpu->regA, cpu->regH, 0);} //AD
 void lrnop85(CPU* cpu) {cpu->regA = lr_add8(cpu, cpu->regA, cpu->regL, 0);} //ADDL(cpu->l);}
 void lrnop86(CPU* cpu) {cpu->tmpb = lr_mrd(cpu, cpu->regHL); cpu->regA = lr_add8(cpu, cpu->regA, cpu->tmpb, 0);} //ADDL(cpu->tmpb);}
 void lrnop87(CPU* cpu) {cpu->regA = lr_add8(cpu, cpu->regA, cpu->regA, 0);} //ADDL(cpu->regA);}
-// 88..8F	adc regA,r		4 [3rd]
+// 88..8F	adc a,r		4 [3rd]
 void lrnop88(CPU* cpu) {cpu->regA = lr_add8(cpu, cpu->regA, cpu->regB, cpu->flgC);} //ADCL(cpu->b);}
 void lrnop89(CPU* cpu) {cpu->regA = lr_add8(cpu, cpu->regA, cpu->regC, cpu->flgC);} //ADCL(cpu->c);}
 void lrnop8A(CPU* cpu) {cpu->regA = lr_add8(cpu, cpu->regA, cpu->regD, cpu->flgC);} //ADCL(cpu->d);}
@@ -628,7 +623,7 @@ void lrnop94(CPU* cpu) {cpu->regA = lr_sub8(cpu, cpu->regA, cpu->regH, 0);} //SU
 void lrnop95(CPU* cpu) {cpu->regA = lr_sub8(cpu, cpu->regA, cpu->regL, 0);} //SUBL(cpu->l);}
 void lrnop96(CPU* cpu) {cpu->tmpb = lr_mrd(cpu, cpu->regHL); cpu->regA = lr_sub8(cpu, cpu->regA, cpu->tmpb, 0);} //SUBL(cpu->tmpb);}
 void lrnop97(CPU* cpu) {cpu->regA = lr_sub8(cpu, cpu->regA, cpu->regA, 0);} //SUBL(cpu->regA);}
-// 98..9F	sbc regA,r		4 [3rd]
+// 98..9F	sbc a,r		4 [3rd]
 void lrnop98(CPU* cpu) {cpu->regA = lr_sub8(cpu, cpu->regA, cpu->regB, cpu->flgC);} //SBCL(cpu->b);}
 void lrnop99(CPU* cpu) {cpu->regA = lr_sub8(cpu, cpu->regA, cpu->regC, cpu->flgC);} //SBCL(cpu->c);}
 void lrnop9A(CPU* cpu) {cpu->regA = lr_sub8(cpu, cpu->regA, cpu->regD, cpu->flgC);} //SBCL(cpu->d);}
@@ -679,7 +674,7 @@ void lrnopC0(CPU* cpu) {
 	if (!cpu->flgZ) lr_ret(cpu);
 }
 
-// c1	pop regBC		4 3rd 3rd
+// c1	pop bc		4 3rd 3rd
 void lrnopC1(CPU* cpu) {
 	cpu->regBC = lr_pop(cpu); // POP(cpu->b,cpu->c);
 }
@@ -709,12 +704,12 @@ void lrnopC4(CPU* cpu) {
 	}
 }
 
-// c5	push regBC		5 3wr 3wr
+// c5	push bc		5 3wr 3wr
 void lrnopC5(CPU* cpu) {
 	lr_push(cpu, cpu->regBC); //PUSH(cpu->b, cpu->c);
 }
 
-// c6	add regA,n		4 3rd
+// c6	add a,n		4 3rd
 void lrnopC6(CPU* cpu) {
 	cpu->tmpb = lr_mrd(cpu, cpu->regPC++);
 	cpu->regA = lr_add8(cpu, cpu->regA, cpu->tmpb, 0); //ADDL(cpu->tmpb);
@@ -767,7 +762,7 @@ void lrnopCD(CPU* cpu) {
 	cpu->regPC = cpu->regWZ;
 }
 
-// ce	adc regA,n		4 3rd
+// ce	adc a,n		4 3rd
 void lrnopCE(CPU* cpu) {
 	cpu->tmpb = lr_mrd(cpu, cpu->regPC++);
 	cpu->regA = lr_add8(cpu, cpu->regA, cpu->tmpb, cpu->flgC); //ADCL(cpu->tmpb);
@@ -783,7 +778,7 @@ void lrnopD0(CPU* cpu) {
 	if (!cpu->flgC) lr_ret(cpu);
 }
 
-// d1	pop regDE		4 3rd 3rd
+// d1	pop de		4 3rd 3rd
 void lrnopD1(CPU* cpu) {
 	cpu->regDE = lr_pop(cpu); // POP(cpu->d,cpu->e);
 }
@@ -806,7 +801,7 @@ void lrnopD4(CPU* cpu) {
 	}
 }
 
-// d5	push regDE		5 3wr 3wr
+// d5	push de		5 3wr 3wr
 void lrnopD5(CPU* cpu) {
 	lr_push(cpu, cpu->regDE); // PUSH(cpu->d,cpu->e);
 }
@@ -851,7 +846,7 @@ void lrnopDC(CPU* cpu) {
 	}
 }
 
-// de	sbc regA,n		4 3rd
+// de	sbc a,n		4 3rd
 void lrnopDE(CPU* cpu) {
 	cpu->tmpb = lr_mrd(cpu, cpu->regPC++);
 	cpu->regA = lr_sub8(cpu, cpu->regA, cpu->tmpb, cpu->flgC); //SBCL(cpu->tmpb);
@@ -862,7 +857,7 @@ void lrnopDF(CPU* cpu) {
 	lr_call(cpu, 0x18);
 }
 
-// e0	ld (FF00 + n), regA
+// e0	ld (FF00 + n), a
 void lrnopE0(CPU* cpu) {
 	cpu->ltw = lr_mrd(cpu, cpu->regPC++);
 	cpu->htw = 0xff;
@@ -871,12 +866,12 @@ void lrnopE0(CPU* cpu) {
 	cpu->t++;
 }
 
-// e1	pop regHL		4 3rd 3rd
+// e1	pop hl		4 3rd 3rd
 void lrnopE1(CPU* cpu) {
 	cpu->regHL = lr_pop(cpu); // POP(cpu->h, cpu->l);
 }
 
-// e2	ld (FF00 + C), regA
+// e2	ld (FF00 + C), a
 void lrnopE2(CPU* cpu) {
 	cpu->ltw = cpu->regC;
 	cpu->htw = 0xff;
@@ -884,7 +879,7 @@ void lrnopE2(CPU* cpu) {
 	cpu->t++;
 }
 
-// e5	push regHL		5 3wr 3wr
+// e5	push hl		5 3wr 3wr
 void lrnopE5(CPU* cpu) {
 	lr_push(cpu, cpu->regHL); // PUSH(cpu->h, cpu->l);
 }
@@ -900,17 +895,18 @@ void lrnopE7(CPU* cpu) {
 	lr_call(cpu, 0x20);
 }
 
-// e8	add sp,e	???
+// e8	add sp,e
 int lr_addspe(CPU* cpu) {
-	cpu->tmpb = lr_mrd(cpu, cpu->regPC++);
+	cpu->ltw = lr_mrd(cpu, cpu->regPC++);
 	cpu->t++;
-	cpu->tmpw = cpu->regSP;
-	cpu->tmpi = cpu->tmpw + (signed char)cpu->tmpb;
-	cpu->tmp = (cpu->tmpw & 0x0f) + (cpu->tmpb & 0x0f);
+	cpu->htw = (cpu->ltw & 0x80) ? 0xff : 0x00;
+	cpu->tmpi = cpu->regSP + cpu->tmpw;
+	cpu->tmp = (cpu->regSPl & 0x0f) + (cpu->ltw & 0x0f);
+	cpu->twrd = cpu->regSPl + cpu->ltw;
 	cpu->flgZ = 0;
 	cpu->flgN = 0;
-	cpu->flgC = !!(cpu->tmpi & ~0xffff);
-	cpu->flgH = !!(cpu->tmp & 0xf0);
+	cpu->flgC = !!cpu->hwr;			// b7 borrow
+	cpu->flgH = !!(cpu->tmp & 0xf0);	// b3 borrow
 	return cpu->tmpi & 0xffff;
 }
 
@@ -918,12 +914,12 @@ void lrnopE8(CPU* cpu) {
 	cpu->regSP = lr_addspe(cpu);
 }
 
-// e9	jp (regHL)		4
+// e9	jp (hl)		4
 void lrnopE9(CPU* cpu) {
 	cpu->regPC = cpu->regHL;
 }
 
-// ea	ld (nn),regA	4 4rd 4rd 4wr
+// ea	ld (nn),a	4 4rd 4rd 4wr
 void lrnopEA(CPU* cpu) {
 	cpu->regWZl = lr_mrd(cpu, cpu->regPC++);
 	cpu->t++;
@@ -944,7 +940,7 @@ void lrnopEF(CPU* cpu) {
 	lr_call(cpu, 0x28);
 }
 
-// f0	ld regA,(FF00 + n)
+// f0	ld a,(FF00 + n)
 void lrnopF0(CPU* cpu) {
 	cpu->ltw = lr_mrd(cpu, cpu->regPC++);
 	cpu->htw = 0xff;
@@ -960,7 +956,7 @@ void lrnopF1(CPU* cpu) {
 	lr_set_flag(cpu, cpu->ltw);
 }
 
-// f2	ld regA,(FF00 + C)
+// f2	ld a,(FF00 + c)
 void lrnopF2(CPU* cpu) {
 	cpu->ltw = cpu->regC;
 	cpu->htw = 0xff;
@@ -992,17 +988,17 @@ void lrnopF7(CPU* cpu) {
 	lr_call(cpu, 0x30);
 }
 
-// f8	ld HL, SP + e	???
+// f8	ld hl,sp + e	???
 void lrnopF8(CPU* cpu) {
 	cpu->regHL = lr_addspe(cpu);
 }
 
-// f9	ld regSP,regHL	6
+// f9	ld sp,hl	6
 void lrnopF9(CPU* cpu) {
 	cpu->regSP = cpu->regHL;
 }
 
-// fa	ld regA,(nn)	4 4rd 4rd 4rd
+// fa	ld a,(nn)	4 4rd 4rd 4rd
 void lrnopFA(CPU* cpu) {
 	cpu->regWZl = lr_mrd(cpu, cpu->regPC++);
 	cpu->t++;

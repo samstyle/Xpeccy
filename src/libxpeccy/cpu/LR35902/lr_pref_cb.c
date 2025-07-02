@@ -228,7 +228,6 @@ void lrcbBC(CPU* cpu) {cpu->regH &= ~0x80;}
 void lrcbBD(CPU* cpu) {cpu->regL &= ~0x80;}
 void lrcbBE(CPU* cpu) {cpu->tmp = lr_mrd(cpu, cpu->regHL); cpu->t++; lr_mwr(cpu, cpu->regHL, cpu->tmp & ~0x80);}
 void lrcbBF(CPU* cpu) {cpu->regA &= ~0x80;}
-
 // c0..c7	set 0,r		4 [4rd 3wr]
 void lrcbC0(CPU* cpu) {cpu->regB |= 0x01;}
 void lrcbC1(CPU* cpu) {cpu->regC |= 0x01;}
