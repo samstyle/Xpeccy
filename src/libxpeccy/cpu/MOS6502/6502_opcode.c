@@ -191,7 +191,7 @@ void mosop09(CPU* cpu) {
 	cpu->regA = mos_ora(cpu, cpu->regA, cpu->tmp);
 }
 
-// asl regA
+// asl a
 void mosop0A(CPU* cpu) {
 	cpu->regA = mos_asl(cpu, cpu->regA);
 }
@@ -394,7 +394,7 @@ void mosop29(CPU* cpu) {
 	cpu->regA = mos_and(cpu, cpu->regA, cpu->tmp);
 }
 
-// rol regA
+// rol a
 void mosop2A(CPU* cpu) {
 	cpu->regA = mos_rol(cpu, cpu->regA);
 }
@@ -578,7 +578,7 @@ void mosop47(CPU* cpu) {
 	cpu->regA = mos_eor(cpu, cpu->regA, cpu->tmp);
 }
 
-// pha : push regA
+// pha : push a
 void mosop48(CPU* cpu) {
 	m6502_push(cpu, cpu->regA);		// push a
 }
@@ -589,13 +589,13 @@ void mosop49(CPU* cpu) {
 	cpu->regA = mos_eor(cpu, cpu->regA, cpu->tmp);
 }
 
-// lsr regA
+// lsr a
 void mosop4A(CPU* cpu) {
 	cpu->regA = mos_lsr(cpu, cpu->regA);
 }
 
 // *asr n
-// regA &= n. regA>>1. N.Z.C flags
+// a &= n. a>>1. N.Z.C flags
 void mosop4B(CPU* cpu) {
 	mosGetImm(cpu->tmp);
 	cpu->regA &= cpu->tmp;
@@ -778,7 +778,7 @@ void mosop67(CPU* cpu) {
 	cpu->regA = mos_adc(cpu, cpu->regA, cpu->tmp);
 }
 
-// pla = pop regA
+// pla = pop a
 void mosop68(CPU* cpu) {
 	cpu->tmpb = cpu->mrd(cpu->regPC, 0, cpu->xptr);
 	cpu->regA = m6502_pop(cpu);
@@ -791,7 +791,7 @@ void mosop69(CPU* cpu) {
 	cpu->regA = mos_adc(cpu, cpu->regA, cpu->tmp);
 }
 
-// ror regA
+// ror a
 void mosop6A(CPU* cpu) {
 	cpu->regA = mos_ror(cpu, cpu->regA);
 }

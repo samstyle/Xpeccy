@@ -22,7 +22,7 @@ int pdp_get_flag(CPU* cpu) {
 	return cpu->flgC | (cpu->flgV << 1) | (cpu->flgZ << 2) | (cpu->flgN << 3) | (cpu->flgT << 4) | (cpu->flgF7 << 7) | (cpu->flgF10 << 10) | (cpu->flgF11 << 11);
 }
 
-// regNOD: b0:write MSB(1)/LSB(0)
+// nod: b0:write MSB(1)/LSB(0)
 void pdp_wrb(CPU* cpu, int adr, int val) {	// val is 00..FF
 	if (adr & 1) {
 		cpu->regNOD = 2;			// MSB
@@ -35,7 +35,7 @@ void pdp_wrb(CPU* cpu, int adr, int val) {	// val is 00..FF
 	cpu->mwr(adr, val, cpu->xptr);
 }
 
-// regNOD = 3: write both bytes
+// nod = 3: write both bytes
 void pdp_wr(CPU* cpu, int adr, int val) {
 	cpu->regNOD = 3;
 	adr &= ~1;
@@ -61,7 +61,6 @@ void pdp11_reset(CPU* cpu) {
 		cpu->regRN(i) = 0;
 	cpu->t += 1016;
 	cpu->regRN(7) = pdp_rd(cpu, 0xffce) & 0xff00;
-//	cpu->regPC = cpu->regRN(7);
 	pdp_set_flag(cpu, 0x300); //cpu->f = 0x300;			// b8,9 = 11, cpu0
 	cpu->intrq = 0;
 	cpu->inten = PDP_INT_IRQ2 | PDP_INT_VIRQ;
@@ -81,8 +80,8 @@ unsigned short pdp_pop(CPU* cpu) {
 	return res;
 }
 
-// TODO: some traps will decrease R7 by 2. depends on regMCIR
-// regMCIR 010,100: decrease R7
+// TODO: some traps will decrease R7 by 2. depends on mcir
+// mcir 010,100: decrease R7
 // 000: waiting for INT
 // 001: no INT
 // 01x: halt, irq1, double error, b0:don't R7-=2
@@ -286,7 +285,6 @@ void pdp_wait(CPU* cpu) {
 	// cpu->mcir = 0;
 	cpu->flgWAIT = 1;
 	cpu->regRN(7) -= 2;
-//	cpu->regPC = cpu->regRN(7);
 }
 
 // 0002:rti

@@ -170,12 +170,12 @@ void i286_0F013(CPU* cpu) {
 	}
 }
 
-// 0f 01 /4 smsw ew	[ea] = regMSW
+// 0f 01 /4 smsw ew	[ea] = msw
 void i286_0F014(CPU* cpu) {
 	i286_wr_ea(cpu, cpu->regMSW, 1);
 }
 
-// 0f 01 /6 lmsw ew	regMSW = [ea]
+// 0f 01 /6 lmsw ew	msw = [ea]
 void i286_0F016(CPU* cpu) {
 	cpu->regMSW = (cpu->regMSW & 1) | cpu->tmpw;		// can't set real mode by software
 	if (cpu->regMSW & I286_FPE) {

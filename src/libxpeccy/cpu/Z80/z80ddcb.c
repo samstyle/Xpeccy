@@ -2,7 +2,7 @@
 #include "../cpu.h"
 #include "z80_macro.h"
 
-// rlc reg,(regIX+e)	[3rd] 4 5add 4rd 3wr
+// rlc reg,(ix+e)	[3rd] 4 5add 4rd 3wr
 void ddcb00(CPU* cpu) {XDCBR(cpu->regIX,z80_rlc,cpu->regB);}
 void ddcb01(CPU* cpu) {XDCBR(cpu->regIX,z80_rlc,cpu->regC);}
 void ddcb02(CPU* cpu) {XDCBR(cpu->regIX,z80_rlc,cpu->regD);}
@@ -11,7 +11,7 @@ void ddcb04(CPU* cpu) {XDCBR(cpu->regIX,z80_rlc,cpu->regH);}
 void ddcb05(CPU* cpu) {XDCBR(cpu->regIX,z80_rlc,cpu->regL);}
 void ddcb06(CPU* cpu) {XDCB(cpu->regIX,z80_rlc);}
 void ddcb07(CPU* cpu) {XDCBR(cpu->regIX,z80_rlc,cpu->regA);}
-// rrc reg,(regIX+e)
+// rrc reg,(ix+e)
 void ddcb08(CPU* cpu) {XDCBR(cpu->regIX,z80_rrc,cpu->regB);}
 void ddcb09(CPU* cpu) {XDCBR(cpu->regIX,z80_rrc,cpu->regC);}
 void ddcb0A(CPU* cpu) {XDCBR(cpu->regIX,z80_rrc,cpu->regD);}
@@ -20,7 +20,7 @@ void ddcb0C(CPU* cpu) {XDCBR(cpu->regIX,z80_rrc,cpu->regH);}
 void ddcb0D(CPU* cpu) {XDCBR(cpu->regIX,z80_rrc,cpu->regL);}
 void ddcb0E(CPU* cpu) {XDCB(cpu->regIX,z80_rrc);}
 void ddcb0F(CPU* cpu) {XDCBR(cpu->regIX,z80_rrc,cpu->regA);}
-// rl reg,(regIX+e)
+// rl reg,(ix+e)
 void ddcb10(CPU* cpu) {XDCBR(cpu->regIX,z80_rl,cpu->regB);}
 void ddcb11(CPU* cpu) {XDCBR(cpu->regIX,z80_rl,cpu->regC);}
 void ddcb12(CPU* cpu) {XDCBR(cpu->regIX,z80_rl,cpu->regD);}
@@ -29,7 +29,7 @@ void ddcb14(CPU* cpu) {XDCBR(cpu->regIX,z80_rl,cpu->regH);}
 void ddcb15(CPU* cpu) {XDCBR(cpu->regIX,z80_rl,cpu->regL);}
 void ddcb16(CPU* cpu) {XDCB(cpu->regIX,z80_rl);}
 void ddcb17(CPU* cpu) {XDCBR(cpu->regIX,z80_rl,cpu->regA);}
-// rr reg,(regIX+e)
+// rr reg,(ix+e)
 void ddcb18(CPU* cpu) {XDCBR(cpu->regIX,z80_rr,cpu->regB);}
 void ddcb19(CPU* cpu) {XDCBR(cpu->regIX,z80_rr,cpu->regC);}
 void ddcb1A(CPU* cpu) {XDCBR(cpu->regIX,z80_rr,cpu->regD);}
@@ -38,7 +38,7 @@ void ddcb1C(CPU* cpu) {XDCBR(cpu->regIX,z80_rr,cpu->regH);}
 void ddcb1D(CPU* cpu) {XDCBR(cpu->regIX,z80_rr,cpu->regL);}
 void ddcb1E(CPU* cpu) {XDCB(cpu->regIX,z80_rr);}
 void ddcb1F(CPU* cpu) {XDCBR(cpu->regIX,z80_rr,cpu->regA);}
-// sla reg,(regIX+e)
+// sla reg,(ix+e)
 void ddcb20(CPU* cpu) {XDCBR(cpu->regIX,z80_sla,cpu->regB);}
 void ddcb21(CPU* cpu) {XDCBR(cpu->regIX,z80_sla,cpu->regC);}
 void ddcb22(CPU* cpu) {XDCBR(cpu->regIX,z80_sla,cpu->regD);}
@@ -47,7 +47,7 @@ void ddcb24(CPU* cpu) {XDCBR(cpu->regIX,z80_sla,cpu->regH);}
 void ddcb25(CPU* cpu) {XDCBR(cpu->regIX,z80_sla,cpu->regL);}
 void ddcb26(CPU* cpu) {XDCB(cpu->regIX,z80_sla);}
 void ddcb27(CPU* cpu) {XDCBR(cpu->regIX,z80_sla,cpu->regA);}
-// sra reg,(regIX+e)
+// sra reg,(ix+e)
 void ddcb28(CPU* cpu) {XDCBR(cpu->regIX,z80_sra,cpu->regB);}
 void ddcb29(CPU* cpu) {XDCBR(cpu->regIX,z80_sra,cpu->regC);}
 void ddcb2A(CPU* cpu) {XDCBR(cpu->regIX,z80_sra,cpu->regD);}
@@ -56,7 +56,7 @@ void ddcb2C(CPU* cpu) {XDCBR(cpu->regIX,z80_sra,cpu->regH);}
 void ddcb2D(CPU* cpu) {XDCBR(cpu->regIX,z80_sra,cpu->regL);}
 void ddcb2E(CPU* cpu) {XDCB(cpu->regIX,z80_sra);}
 void ddcb2F(CPU* cpu) {XDCBR(cpu->regIX,z80_sra,cpu->regA);}
-// sll reg,(regIX+e)
+// sll reg,(ix+e)
 void ddcb30(CPU* cpu) {XDCBR(cpu->regIX,z80_sll,cpu->regB);}
 void ddcb31(CPU* cpu) {XDCBR(cpu->regIX,z80_sll,cpu->regC);}
 void ddcb32(CPU* cpu) {XDCBR(cpu->regIX,z80_sll,cpu->regD);}
@@ -65,7 +65,7 @@ void ddcb34(CPU* cpu) {XDCBR(cpu->regIX,z80_sll,cpu->regH);}
 void ddcb35(CPU* cpu) {XDCBR(cpu->regIX,z80_sll,cpu->regL);}
 void ddcb36(CPU* cpu) {XDCB(cpu->regIX,z80_sll);}
 void ddcb37(CPU* cpu) {XDCBR(cpu->regIX,z80_sll,cpu->regA);}
-// srl reg,(regIX+e)
+// srl reg,(ix+e)
 void ddcb38(CPU* cpu) {XDCBR(cpu->regIX,z80_srl,cpu->regB);}
 void ddcb39(CPU* cpu) {XDCBR(cpu->regIX,z80_srl,cpu->regC);}
 void ddcb3A(CPU* cpu) {XDCBR(cpu->regIX,z80_srl,cpu->regD);}
@@ -75,7 +75,7 @@ void ddcb3D(CPU* cpu) {XDCBR(cpu->regIX,z80_srl,cpu->regL);}
 void ddcb3E(CPU* cpu) {XDCB(cpu->regIX,z80_srl);}
 void ddcb3F(CPU* cpu) {XDCBR(cpu->regIX,z80_srl,cpu->regA);}
 
-// bit n,(regIX+e)
+// bit n,(ix+e)
 void ddcb46(CPU* cpu) {BITX(cpu->regIX,0);}
 void ddcb4E(CPU* cpu) {BITX(cpu->regIX,1);}
 void ddcb56(CPU* cpu) {BITX(cpu->regIX,2);}
@@ -85,7 +85,7 @@ void ddcb6E(CPU* cpu) {BITX(cpu->regIX,5);}
 void ddcb76(CPU* cpu) {BITX(cpu->regIX,6);}
 void ddcb7E(CPU* cpu) {BITX(cpu->regIX,7);}
 
-// res 0,reg,(regIX+e)
+// res 0,reg,(ix+e)
 void ddcb80(CPU* cpu) {RESXR(cpu->regIX,0,cpu->regB);}
 void ddcb81(CPU* cpu) {RESXR(cpu->regIX,0,cpu->regC);}
 void ddcb82(CPU* cpu) {RESXR(cpu->regIX,0,cpu->regD);}
@@ -94,7 +94,7 @@ void ddcb84(CPU* cpu) {RESXR(cpu->regIX,0,cpu->regH);}
 void ddcb85(CPU* cpu) {RESXR(cpu->regIX,0,cpu->regL);}
 void ddcb86(CPU* cpu) {RESX(cpu->regIX,0);}
 void ddcb87(CPU* cpu) {RESXR(cpu->regIX,0,cpu->regA);}
-// res 1,reg,(regIX+e)
+// res 1,reg,(ix+e)
 void ddcb88(CPU* cpu) {RESXR(cpu->regIX,1,cpu->regB);}
 void ddcb89(CPU* cpu) {RESXR(cpu->regIX,1,cpu->regC);}
 void ddcb8A(CPU* cpu) {RESXR(cpu->regIX,1,cpu->regD);}
@@ -103,7 +103,7 @@ void ddcb8C(CPU* cpu) {RESXR(cpu->regIX,1,cpu->regH);}
 void ddcb8D(CPU* cpu) {RESXR(cpu->regIX,1,cpu->regL);}
 void ddcb8E(CPU* cpu) {RESX(cpu->regIX,1);}
 void ddcb8F(CPU* cpu) {RESXR(cpu->regIX,1,cpu->regA);}
-// res 2,reg,(regIX+e)
+// res 2,reg,(ix+e)
 void ddcb90(CPU* cpu) {RESXR(cpu->regIX,2,cpu->regB);}
 void ddcb91(CPU* cpu) {RESXR(cpu->regIX,2,cpu->regC);}
 void ddcb92(CPU* cpu) {RESXR(cpu->regIX,2,cpu->regD);}
@@ -112,7 +112,7 @@ void ddcb94(CPU* cpu) {RESXR(cpu->regIX,2,cpu->regH);}
 void ddcb95(CPU* cpu) {RESXR(cpu->regIX,2,cpu->regL);}
 void ddcb96(CPU* cpu) {RESX(cpu->regIX,2);}
 void ddcb97(CPU* cpu) {RESXR(cpu->regIX,2,cpu->regA);}
-// res 3,reg,(regIX+e)
+// res 3,reg,(ix+e)
 void ddcb98(CPU* cpu) {RESXR(cpu->regIX,3,cpu->regB);}
 void ddcb99(CPU* cpu) {RESXR(cpu->regIX,3,cpu->regC);}
 void ddcb9A(CPU* cpu) {RESXR(cpu->regIX,3,cpu->regD);}
@@ -121,7 +121,7 @@ void ddcb9C(CPU* cpu) {RESXR(cpu->regIX,3,cpu->regH);}
 void ddcb9D(CPU* cpu) {RESXR(cpu->regIX,3,cpu->regL);}
 void ddcb9E(CPU* cpu) {RESX(cpu->regIX,3);}
 void ddcb9F(CPU* cpu) {RESXR(cpu->regIX,3,cpu->regA);}
-// res 4,reg,(regIX+e)
+// res 4,reg,(ix+e)
 void ddcbA0(CPU* cpu) {RESXR(cpu->regIX,4,cpu->regB);}
 void ddcbA1(CPU* cpu) {RESXR(cpu->regIX,4,cpu->regC);}
 void ddcbA2(CPU* cpu) {RESXR(cpu->regIX,4,cpu->regD);}
@@ -130,7 +130,7 @@ void ddcbA4(CPU* cpu) {RESXR(cpu->regIX,4,cpu->regH);}
 void ddcbA5(CPU* cpu) {RESXR(cpu->regIX,4,cpu->regL);}
 void ddcbA6(CPU* cpu) {RESX(cpu->regIX,4);}
 void ddcbA7(CPU* cpu) {RESXR(cpu->regIX,4,cpu->regA);}
-// res 5,reg,(regIX+e)
+// res 5,reg,(ix+e)
 void ddcbA8(CPU* cpu) {RESXR(cpu->regIX,5,cpu->regB);}
 void ddcbA9(CPU* cpu) {RESXR(cpu->regIX,5,cpu->regC);}
 void ddcbAA(CPU* cpu) {RESXR(cpu->regIX,5,cpu->regD);}
@@ -139,7 +139,7 @@ void ddcbAC(CPU* cpu) {RESXR(cpu->regIX,5,cpu->regH);}
 void ddcbAD(CPU* cpu) {RESXR(cpu->regIX,5,cpu->regL);}
 void ddcbAE(CPU* cpu) {RESX(cpu->regIX,5);}
 void ddcbAF(CPU* cpu) {RESXR(cpu->regIX,5,cpu->regA);}
-// res 6,reg,(regIX+e)
+// res 6,reg,(ix+e)
 void ddcbB0(CPU* cpu) {RESXR(cpu->regIX,6,cpu->regB);}
 void ddcbB1(CPU* cpu) {RESXR(cpu->regIX,6,cpu->regC);}
 void ddcbB2(CPU* cpu) {RESXR(cpu->regIX,6,cpu->regD);}
@@ -148,7 +148,7 @@ void ddcbB4(CPU* cpu) {RESXR(cpu->regIX,6,cpu->regH);}
 void ddcbB5(CPU* cpu) {RESXR(cpu->regIX,6,cpu->regL);}
 void ddcbB6(CPU* cpu) {RESX(cpu->regIX,6);}
 void ddcbB7(CPU* cpu) {RESXR(cpu->regIX,6,cpu->regA);}
-// res 7,reg,(regIX+e)
+// res 7,reg,(ix+e)
 void ddcbB8(CPU* cpu) {RESXR(cpu->regIX,7,cpu->regB);}
 void ddcbB9(CPU* cpu) {RESXR(cpu->regIX,7,cpu->regC);}
 void ddcbBA(CPU* cpu) {RESXR(cpu->regIX,7,cpu->regD);}
@@ -158,7 +158,7 @@ void ddcbBD(CPU* cpu) {RESXR(cpu->regIX,7,cpu->regL);}
 void ddcbBE(CPU* cpu) {RESX(cpu->regIX,7);}
 void ddcbBF(CPU* cpu) {RESXR(cpu->regIX,7,cpu->regA);}
 
-// set 0,reg,(regIX+e)
+// set 0,reg,(ix+e)
 void ddcbC0(CPU* cpu) {SETXR(cpu->regIX,0,cpu->regB);}
 void ddcbC1(CPU* cpu) {SETXR(cpu->regIX,0,cpu->regC);}
 void ddcbC2(CPU* cpu) {SETXR(cpu->regIX,0,cpu->regD);}
@@ -167,7 +167,7 @@ void ddcbC4(CPU* cpu) {SETXR(cpu->regIX,0,cpu->regH);}
 void ddcbC5(CPU* cpu) {SETXR(cpu->regIX,0,cpu->regL);}
 void ddcbC6(CPU* cpu) {SETX(cpu->regIX,0);}
 void ddcbC7(CPU* cpu) {SETXR(cpu->regIX,0,cpu->regA);}
-// set 1,reg,(regIX+e)
+// set 1,reg,(ix+e)
 void ddcbC8(CPU* cpu) {SETXR(cpu->regIX,1,cpu->regB);}
 void ddcbC9(CPU* cpu) {SETXR(cpu->regIX,1,cpu->regC);}
 void ddcbCA(CPU* cpu) {SETXR(cpu->regIX,1,cpu->regD);}
@@ -176,7 +176,7 @@ void ddcbCC(CPU* cpu) {SETXR(cpu->regIX,1,cpu->regH);}
 void ddcbCD(CPU* cpu) {SETXR(cpu->regIX,1,cpu->regL);}
 void ddcbCE(CPU* cpu) {SETX(cpu->regIX,1);}
 void ddcbCF(CPU* cpu) {SETXR(cpu->regIX,1,cpu->regA);}
-// set 2,reg,(regIX+e)
+// set 2,reg,(ix+e)
 void ddcbD0(CPU* cpu) {SETXR(cpu->regIX,2,cpu->regB);}
 void ddcbD1(CPU* cpu) {SETXR(cpu->regIX,2,cpu->regC);}
 void ddcbD2(CPU* cpu) {SETXR(cpu->regIX,2,cpu->regD);}
@@ -185,7 +185,7 @@ void ddcbD4(CPU* cpu) {SETXR(cpu->regIX,2,cpu->regH);}
 void ddcbD5(CPU* cpu) {SETXR(cpu->regIX,2,cpu->regL);}
 void ddcbD6(CPU* cpu) {SETX(cpu->regIX,2);}
 void ddcbD7(CPU* cpu) {SETXR(cpu->regIX,2,cpu->regA);}
-// set 3,reg,(regIX+e)
+// set 3,reg,(ix+e)
 void ddcbD8(CPU* cpu) {SETXR(cpu->regIX,3,cpu->regB);}
 void ddcbD9(CPU* cpu) {SETXR(cpu->regIX,3,cpu->regC);}
 void ddcbDA(CPU* cpu) {SETXR(cpu->regIX,3,cpu->regD);}
@@ -194,7 +194,7 @@ void ddcbDC(CPU* cpu) {SETXR(cpu->regIX,3,cpu->regH);}
 void ddcbDD(CPU* cpu) {SETXR(cpu->regIX,3,cpu->regL);}
 void ddcbDE(CPU* cpu) {SETX(cpu->regIX,3);}
 void ddcbDF(CPU* cpu) {SETXR(cpu->regIX,3,cpu->regA);}
-// set 4,reg,(regIX+e)
+// set 4,reg,(ix+e)
 void ddcbE0(CPU* cpu) {SETXR(cpu->regIX,4,cpu->regB);}
 void ddcbE1(CPU* cpu) {SETXR(cpu->regIX,4,cpu->regC);}
 void ddcbE2(CPU* cpu) {SETXR(cpu->regIX,4,cpu->regD);}
@@ -203,7 +203,7 @@ void ddcbE4(CPU* cpu) {SETXR(cpu->regIX,4,cpu->regH);}
 void ddcbE5(CPU* cpu) {SETXR(cpu->regIX,4,cpu->regL);}
 void ddcbE6(CPU* cpu) {SETX(cpu->regIX,4);}
 void ddcbE7(CPU* cpu) {SETXR(cpu->regIX,4,cpu->regA);}
-// set 5,reg,(regIX+e)
+// set 5,reg,(ix+e)
 void ddcbE8(CPU* cpu) {SETXR(cpu->regIX,5,cpu->regB);}
 void ddcbE9(CPU* cpu) {SETXR(cpu->regIX,5,cpu->regC);}
 void ddcbEA(CPU* cpu) {SETXR(cpu->regIX,5,cpu->regD);}
@@ -212,7 +212,7 @@ void ddcbEC(CPU* cpu) {SETXR(cpu->regIX,5,cpu->regH);}
 void ddcbED(CPU* cpu) {SETXR(cpu->regIX,5,cpu->regL);}
 void ddcbEE(CPU* cpu) {SETX(cpu->regIX,5);}
 void ddcbEF(CPU* cpu) {SETXR(cpu->regIX,5,cpu->regA);}
-// set 6,reg,(regIX+e)
+// set 6,reg,(ix+e)
 void ddcbF0(CPU* cpu) {SETXR(cpu->regIX,6,cpu->regB);}
 void ddcbF1(CPU* cpu) {SETXR(cpu->regIX,6,cpu->regC);}
 void ddcbF2(CPU* cpu) {SETXR(cpu->regIX,6,cpu->regD);}
@@ -221,7 +221,7 @@ void ddcbF4(CPU* cpu) {SETXR(cpu->regIX,6,cpu->regH);}
 void ddcbF5(CPU* cpu) {SETXR(cpu->regIX,6,cpu->regL);}
 void ddcbF6(CPU* cpu) {SETX(cpu->regIX,6);}
 void ddcbF7(CPU* cpu) {SETXR(cpu->regIX,6,cpu->regA);}
-// set 7,reg,(regIX+e)
+// set 7,reg,(ix+e)
 void ddcbF8(CPU* cpu) {SETXR(cpu->regIX,7,cpu->regB);}
 void ddcbF9(CPU* cpu) {SETXR(cpu->regIX,7,cpu->regC);}
 void ddcbFA(CPU* cpu) {SETXR(cpu->regIX,7,cpu->regD);}

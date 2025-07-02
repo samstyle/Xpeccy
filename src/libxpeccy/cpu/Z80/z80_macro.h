@@ -10,7 +10,6 @@ extern const unsigned char FVsubTab[8];
 
 // bit
 // z = bit value, p/v = z, s = (val & (1 << bit) & 0x80)
-
 // cpu->f = (cpu->f & Z80_FC) | Z80_FH | (sz53pTab[val & (0x01 << bit)] & ~(Z80_F5 | Z80_F3)) | ((val & (1 << bit)) & (Z80_F5 | Z80_F3));}
 #define BIT(bit,val) {\
 	cpu->tmp = val & (1 << bit);\
@@ -34,9 +33,6 @@ extern const unsigned char FVsubTab[8];
 	cpu->flgPV = cpu->flgZ;\
 	cpu->flgN = 0;\
 }
-
-//#define SET(bit,val) {val |= (1 << bit);}
-//#define RES(bit,val) {val &= ~(1 << bit);}
 
 // extend
 
