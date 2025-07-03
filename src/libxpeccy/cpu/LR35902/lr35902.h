@@ -2,20 +2,13 @@
 
 #include "../cpu.h"
 
-/*
-#define FLZ 0x80
-#define FLN 0x40
-#define FLH 0x20
-#define FLC 0x10
-*/
-
 #define flgC	flags[4]
 #define flgH	flags[5]
 #define flgN	flags[6]
 #define flgZ	flags[7]
-#define flgIFF1	flags[8]
+#define flgIFF1	flags[8]		// interrupts enabled
 #define flgDIHALT flags[9]		// HALT when DI: repeat next opcode
-#define flgSTOP flags[10]		// LR35902: CPU stoped, unlock on keypress
+#define flgSTOP flags[10]		// CPU stoped, unlock on keypress
 
 #define regA regs[0].l
 #define regBC regs[1].w
@@ -27,12 +20,6 @@
 #define regHL regs[3].w
 #define regH regs[3].h
 #define regL regs[3].l
-#define regIX regs[4].w
-#define regIXh regs[4].h
-#define regIXl regs[4].l
-#define regIY regs[5].w
-#define regIYh regs[5].h
-#define regIYl regs[5].l
 #define regSP regs[6].w
 #define regSPh regs[6].h
 #define regSPl regs[6].l
@@ -45,12 +32,6 @@
 #define regI regs[9].l
 #define regR regs[9].h
 #define regR7 regs[9].ih
-#define regFa regs[10].i
-#define regIM regs[11].l	// im mode
-#define regAa regs[0].h
-#define regBCa regs[1].ih
-#define regDEa regs[2].ih
-#define regHLa regs[3].ih
 
 enum {
 	LR_REG_PC = 1,

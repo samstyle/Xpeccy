@@ -964,6 +964,7 @@ void lrnopF2(CPU* cpu) {
 	cpu->t++;
 }
 
+// TODO: interrupts disabled after next opcode (like ei)
 // f3	di		4
 void lrnopF3(CPU* cpu) {
 	cpu->flgIFF1 = 0;
@@ -1011,7 +1012,7 @@ void lrnopFA(CPU* cpu) {
 // fb	ei		4
 void lrnopFB(CPU* cpu) {
 	cpu->flgIFF1 = 1;
-//	cpu->noint = 1;
+	cpu->flgNOINT = 1;
 }
 
 // fe	cp n		4 3rd

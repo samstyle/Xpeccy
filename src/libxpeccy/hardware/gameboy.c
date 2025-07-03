@@ -56,7 +56,7 @@ int gbIORd(Computer* comp, int port) {
 		case 0x4b: break;
 // INTERRUPT
 		case 0x0f:
-			res = comp->cpu->intrq;
+			res = comp->cpu->intoc;
 			break;
 // GBC
 		case 0x4d:
@@ -148,8 +148,6 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 	gbsChan* ch2 = &comp->gbsnd->ch2;
 	gbsChan* ch3 = &comp->gbsnd->ch3;
 	gbsChan* ch4 = &comp->gbsnd->ch4;
-	// gbc video ptr
-//	GBCVid* gbv = comp->vid->gbc;
 
 	comp->gb.iomap[port] = val;
 	switch (port) {
@@ -387,8 +385,8 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 		case 0x02:
 			break;
 // INT
-		case 0x0f:				// interrupt requesting
-			comp->cpu->intrq |= val;	// add to cpu int req
+		case 0x0f:
+			comp->cpu->intoc = val;
 			break;
 // GBC
 //	cpu speed

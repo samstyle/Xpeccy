@@ -29,16 +29,9 @@ void lr_reset(CPU* cpu) {
 	cpu->intrq = 0;
 	cpu->flgHALT = 0;
 	cpu->flgSTOP = 0;
+	cpu->flgNOINT = 0;
 	cpu->intrq = 0;
 	cpu->inten = 0;
-	// not necessary
-//	cpu->regIM = 0;
-//	cpu->regBCa = cpu->regDEa = cpu->regHLa = 0xffff;
-//	cpu->regAa = 0xff;
-//	cpu->regFa = 0xff;
-//	cpu->regIX = cpu->regIY = 0xffff;
-//	cpu->regI = cpu->regR = 0xff;
-//	cpu->regR7 = 0x80;
 }
 
 typedef struct {
@@ -52,7 +45,8 @@ void z80_push(CPU*, unsigned short);
 void z80_call(CPU*, unsigned short);
 
 int lr_int(CPU* cpu) {
-	if (cpu->flgHALT) {		// free HALT anyway
+	cpu->intoc = cpu->intrq;
+	if (cpu->flgHALT) {				// free HALT anyway
 		cpu->flgHALT = 0;
 		cpu->regPC++;
 		if (!cpu->flgIFF1) {
@@ -60,26 +54,28 @@ int lr_int(CPU* cpu) {
 			cpu->tmpw = cpu->regPC;		// tmpw doesn't used on LR35902, store PC there
 		}
 	}
-	if (!cpu->flgIFF1) return 0;
-	int idx = 0;
 	int res = 0;
-	cpu->intrq &= cpu->inten;
-	while (lr_intab[idx].mask) {
-		if (cpu->intrq & lr_intab[idx].mask) {
-			cpu->flgIFF1 = 0;
-			cpu->intrq ^= lr_intab[idx].mask;	// reset int request flag
-			z80_call(cpu, lr_intab[idx].inta);	// execute call	{RST(lr_intab[idx].inta);}
-			res = 15;				// TODO: to know how much T eats INT handle
-			break;
+	if (cpu->flgIFF1) {
+		int idx = 0;
+		cpu->intrq &= cpu->inten;
+		while (lr_intab[idx].mask) {
+			if (cpu->intrq & lr_intab[idx].mask) {
+				cpu->flgIFF1 = 0;
+				cpu->intrq ^= lr_intab[idx].mask;	// reset int request flag
+				z80_call(cpu, lr_intab[idx].inta);	// execute call	{RST(lr_intab[idx].inta);}
+				res = 15;				// TODO: to know how much T eats INT handle
+				break;
+			}
+			idx++;
 		}
-		idx++;
 	}
+	cpu->intrq = 0;
 	return res;
 }
 
 int lr_exec(CPU* cpu) {
 	int res = 0;
-	if ((cpu->intrq & cpu->inten) && cpu->flgIFF1) {
+	if (cpu->intrq && !cpu->flgNOINT) {
 		res = lr_int(cpu);
 	} else if (cpu->flgLOCK) {
 		res = 1;
@@ -98,6 +94,7 @@ int lr_exec(CPU* cpu) {
 		}
 		res = cpu->t;
 	}
+	cpu->flgNOINT = 0;
 	return res;
 }
 

@@ -166,7 +166,8 @@ struct CPU {
 	int gen;			// cpu generation (for x86: 0-8086, 1-80186, 2-80286 etc)
 	int intrq;			// interrupts request. each bit for each INT type, 1 = requested
 	int inten;			// interrupts enabled mask
-	int intvec;		// interrupt vector (internal/external)
+	int intoc;			// occured interrupts (for lr35902)
+	int intvec;			// interrupt vector (internal/external)
 	int errcod;			// error code (-1 if not present)
 	int adr;			// address bus for using from outside
 	int t;				// ticks counter
