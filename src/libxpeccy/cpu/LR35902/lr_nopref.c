@@ -4,7 +4,6 @@
 #include "lr_macro.h"
 
 extern opCode lrcbTab[256];
-extern const unsigned char daaTab[0x1000];
 
 void lr_mwr(CPU* cpu, int a, int v) {
 	cpu->mwr(a, v, cpu->xptr);
@@ -363,14 +362,25 @@ void lrnop26(CPU* cpu) {
 }
 
 // 27	daa		4
+// https://blog.ollien.com/posts/gb-daa/
 void lrnop27(CPU* cpu) {
-	const unsigned char* tdaa = daaTab + 2 * (cpu->regA + 0x100 * (cpu->flgC | (cpu->flgN << 1) | (cpu->flgH << 2)));
-	cpu->tmp = *tdaa;			// this is z80 flag
-	cpu->regA = *(tdaa + 1);
-	cpu->flgZ = !!(cpu->tmp & 0x40);	// convert z80 flag to lr35902 flag
-	cpu->flgN = !!(cpu->tmp & 0x02);
-	cpu->flgH = !!(cpu->tmp & 0x10);
-	cpu->flgC = !!(cpu->tmp & 0x01);
+	cpu->tmp = 0;		// offset
+	if (cpu->flgH || (!cpu->flgN && ((cpu->regA & 0x0f) > 0x09))) {
+		cpu->tmp |= 0x06;
+	}
+	if (cpu->flgC || (!cpu->flgN && (cpu->regA > 0x99))) {
+		cpu->tmp |= 0x60;
+		cpu->flgC = 1;
+	} else {
+		cpu->flgC = 0;
+	}
+	if (cpu->flgN) {
+		cpu->regA -= cpu->tmp;
+	} else {
+		cpu->regA += cpu->tmp;
+	}
+	cpu->flgH = 0;
+	cpu->flgZ = !cpu->regA;
 }
 
 // 28	jr z,e		4 3rd [5jr]
