@@ -106,3 +106,49 @@ void xGameboyWidget::draw() {
 	}
 	ui.gbImage->setPixmap(QPixmap::fromImage(img));
 }
+
+// gb video registers
+
+typedef struct {
+	QString name;
+	int port;
+} xGBPortDsc;
+
+QList<xGBPortDsc> gbvPortList = {{"LCDC",0xff40},{"STAT",0xff41},{"SCY",0xff42}, {"SCX",0xff43},{"LY",0xff44},{"LYC",0xff45},\
+				 {"BGP",0xff47},{"OBP0",0xff48},{"OBP1",0xff49},{"WX",0xff4a},{"WY",0xff4b}};
+
+xGBVideoModel::xGBVideoModel(QObject* p):xTableModel(p) {}
+int xGBVideoModel::rowCount(const QModelIndex &) const {return gbvPortList.size();}
+int xGBVideoModel::columnCount(const QModelIndex &) const {return 2;}
+QVariant xGBVideoModel::data(const QModelIndex& idx, int role) const {
+	QVariant res;
+	Computer* comp = conf.prof.cur->zx;
+	int row = idx.row();
+	int col = idx.column();
+	switch(role) {
+		case Qt::DisplayRole:
+			switch (col) {
+				case 0: res = QString("%0 (%1)").arg(gbvPortList[row].name).arg(gethexword(gbvPortList[row].port)); break;
+				case 1:	res = gethexbyte(comp->hw->mrd(comp, gbvPortList.at(row).port, 0)); break;
+			}
+			break;
+	}
+	return res;
+}
+
+void xGBVideoWidget::draw() {
+	((xTableModel*)(ui.table->model()))->update();
+}
+
+xGBVideoWidget::xGBVideoWidget(QString n, QString i, QWidget* p):xDockWidget(n, i, p) {
+	QWidget* wid = new QWidget;
+	setWidget(wid);
+	ui.setupUi(wid);
+	ui.table->setModel(new xGBVideoModel);
+	ui.table->horizontalHeader()->setVisible(false);
+	ui.table->verticalHeader()->setVisible(false);
+	ui.table->horizontalHeader()->setStretchLastSection(true);
+	ui.table->setColumnWidth(0, 150);
+	setObjectName("GBVWIDGET");
+	hwList << HWG_GB;
+}

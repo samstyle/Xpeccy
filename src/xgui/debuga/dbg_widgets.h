@@ -112,6 +112,7 @@ class xFDDWidget : public xDockWidget {
 // gameboy
 
 #include "ui_form_gameboy.h"
+#include "ui_form_vga.h"
 
 class xGameboyWidget : public xDockWidget {
 	Q_OBJECT
@@ -121,6 +122,25 @@ class xGameboyWidget : public xDockWidget {
 		void draw();
 	private:
 		Ui::GBWidget ui;
+};
+
+class xGBVideoModel : public xTableModel {
+	public:
+		xGBVideoModel(QObject* = nullptr);
+	private:
+		int rowCount(const QModelIndex& = QModelIndex()) const;
+		int columnCount(const QModelIndex& = QModelIndex()) const;
+		QVariant data(const QModelIndex&, int) const;
+};
+
+class xGBVideoWidget : public xDockWidget {
+	Q_OBJECT
+	public:
+		xGBVideoWidget(QString, QString, QWidget* = nullptr);
+	public slots:
+		void draw();
+	private:
+		Ui::TableWidget ui;
 };
 
 // memmap
@@ -245,7 +265,7 @@ class xVgaWidget : public xDockWidget {
 	public slots:
 		void draw();
 	private:
-		Ui::VGAWidget ui;
+		Ui::TableWidget ui;
 };
 
 // vic-ii

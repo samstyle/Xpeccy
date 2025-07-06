@@ -73,7 +73,7 @@ void gbcvLine(Video* vid) {
 	memset(vid->stline, 0x00, 256);
 	memset(vid->sbline, 0x00, 256);
 
-	vid->gbcmode = 0;					// hblank start: mode 0
+//	vid->gbcmode = 0;					// hblank start: mode 0
 	if (vid->inten & 8)
 		vid->intrq = 1;
 

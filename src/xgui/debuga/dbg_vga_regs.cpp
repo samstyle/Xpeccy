@@ -70,16 +70,16 @@ QVariant xVgaRegModel::data(const QModelIndex& idx, int role) const {
 // widget
 
 xVgaWidget::xVgaWidget(QString i, QString t, QWidget* p):xDockWidget(i,t,p) {
-	setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
+//	setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
 	QWidget* wid = new QWidget;
 	setWidget(wid);
 	ui.setupUi(wid);
 	setObjectName("VGAWIDGET");
-	ui.tabVgaReg->setModel(new xVgaRegModel());
-	connect(this, &QDockWidget::visibilityChanged, this, &xVgaWidget::draw);
+	ui.table->setModel(new xVgaRegModel());
+//	connect(this, &QDockWidget::visibilityChanged, this, &xVgaWidget::draw);
 	hwList << HWG_PC;
 }
 
 void xVgaWidget::draw() {
-	ui.tabVgaReg->update();
+	((xTableModel*)(ui.table->model()))->update();
 }

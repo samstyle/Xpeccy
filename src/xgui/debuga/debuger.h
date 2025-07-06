@@ -98,6 +98,7 @@ class DebugWin : public QMainWindow {
 		xFDDWidget* wid_fdd;
 		xBreakWidget* wid_brk;
 		xGameboyWidget* wid_gb;
+		xGBVideoWidget* wid_gbv;
 		xPPUWidget* wid_ppu;
 		// apu (future)
 		xCiaWidget* wid_cia;
