@@ -883,58 +883,59 @@ typedef struct {
 	void(*cbDot)(Video*);		// each dot
 	void(*cbHBlank)(Video*);	// hblank start
 	void(*cbLine)(Video*);		// visible line start
+	void(*cbVBlank)(Video*);	// @vblank (right after last line)
 	void(*cbFrame)(Video*);		// vblank start
 } xVideoMode;
 
-// id,(@on),(@every_visible_dot),(@HBlank),(@LineStart),(@VBlank)
+// id,(@on),(@every_visible_dot),(@HBlank),(@LineStart),(@VBlank),(@Frame)
 static xVideoMode vidModeTab[] = {
-	{VID_NORMAL, NULL, vidDrawNormal, NULL, NULL, NULL},
-	{VID_ULA_SCR, NULL, ula_dot, NULL, NULL, NULL},
-	{VID_ALCO, NULL, vidDrawAlco, NULL, NULL, NULL},
-	{VID_HWMC, NULL, vidDrawHwmc, NULL, NULL, NULL},
-	{VID_ATM_EGA, NULL, vidDrawATMega, NULL, NULL, NULL},
-	{VID_ATM_TEXT, NULL, vidDrawATMtext, NULL, NULL, NULL},
-	{VID_ATM_HWM, NULL, vidDrawATMhwmc, NULL, NULL, NULL},
-	{VID_EVO_TEXT, NULL, vidDrawEvoText, NULL, NULL, NULL},
-	{VID_TSL_NORMAL, NULL, vidDrawTSLNormal, vidTSline, NULL, NULL},
-	{VID_TSL_16, NULL, vidDrawTSLExt, vidTSline, NULL, NULL},			// vidDrawTSL16
-	{VID_TSL_256, NULL, vidDrawTSLExt, vidTSline, NULL, NULL},			// vidDrawTSL256
-	{VID_TSL_TEXT, NULL, vidDrawTSLText, vidTSline, NULL, NULL},
-	{VID_PRF_MC, NULL, vidProfiScr, NULL, NULL, NULL},
+	{VID_NORMAL, NULL, vidDrawNormal, NULL, NULL, NULL, NULL},
+	{VID_ULA_SCR, NULL, ula_dot, NULL, NULL, NULL, NULL},
+	{VID_ALCO, NULL, vidDrawAlco, NULL, NULL, NULL, NULL},
+	{VID_HWMC, NULL, vidDrawHwmc, NULL, NULL, NULL, NULL},
+	{VID_ATM_EGA, NULL, vidDrawATMega, NULL, NULL, NULL, NULL},
+	{VID_ATM_TEXT, NULL, vidDrawATMtext, NULL, NULL, NULL, NULL},
+	{VID_ATM_HWM, NULL, vidDrawATMhwmc, NULL, NULL, NULL, NULL},
+	{VID_EVO_TEXT, NULL, vidDrawEvoText, NULL, NULL, NULL, NULL},
+	{VID_TSL_NORMAL, NULL, vidDrawTSLNormal, NULL, vidTSline, NULL, NULL},
+	{VID_TSL_16, NULL, vidDrawTSLExt, NULL, vidTSline, NULL, NULL},			// vidDrawTSL16
+	{VID_TSL_256, NULL, vidDrawTSLExt, NULL, vidTSline, NULL, NULL},		// vidDrawTSL256
+	{VID_TSL_TEXT, NULL, vidDrawTSLText, NULL, vidTSline, NULL, NULL},
+	{VID_PRF_MC, NULL, vidProfiScr, NULL, NULL, NULL, NULL},
 
-	{VID_GBC, NULL, gbcvDraw, gbcvLine, NULL, gbcvFram},
-	{VID_NES, NULL, ppuDraw, ppuHBL, ppuLine, ppuFram},
+	{VID_GBC, NULL, gbcvDraw, gbcvHBL, gbcvLine, gbcvVBL, gbcvFram},
+	{VID_NES, NULL, ppuDraw, ppuHBL, ppuLine, ppuFram, NULL},
 
-	{VDP_TEXT1, NULL, vdpText1, vdpHBlk, NULL, NULL},
-	{VDP_TEXT2, NULL, vdpDummy, vdpHBlk, NULL, NULL},
-	{VDP_MCOL, NULL, vdpMultcol, vdpHBlk, vdp_line, NULL},
-	{VDP_GRA1, NULL, vdpGra1, vdpHBlk, vdp_line, NULL},
-	{VDP_GRA2, NULL, vdpGra2, vdpHBlk, vdp_line, NULL},
-	{VDP_GRA3, NULL, vdpGra2, vdpHBlk, vdp_linex, NULL},
-	{VDP_GRA4, NULL, vdpGra4, vdpHBlk, vdp_linex, NULL},
-	{VDP_GRA5, NULL, vdpGra5, vdpHBlk, vdp_linex, NULL},
-	{VDP_GRA6, NULL, vdpGra6, vdpHBlk, vdp_linex, NULL},
-	{VDP_GRA7, NULL, vdpGra7, vdpHBlk, vdp_linex, NULL},
+	{VDP_TEXT1, NULL, vdpText1, vdpHBlk, NULL, NULL, NULL},
+	{VDP_TEXT2, NULL, vdpDummy, vdpHBlk, NULL, NULL, NULL},
+	{VDP_MCOL, NULL, vdpMultcol, vdpHBlk, vdp_line, NULL, NULL},
+	{VDP_GRA1, NULL, vdpGra1, vdpHBlk, vdp_line, NULL, NULL},
+	{VDP_GRA2, NULL, vdpGra2, vdpHBlk, vdp_line, NULL, NULL},
+	{VDP_GRA3, NULL, vdpGra2, vdpHBlk, vdp_linex, NULL, NULL},
+	{VDP_GRA4, NULL, vdpGra4, vdpHBlk, vdp_linex, NULL, NULL},
+	{VDP_GRA5, NULL, vdpGra5, vdpHBlk, vdp_linex, NULL, NULL},
+	{VDP_GRA6, NULL, vdpGra6, vdpHBlk, vdp_linex, NULL, NULL},
+	{VDP_GRA7, NULL, vdpGra7, vdpHBlk, vdp_linex, NULL, NULL},
 
-	{VID_C64_TEXT, NULL, vidC64TDraw, NULL, vidC64Line, vidC64Fram},
-	{VID_C64_TEXT_MC, NULL, vidC64TMDraw, NULL, vidC64Line, vidC64Fram},
-	{VID_C64_BITMAP, NULL, vidC64BDraw, NULL, vidC64Line, vidC64Fram},
-	{VID_C64_BITMAP_MC, NULL, vidC64BMDraw, NULL, vidC64Line, vidC64Fram},
+	{VID_C64_TEXT, NULL, vidC64TDraw, NULL, vidC64Line, vidC64Fram, NULL},
+	{VID_C64_TEXT_MC, NULL, vidC64TMDraw, NULL, vidC64Line, vidC64Fram, NULL},
+	{VID_C64_BITMAP, NULL, vidC64BDraw, NULL, vidC64Line, vidC64Fram, NULL},
+	{VID_C64_BITMAP_MC, NULL, vidC64BMDraw, NULL, vidC64Line, vidC64Fram, NULL},
 
-	{VID_BK_BW, NULL, bk_bw_dot, NULL, NULL, NULL},
-	{VID_BK_COL, NULL, bk_col_dot, NULL, NULL, NULL},
+	{VID_BK_BW, NULL, bk_bw_dot, NULL, NULL, NULL, NULL},
+	{VID_BK_COL, NULL, bk_col_dot, NULL, NULL, NULL, NULL},
 
-	{VID_SPCLST, spcv_ini, spc_dot, NULL, NULL, NULL},
+	{VID_SPCLST, spcv_ini, spc_dot, NULL, NULL, NULL, NULL},
 
-	{CGA_TXT_L, cga_t40_ini, cga_lores_dot, NULL, cga_t40_line, cga_t40_frm},
-	{CGA_TXT_H, cga_t80_ini, cga_t40_dot, NULL, cga_t40_line, cga_t40_frm},
-	{CGA_GRF_L, NULL, cga_lores_dot, NULL, cga320_2bpp_line, cga_t40_frm},
-	{CGA_GRF_H, NULL, cga_t40_dot, NULL, cga640_1bpp_line, cga_t40_frm},
-	{VGA_GRF_L, vga_glo_ini, cga_t40_dot, NULL, vga320_4bpp_line, cga_t40_frm},
-	{VGA_GRF_H, vga_ghi_ini, cga_t40_dot, NULL, vga640_4bpp_line, cga_t40_frm},
-	{VGA_GRF_256, vga_glo_ini, cga_lores_dot, NULL, vga256_line, cga_t40_frm},
+	{CGA_TXT_L, cga_t40_ini, cga_lores_dot, NULL, cga_t40_line, cga_t40_frm, NULL},
+	{CGA_TXT_H, cga_t80_ini, cga_t40_dot, NULL, cga_t40_line, cga_t40_frm, NULL},
+	{CGA_GRF_L, NULL, cga_lores_dot, NULL, cga320_2bpp_line, cga_t40_frm, NULL},
+	{CGA_GRF_H, NULL, cga_t40_dot, NULL, cga640_1bpp_line, cga_t40_frm, NULL},
+	{VGA_GRF_L, vga_glo_ini, cga_t40_dot, NULL, vga320_4bpp_line, cga_t40_frm, NULL},
+	{VGA_GRF_H, vga_ghi_ini, cga_t40_dot, NULL, vga640_4bpp_line, cga_t40_frm, NULL},
+	{VGA_GRF_256, vga_glo_ini, cga_lores_dot, NULL, vga256_line, cga_t40_frm, NULL},
 
-	{VID_UNKNOWN, NULL, vidDrawBorder, NULL, NULL, NULL}
+	{VID_UNKNOWN, NULL, vidDrawBorder, NULL, NULL, NULL, NULL}
 };
 
 void vid_set_core(Video* vid, xVideoMode* xvm) {
@@ -942,6 +943,7 @@ void vid_set_core(Video* vid, xVideoMode* xvm) {
 	vid->cbHBlank = xvm->cbHBlank;
 	vid->cbFrame = xvm->cbFrame;
 	vid->cbLine = xvm->cbLine;
+	vid->cbVBlank = xvm->cbVBlank;
 	if (xvm->init)
 		xvm->init(vid);
 }
@@ -958,6 +960,8 @@ void vid_set_mode(Video* vid, int mode) {
 void vid_irq(Video* vid, int id) {
 	vid->xirq(id, vid->xptr);
 }
+
+// NOTE: CRT VBlank starts right after last line (no HBlank skip) and ends at start of line 0
 
 void vid_tick(Video* vid) {
 	if ((vid->ray.x & vid->brdstep) == 0)
@@ -984,21 +988,52 @@ void vid_tick(Video* vid) {
 	if (vid->ray.x >= vid->full.x) {			// new line
 		vid->hblank = 0;
 		vid->ray.x = 0;
-		vid->ray.xs = -vid->bord.x;
+		vid->ray.y++;
+		vid->ray.yb++;
 		vid->ray.ys++;
 		vid->lcnt++;
-		if (vid->cbLine) vid->cbLine(vid);
-
-		if (vid->ray.y == vid->vend.y) {		// vblank start
-			vid->xirq(IRQ_VID_VBLANK, vid->xptr);
-			vid->vblank = 1;
+		if (vid->ray.y == vid->bord.y) {		// screen line
+			vid->ray.ys = 0;
+		}
+		if (vid->ray.y == vid->vend.y) {
 			vid->ray.yb = 0;
-			vid->idx = 0;
+		}
+		if (vid->ray.y >= vid->full.y) {		// new frame
+			vid_frame(vid);			// complete frame image
+			vid->ray.y = 0;
+			vid->lcnt = 0;
+			vid->vblank = 0;
+			vid->tsconf.scrLine = 0;
+			vid->fcnt++;
+			vid->flash = (vid->fcnt & 0x10) ? 1 : 0;
+			if (vid->cbFrame) vid->cbFrame(vid);
+			vid->tail = 0;
+			if (vid->debug) vid_dark_all();
+		}
+		if (vid->cbLine) vid->cbLine(vid);
+		vid->vvis = (vid->ray.y >= vid->lcut.y) && (vid->ray.y < vid->rcut.y);
+		vid->vbrd = (vid->ray.y < vid->bord.y) || (vid->ray.y >= vid->send.y);
+	}
+	if (vid->ray.x == vid->bord.x) {
+		vid->ray.xs = 0;
+	}
+	if (vid->ray.x == vid->vend.x) {			// end of line
+		if ((vid->ray.y >= vid->lcut.y) && (vid->ray.y < vid->rcut.y)) vid_line(vid);	// complete line image
+		// if (vid->vvis) vid_line(vid);
+		vid->ray.xb = 0;
+		if (vid->ray.y == vid->vend.y - 1) {	// it was last line, vblank
+			vid->vblank = 1;
+			vid_irq(vid, IRQ_VID_VBLANK);
+			if (vid->cbVBlank) vid->cbVBlank(vid);
+		} else if (!vid->vblank) {		// or hblank (not during vblank period)
+			vid->hblank = 1;
+			vid_irq(vid, IRQ_VID_HBLANK);
+			if (vid->cbHBlank) vid->cbHBlank(vid);
 		}
 	}
-	if (vid->ray.x == vid->vend.x) {			// hblank start
-		if ((vid->ray.y >= vid->lcut.y) && (vid->ray.y < vid->rcut.y))
-			vid_line(vid);
+	vid->hvis = (vid->ray.x >= vid->lcut.x) && (vid->ray.x < vid->rcut.x);
+	vid->hbrd = (vid->ray.x < vid->bord.x) || (vid->ray.x >= vid->send.x);
+/*
 		vid->hblank = 1;
 		vid->ray.xb = 0;
 		vid->ray.y++;
@@ -1016,7 +1051,12 @@ void vid_tick(Video* vid) {
 			if (vid->debug)
 				vid_dark_all();
 		}
-		// ...
+		if (vid->ray.y == vid->vend.y) {		// vblank start
+			vid->xirq(IRQ_VID_VBLANK, vid->xptr);
+			vid->vblank = 1;
+			vid->ray.yb = 0;
+			vid->idx = 0;
+		}
 		vid->vvis = (vid->ray.y >= vid->lcut.y) && (vid->ray.y < vid->rcut.y);
 //		if (vid->ray.y == vid->lcut.y) {	// window visibility
 //			vid->vvis = 1;
@@ -1045,6 +1085,7 @@ void vid_tick(Video* vid) {
 //	} else if (vid->ray.x == vid->bord.x) {		// screen start H
 //		vid->hbrd = 0;
 //	}
+*/
 	// generate int
 	if (vid->intFRAME) {
 		vid->intFRAME--;
@@ -1068,4 +1109,3 @@ void vid_sync(Video* vid, int ns) {
 		vid_tick(vid);
 	}
 }
-

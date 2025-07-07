@@ -155,6 +155,7 @@ struct Video {
 	int vmode;
 	cbvid cbDot;		// call every dot
 	cbvid cbHBlank;		// call every line
+	cbvid cbVBlank;
 	cbvid cbLine;		// @ hblank end
 	cbvid cbFrame;		// call every frame
 

@@ -67,15 +67,13 @@ void gbcvDraw(Video* vid) {
 }
 
 // line begin : create full line image in the buffer
+// TODO: create bgmap here too
+
 void gbcvLine(Video* vid) {
 	memset(vid->wtline, 0xff, 256);
 	memset(vid->wbline, 0xff, 256);
 	memset(vid->stline, 0x00, 256);
 	memset(vid->sbline, 0x00, 256);
-
-//	vid->gbcmode = 0;					// hblank start: mode 0
-	if (vid->inten & 8)
-		vid->intrq = 1;
 
 	if ((vid->lcnt == vid->intp.y) && (vid->inten & 64)) vid->intrq = 1;		// ly = lyc
 	vid->xpos = vid->sc.x;
@@ -185,12 +183,20 @@ void gbcvLine(Video* vid) {
 	}
 }
 
+void gbcvHBL(Video* vid) {
+	vid->gbcmode = 0;		// hblank start: mode 0
+	if (vid->inten & 8)
+		vid->intrq = 1;
+}
+
+void gbcvVBL(Video* vid) {
+	vid->gbcmode = 1;		// vblank start : mode 1
+	if (vid->inten & 16)		// int @ vblank
+		vid->intrq = 1;
+}
+
 void gbcvFram(Video* vid) {
 	vid->wline = 0;
-
-	vid->gbcmode = 1;		// vblank start : mode 1
-	if (vid->inten & 16)
-		vid->intrq = 1;	// int @ vblank
 }
 
 // game boy palette
@@ -235,6 +241,7 @@ void gbcvReset(Video* vid) {
 	vid->winen = 0;
 	vid->spren = 0;
 	vid->gbmode = 0;
+	vid->intp.x = 2000;		// remove standart int
 	memset(vid->ram, 0x00, 0x4000);
 	memset(vid->oam, 0x00, 0x100);
 	for (int i = 0; i < 4; i++) {

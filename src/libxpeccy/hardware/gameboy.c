@@ -44,14 +44,7 @@ int gbIORd(Computer* comp, int port) {
 		case 0x41:
 			res &= 0x78;
 			if (comp->vid->lcnt == comp->vid->intp.y) res |= 4;
-			if (comp->vid->vbank) {
-				// gbvmode 1
-				res |= 1;
-			} else if (comp->vid->hblank) {
-				// gbvmode 0
-			} else {
-				res |= comp->vid->gbcmode & 3;
-			}
+			res |= comp->vid->gbcmode & 3;
 			break;
 		case 0x42: break;
 		case 0x43: break;
@@ -192,7 +185,7 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 			comp->vid->lcnt = 0;
 			break;
 		case 0x45:
-			comp->vid->intp.y = val + 1;			// THE KOSTYL (TODO: check LYC INT line)
+			comp->vid->intp.y = val;
 			break;
 		case 0x46:						// TODO: block CPU memory access for 160 microsec (except ff80..fffe)
 			sadr = (val << 8) & 0xffff;

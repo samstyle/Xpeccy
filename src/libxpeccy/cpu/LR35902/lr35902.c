@@ -55,42 +55,44 @@ int lr_int(CPU* cpu) {
 		}
 	}
 	int res = 0;
-	if (cpu->flgIFF1) {
-		int idx = 0;
-		cpu->intrq &= cpu->inten;
-		while (lr_intab[idx].mask) {
-			if (cpu->intrq & lr_intab[idx].mask) {
+	int idx = 0;
+	cpu->intrq &= cpu->inten;
+	while (lr_intab[idx].mask) {
+		if (!res && (cpu->intrq & lr_intab[idx].mask)) {
+			if (cpu->flgIFF1) {
 				cpu->flgIFF1 = 0;
-				cpu->intrq ^= lr_intab[idx].mask;	// reset int request flag
+				cpu->intrq ^= lr_intab[idx].mask;	// reset highest priority INT request flag. if there is others, they suspended (not switched off)
 				z80_call(cpu, lr_intab[idx].inta);	// execute call	{RST(lr_intab[idx].inta);}
 				res = 15;				// TODO: to know how much T eats INT handle
-				break;
 			}
-			idx++;
+			break;
 		}
+		idx++;
 	}
-	cpu->intrq = 0;
 	return res;
 }
 
 int lr_exec(CPU* cpu) {
 	int res = 0;
-	if (cpu->intrq && !cpu->flgNOINT) {
-		res = lr_int(cpu);
-	} else if (cpu->flgLOCK) {
+	if (cpu->flgLOCK) {
 		res = 1;
 	} else {
-		cpu->t = 0;
-		cpu->opTab = lrTab;
-		do {
-			cpu->tmp = cpu->mrd(cpu->regPC++, 1, cpu->xptr);
-			cpu->op = &cpu->opTab[cpu->tmp];
-			cpu->t += cpu->op->t;
-			cpu->op->exec(cpu);
-		} while (cpu->op->flag & OF_PREFIX);
-		if (cpu->flgDIHALT) {		// LR35902 bug (?) : repeat opcode after HALT with disabled interrupts (DI)
-			cpu->flgDIHALT = 0;
-			cpu->regPC = cpu->tmpw;
+		if (cpu->intrq && !cpu->flgNOINT) {
+			res = lr_int(cpu);
+		}
+		if (!res) {
+			cpu->t = 0;
+			cpu->opTab = lrTab;
+			do {
+				cpu->tmp = cpu->mrd(cpu->regPC++, 1, cpu->xptr);
+				cpu->op = &cpu->opTab[cpu->tmp];
+				cpu->t += cpu->op->t;
+				cpu->op->exec(cpu);
+			} while (cpu->op->flag & OF_PREFIX);
+			if (cpu->flgDIHALT) {		// LR35902 bug (?) : repeat opcode after HALT with disabled interrupts (DI)
+				cpu->flgDIHALT = 0;
+				cpu->regPC = cpu->tmpw;
+			}
 		}
 		res = cpu->t;
 	}

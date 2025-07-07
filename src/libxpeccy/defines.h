@@ -23,6 +23,7 @@ enum {
 	IRQ_VID_INT,	// video
 	IRQ_VID_INT_E,
 	IRQ_VID_FRAME,
+	IRQ_VID_HBLANK,
 	IRQ_VID_VBLANK,
 	IRQ_VID_LINE,	// tsconf
 	IRQ_RZX_INT,
