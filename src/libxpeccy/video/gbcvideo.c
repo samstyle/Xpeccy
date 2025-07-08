@@ -184,9 +184,11 @@ void gbcvLine(Video* vid) {
 }
 
 void gbcvHBL(Video* vid) {
-	vid->gbcmode = 0;		// hblank start: mode 0
-	if (vid->inten & 8)
-		vid->intrq = 1;
+	if (!vid->vblank) {
+		vid->gbcmode = 0;		// hblank start: mode 0 (not during vblank)
+		if (vid->inten & 8)
+			vid->intrq = 1;
+	}
 }
 
 void gbcvVBL(Video* vid) {

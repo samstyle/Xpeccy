@@ -65,7 +65,6 @@ int lr_int(CPU* cpu) {
 				z80_call(cpu, lr_intab[idx].inta);	// execute call	{RST(lr_intab[idx].inta);}
 				res = 15;				// TODO: to know how much T eats INT handle
 			}
-			break;
 		}
 		idx++;
 	}

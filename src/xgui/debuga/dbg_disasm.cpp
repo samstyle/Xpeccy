@@ -1063,6 +1063,7 @@ void xDisasmTable::mousePressEvent(QMouseEvent* ev) {
 		case Qt::MiddleButton:
 			blockStart = -1;
 			blockEnd = -1;
+			updContent();
 			emit rqRefill();
 			ev->ignore();
 			break;
@@ -1109,6 +1110,7 @@ void xDisasmTable::mouseMoveEvent(QMouseEvent* ev) {
 			blockStart = markAdr;
 			blockEnd = adr;
 		}
+		updContent();
 		emit rqRefill();
 	}
 	QTableView::mouseMoveEvent(ev);
