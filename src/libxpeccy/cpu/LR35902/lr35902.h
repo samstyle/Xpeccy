@@ -9,6 +9,8 @@
 #define flgIFF1	flags[8]		// interrupts enabled
 #define flgDIHALT flags[9]		// HALT when DI: repeat next opcode
 #define flgSTOP flags[10]		// CPU stoped, unlock on keypress
+#define flgIFFC flags[11]		// need to change IFF (after ei/di)
+#define flgIFFN flags[12]		// new IFF
 
 #define regA regs[0].l
 #define regBC regs[1].w
@@ -29,9 +31,10 @@
 #define regWZ regs[8].w
 #define regWZh regs[8].h
 #define regWZl regs[8].l
-#define regI regs[9].l
-#define regR regs[9].h
-#define regR7 regs[9].ih
+#define regTPC regs[8].ih	// temp pc storage
+//#define regI regs[9].l
+//#define regR regs[9].h
+//#define regR7 regs[9].ih
 
 enum {
 	LR_REG_PC = 1,

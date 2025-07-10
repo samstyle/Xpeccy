@@ -29,7 +29,8 @@ void lr_reset(CPU* cpu) {
 	cpu->intrq = 0;
 	cpu->flgHALT = 0;
 	cpu->flgSTOP = 0;
-	cpu->flgNOINT = 0;
+	cpu->flgIFFC = 0;
+//	cpu->flgNOINT = 0;
 	cpu->intrq = 0;
 	cpu->inten = 0;
 }
@@ -51,7 +52,7 @@ int lr_int(CPU* cpu) {
 		cpu->regPC++;
 		if (!cpu->flgIFF1) {
 			cpu->flgDIHALT = 1;
-			cpu->tmpw = cpu->regPC;		// tmpw doesn't used on LR35902, store PC there
+			cpu->regTPC = cpu->regPC;
 		}
 	}
 	int res = 0;
@@ -76,10 +77,14 @@ int lr_exec(CPU* cpu) {
 	if (cpu->flgLOCK) {
 		res = 1;
 	} else {
-		if (cpu->intrq && !cpu->flgNOINT) {
+		if (cpu->intrq) {
 			res = lr_int(cpu);
 		}
 		if (!res) {
+			if (cpu->flgIFFC) {			// if last instruction was ei/di, change current IFF
+				cpu->flgIFFC = 0;
+				cpu->flgIFF1 = cpu->flgIFFN;
+			}
 			cpu->t = 0;
 			cpu->opTab = lrTab;
 			do {
@@ -90,12 +95,12 @@ int lr_exec(CPU* cpu) {
 			} while (cpu->op->flag & OF_PREFIX);
 			if (cpu->flgDIHALT) {		// LR35902 bug (?) : repeat opcode after HALT with disabled interrupts (DI)
 				cpu->flgDIHALT = 0;
-				cpu->regPC = cpu->tmpw;
+				cpu->regPC = cpu->regTPC;
 			}
 		}
 		res = cpu->t;
 	}
-	cpu->flgNOINT = 0;
+//	cpu->flgNOINT = 0;
 	return res;
 }
 

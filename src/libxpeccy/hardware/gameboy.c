@@ -68,6 +68,7 @@ int gbIORd(Computer* comp, int port) {
 		case 0x4f:
 			res = comp->gb.vbank & 1;
 			break;
+		// TODO: 0x55: remaining DMA length (blocks by 16 bytes)-1; b7=dma inactive
 		case 0x70:
 			res = comp->gb.wbank & 7;
 			break;
@@ -452,6 +453,7 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 			//if (sadr > 0xdfff) break;		// not wram
 			dadr = (comp->dma.dst.h << 8) | comp->dma.dst.l;	// vram adr (0000...1ff0)
 			per = ((val & 0x7f) + 1) << 4;				// bytes to transfer (10..800)
+			// TODO: b7,val: 0=copy now, 1=copy by 16 bytes each HBlank
 			while (per > 0) {
 				memWr(comp->mem, 0x8000 | (dadr & 0x1fff), memRd(comp->mem, sadr));
 				dadr++;
@@ -709,9 +711,9 @@ void gbc_irq(Computer* comp, int t) {
 
 void gbc_init(Computer* comp) {
 	comp->fps = 50;
-	comp->gbsnd->wav.period = comp->nsPerTick << 5;			// 128KHz period for wave generator = cpu.frq / 32
+	comp->gbsnd->wav.period = comp->nsPerTick << 5;				// 128KHz period for wave generator = cpu.frq / 32
 	comp->gb.timer.div.per = (comp->nsPerTick / comp->frqMul) * 256;	// 16KHz timer divider tick. this timer depends on turbo speed
-	vid_upd_timings(comp->vid, comp->nsPerTick << 1);
+	vid_upd_timings(comp->vid, comp->nsPerTick);				// dot:4.2MHz, cpu:4.2MHz
 }
 
 // keypress

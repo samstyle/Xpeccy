@@ -1017,19 +1017,17 @@ void vid_tick(Video* vid) {
 	if (vid->ray.x == vid->bord.x) {
 		vid->ray.xs = 0;
 	}
-	if (vid->ray.x == vid->vend.x) {			// end of line
+	if (vid->ray.x == vid->vend.x) {			// hblank
 		if ((vid->ray.y >= vid->lcut.y) && (vid->ray.y < vid->rcut.y)) vid_line(vid);	// complete line image
-		// if (vid->vvis) vid_line(vid);
 		vid->ray.xb = 0;
 		if (vid->ray.y == vid->vend.y - 1) {	// it was last line, vblank
 			vid->vblank = 1;
 			vid_irq(vid, IRQ_VID_VBLANK);
 			if (vid->cbVBlank) vid->cbVBlank(vid);
-		} else if (!vid->vblank) {		// or hblank (not during vblank period)
-			vid->hblank = 1;
-			vid_irq(vid, IRQ_VID_HBLANK);
-			if (vid->cbHBlank) vid->cbHBlank(vid);
 		}
+		vid->hblank = 1;
+		vid_irq(vid, IRQ_VID_HBLANK);
+		if (vid->cbHBlank) vid->cbHBlank(vid);
 	}
 	vid->hvis = (vid->ray.x >= vid->lcut.x) && (vid->ray.x < vid->rcut.x);
 	vid->hbrd = (vid->ray.x < vid->bord.x) || (vid->ray.x >= vid->send.x);
