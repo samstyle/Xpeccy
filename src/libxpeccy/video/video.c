@@ -1000,6 +1000,7 @@ void vid_tick(Video* vid) {
 		}
 		if (vid->ray.y >= vid->full.y) {		// new frame
 			vid_frame(vid);			// complete frame image
+			vid->idx = 0;
 			vid->ray.y = 0;
 			vid->lcnt = 0;
 			vid->vblank = 0;
