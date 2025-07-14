@@ -85,7 +85,7 @@ void zx_irq(Computer* comp, int t) {
 			rzxGetFrame(comp);
 #endif
 			break;
-		case IRQ_VID_INT_E:			// frame int end
+		case IRQ_VID_IEND:			// frame int end
 			if (comp->vid->intLINE) {
 				zx_irq(comp, IRQ_VID_LINE);
 			} else if (comp->vid->intDMA) {

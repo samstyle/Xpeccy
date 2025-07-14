@@ -903,7 +903,7 @@ static xVideoMode vidModeTab[] = {
 	{VID_TSL_TEXT, NULL, vidDrawTSLText, NULL, vidTSline, NULL, NULL},
 	{VID_PRF_MC, NULL, vidProfiScr, NULL, NULL, NULL, NULL},
 
-	{VID_GBC, NULL, gbcvDraw, gbcvHBL, gbcvLine, gbcvVBL, gbcvFram},
+	{VID_GBC, NULL, gbcvDraw, NULL, gbcvLine, gbcvVBL, gbcvFram},
 	{VID_NES, NULL, ppuDraw, ppuHBL, ppuLine, ppuFram, NULL},
 
 	{VDP_TEXT1, NULL, vdpText1, vdpHBlk, NULL, NULL, NULL},
@@ -963,6 +963,8 @@ void vid_irq(Video* vid, int id) {
 
 // NOTE: CRT VBlank starts right after last line (no HBlank skip) and ends at start of line 0
 
+#define VBL_LINE 0
+
 void vid_tick(Video* vid) {
 	if ((vid->ray.x & vid->brdstep) == 0)
 		vid->brdcol = vid->nextbrd;
@@ -997,6 +999,11 @@ void vid_tick(Video* vid) {
 		}
 		if (vid->ray.y == vid->vend.y) {
 			vid->ray.yb = 0;
+#if VBL_LINE
+			vid->vblank = 1;
+			vid_irq(vid, IRQ_VID_VBLANK);
+			if (vid->cbVBlank) vid->cbVBlank(vid);
+#endif
 		}
 		if (vid->ray.y >= vid->full.y) {		// new frame
 			vid_frame(vid);			// complete frame image
@@ -1021,11 +1028,13 @@ void vid_tick(Video* vid) {
 	if (vid->ray.x == vid->vend.x) {			// hblank
 		if ((vid->ray.y >= vid->lcut.y) && (vid->ray.y < vid->rcut.y)) vid_line(vid);	// complete line image
 		vid->ray.xb = 0;
+#if !VBL_LINE
 		if (vid->ray.y == vid->vend.y - 1) {	// it was last line, vblank
 			vid->vblank = 1;
 			vid_irq(vid, IRQ_VID_VBLANK);
 			if (vid->cbVBlank) vid->cbVBlank(vid);
 		}
+#endif
 		vid->hblank = 1;
 		vid_irq(vid, IRQ_VID_HBLANK);
 		if (vid->cbHBlank) vid->cbHBlank(vid);
@@ -1089,7 +1098,7 @@ void vid_tick(Video* vid) {
 	if (vid->intFRAME) {
 		vid->intFRAME--;
 		if (!vid->intFRAME)
-			vid->xirq(IRQ_VID_INT_E, vid->xptr);
+			vid->xirq(IRQ_VID_IEND, vid->xptr);
 	} else if ((vid->ray.yb == vid->intp.y) && (vid->ray.xb == vid->intp.x)) {
 		vid->intTime = vid->time;
 		// vid->intFRAME = vid->intsize;

@@ -532,6 +532,25 @@ int reg_get_value(CPU* cpu, xRegDsc* dsc) {
 	return res;
 }
 
+int reg_set_value(CPU* cpu, xRegDsc* dsc, int val) {
+	int res = 1;
+	if (dsc->flag & REG_SEG) return 0;		// what to do with x86 segment registers?
+	if (dsc->offset == 0) {
+		cpu_set_flag(cpu, val);
+	} else {
+		void* ptr = ((void*)cpu) + dsc->offset;
+		switch(dsc->type) {
+			case REG_BIT: *(bool*)ptr = !!val; break;
+			case REG_BYTE: *(unsigned char*)ptr = val & 0xff; break;
+			case REG_WORD: *(unsigned short*)ptr = val & 0xffff; break;
+			case REG_24: *(int*)ptr = val & 0xffffff; break;
+			case REG_32: *(int*)ptr = val & 0xffffffff; break;
+			default: res = 0; break;		// fail, unknown type
+		}
+	}
+	return res;
+}
+
 xRegister cpuGetReg(CPU* cpu, int id) {
 	xRegister reg;
 	reg.type = REG_NONE;
@@ -577,10 +596,12 @@ int cpu_get_reg(CPU* cpu, const char* name, bool* f) {
 bool cpu_set_reg(CPU* cpu, const char* name, int val) {
 	int i = 0;
 	int work = 1;
-	void* ptr;
+//	void* ptr;
 	xRegDsc* rt = cpu->core->rdsctab;
 	while (work && (rt[i].id != REG_NONE)) {
 		if (!strcmp(name, rt[i].name) && (rt[i].offset != 0) && !(rt[i].flag & REG_SEG)) {	// TODO: offset==0 -> setflag (no it's not: AF for example)
+			work = !reg_set_value(cpu, &rt[i], val);	// 0 if succes, 1 if error
+/*
 			ptr = ((void*)cpu) + rt[i].offset;
 			work = 0;
 			switch(rt[i].type) {
@@ -591,6 +612,7 @@ bool cpu_set_reg(CPU* cpu, const char* name, int val) {
 				case REG_32: *(int*)ptr = val & 0xffffffff; break;
 				default: work = 1; break;
 			}
+*/
 		}
 		i++;
 	}
@@ -603,20 +625,30 @@ void cpuSetRegs(CPU* cpu, xRegBunch bunch) {
 	}
 }
 
-int cpu_get_onmsk(CPU* cpu, int msk) {
+xRegDsc* cpu_find_onmsk(CPU* cpu, int msk) {
 	int i = 0;
-	int res = -1;
 	int work = 1;
 	xRegDsc* rt = cpu->core->rdsctab;
 	while (work && (rt[i].id != REG_NONE)) {
 		if (rt[i].flag & msk) {
-			res = reg_get_value(cpu, &rt[i]);
 			work = 0;
+		} else {
+			i++;
 		}
-		i++;
 	}
-	return res;
+	return work ? NULL : &rt[i];
+}
+
+int cpu_get_onmsk(CPU* cpu, int msk) {
+	xRegDsc* rd = cpu_find_onmsk(cpu, msk);
+	return rd ? reg_get_value(cpu, rd) : -1;
+}
+
+void cpu_set_onmsk(CPU* cpu, int msk, int val) {
+	xRegDsc* rd = cpu_find_onmsk(cpu, msk);
+	if (rd) reg_set_value(cpu, rd, val);
 }
 
 int cpu_get_sp(CPU* cpu) {return cpu_get_onmsk(cpu, REG_SP);}
 int cpu_get_pc(CPU* cpu) {return cpu_get_onmsk(cpu, REG_PC);}
+void cpu_set_pc(CPU* cpu, int val) {cpu_set_onmsk(cpu, REG_PC, val);}

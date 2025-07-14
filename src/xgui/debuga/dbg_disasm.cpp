@@ -986,11 +986,13 @@ void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 			i = getData(idx.row(), 0, Qt::UserRole).toInt() - comp->cpu->cs.base;
 			if ((i >= 0) && (i <= comp->cpu->cs.limit)) {
 				pc = i;
+				cpu_set_pc(comp->cpu, i);
+				updContent();
 				emit rqRefillAll();
 			}
 			break;
 		case XCUT_SAVE:
-			ev->ignore();
+			ev->ignore();		// send it to debuga
 			break;
 		case XCUT_SETBRK:
 			adr = getData(idx.row(), 0, Qt::UserRole).toInt();	// bus addr

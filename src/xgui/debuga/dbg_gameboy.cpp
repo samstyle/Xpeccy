@@ -119,7 +119,7 @@ QList<xGBPortDsc> gbvPortList = {{"LCDC",0xff40},{"STAT",0xff41},{"SCY",0xff42},
 
 xGBVideoModel::xGBVideoModel(QObject* p):xTableModel(p) {}
 int xGBVideoModel::rowCount(const QModelIndex &) const {return gbvPortList.size();}
-int xGBVideoModel::columnCount(const QModelIndex &) const {return 2;}
+int xGBVideoModel::columnCount(const QModelIndex &) const {return 3;}
 QVariant xGBVideoModel::data(const QModelIndex& idx, int role) const {
 	QVariant res;
 	Computer* comp = conf.prof.cur->zx;
@@ -129,7 +129,8 @@ QVariant xGBVideoModel::data(const QModelIndex& idx, int role) const {
 		case Qt::DisplayRole:
 			switch (col) {
 				case 0: res = QString("%0 (%1)").arg(gbvPortList[row].name).arg(gethexword(gbvPortList[row].port)); break;
-				case 1:	res = gethexbyte(comp->hw->mrd(comp, gbvPortList.at(row).port, 0)); break;
+				case 1:	res = gethexbyte(comp->hw->mrd(comp, gbvPortList.at(row).port, 0)); break;		// hex
+				case 2: res = getbinbyte(comp->hw->mrd(comp, gbvPortList.at(row).port, 0)); break;		// bin
 			}
 			break;
 	}

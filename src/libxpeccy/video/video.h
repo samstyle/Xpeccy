@@ -296,8 +296,8 @@ struct Video {
 		ePair(T1YOffset,t1yh,t1yl);
 		ePair(scrLine, loffh, loffl);
 		ePair(intLine, ilinh, ilinl);	// INT line
-		unsigned char cram[0x200];	// pal
-		unsigned char sfile[0x200];	// sprites
+		unsigned char cram[0x200];	// pal = colram?
+		unsigned char sfile[0x200];	// sprites = ram?
 		int dmabytes;
 	} tsconf;
 	struct {
@@ -335,7 +335,7 @@ struct Video {
 
 	unsigned char bios[MEM_64K];			// ega/vga bios
 	unsigned char ram[MEM_256K];			// video memory
-	unsigned char oam[MEM_256];			// nes oam memory
+	unsigned char oam[MEM_256];			// nes/gb oam memory
 	unsigned char reg[256];				// max 256 registers
 
 	ulaPlus* ula;

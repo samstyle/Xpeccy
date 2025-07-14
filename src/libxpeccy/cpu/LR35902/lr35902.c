@@ -30,7 +30,6 @@ void lr_reset(CPU* cpu) {
 	cpu->flgHALT = 0;
 	cpu->flgSTOP = 0;
 	cpu->flgIFFC = 0;
-//	cpu->flgNOINT = 0;
 	cpu->intrq = 0;
 	cpu->inten = 0;
 }
@@ -42,12 +41,12 @@ typedef struct {
 
 xLRInt lr_intab[] = {{1,0x40},{2,0x48},{4,0x50},{8,0x58},{16,0x60},{0,0}};
 
-void z80_push(CPU*, unsigned short);
-void z80_call(CPU*, unsigned short);
+void lr_call(CPU*, unsigned short);
 
+// TODO: how interrupt works
 int lr_int(CPU* cpu) {
-	cpu->intoc = cpu->intrq;
-	if (cpu->flgHALT) {				// free HALT anyway
+//	cpu->intoc = cpu->intrq;
+	if (cpu->flgHALT) {				// HALT exit if any
 		cpu->flgHALT = 0;
 		cpu->regPC++;
 		if (!cpu->flgIFF1) {
@@ -57,17 +56,16 @@ int lr_int(CPU* cpu) {
 	}
 	int res = 0;
 	int idx = 0;
-	cpu->intrq &= cpu->inten;
-	while (lr_intab[idx].mask) {
-		if (!res && (cpu->intrq & lr_intab[idx].mask)) {
-			if (cpu->flgIFF1) {
+	if ((cpu->intrq & cpu->inten) && cpu->flgIFF1) {			// have enabled interrupt (IME and IE)
+		while (lr_intab[idx].mask) {
+			if (!res && ((cpu->intrq & cpu->inten) & lr_intab[idx].mask)) {
 				cpu->flgIFF1 = 0;
-				cpu->intrq ^= lr_intab[idx].mask;	// reset highest priority INT request flag. if there is others, they suspended (not switched off)
-				z80_call(cpu, lr_intab[idx].inta);	// execute call	{RST(lr_intab[idx].inta);}
-				res = 15;				// TODO: to know how much T eats INT handle
+				cpu->intrq &= ~lr_intab[idx].mask;	// reset highest priority INT request flag. if there is others, they suspended (not switched off)
+				lr_call(cpu, lr_intab[idx].inta);	// execute call	{RST(lr_intab[idx].inta);}
+				res = 5;				// TODO: to know how much T eats INT handle (5M = 20T)
 			}
+			idx++;
 		}
-		idx++;
 	}
 	return res;
 }
@@ -100,7 +98,6 @@ int lr_exec(CPU* cpu) {
 		}
 		res = cpu->t;
 	}
-//	cpu->flgNOINT = 0;
 	return res;
 }
 
@@ -198,7 +195,9 @@ xRegDsc lrRegTab[] = {
 	{LR_REG_DE, "DE", REG_WORD, REG_RDMP, offsetof(CPU, regDE)},
 	{LR_REG_HL, "HL", REG_WORD, REG_RDMP, offsetof(CPU, regHL)},
 	{LR_REG_SP, "SP", REG_WORD, REG_RDMP | REG_SP, offsetof(CPU, regSP)},
-	{LR_FLG_IFF, "IFF", REG_BIT, 0, offsetof(CPU, flgIFF1)},
+	{LR_FLG_IFF, "IME", REG_BIT, 0, offsetof(CPU, flgIFF1)},
+	{LR_REG_IF, "IF", REG_WORD, REG_RO, offsetof(CPU, intrq)},
+	{LR_REG_IE, "IE", REG_WORD, REG_RO, offsetof(CPU, inten)},
 	{REG_EMPTY, "A", REG_BYTE, 0, offsetof(CPU, regA)},
 	{REG_EMPTY, "F", REG_32, 0, 0},
 	{REG_NONE, "", 0, 0, 0}
@@ -224,6 +223,9 @@ void lr_get_regs(CPU* cpu, xRegBunch* bunch) {
 			case LR_REG_BC: bunch->regs[idx].value = cpu->regBC; break;
 			case LR_REG_DE: bunch->regs[idx].value = cpu->regDE; break;
 			case LR_REG_HL: bunch->regs[idx].value = cpu->regHL; break;
+			case LR_REG_IF: bunch->regs[idx].value = cpu->intrq; break;
+			case LR_REG_IE: bunch->regs[idx].value = cpu->inten; break;
+			case LR_FLG_IFF: bunch->regs[idx].value = cpu->flgIFF1; break;
 		}
 		idx++;
 	}
@@ -246,6 +248,7 @@ void lr_set_regs(CPU* cpu, xRegBunch bunch) {
 			case LR_REG_BC: cpu->regBC = bunch.regs[idx].value; break;
 			case LR_REG_DE: cpu->regDE = bunch.regs[idx].value; break;
 			case LR_REG_HL: cpu->regHL = bunch.regs[idx].value; break;
+			case LR_FLG_IFF: cpu->flgIFF1 = bunch.regs[idx].value; break;
 			case REG_NONE: idx = 100; break;
 		}
 	}

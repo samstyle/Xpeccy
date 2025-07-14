@@ -164,9 +164,9 @@ struct CPU {
 	// common part
 	int type;			// cpu type id
 	int gen;			// cpu generation (for x86: 0-8086, 1-80186, 2-80286 etc)
-	int intrq;			// interrupts request. each bit for each INT type, 1 = requested
-	int inten;			// interrupts enabled mask
-	int intoc;			// occured interrupts (for lr35902)
+	unsigned short intrq;		// interrupts request. each bit for each INT type, 1 = requested
+	unsigned short inten;		// interrupts enabled mask
+	//unsigned short intoc;		// occured interrupts (for lr35902)
 	int intvec;			// interrupt vector (internal/external)
 	int errcod;			// error code (-1 if not present)
 	int adr;			// address bus for using from outside
@@ -260,6 +260,7 @@ xRegister cpuGetReg(CPU*, int);
 void cpuSetRegs(CPU*, xRegBunch);
 int cpu_get_reg(CPU*, const char*, bool*);
 int cpu_get_pc(CPU*);
+void cpu_set_pc(CPU*, int);
 int cpu_get_sp(CPU*);
 bool cpu_set_reg(CPU*, const char*, int);
 int cpu_get_flag(CPU*);

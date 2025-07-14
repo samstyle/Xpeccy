@@ -43,12 +43,12 @@ int gbIORd(Computer* comp, int port) {
 		case 0x40: break;
 		case 0x41:
 			res &= 0x78;
-			if (comp->vid->lcnt == comp->vid->intp.y) res |= 4;
+			if (comp->vid->ray.y == comp->vid->intp.y) res |= 4;
 			res |= comp->vid->gbcmode & 3;
 			break;
 		case 0x42: break;
 		case 0x43: break;
-		case 0x44: res = comp->vid->lcnt; break;
+		case 0x44: res = comp->vid->ray.y; break;
 		case 0x45: break;
 		case 0x47: break;
 		case 0x48: break;
@@ -57,7 +57,7 @@ int gbIORd(Computer* comp, int port) {
 		case 0x4b: break;
 // INTERRUPT
 		case 0x0f:
-			res = comp->cpu->intoc;
+			res = comp->cpu->intrq;
 			break;
 // GBC
 		case 0x4d:
@@ -169,8 +169,9 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 			comp->vid->spren  = (val & 0x02) ? 1 : 0;
 			if (comp->vid->gbmode) {
 				comp->vid->bgen = (val & 1);		// gbc in gb mode has different effect
+				comp->vid->bgprior = 0;
 			} else {
-				comp->vid->bgprior = (val & 1);	// change bg/win priority
+				comp->vid->bgprior = (val & 1);		// change bg/win priority (1 if spr under bg)
 			}
 			break;
 		case 0x41:						// lcd stat interrupts enabling
@@ -182,8 +183,8 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 		case 0x43:
 			comp->vid->sc.x = val;
 			break;
-		case 0x44:						// TODO: writing will reset the counter (?)
-			comp->vid->lcnt = 0;
+		case 0x44:						// TODO: writing will reset the counter (?) or it's read-only and is ray.y?
+			// comp->vid->lcnt = 0;
 			break;
 		case 0x45:
 			comp->vid->intp.y = val;
@@ -388,7 +389,7 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 			break;
 // INT
 		case 0x0f:
-			comp->cpu->intoc = val;
+			comp->cpu->intrq = val;
 			break;
 // GBC
 //	cpu speed
@@ -658,7 +659,7 @@ void gbcSync(Computer* comp, int ns) {
 	// sound
 	gbsSync(comp->gbsnd, ns);
 	// timer
-	if (comp->gb.timer.div.per) {
+	if (comp->gb.timer.div.per) {		// TODO: STOP resets counter, it doesn't incremented until STOP ends
 		comp->gb.timer.div.cnt -= ns;
 		if (comp->gb.timer.div.cnt < 0) {
 			comp->gb.timer.div.cnt += comp->gb.timer.div.per;
@@ -686,10 +687,11 @@ void gbcSync(Computer* comp, int ns) {
 		compSetTurbo(comp, comp->speed ? 2.0 : 1.0);
 	}
 	// interrupts
-	if (comp->vid->intrq) {
-		comp->vid->intrq = 0;
-		req |= 2;
-	} else if (comp->gb.timer.t.intrq) {
+//	if (comp->vid->intrq) {
+//		comp->vid->intrq = 0;
+//		req |= 2;
+//	} else
+	if (comp->gb.timer.t.intrq) {
 		comp->gb.timer.t.intrq = 0;
 		req |= 4;
 	} else if (0) {				// TODO: serial INT (?)
@@ -703,14 +705,15 @@ void gbcSync(Computer* comp, int ns) {
 
 void gbc_irq(Computer* comp, int t) {
 	switch (t) {
-		case IRQ_VID_VBLANK: comp->cpu->intrq |= 1; break;		// @ comp->vid->vbstrb
-		// case IRQ_VID_INT: comp->cpu->intrq |= 2; break;			// video int (hblank, vblank or selected line)
+		case IRQ_VID_VBLANK: comp->cpu->intrq |= 1; break;		// @ vblank
+		case IRQ_VID_INT: comp->cpu->intrq |= 2; break;			// video int (mode 0,1,2 or LY=LYC)
 		case IRQ_KBD: comp->cpu->intrq |= 16; break;
 	}
 }
 
+// called from comp_update_timings. comp->nsPerTick is no-turbo tick duration
 void gbc_init(Computer* comp) {
-	comp->fps = 50;
+	comp->fps = 60;
 	comp->gbsnd->wav.period = comp->nsPerTick << 5;				// 128KHz period for wave generator = cpu.frq / 32
 	comp->gb.timer.div.per = (comp->nsPerTick / comp->frqMul) * 256;	// 16KHz timer divider tick. this timer depends on turbo speed
 	vid_upd_timings(comp->vid, comp->nsPerTick);				// dot:4.2MHz, cpu:4.2MHz
@@ -842,45 +845,4 @@ void gbReset(Computer* comp) {
 	slot->ramen = 0;
 	slot->ramMask = 0x1ffff;
 	slot->ramod = 0;
-/*
-	if (slot->data) {
-		unsigned char type = slot->data[0x147];		// slot type
-		printf("Cartrige type %.2X\n",type);
-		switch (type) {
-			case 0x00:
-				sltSetMaper(slot, MAPER_GB, MAP_GB_NOMAP);	// rom only (up to 32K)
-				break;
-			case 0x01:
-			case 0x02:
-			case 0x03:
-				sltSetMaper(slot, MAPER_GB, MAP_GB_MBC1);		// mbc1
-				break;
-			case 0x05:
-			case 0x06:
-				sltSetMaper(slot, MAPER_GB, MAP_GB_MBC2);		// mbc2
-				break;
-			case 0x0f:
-			case 0x10:
-			case 0x11:
-			case 0x12:
-			case 0x13:
-				sltSetMaper(slot, MAPER_GB, MAP_GB_MBC3);		// mbc3
-				break;
-			case 0x19:
-			case 0x1a:
-			case 0x1b:
-			case 0x1c:
-			case 0x1d:
-			case 0x1e:
-				//slot->memMap[0] = 1;
-				//slot->memMap[1] = 0;
-				sltSetMaper(slot, MAPER_GB, MAP_GB_MBC5);		// mbc5
-				break;
-			default:
-				sltSetMaper(slot, MAPER_GB, MAP_UNKNOWN);
-				break;
-		}
-
-	}
-*/
 }
