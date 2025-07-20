@@ -28,13 +28,10 @@
 #define regPC regs[7].w
 #define regPCh regs[7].h
 #define regPCl regs[7].l
+#define regTPC regs[7].ih	// temp pc storage
 #define regWZ regs[8].w
 #define regWZh regs[8].h
 #define regWZl regs[8].l
-#define regTPC regs[8].ih	// temp pc storage
-//#define regI regs[9].l
-//#define regR regs[9].h
-//#define regR7 regs[9].ih
 
 enum {
 	LR_REG_PC = 1,

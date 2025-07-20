@@ -18,7 +18,7 @@ void gbcRenderBG(Video* vid) {
 		y = (vid->sc.y + vid->ray.y) & 0xff;
 		adr = vid->bgmapadr + ((y & 0xf8) << 2) + (vid->sc.x >> 3);	// 1st visible tile adr
 		x = (vid->sc.x & 0xf8) - vid->sc.x;				// coord of left tile pixel (may be -7..0)
-		for (tx = 0; tx < 32; tx++) {
+		for (tx = 0; tx < 21; tx++) {
 			tile = vid->ram[adr & 0x1fff];					// tile nr
 			if (vid->altile) tile += 0x80;
 			flag = vid->gbmode ? 0 : vid->ram[0x2000 | (adr & 0x1fff)];	// tile flags (GBC)
@@ -53,7 +53,7 @@ void gbcRenderWIN(Video* vid) {
 	if (vid->winen && !vid->winblock && (vid->ray.y >= vid->win.y)) {
 		adr = vid->winmapadr + ((vid->wline & 0xf8) << 2);
 		pos = vid->win.x;
-		for (tx = 0; (tx < 32) & (pos < 168); tx++) {
+		for (tx = 0; (tx < 21) && (pos < 159); tx++) {
 			tile = vid->ram[adr & 0x1fff];
 			if (vid->altile) tile += 0x80;
 			flag = vid->gbmode ? 0 : vid->ram[(adr & 0x1fff) | 0x2000];
@@ -234,7 +234,7 @@ void gbcvDraw(Video* vid) {
 	vid_dot_full(vid, col);
 #endif
 	// vidPutDot(&vid->ray, vid->pal, col);
-	if (!vid->vblank) {				// on visible screen
+	if (vid->lcdon && !vid->vblank) {		// on visible screen
 		if (vid->ray.x == 0) {			// visible line start : mode 2
 			vid->gbcmode = 2;
 			if ((vid->inten & 32) && !vid->intrq) {
@@ -246,7 +246,9 @@ void gbcvDraw(Video* vid) {
 			vid->xpos = 172 + 80 + (vid->sc.x & 7);
 			int tx = gbcCountSPR(vid);
 			if (tx > 0) vid->xpos += 12 * tx - 4;
+//			vid->xpos = 160;
 		} else if (vid->ray.x == vid->xpos) {
+			vid->intrq = 0;			// ??? do it even if lcdoff & vblank
 			gbcvHBL(vid);
 		}
 	}
@@ -256,7 +258,7 @@ void gbcvDraw(Video* vid) {
 // TODO: create bgmap here too
 
 void gbcvLine(Video* vid) {
-	vid->intrq = 0;
+	if (vid->vblank) vid->intrq = 0;
 #if GBRENDERVER==0
 	memset(vid->wtline, 0xff, 256);
 	memset(vid->wbline, 0xff, 256);
@@ -265,11 +267,12 @@ void gbcvLine(Video* vid) {
 #elif GBRENDERVER==1
 	memset(vid->line, 0x00, 256);
 #endif
-
-	if ((vid->ray.y == vid->intp.y) && (vid->inten & 64)) {		// ly = lyc (prior int)
+	if (vid->ray.y != 0) vid->lcnt++;	// ly=0 since line 153, don't increase until line 1
+	if ((vid->lcnt == vid->intp.y) && (vid->inten & 64) && !vid->intrq) {
 		vid->intrq = 1;
 		vid_irq(vid, IRQ_VID_INT);
 	}
+	if (vid->lcnt == vid->full.y - 1) vid->lcnt = 0;	// ly=0 @ last line
 
 	if (!vid->lcdon) return;
 	if (vid->ray.y >= vid->scrn.y) return;
@@ -303,6 +306,7 @@ void gbcvVBL(Video* vid) {
 
 void gbcvFram(Video* vid) {
 	vid->wline = 0;
+//	vid->lcnt = 0;
 }
 
 // game boy palette

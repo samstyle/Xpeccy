@@ -290,6 +290,10 @@ void comp_irq(int t, void* ptr) {
 				comp->hCount = comp->fCount;		// if not HALT-ed during frame, count all ticks
 			}
 			break;
+		case IRQ_CPU_SYNC:
+			vid_sync(comp->vid, (comp->cpu->t - res4) * comp->nsPerTick);
+			res4 = comp->cpu->t;
+			break;
 	}
 	if (comp->hw->irq) comp->hw->irq(comp, t);
 }

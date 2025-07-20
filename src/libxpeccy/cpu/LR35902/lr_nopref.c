@@ -4,19 +4,20 @@
 #include "lr_macro.h"
 
 // TODO: check timings - https://gb.insertcoin.dev/
+// TODO: recheck timings. 'back to color' 1st part VBL interrupt must be shorter than line duration to catch line #90
 
 extern opCode lrcbTab[256];
 
 // mrd/mwr eat 4T
 void lr_mwr(CPU* cpu, int a, int v) {
-	cpu->mwr(a, v, cpu->xptr);
 	cpu->t += 4;
+	cpu->mwr(a, v, cpu->xptr);
 }
 
 int lr_mrd(CPU* cpu, int a) {
-	int v = cpu->mrd(a, 0, cpu->xptr);
 	cpu->t += 4;
-	return v & 0xff;
+	cpu->xirq(IRQ_CPU_SYNC, cpu->xptr);
+	return cpu->mrd(a, 0, cpu->xptr) & 0xff;
 }
 
 unsigned short lr_pop(CPU* cpu) {
@@ -280,7 +281,7 @@ void lrnop18(CPU* cpu) {
 	cpu->tmp = lr_mrd(cpu, cpu->regPC++);
 	cpu->regPC += (signed char)cpu->tmp;
 	cpu->regWZ = cpu->regPC;
-	cpu->t += 5;
+	cpu->t += 4;
 }
 
 // 19	add hl,de	8
@@ -331,7 +332,7 @@ void lrnop20(CPU* cpu) {
 	if (!cpu->flgZ) {
 		cpu->regPC += (signed char)cpu->tmp;
 		cpu->regWZ = cpu->regPC;
-		cpu->t += 5;
+		cpu->t += 4;
 	}
 }
 
@@ -343,7 +344,7 @@ void lrnop21(CPU* cpu) {
 
 // 22	ldi (hl),a		4 4wr
 void lrnop22(CPU* cpu) {
-	lr_mwr(cpu, cpu->regHL++, cpu->regA); cpu->t++;
+	lr_mwr(cpu, cpu->regHL++, cpu->regA);
 }
 
 // 23	inc hl		8
@@ -394,7 +395,7 @@ void lrnop28(CPU* cpu) {
 	if (cpu->flgZ) {
 		cpu->regPC += (signed char)cpu->tmp;
 		cpu->regWZ = cpu->regPC;
-		cpu->t += 5;
+		cpu->t += 4;
 	}
 }
 
@@ -441,7 +442,7 @@ void lrnop30(CPU* cpu) {
 	if (!cpu->flgC) {
 		cpu->regPC += (signed char)cpu->tmp;
 		cpu->regWZ = cpu->regPC;
-		cpu->t += 5;
+		cpu->t += 4;
 	}
 }
 
@@ -453,7 +454,7 @@ void lrnop31(CPU* cpu) {
 
 // 32	ldd (hl),a		4 4wr
 void lrnop32(CPU* cpu) {
-	lr_mwr(cpu, cpu->regHL--, cpu->regA); cpu->t++;
+	lr_mwr(cpu, cpu->regHL--, cpu->regA);
 }
 
 // 33	inc sp		8
@@ -465,7 +466,6 @@ void lrnop33(CPU* cpu) {
 void lrnop34(CPU* cpu) {
 	cpu->tmpb = lr_mrd(cpu, cpu->regHL);
 	cpu->tmpb = lr_inc8(cpu, cpu->tmpb); //INCL(cpu->tmpb);
-	cpu->t++;
 	lr_mwr(cpu, cpu->regHL, cpu->tmpb);
 }
 
@@ -473,7 +473,6 @@ void lrnop34(CPU* cpu) {
 void lrnop35(CPU* cpu) {
 	cpu->tmpb = lr_mrd(cpu, cpu->regHL);
 	cpu->tmpb = lr_dec8(cpu, cpu->tmpb); //DECL(cpu->tmpb);
-	cpu->t++;
 	lr_mwr(cpu, cpu->regHL, cpu->tmpb);
 }
 
@@ -496,7 +495,7 @@ void lrnop38(CPU* cpu) {
 	if (cpu->flgC) {
 		cpu->regPC += (signed char)cpu->tmp;
 		cpu->regWZ = cpu->regPC;
-		cpu->t += 5;
+		cpu->t += 4;
 	}
 }
 
@@ -508,7 +507,6 @@ void lrnop39(CPU* cpu) {
 // 3A	ldd a,(hl)	4 4rd
 void lrnop3A(CPU* cpu) {
 	cpu->regA = lr_mrd(cpu, cpu->regHL--);
-	cpu->t++;
 }
 
 // 3B	dec sp		8
@@ -916,7 +914,6 @@ void lrnopE7(CPU* cpu) {
 // e8	add sp,e		8T = 4rd 4add
 int lr_addspe(CPU* cpu) {
 	cpu->ltw = lr_mrd(cpu, cpu->regPC++);
-	cpu->t++;
 	cpu->htw = (cpu->ltw & 0x80) ? 0xff : 0x00;
 	cpu->tmpi = cpu->regSP + cpu->tmpw;
 	cpu->tmp = (cpu->regSPl & 0x0f) + (cpu->ltw & 0x0f);
@@ -976,7 +973,6 @@ void lrnopF2(CPU* cpu) {
 	cpu->regWZl = cpu->regC;
 	cpu->regWZh = 0xff;
 	cpu->regA = lr_mrd(cpu, cpu->regWZ);
-	cpu->t++;
 }
 
 // TODO: interrupts disabled after next opcode (like ei)
@@ -1033,7 +1029,7 @@ void lrnopFE(CPU* cpu) {
 	lr_cmp8(cpu, cpu->tmpb);
 }
 
-// ff	rst38		4 4push 4push 4pc
+// ff	rst38		4 12call
 void lrnopFF(CPU* cpu) {
 	lr_call(cpu, 0x38);
 }

@@ -43,12 +43,12 @@ int gbIORd(Computer* comp, int port) {
 		case 0x40: break;
 		case 0x41:
 			res &= 0x78;
-			if (comp->vid->ray.y == comp->vid->intp.y) res |= 4;
+			if (comp->vid->lcnt == comp->vid->intp.y) res |= 4;
 			res |= comp->vid->gbcmode & 3;
 			break;
 		case 0x42: break;
 		case 0x43: break;
-		case 0x44: res = comp->vid->ray.y; break;
+		case 0x44: res = comp->vid->lcnt; break;
 		case 0x45: break;
 		case 0x47: break;
 		case 0x48: break;
@@ -680,7 +680,7 @@ void gbcSync(Computer* comp, int ns) {
 	}
 	// cpu speed change
 	if (comp->cpu->flgSTOP && comp->gb.speedrq) {
-		comp->cpu->flgSTOP = 0;
+		// comp->cpu->flgSTOP = 0;
 		comp->cpu->regPC++;
 		comp->gb.speedrq = 0;
 		comp->speed ^= 1;
@@ -767,6 +767,7 @@ static char gbMsgCh41[] = " CH4 on ";
 void gbc_keyp(Computer* comp, keyEntry ent) {
 	unsigned char mask = gbGetInputMask(ent.key);
 	if (mask) {
+		comp->cpu->flgSTOP = 0;
 		comp->gb.buttons &= ~mask;
 		//comp->gb.inpint = 1;			// input interrupt request
 		gbc_irq(comp, IRQ_KBD);

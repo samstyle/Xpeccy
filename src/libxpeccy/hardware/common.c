@@ -113,8 +113,8 @@ void zx_irq(Computer* comp, int t) {
 //			zx_cont_tick(comp, pg->num << 8);
 //			break;
 		case IRQ_CPU_SYNC:			// sync cpu-vid
-			vid_sync(comp->vid, (comp->cpu->t - res4) * comp->nsPerTick);
-			res4 = comp->cpu->t;
+//			vid_sync(comp->vid, (comp->cpu->t - res4) * comp->nsPerTick);
+//			res4 = comp->cpu->t;
 			// TODO: collect wait from devices
 			if (comp->contMem) {
 				xAdr xa = mem_get_xadr(comp->mem, comp->cpu->adr);

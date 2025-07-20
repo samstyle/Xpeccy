@@ -963,7 +963,7 @@ void vid_irq(Video* vid, int id) {
 
 // NOTE: CRT VBlank starts right after last line (no HBlank skip) and ends at start of line 0
 
-#define VBL_LINE 0
+#define VBL_LINE 1
 
 void vid_tick(Video* vid) {
 	if ((vid->ray.x & vid->brdstep) == 0)
@@ -991,25 +991,17 @@ void vid_tick(Video* vid) {
 		vid->hblank = 0;
 		vid->ray.x = 0;
 		vid->ray.y++;
-		vid->ray.yb++;
-		vid->ray.ys++;
-		vid->lcnt++;
-		if (vid->ray.y == vid->bord.y) {		// screen line
-			vid->ray.ys = 0;
-		}
-		if (vid->ray.y == vid->vend.y) {
-			vid->ray.yb = 0;
 #if VBL_LINE
+		if (vid->ray.y == vid->vend.y) {
 			vid->vblank = 1;
 			vid_irq(vid, IRQ_VID_VBLANK);
 			if (vid->cbVBlank) vid->cbVBlank(vid);
-#endif
 		}
+#endif
 		if (vid->ray.y >= vid->full.y) {		// new frame
 			vid_frame(vid);			// complete frame image
 			vid->idx = 0;
 			vid->ray.y = 0;
-			vid->lcnt = 0;
 			vid->vblank = 0;
 			vid->tsconf.scrLine = 0;
 			vid->fcnt++;
@@ -1024,76 +1016,27 @@ void vid_tick(Video* vid) {
 	}
 	if (vid->ray.x == vid->bord.x) {
 		vid->ray.xs = 0;
+		vid->ray.ys++;
+		if (vid->ray.y == vid->bord.y) vid->ray.ys = 0;
 	}
 	if (vid->ray.x == vid->vend.x) {			// hblank
 		if ((vid->ray.y >= vid->lcut.y) && (vid->ray.y < vid->rcut.y)) vid_line(vid);	// complete line image
 		vid->ray.xb = 0;
+		vid->ray.yb++;
+		if (vid->ray.y == vid->vend.y - 1) {		// last screen line
+			vid->ray.yb = 0;
 #if !VBL_LINE
-		if (vid->ray.y == vid->vend.y - 1) {	// it was last line, vblank
 			vid->vblank = 1;
 			vid_irq(vid, IRQ_VID_VBLANK);
 			if (vid->cbVBlank) vid->cbVBlank(vid);
-		}
 #endif
+		}
 		vid->hblank = 1;
 		vid_irq(vid, IRQ_VID_HBLANK);
 		if (vid->cbHBlank) vid->cbHBlank(vid);
 	}
 	vid->hvis = (vid->ray.x >= vid->lcut.x) && (vid->ray.x < vid->rcut.x);
 	vid->hbrd = (vid->ray.x < vid->bord.x) || (vid->ray.x >= vid->send.x);
-/*
-		vid->hblank = 1;
-		vid->ray.xb = 0;
-		vid->ray.y++;
-		vid->ray.yb++;
-		if (vid->ray.y >= vid->full.y) {		// new frame
-			vid_frame(vid);
-			vid->lcnt = 0;
-			vid->vblank = 0;
-			vid->ray.y = 0;
-			vid->tsconf.scrLine = 0;
-			vid->fcnt++;
-			vid->flash = (vid->fcnt & 0x10) ? 1 : 0;
-			if (vid->cbFrame) vid->cbFrame(vid);
-			vid->tail = 0;
-			if (vid->debug)
-				vid_dark_all();
-		}
-		if (vid->ray.y == vid->vend.y) {		// vblank start
-			vid->xirq(IRQ_VID_VBLANK, vid->xptr);
-			vid->vblank = 1;
-			vid->ray.yb = 0;
-			vid->idx = 0;
-		}
-		vid->vvis = (vid->ray.y >= vid->lcut.y) && (vid->ray.y < vid->rcut.y);
-//		if (vid->ray.y == vid->lcut.y) {	// window visibility
-//			vid->vvis = 1;
-//		} else if (vid->ray.y == vid->rcut.y) {
-//			vid->vvis = 0;
-//		}
-		vid->vbrd = (vid->ray.y < vid->bord.y) || (vid->ray.y >= vid->send.y);
-//		if (vid->ray.y == vid->send.y) {	// screen end V
-//			vid->vbrd = 1;
-//		}
-		if (vid->ray.y == vid->bord.y) {	// screen start V
-//			vid->vbrd = 0;
-			vid->ray.ys = -1;		// will be 0 at start of next line, but during HBlank is -1
-		}
-		if (vid->cbHBlank) vid->cbHBlank(vid);
-	}
-	vid->hvis = (vid->ray.x >= vid->lcut.x) && (vid->ray.x < vid->rcut.x);
-//	if (vid->ray.x == vid->lcut.x) {		// window visibility
-//		vid->hvis = 1;
-//	} else if (vid->ray.x == vid->rcut.x) {
-//		vid->hvis = 0;
-//	}
-	vid->hbrd = (vid->ray.x < vid->bord.x) || (vid->ray.x >= vid->send.x);
-//	if (vid->ray.x == vid->send.x) {		// screen end H
-//		vid->hbrd = 1;
-//	} else if (vid->ray.x == vid->bord.x) {		// screen start H
-//		vid->hbrd = 0;
-//	}
-*/
 	// generate int
 	if (vid->intFRAME) {
 		vid->intFRAME--;

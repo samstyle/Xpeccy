@@ -71,19 +71,19 @@ int lr_int(CPU* cpu) {
 }
 
 int lr_exec(CPU* cpu) {
-	int res = 0;
 	if (cpu->flgLOCK) {
-		res = 1;
+		cpu->t = 4;
 	} else {
+		cpu->t = 0;
 		if (cpu->intrq) {
-			res = lr_int(cpu);
+			cpu->t = lr_int(cpu);
 		}
-		if (!res) {
+		if (!cpu->t) {
 			if (cpu->flgIFFC) {			// if last instruction was ei/di, change current IFF
 				cpu->flgIFFC = 0;
 				cpu->flgIFF1 = cpu->flgIFFN;
 			}
-			cpu->t = 0;
+//			cpu->t = 0;
 			cpu->opTab = lrTab;
 			do {
 				cpu->tmp = cpu->mrd(cpu->regPC++, 1, cpu->xptr);
@@ -96,9 +96,8 @@ int lr_exec(CPU* cpu) {
 				cpu->regPC = cpu->regTPC;
 			}
 		}
-		res = cpu->t;
 	}
-	return res;
+	return cpu->t;
 }
 
 // disasm
