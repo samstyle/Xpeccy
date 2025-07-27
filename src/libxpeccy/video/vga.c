@@ -63,7 +63,7 @@ void vga_upd_mode(Video* vid) {
 	int ry = vga_scr_height[(vid->reg[EGA_3C2] >> 6) & 3];
 	vid->linedbl = (vid->vga.cga || (ry == 200));
 	if (vid->linedbl) ry <<= 1;
-	vid->cbDot = (SEQ_REG(1) & 8) ? cga_lores_dot : cga_t40_dot;
+	vid->cb->dot = (SEQ_REG(1) & 8) ? cga_lores_dot : cga_t40_dot;
 	vid_set_resolution(vid, rx, ry);
 }
 

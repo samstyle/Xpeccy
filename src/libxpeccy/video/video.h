@@ -19,6 +19,8 @@ typedef struct Video Video;
 #include "gbcvideo.h"
 #include "nesppu.h"
 
+#define vid_irq(_v, _n) _v->xirq(_n, _v->xptr)
+
 // screen mode
 enum {
 	VID_UNKNOWN = -1,
@@ -102,13 +104,23 @@ void vid_dot_half(Video*, unsigned char);
 typedef void(*cbvid)(Video*);
 typedef void(*vcbptr)(void*);
 
+typedef struct {
+	int id;
+	cbvid init;
+	cbvid dot;		// each dot
+	cbvid hbl;		// hblank start
+	cbvid line;		// visible line start
+	cbvid vbl;		// @vblank (right after last line)
+	cbvid frm;		// @1st visible line (called before cbLine)
+} xVideoMode;
+
 struct Video {
 	unsigned nogfx:1;	// tsl : nogfx flag
 	unsigned newFrame:1;	// set @ start of VBlank
 	int intFRAME;		// aka INT
 	unsigned intLINE:1;	// for TSConf
 	unsigned intDMA:1;	// for TSConf
-	unsigned noScreen:1;
+//	unsigned noScreen:1;
 	unsigned debug:1;
 	unsigned upd:1;
 	unsigned tail:1;
@@ -153,11 +165,13 @@ struct Video {
 	uint32_t bpal[256];	// base palette (loaded preset)
 
 	int vmode;
-	cbvid cbDot;		// call every dot
-	cbvid cbHBlank;		// call every line
-	cbvid cbVBlank;
-	cbvid cbLine;		// @ hblank end
-	cbvid cbFrame;		// call every frame
+	xVideoMode* cb;
+//	cbvid cbDot;		// call every dot
+//	cbvid cbHBlank;		// call every line
+//	cbvid cbVBlank;
+//	cbvid cbLine;		// @ hblank end
+//	cbvid cbFrame;		// call every frame
+	cbvid cbCount;		// call when busy count down to 0
 
 	cbxrd mrd;		// external memory reading
 	cbxwr mwr;		// external memory writing
@@ -210,16 +224,16 @@ struct Video {
 	unsigned winen:1;	// sw enable win
 	unsigned winblock:1;	// hw block win
 	unsigned gbmode:1;	// gameboy capatible
-	unsigned char gbcmode;
+	unsigned char gbcmode;	// lcd mode (0,1,2,3)
 	unsigned short winmapadr;
 	unsigned short tilesadr;
 	unsigned short bgmapadr;
 	unsigned char wline;
 	int xpos;
-	unsigned char wtline[256];	// win layer with priority
-	unsigned char wbline[256];	// win layer without priority
-	unsigned char stline[256];	// spr layer with priority
-	unsigned char sbline[256];	// spr layer without priority
+//	unsigned char wtline[256];	// win layer with priority
+//	unsigned char wbline[256];	// win layer without priority
+//	unsigned char stline[256];	// spr layer with priority
+//	unsigned char sbline[256];	// spr layer without priority
 	vCoord win;			// win layout position
 	// v9938
 	unsigned high:1;
@@ -347,7 +361,7 @@ void vidDestroy(Video*);
 
 void vid_reset(Video*);
 void vid_sync(Video*,int);
-void vid_irq(Video*, int);
+// void vid_irq(Video*, int);
 void vid_set_mode(Video*,int);
 void vid_reset_ray(Video*);
 void vid_set_ray(Video*, int);

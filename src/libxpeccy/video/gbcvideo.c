@@ -8,14 +8,18 @@
 
 // listen here, you little sh*t... why don't work properly?
 
-#define GBRENDERVER 1
+xColor iniCol[4] = {
+	{0xE1, 0xF7, 0xD1},
+	{0x87, 0xC3, 0x72},
+	{0x33, 0x70, 0x53},
+	{0x09, 0x20, 0x21}
+};
 
-#if GBRENDERVER > 0
 void gbcRenderBG(Video* vid) {
 	int x,y,ry,adr,tadr,data,tx,bi;
 	unsigned char tile,flag,col;
 	if (vid->bgen && !vid->bgblock) {
-		y = (vid->sc.y + vid->ray.y) & 0xff;
+		y = (vid->sc.y + vid->lcnt) & 0xff;
 		adr = vid->bgmapadr + ((y & 0xf8) << 2) + (vid->sc.x >> 3);	// 1st visible tile adr
 		x = (vid->sc.x & 0xf8) - vid->sc.x;				// coord of left tile pixel (may be -7..0)
 		for (tx = 0; tx < 21; tx++) {
@@ -45,15 +49,14 @@ void gbcRenderBG(Video* vid) {
 		}
 	}
 }
-#endif
 
 void gbcRenderWIN(Video* vid) {
 	int adr,tadr,y,pos,tx,bi,data;
 	unsigned char tile,flag,col;
-	if (vid->winen && !vid->winblock && (vid->ray.y >= vid->win.y)) {
+	if (vid->winen && !vid->winblock && (vid->lcnt >= vid->win.y)) {
 		adr = vid->winmapadr + ((vid->wline & 0xf8) << 2);
 		pos = vid->win.x;
-		for (tx = 0; (tx < 21) && (pos < 159); tx++) {
+		for (tx = 0; (tx < 21) && (pos < 161); tx++) {
 			tile = vid->ram[adr & 0x1fff];
 			if (vid->altile) tile += 0x80;
 			flag = vid->gbmode ? 0 : vid->ram[(adr & 0x1fff) | 0x2000];
@@ -73,17 +76,9 @@ void gbcRenderWIN(Video* vid) {
 					data <<= 1;
 				}
 				col |= (flag & 7) << 2;
-#if GBRENDERVER==0
-				if (flag & 0x80) {
-					vid->wtline[pos & 0xff] = col;
-				} else {
-					vid->wbline[pos & 0xff] = col;
-				}
-#else
 				if ((!vid->gbmode && vid->bgprior) || (flag & 0x80)) col |= 0x80;
 				if (vid->line[pos & 0xff] & 0x80) col |= 0x80;
 				vid->line[pos & 0xff] = col;
-#endif
 				pos++;
 			}
 		}
@@ -104,7 +99,7 @@ void gbcRenderSPR(Video* vid) {
 			flag = vid->oam[adr++];
 			if (vid->bigspr)
 				tile &= 0xfe;
-			pos = (vid->ray.y - y) & 0xff;				// line inside sprite
+			pos = (vid->lcnt - y) & 0xff;				// line inside sprite
 			if (pos < (vid->bigspr ? 16 : 8)) {			// if line visible
 				if (!vid->sprblock) {				// need to count anyway
 					if (vid->gbmode) {				// start of palete color idx (0x40+ for sprites)
@@ -133,17 +128,6 @@ void gbcRenderSPR(Video* vid) {
 						}
 						if (col) {							// not-transparent
 							col += pal;						// shift to sprite palete
-#if GBRENDERVER==0
-							if (flag & 0x80) {					// behind bg/win
-								if (vid->sbline[0xff] == 0) {
-									vid->sbline[pos & 0xff] = col;
-								}
-							} else {
-								if (vid->stline[pos & 0xff] == 0) {
-									vid->stline[pos & 0xff] = col;
-								}
-							}
-#else
 							col |= 0x80;		// to prevent next sprites overlap
 							if ((!vid->gbmode && vid->bgprior) || (vid->line[pos & 0xff] & 0x80) || (flag & 0x80)) {			// only above BG/WIN color 00
 								if (!(vid->line[pos & 0xff] & 3)) {
@@ -152,7 +136,6 @@ void gbcRenderSPR(Video* vid) {
 							} else {
 								vid->line[pos & 0xff] = col;
 							}
-#endif
 						}
 						pos++;
 					}
@@ -161,6 +144,16 @@ void gbcRenderSPR(Video* vid) {
 			}
 		}
 	}
+}
+
+void gbcRenderLine(Video* vid) {
+	memset(vid->line, 0x00, 256);
+// BG
+	gbcRenderBG(vid);
+// WIN
+	gbcRenderWIN(vid);
+// OAM (sprites)
+	gbcRenderSPR(vid);
 }
 
 int gbcCountSPR(Video* vid) {
@@ -179,113 +172,81 @@ int gbcCountSPR(Video* vid) {
 	return tx;
 }
 
-void gbcvDraw(Video* vid) {
-	unsigned char col = 0xff;		// color FF = white
+// delay (dots) for a number of sprites in a row
+static int sprDelay[11] = {0, 8, 20, 32, 44, 52, 64, 76, 88, 96, 108};
 
-	if (vid->lcdon) {
-#if GBRENDERVER==0
-		int x,y;
-		unsigned char tile;
-		unsigned char flag;
-		int adr, data;
-		// get bg color & flag
-		x = (vid->sc.x + vid->ray.x) & 0xff;
-		y = (vid->sc.y + vid->ray.y) & 0xff;
-		adr = vid->bgmapadr + ((y & 0xf8) << 2) + (x >> 3);		// tile adr
-		tile = vid->ram[adr & 0x1fff];					// tile nr
-		flag = vid->gbmode ? 0 : vid->ram[0x2000 | (adr & 0x1fff)];	// tile flags (GBC)
-		if (flag & 0x20) x ^= 7;		// HFlip
-		if (flag & 0x40) y ^= 7;		// VFlip
-		if (vid->altile) tile += 0x80;					// tile nr for alt.tileset
-		adr = vid->tilesadr + (tile << 4) + ((y & 7) << 1);		// tile data adr
-		adr &= 0x1fff;
-		if (flag & 8)
-			adr |= 0x2000;
-		data = vid->ram[adr & 0x3fff] & 0xff;
-		adr++;
-		data |= vid->ram[adr & 0x3fff] << 8;
-		data <<= (x & 7);
-
-		int bgen = vid->bgen && !vid->bgblock;
-		int winen = vid->winen && !vid->winblock && (vid->ray.y >= vid->win.y) && (vid->ray.x >= vid->win.x);
-		int spen = vid->spren && !vid->sprblock;
-
-		if (winen && vid->bgprior && (vid->wtline[vid->ray.x] != 0xff)) {	// WIN + priority
-			col = vid->wtline[vid->ray.x];
-		} else if (bgen && vid->bgprior && (flag & 0x80)) {			// BG + priority
-			col = ((data & 0x80) ? 1 : 0) | ((data & 0x8000) ? 2 : 0);
-			col |= (flag & 7) << 2;
-		} else if (spen && vid->stline[vid->ray.x]) {				// top SPR
-			col = vid->stline[vid->ray.x];
-		} else if (winen) {							// WIN
-			col = vid->wbline[vid->ray.x];
-		} else if (bgen) {							// BG
-			col = ((data & 0x80) ? 1 : 0) | ((data & 0x8000) ? 2 : 0);
-			col |= (flag & 7) << 2;
-		}
-		if (!col && vid->sbline[vid->ray.x]) {					// bottom sprites
-			col = vid->sbline[vid->ray.x];
-		}
-#elif GBRENDERVER==1
-		col = vid->line[vid->ray.x & 0xff] & 0x7f;
-#endif
+void gbcvMode0(Video* vid) {
+	vid->intrq = 0;
+	vid->gbcmode = 0;
+	if ((vid->inten & 8) && !vid->intrq) {
+		vid->intrq = 1;
+		vid_irq(vid, IRQ_VID_INT);
 	}
-#if GBRENDERER < 2
-	vid_dot_full(vid, col);
-#endif
-	// vidPutDot(&vid->ray, vid->pal, col);
-	if (vid->lcdon && !vid->vblank) {		// on visible screen
-		if (vid->ray.x == 0) {			// visible line start : mode 2
-			vid->gbcmode = 2;
-			if ((vid->inten & 32) && !vid->intrq) {
-				vid->intrq = 1;
-				vid_irq(vid, IRQ_VID_INT);
-			}
-		} else if (vid->ray.x == 80) {		// end of oem/vmem access : mode 3
-			vid->gbcmode = 3;
-			vid->xpos = 172 + 80 + (vid->sc.x & 7);
-			int tx = gbcCountSPR(vid);
-			if (tx > 0) vid->xpos += 12 * tx - 4;
-//			vid->xpos = 160;
-		} else if (vid->ray.x == vid->xpos) {
-			vid->intrq = 0;			// ??? do it even if lcdoff & vblank
-			gbcvHBL(vid);
+}
+
+void gbcvMode3(Video* vid) {
+	vid->gbcmode = 3;
+	vid->busy = 172 + (vid->sc.x & 7);
+	int n = gbcCountSPR(vid);
+	vid->busy += sprDelay[n];
+	vid->cbCount = gbcvMode0;
+}
+
+void gbcvMode2(Video* vid) {
+	if (vid->vblank) {
+		vid->intrq = 0;
+		vid->gbcmode = 1;
+	} else {
+		vid->gbcmode = 2;
+		vid->busy = 80;
+		vid->cbCount = gbcvMode3;
+		if ((vid->inten & 32) && !vid->intrq) {
+			vid->intrq = 1;
+			vid_irq(vid, IRQ_VID_INT);
 		}
 	}
 }
 
-// line begin : create full line image in the buffer
-// TODO: create bgmap here too
-
-void gbcvLine(Video* vid) {
-	if (vid->vblank) vid->intrq = 0;
-#if GBRENDERVER==0
-	memset(vid->wtline, 0xff, 256);
-	memset(vid->wbline, 0xff, 256);
-	memset(vid->stline, 0x00, 256);
-	memset(vid->sbline, 0x00, 256);
-#elif GBRENDERVER==1
-	memset(vid->line, 0x00, 256);
-#endif
-	if (vid->ray.y != 0) vid->lcnt++;	// ly=0 since line 153, don't increase until line 1
+// comparer ly-lyc
+void gbcvLYC(Video* vid) {
 	if ((vid->lcnt == vid->intp.y) && (vid->inten & 64) && !vid->intrq) {
 		vid->intrq = 1;
 		vid_irq(vid, IRQ_VID_INT);
 	}
-	if (vid->lcnt == vid->full.y - 1) vid->lcnt = 0;	// ly=0 @ last line
-
-	if (!vid->lcdon) return;
-	if (vid->ray.y >= vid->scrn.y) return;
-// BG
-#if GBRENDERVER==1
-	gbcRenderBG(vid);
-#endif
-// WIN
-	gbcRenderWIN(vid);
-// OAM (sprites)
-	gbcRenderSPR(vid);
 }
 
+void gbcvDraw(Video* vid) {
+	unsigned char col;
+	if (vid->lcdon) {
+		col = vid->line[vid->ray.x & 0xff] & 0x7f;
+	} else {
+		col = 0x03;		// color = white
+	}
+	vid_dot_full(vid, col);
+}
+
+// line begin : create full line image in the buffer
+// GB: compare LYC0 @ line 153, don't compare @ line 0, (LY=0 @ line 153 ? )
+// GBC wants line153 as line153 (without ly=0) ?
+
+void gbcvLine(Video* vid) {
+	if (vid->ray.y != 0) vid->lcnt++;			// ly=0 since line 153, don't increase until line 1
+	if (vid->gbmode) {
+		if (vid->ray.y == vid->full.y - 1) vid->lcnt = 0;
+		gbcvLYC(vid);						// @line153 compare LYC with LY=0
+	} else {
+		gbcvLYC(vid);
+		if (vid->ray.y == vid->full.y - 1) vid->lcnt = 0;
+	}
+	gbcvMode2(vid);						// start mode 2, or mode 1 if vblank
+
+	if (!vid->lcdon) return;
+	if (vid->vblank) return;		// vblank
+
+	gbcRenderLine(vid);
+}
+
+/*
 void gbcvHBL(Video* vid) {
 	if (!vid->vblank) {
 		vid->gbcmode = 0;		// hblank start: mode 0 (not during vblank)
@@ -295,7 +256,7 @@ void gbcvHBL(Video* vid) {
 		}
 	}
 }
-
+*/
 void gbcvVBL(Video* vid) {
 	vid->gbcmode = 1;		// vblank start : mode 1
 	if ((vid->inten & 16) && !vid->intrq) {		// int @ vblank
@@ -306,17 +267,87 @@ void gbcvVBL(Video* vid) {
 
 void gbcvFram(Video* vid) {
 	vid->wline = 0;
-//	vid->lcnt = 0;
+	vid->lcnt = 0;
+}
+
+// registers r/w
+
+void setGrayScale(Video* vid, int base, unsigned char val) {
+	vid_set_col(vid, base, iniCol[val & 3]);
+	vid_set_col(vid, base + 1, iniCol[(val >> 2) & 3]);
+	vid_set_col(vid, base + 2, iniCol[(val >> 4) & 3]);
+	vid_set_col(vid, base + 3, iniCol[(val >> 6) & 3]);
+}
+
+void gbcv_wr(Video* vid, int port, int val) {
+	int sadr,dadr;
+	port &= 0x0f;
+	port |= 0x40;
+	vid->reg[port] = val & 0xff;
+	switch(port) {
+		case 0x40:
+			vid->lcdon = (val & 0x80) ? 1 : 0;
+			vid->winmapadr = (val & 0x40) ? 0x9c00 : 0x9800;
+			vid->winen = (val & 0x20) ? 1 : 0;
+			vid->altile = (val & 0x10) ? 0 : 1;			// signed tile num
+			vid->tilesadr = (val & 0x10) ? 0x8000 : 0x8800;
+			vid->bgmapadr = (val & 0x08) ? 0x9c00 : 0x9800;
+			vid->bigspr = (val & 0x04) ? 1 : 0;
+			vid->spren  = (val & 0x02) ? 1 : 0;
+			if (vid->gbmode) {
+				vid->bgen = (val & 1);		// gbc in gb mode has different effect
+				vid->bgprior = 0;
+			} else {
+				vid->bgprior = (val & 1);		// change bg/win priority (1 if spr under bg)
+			}
+			break;
+		case 0x41:						// lcd stat interrupts enabling
+			vid->inten = val;
+			break;
+		case 0x42:
+			vid->sc.y = val;
+			break;
+		case 0x43:
+			vid->sc.x = val;
+			break;
+		case 0x44:						// TODO: writing will reset the counter (?) or it's read-only and is ray.y?
+			// vid->lcnt = 0;
+			break;
+		case 0x45:
+			vid->intp.y = val;
+			//gbcvLYC(vid);					// and compare immediately (?)
+			break;
+		case 0x46:						// TODO: block CPU memory access for 160 microsec (except ff80..fffe)
+			sadr = (val << 8) & 0xffff;
+			dadr = 0;
+			while (dadr < 0xa0) {
+				vid->oam[dadr] = vid->mrd(sadr, vid->xptr);	// = memRd(comp->mem, sadr) & 0xff;
+				sadr++;
+				dadr++;
+			}
+			break;
+		case 0x47:						// palete for bg/win
+			if (vid->gbmode)
+				setGrayScale(vid, 0, val);
+			break;
+		case 0x48:
+			if (vid->gbmode)
+				setGrayScale(vid, 0x40, val);	// object pal 0
+			break;
+		case 0x49:
+			if (vid->gbmode)
+				setGrayScale(vid, 0x44, val);	// object pal 1
+			break;
+		case 0x4a:
+			vid->win.y = val;
+			break;
+		case 0x4b:
+			vid->win.x = val - 7;
+			break;
+	}
 }
 
 // game boy palette
-
-xColor iniCol[4] = {
-	{0xE1, 0xF7, 0xD1},
-	{0x87, 0xC3, 0x72},
-	{0x33, 0x70, 0x53},
-	{0x09, 0x20, 0x21}
-};
 
 void gbcvReset(Video* vid) {
 	vid->sc.x = 0;

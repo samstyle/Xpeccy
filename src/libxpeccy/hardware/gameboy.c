@@ -82,14 +82,6 @@ int gbIORd(Computer* comp, int port) {
 	return res;
 }
 
-extern xColor iniCol[4];
-void setGrayScale(Video* vid, int base, unsigned char val) {
-	vid_set_col(vid, base, iniCol[val & 3]);
-	vid_set_col(vid, base + 1, iniCol[(val >> 2) & 3]);
-	vid_set_col(vid, base + 2, iniCol[(val >> 4) & 3]);
-	vid_set_col(vid, base + 3, iniCol[(val >> 6) & 3]);
-}
-
 void gbSetTone(gbsChan* gbch, int frq, int form) {
 	// 1 tick = cpu.freq (Hz) / 32		!!!
 	// 1e9 ns in one sec
@@ -158,6 +150,22 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 		// b5: 0:select buttons
 		case 0x00: break;
 // VIDEO
+#if 1
+		case 0x40:
+		case 0x41:
+		case 0x42:
+		case 0x43:
+		case 0x44:
+		case 0x45:
+		case 0x46:
+		case 0x47:
+		case 0x48:
+		case 0x49:
+		case 0x4a:
+		case 0x4b:
+			gbcv_wr(comp->vid, port, val);
+			break;
+#else
 		case 0x40:
 			comp->vid->lcdon = (val & 0x80) ? 1 : 0;
 			comp->vid->winmapadr = (val & 0x40) ? 0x9c00 : 0x9800;
@@ -216,6 +224,7 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 		case 0x4b:
 			comp->vid->win.x = val - 7;
 			break;
+#endif
 // SOUND
 // 1e9/frq(Hz) = full period ns
 // 5e8/frq(Hz) = half period ns
@@ -246,7 +255,7 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 		case 0x14:
 			frq = ((val << 8) | (comp->gb.iomap[0x13])) & 0x07ff;
 			gbSetTone(ch1, frq, comp->gb.iomap[0x11]);
-			ch1->cont = (val & 0x40) ? 0 : 1;
+			ch1->cont = !(val & 0x40);
 			if (val & 0x80) {
 				ch1->step = 0;
 				ch1->env.vol = (comp->gb.iomap[0x12] >> 4) & 0x0f;
@@ -274,7 +283,7 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 		case 0x19:
 			frq = ((val << 8) | comp->gb.iomap[0x18]) & 0x07ff;
 			gbSetTone(ch2, frq, comp->gb.iomap[0x16]);
-			ch2->cont = (val & 0x40) ? 0 : 1;
+			ch2->cont = !(val & 0x40);
 			if (val & 0x80) {
 				ch2->step = 0;
 				ch2->env.vol = (comp->gb.iomap[0x17] >> 4) & 0x0f;
@@ -286,7 +295,7 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 			break;
 		// chan 3 : wave
 		case 0x1a:
-			comp->gbsnd->ch3on = (val & 0x80) ? 1 : 0;
+			comp->gbsnd->ch3on = !!(val & 0x80);
 			break;
 		case 0x1b:
 			ch3->dur = 256 - val;		// 256-x @ 256Hz
@@ -305,7 +314,7 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 			per = (2048 - frq) >> 4;
 			ch3->perH = per;
 			ch3->perL = per;
-			ch3->cont = (val & 0x40) ? 0 : 1;
+			ch3->cont = !(val & 0x40);
 			if (val & 0x80) {
 				ch3->step = 0;
 				ch3->cnt = ch3->perH;
@@ -336,7 +345,7 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 			ch4->perL = per >> 1;
 			break;
 		case 0x23:
-			ch4->cont = (val & 0x40) ? 0 : 1;
+			ch4->cont = !(val & 0x40);
 			if (val & 0x80) {
 				ch4->step = 0;
 				ch4->env.vol = (comp->gb.iomap[0x21] >> 4) & 0x0f;
@@ -350,17 +359,17 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 		case 0x24:		// Vin sound channel control (not used?)
 			break;
 		case 0x25:		// send chan sound to SO1/SO2. b0..3 : ch1..4 -> SO1; b4..7 : ch1..4 -> SO2
-			ch1->so1 = (val & 0x01) ? 1 : 0;
-			ch2->so1 = (val & 0x02) ? 1 : 0;
-			ch3->so1 = (val & 0x04) ? 1 : 0;
-			ch4->so1 = (val & 0x08) ? 1 : 0;
-			ch1->so2 = (val & 0x10) ? 1 : 0;
-			ch2->so2 = (val & 0x20) ? 1 : 0;
-			ch3->so2 = (val & 0x40) ? 1 : 0;
-			ch4->so2 = (val & 0x80) ? 1 : 0;
+			ch1->so1 = !!(val & 0x01);
+			ch2->so1 = !!(val & 0x02);
+			ch3->so1 = !!(val & 0x04);
+			ch4->so1 = !!(val & 0x08);
+			ch1->so2 = !!(val & 0x10);
+			ch2->so2 = !!(val & 0x20);
+			ch3->so2 = !!(val & 0x40);
+			ch4->so2 = !!(val & 0x80);
 			break;
 		case 0x26:		// on/off channels
-			comp->gbsnd->on = (val & 0x80) ? 1 : 0;
+			comp->gbsnd->on = !!(val & 0x80);
 			break;
 // TIMER
 		case 0x04:				// divider. inc @ 16384Hz
@@ -486,6 +495,10 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 			}
 			break;
 	}
+}
+
+int gbc_vid_mrd(int adr, void* ptr) {
+	return memRd(((Computer*)ptr)->mem, adr);
 }
 
 // 0000..7fff : slot
@@ -716,6 +729,7 @@ void gbc_init(Computer* comp) {
 	comp->fps = 60;
 	comp->gbsnd->wav.period = comp->nsPerTick << 5;				// 128KHz period for wave generator = cpu.frq / 32
 	comp->gb.timer.div.per = (comp->nsPerTick / comp->frqMul) * 256;	// 16KHz timer divider tick. this timer depends on turbo speed
+	comp->vid->mrd = gbc_vid_mrd;
 	vid_upd_timings(comp->vid, comp->nsPerTick);				// dot:4.2MHz, cpu:4.2MHz
 }
 

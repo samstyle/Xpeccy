@@ -1075,12 +1075,14 @@ void xDisasmTable::mousePressEvent(QMouseEvent* ev) {
 			} else if (ev->modifiers() & Qt::ControlModifier) {
 				blockStart = adr;
 				if (blockEnd < blockStart) blockEnd = blockStart;
+				updContent();
 				emit rqRefill();
 				ev->ignore();
 			} else if (ev->modifiers() & Qt::ShiftModifier) {
 				blockEnd = adr;
 				if (blockStart > blockEnd) blockStart = blockEnd;
 				if (blockStart < 0) blockStart = 0;
+				updContent();
 				emit rqRefill();
 				ev->ignore();
 			} else {

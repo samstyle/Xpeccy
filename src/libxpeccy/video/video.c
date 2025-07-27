@@ -11,7 +11,6 @@
 #else
 #define SCRBUF_SIZE	3700*2050*4
 #endif
-#define DRAWING_F	1
 
 int bytesPerLine = 768;
 int greyScale = 0;
@@ -38,8 +37,6 @@ unsigned char pscr[SCRBUF_SIZE];		// previous screen (raw)
 #if !defined(USEOPENGL)
 static int xpos = 0;
 static int ypos = 0;
-#elif !DRAWING_F
-// static unsigned char pcol;
 #endif
 
 typedef void(*cbdot)(Video*, unsigned char);
@@ -877,16 +874,6 @@ void vga_ghi_ini(Video*);
 
 // weiter
 
-typedef struct {
-	int id;
-	void(*init)(Video*);
-	void(*cbDot)(Video*);		// each dot
-	void(*cbHBlank)(Video*);	// hblank start
-	void(*cbLine)(Video*);		// visible line start
-	void(*cbVBlank)(Video*);	// @vblank (right after last line)
-	void(*cbFrame)(Video*);		// vblank start
-} xVideoMode;
-
 // id,(@on),(@every_visible_dot),(@HBlank),(@LineStart),(@VBlank),(@Frame)
 static xVideoMode vidModeTab[] = {
 	{VID_NORMAL, NULL, vidDrawNormal, NULL, NULL, NULL, NULL},
@@ -939,11 +926,7 @@ static xVideoMode vidModeTab[] = {
 };
 
 void vid_set_core(Video* vid, xVideoMode* xvm) {
-	vid->cbDot = vid->noScreen ? vidDrawBorder : xvm->cbDot;
-	vid->cbHBlank = xvm->cbHBlank;
-	vid->cbFrame = xvm->cbFrame;
-	vid->cbLine = xvm->cbLine;
-	vid->cbVBlank = xvm->cbVBlank;
+	vid->cb = xvm;
 	if (xvm->init)
 		xvm->init(vid);
 }
@@ -957,29 +940,14 @@ void vid_set_mode(Video* vid, int mode) {
 	vid_set_core(vid, &vidModeTab[i]);
 }
 
-void vid_irq(Video* vid, int id) {
-	vid->xirq(id, vid->xptr);
-}
-
-// NOTE: CRT VBlank starts right after last line (no HBlank skip) and ends at start of line 0
-
-#define VBL_LINE 1
+// NOTE: VBlank starts after last HBlank
 
 void vid_tick(Video* vid) {
 	if ((vid->ray.x & vid->brdstep) == 0)
 		vid->brdcol = vid->nextbrd;
 
-#if DRAWING_F
-	if (vid->cbDot)
-		vid->cbDot(vid);
-#else
-	// if ray is on visible screen & video has drawing callback...
-	if ((vid->ray.y >= vid->lcut.y) && (vid->ray.y < vid->rcut.y) \
-		&& (vid->ray.x >= vid->lcut.x) && (vid->ray.x < vid->rcut.x) \
-		&& vid->cbDot) {
-			vid->cbDot(vid);		// put dot callback
-	}
-#endif
+	if (vid->cb->dot)
+		vid->cb->dot(vid);
 	// if debug, fill all line
 	if (vid->debug)
 		vid_line_fill(vid);
@@ -991,26 +959,28 @@ void vid_tick(Video* vid) {
 		vid->hblank = 0;
 		vid->ray.x = 0;
 		vid->ray.y++;
-#if VBL_LINE
-		if (vid->ray.y == vid->vend.y) {
+		if (vid->ray.y == vid->vend.y) {		// vblank (@ start of line)
 			vid->vblank = 1;
 			vid_irq(vid, IRQ_VID_VBLANK);
-			if (vid->cbVBlank) vid->cbVBlank(vid);
+			if (vid->cb->vbl)
+				vid->cb->vbl(vid);
 		}
-#endif
 		if (vid->ray.y >= vid->full.y) {		// new frame
-			vid_frame(vid);			// complete frame image
+			vid_frame(vid);				// complete frame image
 			vid->idx = 0;
 			vid->ray.y = 0;
 			vid->vblank = 0;
 			vid->tsconf.scrLine = 0;
 			vid->fcnt++;
 			vid->flash = (vid->fcnt & 0x10) ? 1 : 0;
-			if (vid->cbFrame) vid->cbFrame(vid);
+			if (vid->cb->frm)
+				vid->cb->frm(vid);
 			vid->tail = 0;
-			if (vid->debug) vid_dark_all();
+			if (vid->debug)
+				vid_dark_all();
 		}
-		if (vid->cbLine) vid->cbLine(vid);
+		if (vid->cb->line)
+			vid->cb->line(vid);
 		vid->vvis = (vid->ray.y >= vid->lcut.y) && (vid->ray.y < vid->rcut.y);
 		vid->vbrd = (vid->ray.y < vid->bord.y) || (vid->ray.y >= vid->send.y);
 	}
@@ -1025,15 +995,11 @@ void vid_tick(Video* vid) {
 		vid->ray.yb++;
 		if (vid->ray.y == vid->vend.y - 1) {		// last screen line
 			vid->ray.yb = 0;
-#if !VBL_LINE
-			vid->vblank = 1;
-			vid_irq(vid, IRQ_VID_VBLANK);
-			if (vid->cbVBlank) vid->cbVBlank(vid);
-#endif
 		}
 		vid->hblank = 1;
 		vid_irq(vid, IRQ_VID_HBLANK);
-		if (vid->cbHBlank) vid->cbHBlank(vid);
+		if (vid->cb->hbl)
+			vid->cb->hbl(vid);
 	}
 	vid->hvis = (vid->ray.x >= vid->lcut.x) && (vid->ray.x < vid->rcut.x);
 	vid->hbrd = (vid->ray.x < vid->bord.x) || (vid->ray.x >= vid->send.x);
@@ -1044,10 +1010,13 @@ void vid_tick(Video* vid) {
 			vid->xirq(IRQ_VID_IEND, vid->xptr);
 	} else if ((vid->ray.yb == vid->intp.y) && (vid->ray.xb == vid->intp.x)) {
 		vid->intTime = vid->time;
-		// vid->intFRAME = vid->intsize;
 		vid->xirq(IRQ_VID_INT, vid->xptr);
 	}
-	if (vid->busy > 0) vid->busy--;
+	if (vid->busy > 0) {
+		vid->busy--;
+		if ((vid->busy == 0) && vid->cbCount)
+			vid->cbCount(vid);
+	}
 	if (vid->inth > 0) vid->inth--;
 	if (vid->intf > 0) vid->intf--;
 }

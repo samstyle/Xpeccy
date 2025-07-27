@@ -46,7 +46,7 @@ void lr_call(CPU*, unsigned short);
 // TODO: how interrupt works
 int lr_int(CPU* cpu) {
 //	cpu->intoc = cpu->intrq;
-	if (cpu->flgHALT) {				// HALT exit if any
+	if (cpu->flgHALT && (cpu->intrq & cpu->inten)) {				// HALT exit if any
 		cpu->flgHALT = 0;
 		cpu->regPC++;
 		if (!cpu->flgIFF1) {
@@ -62,7 +62,7 @@ int lr_int(CPU* cpu) {
 				cpu->flgIFF1 = 0;
 				cpu->intrq &= ~lr_intab[idx].mask;	// reset highest priority INT request flag. if there is others, they suspended (not switched off)
 				lr_call(cpu, lr_intab[idx].inta);	// execute call	{RST(lr_intab[idx].inta);}
-				res = 5;				// TODO: to know how much T eats INT handle (5M = 20T)
+				res = 20;				// TODO: to know how much T eats INT handle (5M = 20T)
 			}
 			idx++;
 		}
