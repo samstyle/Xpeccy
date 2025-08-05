@@ -234,6 +234,8 @@ void DebugWin::closeEvent(QCloseEvent*) {stop();}
 DebugWin::DebugWin(QWidget* par):QMainWindow(par) {
 	int i;
 
+	cputype = -1;
+
 	setTabPosition(Qt::AllDockWidgetAreas, QTabWidget::North);
 	setWindowTitle("Xpeccy deBUGa");
 	setWindowIcon(QIcon(":/images/bug.png"));
@@ -974,11 +976,73 @@ void DebugWin::fillFlags(const char* fnam) {
 	}
 }
 
+void DebugWin::reFormCPU(xRegBunch* b) {
+	ui_cpu.verticalLayout->takeAt(1);
+	ui_cpu.formRegs = new QFormLayout;
+	ui_cpu.verticalLayout->insertLayout(1, ui_cpu.formRegs);
+	int c = 0;
+	int r = 0;
+	while (r < dbgRegLabs.size()) {
+		if (b->regs[c].id != REG_NONE) {
+			if (b->regs[c].id != REG_EMPTY) {			// skip 'empty'
+				dbgRegLabs[r]->setText(b->regs[c].name);
+				dbgRegLabs[r]->setProperty("regid", b->regs[c].id);
+				dbgRegLabs[r]->setVisible(true);
+				switch(b->regs[c].type) {
+					case REG_2: dbgRegEdit[r]->setMax(2); break;
+					case REG_BYTE: dbgRegEdit[r]->setMax(0xff); break;
+					case REG_24: dbgRegEdit[r]->setMax(0xffffff); break;
+					case REG_32: dbgRegEdit[r]->setMax(0xffffffff); break;
+					default: dbgRegEdit[r]->setMax(0xffff); break;
+				}
+				if (b->regs[c].type == REG_BIT) {
+					dbgRegLabs[r]->setProperty("isbit", true);
+					ui_cpu.formRegs->addRow(dbgRegLabs[r], dbgRegBits[r]);
+					dbgRegBits[r]->setCheckable(!(b->regs[c].flag & REG_RO));
+					dbgRegBits[r]->setVisible(true);
+				} else {
+					dbgRegLabs[r]->setProperty("isbit", false);
+					ui_cpu.formRegs->addRow(dbgRegLabs[r], dbgRegEdit[r]);
+					dbgRegEdit[r]->setReadOnly(b->regs[c].flag & REG_RO);
+					dbgRegEdit[r]->setVisible(true);
+				}
+				r++;
+			}
+			c++;
+		} else {
+			dbgRegLabs[r]->setVisible(false);
+			dbgRegBits[r]->setVisible(false);
+			dbgRegEdit[r]->setVisible(false);
+			r++;
+		}
+	}
+}
+
 void DebugWin::fillCPU() {
 	block = 1;
 //	Computer* comp = conf.prof.cur->zx;
 	CPU* cpu = conf.prof.cur->zx->cpu;
 	xRegBunch bunch = cpuGetRegs(cpu);
+#if 1
+	if (cpu->core->type != cputype) {
+		cputype = cpu->core->type;
+		reFormCPU(&bunch);
+	}
+	int c = 0;
+	int r = 0;
+	while (bunch.regs[c].id != REG_NONE) {
+		if (bunch.regs[c].id != REG_EMPTY) {
+			if (bunch.regs[c].type == REG_BIT) {
+				dbgRegBits[r]->setChecked(bunch.regs[c].value);
+			} else {
+				dbgRegEdit[r]->setValue(bunch.regs[c].value);
+			}
+			r++;
+		}
+		c++;
+	}
+
+#else
 	xRegister* rp;
 	int i;
 	int t;
@@ -1006,6 +1070,7 @@ void DebugWin::fillCPU() {
 				f = !!(rp->flag & REG_RO);
 				dbgRegLabs[i]->setVisible(true);
 				// NOTE: setWidget return a error if a cell is occuped
+				// NOTE: takeRow exists from Qt5.8
 				if (t == REG_BIT) {
 					if (!dbgRegLabs[i]->property("isbit").toBool()) {
 						ui_cpu.formRegs->takeRow(i);
@@ -1030,6 +1095,7 @@ void DebugWin::fillCPU() {
 				break;
 		}
 	}
+#endif
 	fillFlags(bunch.flags);
 	fillStack();
 	block = 0;
@@ -1291,7 +1357,7 @@ void DebugWin::fillPorts() {
 		ui_misc.labPorts->setVisible(false);
 	}
 	while (i < cnt) {
-		ui_misc.formPort->removeRow(i);
+		ui_misc.formPort->takeAt(i); // removeRow(i);
 		cnt--;
 	}
 }

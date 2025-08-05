@@ -70,9 +70,9 @@ void alf_out7FFD(Computer* comp, int adr, int data) {
 static xPort alf_port_map[] = {
 	{0x0081,0x00fe,2,2,2,alf_inFE,	alf_outFE},
 	{0x0083,0x001f,2,2,2,alf_in1F,	alf_out5F},
-	{0xc083,0x7ffd,2,2,2,NULL,	alf_out7FFD},	// TODO: check xxFD mask
-	{0xc083,0xbffd,2,2,2,NULL,	xOutBFFD},
-	{0xc083,0xfffd,2,2,2,xInFFFD,	xOutFFFD},
+	{0xc002,0x7ffd,2,2,2,NULL,	alf_out7FFD},	// TODO: check xxFD mask
+	{0xc002,0xbffd,2,2,2,NULL,	xOutBFFD},
+	{0xc002,0xfffd,2,2,2,xInFFFD,	xOutFFFD},
 	{0x0000,0x0000,2,2,2,NULL,	NULL}
 };
 

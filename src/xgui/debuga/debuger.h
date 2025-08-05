@@ -67,6 +67,7 @@ class DebugWin : public QMainWindow {
 	private:
 		unsigned block:1;
 		int tabMode;
+		int cputype;
 		// tracer
 		unsigned trace:1;
 		int traceType;
@@ -143,8 +144,9 @@ class DebugWin : public QMainWindow {
 		void fillMem();
 		void fillStack();
 		void fillPorts();
+		void reFormCPU(xRegBunch*);
 
-		void setFlagNames(const char*);
+		// void setFlagNames(const char*);
 		void chLayout();
 
 	private slots:
