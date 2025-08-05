@@ -15,7 +15,7 @@ xZXScrWidget::xZXScrWidget(QString i, QString t, QWidget* p):xDockWidget(i,t,p) 
 	connect(ui.cbScrPix, &QCheckBox::stateChanged, this, &xZXScrWidget::draw);
 	connect(ui.cbScrGrid, &QCheckBox::stateChanged, this, &xZXScrWidget::draw);
 
-	hwList << HWG_ZX;
+	hwList << HWG_ZX << HWG_ALF;
 }
 
 void xZXScrWidget::draw() {

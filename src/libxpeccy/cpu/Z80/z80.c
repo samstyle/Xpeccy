@@ -105,7 +105,7 @@ int z80_int(CPU* cpu) {
 			switch(cpu->regIM) {
 				case 0:
 					cpu->t = 2;
-					cpu->op = &cpu->opTab[cpu->xack(cpu->xptr)];
+					cpu->op = &cpu->opTab[cpu->xack(cpu->xptr) & 0xff];
 					cpu->regR++;
 					cpu->t += cpu->op->t;		// +5 (RST38 fetch)
 					cpu->op->exec(cpu);		// +3 +3 execution. 13 total
@@ -169,6 +169,9 @@ int z80_exec(CPU* cpu) {
 			cpu->op->exec(cpu);
 		} while (cpu->op->flag & OF_PREFIX);
 		res = cpu->t;
+		cpu->t--;
+		cpu_irq(cpu, IRQ_CPU_ACK);
+		cpu->t++;
 	}
 	return res;
 }
@@ -342,6 +345,10 @@ xRegDsc z80RegTab[] = {
 	{Z80_REG_IM, "IM", REG_2, 0, offsetof(CPU, regIM)},
 	{Z80_FLG_IFF1, "IFF1", REG_BIT, 0, offsetof(CPU, flgIFF1)},
 	{Z80_FLG_IFF2, "IFF2", REG_BIT, 0, offsetof(CPU, flgIFF2)},
+#ifdef ISDEBUG
+	{Z80_REG_IE, "IE", REG_WORD, 0, offsetof(CPU, inten)},
+	{Z80_REG_IR, "IF", REG_WORD, 0, offsetof(CPU, intrq)},
+#endif
 	{REG_NONE, "", 0, 0, 0}
 };
 
@@ -382,6 +389,8 @@ void z80_get_regs(CPU* cpu, xRegBunch* bunch) {
 			case Z80_FLG_IFF1: reg.value = cpu->flgIFF1; break;
 			case Z80_FLG_IFF2: reg.value = cpu->flgIFF2; break;
 			case Z80_REG_WZ: reg.value = cpu->regWZ; break;
+			case Z80_REG_IE: reg.value = cpu->inten; break;
+			case Z80_REG_IR: reg.value = cpu->intrq; break;
 		}
 		if (reg.id != REG_EMPTY) {
 			bunch->regs[bidx] = reg;

@@ -585,6 +585,9 @@ int compExec(Computer* comp) {
 		}
 	}
 #endif
+#if 1
+	vid_sync(comp->vid, (res2 - res4) * comp->nsPerTick);
+#else
 	if (res2 > res4) {
 		if (comp->hw->grp == HWG_ZX) {
 			if (res2 > res4 + 1)
@@ -595,6 +598,7 @@ int compExec(Computer* comp) {
 			vid_sync(comp->vid, (res2 - res4) * comp->nsPerTick);
 		}
 	}
+#endif
 // execution completed : get eated time & translate signals
 	nsTime = comp->vid->time;
 	comp->tickCount += res2;

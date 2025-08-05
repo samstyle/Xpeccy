@@ -127,6 +127,11 @@ void zx_irq(Computer* comp, int t) {
 				comp->cpu->flgWAIT = 0;
 			}
 			break;
+		case IRQ_CPU_ACK:
+			vid_sync(comp->vid, (comp->cpu->t - res4) * comp->nsPerTick);
+			res4 = comp->cpu->t;
+			comp->cpu->flgACK = !!comp->vid->intFRAME;
+			break;
 	}
 }
 

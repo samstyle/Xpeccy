@@ -163,7 +163,7 @@ int gbcCountSPR(Video* vid) {
 		adr = 0;
 		while ((adr < 0xa0) && (tx < 10)) {	// max 10 sprites in line
 			y = vid->oam[adr++] - 16;
-			y = (vid->ray.y - y) & 0xff;				// line inside sprite
+			y = (vid->lcnt - y) & 0xff;				// line inside sprite
 			if (y < (vid->bigspr ? 16 : 8)) {			// if line visible
 				tx++;
 			}
@@ -227,23 +227,29 @@ void gbcvDraw(Video* vid) {
 
 // line begin : create full line image in the buffer
 // GB: compare LYC0 @ line 153, don't compare @ line 0, (LY=0 @ line 153 ? )
-// GBC wants line153 as line153 (without ly=0) ?
+// GBC wants line153 as line153 (without ly=0) ? OR line0 use palette from line153 ?
 
 void gbcvLine(Video* vid) {
 	if (vid->ray.y != 0) vid->lcnt++;			// ly=0 since line 153, don't increase until line 1
 	if (vid->gbmode) {
-		if (vid->ray.y == vid->full.y - 1) vid->lcnt = 0;
-		gbcvLYC(vid);						// @line153 compare LYC with LY=0
+		if (vid->ray.y == vid->full.y - 1) {
+			vid->lcnt = 0;
+			gbcRenderLine(vid);
+		}
+		if (vid->ray.y != 0) gbcvLYC(vid);						// @line153 compare LYC with LY=0
 	} else {
-		gbcvLYC(vid);
-		if (vid->ray.y == vid->full.y - 1) vid->lcnt = 0;
+		if (vid->ray.y != 0) gbcvLYC(vid);
+		if (vid->ray.y == vid->full.y - 1) {
+			vid->lcnt = 0;
+			gbcRenderLine(vid);
+		}
 	}
 	gbcvMode2(vid);						// start mode 2, or mode 1 if vblank
 
 	if (!vid->lcdon) return;
 	if (vid->vblank) return;		// vblank
 
-	gbcRenderLine(vid);
+	if (vid->ray.y > 0) gbcRenderLine(vid);
 }
 
 /*

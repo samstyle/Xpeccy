@@ -22,7 +22,8 @@ enum {
 	FL_RZX,
 	FL_HOBETA,
 	FL_RAW,
-	FL_IF2_ROM,
+	FL_SLT_BIN,
+	FL_SLT_ROM,
 	FL_GB,
 	FL_GBC,
 	FL_MSX,
@@ -72,6 +73,7 @@ enum {
 
 enum {
 	FH_SPECTRUM = (1 << 12),
+	FH_ALF,
 	FH_MSX,
 	FH_GAMEBOY,
 	FH_NES,

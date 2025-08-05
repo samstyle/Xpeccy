@@ -23,6 +23,7 @@ enum {
 	HW_TSLAB,	// PentEvo (TSConf)
 	HW_PROFI,	// Profi
 	HW_PHOENIX,	// ZXM Phoenix
+	HW_ALF,		// ALF (ZX48K-like console)
 	HW_MSX,		// MSX 1
 	HW_MSX2,	// MSX 2
 	HW_GBC,		// Game boy color (gameboy capatible)
@@ -38,6 +39,7 @@ enum {
 enum {
 	HWG_NULL = 0,
 	HWG_ZX,
+	HWG_ALF,
 	HWG_MSX,
 	HWG_GB,
 	HWG_NES,
@@ -248,6 +250,17 @@ void phxMapMem(Computer*);
 void phxOut(Computer*, int, int);
 int phxIn(Computer*, int);
 void phxReset(Computer*);
+
+// ALF
+void alf_mapmem(Computer*);
+int alf_mrd(Computer*, int, int);
+void alf_mwr(Computer*, int, int);
+int alf_ird(Computer*, int);
+void alf_iwr(Computer*, int, int);
+int alf_ack(Computer*);
+void alf_reset(Computer*);
+void alf_sync(Computer*, int);
+sndPair alf_vol(Computer*, sndVolume*);
 
 // msx
 void msx_init(Computer*);
