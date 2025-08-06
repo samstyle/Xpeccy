@@ -115,8 +115,10 @@ int loadNes(Computer* comp, const char* name, int drv) {
 			slot->blk1 = 0;
 			slot->ramen = 1;
 			slot->ramwe = 1;
+			slot->haveram = 1;
 			slot->irqen = 0;
 			slot->irq = 0;
+			sltSetPath(slot, name);
 
 			comp->nes.type = mode;
 			if (comp->hw->init) comp->hw->init(comp);

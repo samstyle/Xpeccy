@@ -76,6 +76,7 @@ static xFileTypeInfo ft_tab[] = {
 	{0, 0, NULL, NULL, NULL, NULL, NULL}
 };
 
+static xFileTypeInfo ft_sltraw = {FL_SLT_BIN, 0, NULL, NULL, loadSlot, NULL, "RAW cartrige image"};
 static xFileTypeInfo ft_raw = {FL_RAW, 0, NULL, NULL, loadRaw, NULL, "RAW file to disk A"};
 static xFileTypeInfo ft_bktap = {FL_RAW, 0, NULL, NULL, bkLoadToTape, NULL, "RAW file to BK tape"};
 static xFileTypeInfo ft_rkstap = {FL_RKS, 0, NULL, NULL, loadRKStap, NULL, "RKS to tape"};
@@ -93,7 +94,7 @@ static xFileGroupInfo fg_tab[] = {
 	{FG_DISK_C, ".trd", 2, "Disk C", NULL, {FL_SCL, FL_TRD, FL_TD0, FL_FDI, FL_UDI, FL_DSK, FL_IMA, FL_PCIMG, FL_HOBETA, 0}},
 	{FG_DISK_D, ".trd", 3, "Disk D", NULL, {FL_SCL, FL_TRD, FL_TD0, FL_FDI, FL_UDI, FL_DSK, FL_IMA, FL_PCIMG, FL_HOBETA, 0}},
 	{FG_RAW, "", 0, "Raw file to disk", &ft_raw, {FL_RAW, 0}},
-	{FG_IF2_ROM, "", -1, "Cartrige image", NULL, {FL_SLT_ROM, FL_SLT_BIN, 0}},
+	{FG_IF2_ROM, "", -1, "Cartrige image", &ft_sltraw, {FL_SLT_ROM, FL_SLT_BIN, 0}},
 	{FG_RZX, "", -1, "RZX playback", NULL, {FL_RZX, 0}},
 	{FG_GAMEBOY, "", -1, "GB cartrige", NULL, {FL_GB, FL_GBC, 0}},
 	{FG_MSX, "", -1, "MSX cartrige", NULL, {FL_MSX, FL_MX1, FL_MX2, 0}},
@@ -122,7 +123,7 @@ static xFileHWInfo fh_tab[] = {
 	{FH_CMD, {FG_CMDTAPE, FG_CMDSNAP, 0}},
 	{FH_BK, {FG_BKDATA, FG_BKTAPE, FG_BKRAW, FG_BKDISK, 0}},
 	{FH_DISKS, {FG_DISK_A, FG_DISK_B, FG_DISK_C, FG_DISK_D, 0}},
-	{FH_SLOTS, {FG_GAMEBOY, FG_NES, FG_MSX, 0}},
+	{FH_SLOTS, {FG_GAMEBOY, FG_NES, FG_MSX, FG_IF2_ROM, 0}},
 	{FH_SPCLST, {FG_RKSMEM, FG_RKSTAP, 0}},
 	{FH_PC, {FG_PCDISK, 0}},
 	{FH_DRIVE_A, {FG_DISK_A, FG_RAW, 0}},
@@ -364,7 +365,7 @@ int load_file(Computer* comp, const char* name, int id, int drv) {
 	if (path.isEmpty() && name) return ERR_CANT_OPEN;
 	// qDebug() << path;
 	QString flt;
-	QString ext;
+//	QString ext;
 	xFileTypeInfo* inf;
 	xFileGroupInfo* grp = &fg_dum;
 	if (id == FG_DISK)

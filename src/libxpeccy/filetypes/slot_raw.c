@@ -1,6 +1,7 @@
 #include "filetypes.h"
 
 int loadSlot(Computer* comp, const char* name, int drv) {
+	printf("loadSlot %s\n", name);
 	xCartridge* slot = comp->slot;
 	FILE* file = fopen(name, "rb");
 	if (!file) return ERR_CANT_OPEN;
@@ -18,7 +19,8 @@ int loadSlot(Computer* comp, const char* name, int drv) {
 		slot->brkMap = realloc(slot->brkMap, tsiz);
 		memset(slot->brkMap, 0x00, tsiz);
 		slot->memMask = tsiz - 1;
-		strcpy(slot->name, name);
+		slot->haveram = 0;
+		sltSetPath(slot, name);
 		fread(slot->data, tsiz, 1, file);
 		for (tsiz = 0; tsiz < 4; tsiz++) {
 			slot->memMap[tsiz] = 0;

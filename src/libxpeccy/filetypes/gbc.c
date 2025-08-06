@@ -5,6 +5,7 @@ int loadGB(Computer* comp, const char* name, int drv) {
 	if (comp->slot->data) {
 		unsigned char type = comp->slot->data[0x147];		// slot type
 		printf("Cartrige type %.2X\n",type);
+		comp->slot->haveram = 1;
 		switch (type) {
 			case 0x00:
 				sltSetMaper(comp->slot, MAPER_GB, MAP_GB_NOMAP);	// rom only (up to 32K)

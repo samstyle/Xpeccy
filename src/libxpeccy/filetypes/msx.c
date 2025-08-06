@@ -32,5 +32,6 @@ void detectType(xCartridge* slot) {
 int loadMSX(Computer* comp, const char* name, int drv) {
 	int res = loadSlot(comp, name, drv);
 	detectType(comp->slot);
+	comp->slot->haveram = 0;
 	return res;
 }

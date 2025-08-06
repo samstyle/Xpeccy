@@ -483,8 +483,10 @@ int prf_load_conf(xProfile* prf, std::string cfname, int flag) {
 					// if (pnam == "capacity") sdcSetCapacity(comp->sdc, arg.i);
 					break;
 				case PS_SLOT:
-					if ((pnam == "slot.type") || (pnam == "slotA.type"))
+					if ((pnam == "slot.type") || (pnam == "slotA.type") || (pnam == "type"))
 						comp->slot->mapType = arg.i;
+					if ((pnam == "path") && conf.storePaths)
+						sltSetPath(comp->slot, arg.s);
 					break;
 			}
 		}
@@ -504,6 +506,9 @@ int prf_load_conf(xProfile* prf, std::string cfname, int flag) {
 	} else if (conf.storePaths) {			// loading files
 		if (comp->tape->path) {
 			load_file(comp, comp->tape->path, FG_TAPE, 0);
+		}
+		if (comp->slot->path) {
+			load_file(comp, comp->slot->path, FH_SLOTS, 0);
 		}
 		for (i = 0; i < 4; i++) {
 			flp = comp->dif->fdc->flop[i];
@@ -702,7 +707,8 @@ int prfSave(std::string nm) {
 //	fprintf(file, "capacity = %i\n", comp->sdc->capacity);
 
 	fprintf(file, "\n[SLOT]\n");
-	fprintf(file, "slot.type = %i\n",comp->slot->mapType);
+	fprintf(file, "type = %i\n",comp->slot->mapType);
+	fprintf(file, "path = %s\n", comp->slot->path ? comp->slot->path : "");
 
 	fclose(file);
 

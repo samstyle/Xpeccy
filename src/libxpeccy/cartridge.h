@@ -89,13 +89,15 @@ struct xCartridge {
 	unsigned ramen:1;		// ram enabled (gb, nes)
 	unsigned ramwe:1;		// ram writing enable (nes)
 	unsigned ramod:1;		// ram banking mode (gb)
+	unsigned haveram:1;		// if cartrige have onboard ram
 	unsigned brk:1;
 	unsigned irqen:1;		// irq enable (nes)
 	unsigned irqrl:1;		// irq reload request (nes)
 	unsigned irq:1;			// irq signal (nes)
 	unsigned irqs:1;		// irq control signal (A12 for nes mmc3)
 
-	char name[FILENAME_MAX];
+	//char name[FILENAME_MAX];
+	char* path;
 	int memMap[4];			// max 4x8K PRG pages
 	int prglast;			// last 16K PRG page number
 	int mapType;			// user defined mapper type, if auto-detect didn't worked (msx)
@@ -134,6 +136,7 @@ void sltEject(xCartridge*);
 
 xCardCallback* sltFindMaper(int,int);
 int sltSetMaper(xCartridge*,int, int);
+void sltSetPath(xCartridge*, const char*);
 
 int sltRead(xCartridge*, int, int);
 void sltWrite(xCartridge*, int, int, int);

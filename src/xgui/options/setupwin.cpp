@@ -646,7 +646,7 @@ void SetupWin::start() {
 	ui.sdPath->setText(QString::fromLocal8Bit(comp->sdc->image));
 	ui.sdlock->setChecked(comp->sdc->lock);
 
-	ui.cSlotName->setText(comp->slot->name);
+	ui.cSlotName->setText(comp->slot->path);
 	setRFIndex(ui.cSlotType, comp->slot->mapType);
 // tape
 	ui.cbTapeAuto->setChecked(conf.tape.autostart);
@@ -1723,7 +1723,7 @@ void SetupWin::openSlot() {
 //	ui.cSlotName->setText(fnam);
 //	loadFile(comp, fnam.toLocal8Bit().data(), FT_SLOT_A, 0);
 	if (load_file(comp, NULL, FH_SLOTS, 0) == ERR_OK) {
-		ui.cSlotName->setText(comp->slot->name);
+		ui.cSlotName->setText(comp->slot->path);
 	}
 }
 

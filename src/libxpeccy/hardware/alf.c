@@ -37,9 +37,8 @@ void alf_reset(Computer* comp) {
 // 1F rd:kempston
 int alf_in1F(Computer* comp, int adr) {
 	int res = comp->joy->state;
-	if (!comp->joy->extbuttons) {
-		res = (res & 0x1f) | 0xa0;
-	}
+	if (!comp->joy->extbuttons) res &= 0x1f;
+	res ^= 0xa0;
 	return res;
 }
 

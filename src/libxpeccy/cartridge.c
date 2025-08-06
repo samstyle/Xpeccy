@@ -730,13 +730,18 @@ void sltDestroy(xCartridge* slot) {
 	free(slot);
 }
 
+void sltSetPath(xCartridge* slot, const char* p) {
+	slot->path = (char*)realloc(slot->path, strlen(p) + 1);
+	strcpy(slot->path, p);
+}
+
 void sltEject(xCartridge* slot) {
 	if (slot->data == NULL) return;
 	// save cartrige ram
 	char rname[FILENAME_MAX];
 	FILE* file;
-	if (strlen(slot->name)) {
-		strcpy(rname, slot->name);
+	if (slot->path && slot->haveram) {
+		strcpy(rname, slot->path);
 		strcat(rname, ".ram");
 		file = fopen(rname, "wb");
 		if (file) {
@@ -749,7 +754,10 @@ void sltEject(xCartridge* slot) {
 		free(slot->data);
 		slot->data = NULL;
 	}
-	slot->name[0] = 0x00;
+	if (slot->path) {
+		free(slot->path);
+		slot->path = NULL;
+	}
 	// free brk map
 	if (slot->brkMap) {
 		free(slot->brkMap);
