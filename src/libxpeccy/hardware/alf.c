@@ -15,6 +15,10 @@ int alf_sltrd(int adr, void* ptr) {
 }
 
 void alf_mapmem(Computer* comp) {
+	if (comp->rom) {		// switch to rom1 after snapshot loading
+		comp->rom = 0;
+		comp->regRomN = 1;
+	}
 	if (comp->regRomN & 0x80) {
 		memSetBank(comp->mem, 0x00, MEM_SLOT, comp->regRomN & 0x3f, MEM_16K, alf_sltrd, NULL, comp);	// cartrige data
 	} else {
@@ -31,6 +35,7 @@ void alf_reset(Computer* comp) {
 	vid_set_mode(comp->vid, VID_NORMAL);
 	comp->regRomN = 0x00;
 	comp->p7FFD = 0x00;
+	comp->rom = 0;
 	alf_mapmem(comp);
 }
 
@@ -54,9 +59,9 @@ void alf_outFE(Computer* comp, int adr, int data) {
 	comp->beep->lev = !!(data & 0x10);
 }
 
-// FE rd: 2nd joystick (TODO)
+// FE rd: 2nd joystick
 int alf_inFE(Computer* comp, int adr) {
-	return 0x1f;
+	return comp->joyb->state & 0x1f;
 }
 
 void alf_out7FFD(Computer* comp, int adr, int data) {

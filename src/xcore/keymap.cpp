@@ -171,6 +171,10 @@ void setKey(const char* kname, const char* kstr) {
 							case '4': keyMap[idx].joyMask = XJ_BUT4; break;
 						}
 						kpos++;
+						if (kstr[kpos] == '*') {
+							keyMap[idx].joyMask |= XJ_JOYB;
+							kpos++;
+						}
 						break;
 					default:
 						keyMap[idx].zxKey[pos] = kstr[kpos];

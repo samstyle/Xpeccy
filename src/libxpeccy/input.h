@@ -81,6 +81,7 @@ enum {
 #define XJ_BUT2		(1<<5)
 #define XJ_BUT3		(1<<6)
 #define XJ_BUT4		(1<<7)
+#define XJ_JOYB		(1<<20)
 // msx extend keys
 #define MSXK_SHIFT	'S'
 #define MSXK_CTRL	'C'

@@ -116,7 +116,7 @@ static xFileGroupInfo fg_dum = {0, "", -1, NULL, NULL, {0}};
 
 static xFileHWInfo fh_tab[] = {
 	{FH_SPECTRUM, {FG_SNAPSHOT, FG_TAPE, FG_DISK_A, FG_DISK_B, FG_DISK_C, FG_DISK_D, FG_RAW, FG_RZX, FG_IF2_ROM, 0}},
-	{FH_ALF, {FG_IF2_ROM, 0}},
+	{FH_ALF, {FG_IF2_ROM, FG_SNAPSHOT, 0}},
 	{FH_GAMEBOY, {FG_GAMEBOY, 0}},
 	{FH_MSX, {FG_MSX, FG_MSXTAPE, 0}},
 	{FH_NES, {FG_NES, 0}},

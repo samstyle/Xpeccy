@@ -1331,11 +1331,11 @@ void DebugWin::fillStack() {
 void DebugWin::fillPorts() {
 	Computer* comp = conf.prof.cur->zx;
 	xPortValue* tab = hwGetPorts(comp);
+	QLabel* wid;
 	int i = 0;
 	int cnt = ui_misc.formPort->rowCount();
 	if (tab) {
 		if (tab[0].port > 0) {
-			QLabel* wid;
 			while (tab[i].port > 0) {
 				if (i >= cnt) {
 					ui_misc.formPort->addRow(new QLabel, new QLabel);
@@ -1357,8 +1357,10 @@ void DebugWin::fillPorts() {
 		ui_misc.labPorts->setVisible(false);
 	}
 	while (i < cnt) {
-		ui_misc.formPort->takeAt(i); // removeRow(i);
-		cnt--;
+		((QLabel*)(ui_misc.formPort->itemAt(i, QFormLayout::LabelRole)->widget()))->setVisible(false);
+		((QLabel*)(ui_misc.formPort->itemAt(i, QFormLayout::FieldRole)->widget()))->setVisible(false);
+		//ui_misc.formPort->takeAt(i); // removeRow(i);
+		i++;
 	}
 }
 

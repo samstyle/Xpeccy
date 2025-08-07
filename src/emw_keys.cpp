@@ -121,8 +121,13 @@ void MainWin::xkey_press(int xkey) {
 		xt_press(comp->keyb, kent);
 		if (comp->hw->keyp)
 			comp->hw->keyp(comp, kent);
-		if (kent.joyMask)
-			joyPress(comp->joy, kent.joyMask);
+		if (kent.joyMask) {
+			if (kent.joyMask & XJ_JOYB) {
+				joyPress(comp->joyb, kent.joyMask & 0xff);
+			} else {
+				joyPress(comp->joy, kent.joyMask & 0xff);
+			}
+		}
 		if (xkey == XKEY_F12) {
 			compReset(comp,RES_DEFAULT);
 			emit s_rzx_stop();
@@ -399,8 +404,13 @@ void MainWin::xkey_release(int keyid) {
 	xt_release(comp->keyb, kent);
 	if (comp->hw->keyr)
 		comp->hw->keyr(comp, kent);
-	if (kent.joyMask)
-		joyRelease(comp->joy, kent.joyMask);
+	if (kent.joyMask) {
+		if (kent.joyMask & XJ_JOYB) {
+			joyRelease(comp->joyb, kent.joyMask & 0xff);
+		} else {
+			joyRelease(comp->joy, kent.joyMask & 0xff);
+		}
+	}
 	emit s_keywin_upd(comp->keyb);
 }
 

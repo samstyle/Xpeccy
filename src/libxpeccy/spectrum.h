@@ -119,6 +119,7 @@ typedef struct {
 
 	Keyboard* keyb;
 	Joystick* joy;
+	Joystick* joyb;
 	Mouse* mouse;
 
 	Tape* tape;
