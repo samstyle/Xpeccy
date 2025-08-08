@@ -12,15 +12,15 @@ void detectType(xCartridge* slot) {
 			test = slot->data[radr++] << 16;
 			test |= slot->data[radr++] << 8;
 			test |= slot->data[radr];
-			if ((test == 0x320050) || (test == 0x3200b0)) {
+			if ((test == 0x320050) || (test == 0x3200b0)) {			// ld (5000/b000),a
 				printf("konami 5\n");
 				sltSetMaper(slot, MAPER_MSX, MAP_MSX_KONAMI5);
 				break;
-			} else if ((test == 0x320068) || (test == 0x320078)) {
+			} else if ((test == 0x320068) || (test == 0x320078)) {		// ld (6800/7800),a
 				printf("ascii 8\n");
 				sltSetMaper(slot, MAPER_MSX, MAP_MSX_ASCII8);
 				break;
-			} else if (test == 0x3200a0) {
+			} else if (test == 0x3200a0) {					// ld (a000),a
 				printf("konami 4\n");
 				sltSetMaper(slot, MAPER_MSX, MAP_MSX_KONAMI4);
 				break;

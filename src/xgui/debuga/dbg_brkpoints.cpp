@@ -480,6 +480,33 @@ void xBreakWidget::resetBrk() {
 	emit updated();		// fill disasm/dump
 }
 
+bool parseRange(QString str, xBrkPoint* p) {
+	bool r;
+	int badr;
+	int eadr;
+	int tadr;
+	QStringList splt;
+	splt = str.split('-', X_SkipEmptyParts);
+	badr = splt.first().toInt(&r, 16);
+	if (r) {
+		if (splt.size() > 1) {
+			eadr = splt[1].toInt(&r, 16);
+			if (eadr < badr) {
+				tadr = badr;
+				badr = eadr;
+				eadr = tadr;
+			}
+		} else {
+			eadr = badr;
+		}
+		if (r) {
+			p->adr = badr;
+			p->eadr = eadr;
+		}
+	}
+	return r;
+}
+
 void xBreakWidget::openBrk() {
 	QString path = QFileDialog::getOpenFileName(this, "Open breakpoints list", "", "deBUGa breakpoints (*.xbrk)",nullptr,QFileDialog::DontUseNativeDialog);
 	if (path.isEmpty()) return;
@@ -488,6 +515,7 @@ void xBreakWidget::openBrk() {
 	QStringList splt;
 	QStringList list;
 	xBrkPoint brk;
+	int off;
 	bool b0,b1;
 	if (file.open(QFile::ReadOnly)) {
 		conf.prof.cur->brkList.clear();
@@ -509,31 +537,49 @@ void xBreakWidget::openBrk() {
 					brk.mask = list.at(2).toInt(&b1, 16) & 0xffff;
 				} else if (list.at(0) == "CPU") {
 					brk.type = BRK_CPUADR;
-					if (list.at(1).contains("-")) {		// 1234-ABCD
-						splt = list.at(1).split(QLatin1Char('-'), X_SkipEmptyParts);
-						list[1] = splt.first();
-						list[2] = splt.last();
-					}
-					brk.adr = list.at(1).toInt(&b0, 16) & 0xffff;
-					if (list.at(2).isEmpty()) {
-						brk.eadr = brk.adr;
-					} else {
-						brk.eadr = list.at(2).toInt(&b1, 16) & 0xffff;
-						if (brk.eadr < brk.adr)
-							brk.eadr = brk.adr;
-					}
+					b0 = parseRange(list.at(1), &brk);
+					brk.adr &= 0xffff;
+					brk.eadr &= 0xffff;
+//					if (list.at(1).contains("-")) {		// 1234-ABCD
+//						splt = list.at(1).split(QLatin1Char('-'), X_SkipEmptyParts);
+//						list[1] = splt.first();
+//						list[2] = splt.last();
+//					}
+//					brk.adr = list.at(1).toInt(&b0, 16) & 0xffff;
+//					if (list.at(2).isEmpty()) {
+//						brk.eadr = brk.adr;
+//					} else {
+//						brk.eadr = list.at(2).toInt(&b1, 16) & 0xffff;
+//						if (brk.eadr < brk.adr)
+//							brk.eadr = brk.adr;
+//					}
 				} else if (list.at(0) == "ROM") {
 					brk.type = BRK_MEMROM;
-					brk.adr = (list.at(1).toInt(&b0, 16) & 0xff) << 14;
-					brk.adr |= (list.at(2).toInt(&b1, 16) & 0x3fff);
+					b0 = parseRange(list.at(2), &brk);
+					off = (list.at(1).toInt(&b0, 16) & 0xff) << 14;
+					brk.adr = (brk.adr & 0x3fff) | off;
+					brk.eadr = (brk.eadr & 0x3fff) | off;
+//					brk.adr = (list.at(1).toInt(&b0, 16) & 0xff) << 14;
+//					brk.adr |= (list.at(2).toInt(&b1, 16) & 0x3fff);
+//					brk.eadr = brk.adr;
 				} else if (list.at(0) == "RAM") {
 					brk.type = BRK_MEMRAM;
-					brk.adr = (list.at(1).toInt(&b0, 16) & 0xff) << 14;
-					brk.adr |= (list.at(2).toInt(&b1, 16) & 0x3fff);
+					b0 = parseRange(list.at(2), &brk);
+					off = (list.at(1).toInt(&b0, 16) & 0xff) << 14;
+					brk.adr = (brk.adr & 0x3fff) | off;
+					brk.eadr = (brk.eadr & 0x3fff) | off;
+//					brk.adr = (list.at(1).toInt(&b0, 16) & 0xff) << 14;
+//					brk.adr |= (list.at(2).toInt(&b1, 16) & 0x3fff);
+//					brk.eadr = brk.adr;
 				} else if (list.at(0) == "SLT") {
 					brk.type = BRK_MEMSLT;
-					brk.adr = (list.at(1).toInt(&b0, 16) & 0xff) << 14;
-					brk.adr |= (list.at(2).toInt(&b1, 16) & 0x3fff);
+					b0 = parseRange(list.at(2), &brk);
+					off = (list.at(1).toInt(&b0, 16) & 0xff) << 14;
+					brk.adr = (brk.adr & 0x3fff) | off;
+					brk.eadr = (brk.eadr & 0x3fff) | off;
+//					brk.adr = (list.at(1).toInt(&b0, 16) & 0xff) << 14;
+//					brk.adr |= (list.at(2).toInt(&b1, 16) & 0x3fff);
+//					brk.eadr = brk.adr;
 				} else if (list.at(0) == "IRQ") {
 					brk.type = BRK_IRQ;
 				} else {
@@ -547,6 +593,7 @@ void xBreakWidget::openBrk() {
 					brk.action = BRK_ACT_DBG;
 				}
 				if (b0 && b1) {
+					brk.count = 0;
 					conf.prof.cur->brkList.push_back(brk);
 				}
 			}
@@ -591,16 +638,28 @@ void xBreakWidget::saveBrk() {
 					nm = "RAM";
 					ar1 = gethexbyte((brk.adr >> 14) & 0xff);	// 16K page
 					ar2 = gethexword(brk.adr & 0x3fff);		// adr in page
+					if (brk.eadr > brk.adr) {
+						ar2.append("-");
+						ar2.append(gethexword(brk.eadr & 0x3fff));
+					}
 					break;
 				case BRK_MEMROM:
 					nm = "ROM";
 					ar1 = gethexbyte((brk.adr >> 14) & 0xff);
 					ar2 = gethexword(brk.adr & 0x3fff);
+					if (brk.eadr > brk.adr) {
+						ar2.append("-");
+						ar2.append(gethexword(brk.eadr & 0x3fff));
+					}
 					break;
 				case BRK_MEMSLT:
 					nm = "SLT";
 					ar1 = gethexbyte((brk.adr >> 14) & 0xff);
 					ar2 = gethexword(brk.adr & 0x3fff);
+					if (brk.eadr > brk.adr) {
+						ar2.append("-");
+						ar2.append(gethexword(brk.eadr & 0x3fff));
+					}
 					break;
 				case BRK_IRQ:
 					nm = "IRQ";

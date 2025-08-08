@@ -342,8 +342,13 @@ void MainWin::xkey_press(int xkey) {
 				xt_press(comp->keyb, kent);
 				if (comp->hw->keyp)
 					comp->hw->keyp(comp, kent);
-				if (kent.joyMask)
-					joyPress(comp->joy, kent.joyMask);
+				if (kent.joyMask & 0xff) {
+					if (kent.joyMask & XJ_JOYB) {
+						joyPress(comp->joyb, kent.joyMask);
+					} else {
+						joyPress(comp->joy, kent.joyMask);
+					}
+				}
 				break;
 		}
 	}
