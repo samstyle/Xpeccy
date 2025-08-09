@@ -222,7 +222,7 @@ typedef struct {
 	unsigned used:1;
 	unsigned extbuttons:1;
 	int type;
-	unsigned char state;
+	int state;
 } Joystick;
 
 typedef struct {

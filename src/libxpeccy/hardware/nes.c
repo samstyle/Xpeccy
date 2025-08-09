@@ -150,27 +150,27 @@ void nes_io_wr(int adr, int val, void* ptr) {
 				comp->cpu->t += 0x202;	// DMA eats 512+1+1 cpu ticks, cpu is halted during operation
 				break;
 			case 0x15:
-				comp->nesapu->ch0.en = (val & 0x01) ? 1 : 0;
+				comp->nesapu->ch0.en = !!(val & 0x01);
 				if (!comp->nesapu->ch0.en) comp->nesapu->ch0.len = 0;
-				comp->nesapu->ch1.en = (val & 0x02) ? 1 : 0;
+				comp->nesapu->ch1.en = !!(val & 0x02);
 				if (!comp->nesapu->ch1.en) comp->nesapu->ch1.len = 0;
-				comp->nesapu->cht.en = (val & 0x04) ? 1 : 0;
+				comp->nesapu->cht.en = !!(val & 0x04);
 				if (!comp->nesapu->cht.en) comp->nesapu->cht.len = 0;
-				comp->nesapu->chn.en = (val & 0x08) ? 1 : 0;
+				comp->nesapu->chn.en = !!(val & 0x08);
 				if (!comp->nesapu->chn.en) comp->nesapu->chn.len = 0;
-				comp->nesapu->chd.en = (val & 0x10) ? 1 : 0;
+				comp->nesapu->chd.en = !!(val & 0x10);
 				if (!comp->nesapu->ch0.en) comp->nesapu->chd.len = 0;
 				comp->nesapu->dirq = 0;
 				break;
 			case 0x16:
 				if (val & 1) {		// b0: 0-1-0 = reload gamepads state
-					comp->nes.priJoy = comp->nes.priPadState;
-					comp->nes.secJoy = comp->nes.secPadState;
+					comp->nes.priJoy = comp->joy->state; // comp->nes.priPadState;
+					comp->nes.secJoy = comp->joyb->state; // comp->nes.secPadState;
 				}
 				break;
 			case 0x17:
-				comp->nesapu->irqen = (val & 0x80) ? 0 : 1;
-				comp->nesapu->step5 = (val & 0x40) ? 1 : 0;
+				comp->nesapu->irqen = !(val & 0x80);
+				comp->nesapu->step5 = !!(val & 0x40);
 				comp->nesapu->tstp = 0;
 				break;
 			default:
@@ -316,26 +316,45 @@ void nes_init(Computer* comp) {
 
 // keypress
 
+#define NES_BUTA	1
+#define NES_BUTB	(1<<1)
+#define NES_SEL		(1<<2)
+#define NES_START	(1<<3)
+#define NES_UP		(1<<4)
+#define NES_DOWN	(1<<5)
+#define NES_LEFT	(1<<6)
+#define NES_RIGHT	(1<<7)
+#define NES_JOYB	(1<<16)
+
 typedef struct {
 	signed int id;
 	int mask;
 } nesKey;
 
-static nesKey nesKeyMap[8] = {
-	{XKEY_Z,1},		// A
-	{XKEY_X,2},		// B
-	{XKEY_SPACE,4},		// select
-	{XKEY_ENTER,8},		// start
-	{XKEY_UP,16},		// up
-	{XKEY_DOWN,32},		// down
-	{XKEY_LEFT,64},		// left
-	{XKEY_RIGHT,128}	// right
+// TODO: add keys for 2nd joystick
+// NOTE: if joystick state is in joy->state, don't assign gamepad buttons to kempston
+static nesKey nesKeyMap[] = {
+	{XKEY_Z, NES_BUTA},		// A
+	{XKEY_X, NES_BUTB},		// B
+	{XKEY_SPACE, NES_SEL},		// select
+	{XKEY_ENTER, NES_START},	// start
+	{XKEY_UP, NES_UP},		// up
+	{XKEY_DOWN, NES_DOWN},		// down
+	{XKEY_LEFT, NES_LEFT},		// left
+	{XKEY_RIGHT, NES_RIGHT},	// right
+	{XKEY_I, NES_UP | NES_JOYB},	// IKJL,OP = 2nd joystick
+	{XKEY_K, NES_DOWN | NES_JOYB},
+	{XKEY_J, NES_LEFT | NES_JOYB},
+	{XKEY_L, NES_RIGHT | NES_JOYB},
+	{XKEY_O, NES_BUTA | NES_JOYB},
+	{XKEY_P, NES_BUTB | NES_JOYB},
+	{-1, 0}
 };
 
 int nesGetInputMask(signed int keyid) {
 	int idx = 0;
 	int mask = 0;
-	while (idx < 8) {
+	while (nesKeyMap[idx].mask && !mask) {
 		if (nesKeyMap[idx].id == keyid) {
 			mask = nesKeyMap[idx].mask;
 		}
@@ -364,7 +383,11 @@ static char nesC4on[] = " CH4 on ";
 
 void nes_keyp(Computer* comp, keyEntry ent) {
 	int mask = nesGetInputMask(ent.key);
-	comp->nes.priPadState |= mask;
+	if (mask & NES_JOYB) {
+		comp->joyb->state |= (mask ^ NES_JOYB); // comp->nes.secPadState |= mask;
+	} else {
+		comp->joy->state |= mask; // comp->nes.priPadState |= mask;
+	}
 	switch (ent.key) {
 		case XKEY_0:
 			switch(comp->nes.type) {
@@ -417,7 +440,11 @@ void nes_keyp(Computer* comp, keyEntry ent) {
 void nes_keyr(Computer* comp, keyEntry ent) {
 	int mask = nesGetInputMask(ent.key);
 	if (mask == 0) return;
-	comp->nes.priPadState &= ~mask;
+	if (mask & NES_JOYB) {
+		comp->joyb->state &= ~(mask ^ NES_JOYB); // comp->nes.secPadState &= ~mask;
+	} else {
+		comp->joy->state &= ~mask; // comp->nes.priPadState &= ~mask;
+	}
 }
 
 sndPair nes_vol(Computer* comp, sndVolume* sv) {

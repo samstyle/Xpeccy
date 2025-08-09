@@ -215,8 +215,9 @@ typedef struct {
 //		unsigned vblank:1;		// vid->vblank for catching 0->1
 		unsigned irq;
 		int type;			// DENDY | NTSC | PAL
-		int priPadState;		// b0..7 = A,B,sel,start,up,down,left,right,0,0,0,0,....
-		int secPadState;
+		// TODO: priPadState/secPadState is same as joy->state/joyb->state ?
+//		int priPadState;		// b0..7 = A,B,sel,start,up,down,left,right,0,0,0,0,....
+//		int secPadState;
 		int priJoy;			// shift registers (reading 4016/17 returns bit 0 & shift right)
 		int secJoy;			//		write b0=1 to 4016 restore status
 	} nes;
