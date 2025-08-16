@@ -146,7 +146,9 @@ bool prfSetCurrent(std::string nm) {
 	prfSetLayout(nprf, nprf->layName);
 	comp_kbd_release(nprf->zx);
 	mouseReleaseAll(nprf->zx->mouse);
-	padLoadConfig(nprf->jmapName);
+	//padLoadConfig(nprf->jmapName);
+	conf.joy.gpad->loadMap(nprf->jmapNameA);
+	conf.joy.gpadb->loadMap(nprf->jmapNameB);
 	loadKeys();
 	compSetHardware(nprf->zx, NULL);
 	return true;
@@ -472,9 +474,14 @@ int prf_load_conf(xProfile* prf, std::string cfname, int flag) {
 						prf->kmapName = pval;
 						loadKeys();
 					}
+					// NOTE: gamepad maps loaded in prfSetCurrent
 					if (pnam == "gamepad.map") {
-						prf->jmapName = pval;
-						padLoadConfig(prf->jmapName);
+						prf->jmapNameA = pval;
+						//conf.joy.gpad->loadMap(pval);
+					}
+					if (pnam == "gamepad2.map") {
+						prf->jmapNameB = pval;
+						//conf.joy.gpadb->loadMap(pval);
 					}
 					break;
 				case PS_SDC:
@@ -676,7 +683,8 @@ int prfSave(std::string nm) {
 	fprintf(file, "mouse.sensitivity = %f\n", comp->mouse->sensitivity);
 	fprintf(file, "mouse.pctype = %i\n", comp->mouse->pcmode);
 	fprintf(file, "joy.extbuttons = %s\n", YESNO(comp->joy->extbuttons));
-	fprintf(file, "gamepad.map = %s\n", prf->jmapName.c_str());
+	fprintf(file, "gamepad.map = %s\n", prf->jmapNameA.c_str());
+	fprintf(file, "gamepad2.map = %s\n", prf->jmapNameB.c_str());
 	fprintf(file, "kbd.scantab = %i\n", comp->keyb->pcmode);
 	if ((prf->kmapName != "") && (prf->kmapName != "default"))
 		fprintf(file, "keymap = %s\n", prf->kmapName.c_str());

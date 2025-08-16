@@ -124,7 +124,7 @@ typedef struct {
 		void reset(QAction*);
 		void chLayout(QAction*);
 		void umOpen(QAction*);
-		void gpButtonChanged(int, bool);	// need xGamepad on SDL
+		void gpButtonChanged(int, bool);
 		void gpAxisChanged(int, double);
 		void connected();
 		void disconnected();
@@ -172,7 +172,7 @@ typedef struct {
 #if USE_QT_GAMEPAD
 		QGamepadManager* gpadmgr;
 #endif
-		void mapJoystick(Computer*, int, int, int);
+		void mapJoystick(xGamepad*, Computer*, int, int, int);
 		void mapPress(Computer*, xJoyMapEntry);
 		void mapRelease(Computer*, xJoyMapEntry);
 #ifdef USENETWORK

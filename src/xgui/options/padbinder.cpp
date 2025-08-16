@@ -53,7 +53,9 @@ xPadBinder::xPadBinder(QWidget* p):QDialog(p) {
 	resize(minimumSize());
 }
 
-void xPadBinder::start(xJoyMapEntry e) {
+// TODO: select radiobutton (e->dev)
+void xPadBinder::start(xGamepad* gp, xJoyMapEntry e) {
+	gpad = gp;
 	ent = e;
 	setPadButtonText();
 #if USE_SEQ_BIND
@@ -61,9 +63,23 @@ void xPadBinder::start(xJoyMapEntry e) {
 #else
 	setKeyButtonText();
 #endif
+	switch(e.dev) {
+		case JMAP_KEY:
+			ui.rbKey->setChecked(true);
+			break;
+		case JMAP_JOY:
+			ui.rbJoy->setChecked(true);
+			ui.cbJoyList->setCurrentIndex(ui.cbJoyList->findData(e.dir));
+			break;
+		case JMAP_MOUSE:
+			ui.rbMouse->setChecked(true);
+			ui.cbMouseList->setCurrentIndex(ui.cbMouseList->findData(e.dir));
+			break;
+	}
+
 	ui.pbRepSlider->setValue(ent.rpt);
-	connect(conf.joy.gpad, &xGamepad::buttonChanged, this, &xPadBinder::gpButtonChanged);
-	connect(conf.joy.gpad, &xGamepad::axisChanged, this, &xPadBinder::gpAxisChanged);
+	connect(gpad, SIGNAL(buttonChanged(int,bool)), this, SLOT(gpButtonChanged(int,bool)));
+	connect(gpad, SIGNAL(axisChanged(int,double)), this, SLOT(gpAxisChanged(int,double)));
 	show();
 }
 
@@ -240,144 +256,41 @@ void xPadBinder::okPress() {
 #endif
 		if (ent.dir == XJ_NONE) return;
 	}
+//	disconnect(gpad, this);
 	close();
 	emit bindReady(ent);
+}
+
+void xPadBinder::reject() {
+//	disconnect(gpad, this);
+	hide();
 }
 
 // scan gamepad
 
 void xPadBinder::gpButtonChanged(int n, bool v) {
 	if (v && isActiveWindow()) {
-		ent.type = JOY_BUTTON;
-		ent.num = n;
-		ent.state = 1;
-		mode = PBMODE_FREE;
-		setPadButtonText();
+		xGamepad* gp = (xGamepad*)sender();
+		if (gp == gpad) {
+			ent.type = JOY_BUTTON;
+			ent.num = n;
+			ent.state = 1;
+			mode = PBMODE_FREE;
+			setPadButtonText();
+		}
 	}
 }
 
 void xPadBinder::gpAxisChanged(int n, double v) {
-	if ((absd(v) > conf.joy.deadf) && isActiveWindow()) {
-		ent.type = JOY_AXIS;
-		ent.num = n;
-		ent.state = (v < 0) ? -1 : 1;
-		mode = PBMODE_FREE;
-		setPadButtonText();
+	xGamepad* gp = (xGamepad*)sender();
+	if ((absd(v) > gp->deadZone() / 32768.0) && isActiveWindow()) {
+		if (gp == gpad) {
+			ent.type = JOY_AXIS;
+			ent.num = n;
+			ent.state = (v < 0) ? -1 : 1;
+			mode = PBMODE_FREE;
+			setPadButtonText();
+		}
 	}
 }
 
-// PAD MAP MODEL
-
-xPadMapModel::xPadMapModel(QObject* p):QAbstractItemModel(p) {
-}
-
-QModelIndex xPadMapModel::index(int row, int col, const QModelIndex& idx) const {
-	return createIndex(row, col);
-}
-
-QModelIndex xPadMapModel::parent(const QModelIndex& idx) const {
-	return QModelIndex();
-}
-
-int xPadMapModel::rowCount(const QModelIndex& par) const {
-	if (par.isValid()) return 0;
-	return (int)conf.joy.map.size();
-}
-
-int xPadMapModel::columnCount(const QModelIndex& par) const {
-	if (par.isValid()) return 0;
-	return 3;
-}
-
-static QString hatDirs[4] = {"Up","Down","Left","Right"};
-
-QVariant xPadMapModel::data(const QModelIndex& idx, int role) const {
-	QVariant res;
-	if (!idx.isValid()) return res;
-	int row = idx.row();
-	int col = idx.column();
-	if ((row < 0) || (row >= rowCount())) return res;
-	if ((col < 0) || (col >= columnCount())) return res;
-	xJoyMapEntry jent = conf.joy.map[row];
-	QString str;
-	switch (role) {
-		case Qt::DisplayRole:
-			switch(col) {
-				case 0:
-					if (jent.type == JOY_AXIS) str = "Axis";
-					else if (jent.type == JOY_BUTTON) str = "Button";
-					else if (jent.type == JOY_HAT) str = "Hat";
-					else str = "???";
-					str.append(QString(" %0").arg(jent.num));
-					switch (jent.type) {
-						case JOY_AXIS:
-							str.append((jent.state < 0) ? " -" : " +");
-							break;
-						case JOY_HAT:
-							switch(jent.state) {
-								case SDL_HAT_UP: str.append(" up"); break;
-								case SDL_HAT_LEFT: str.append(" left"); break;
-								case SDL_HAT_DOWN: str.append(" down"); break;
-								case SDL_HAT_RIGHT: str.append(" right"); break;
-								default: str.append(" ??"); break;
-							}
-							break;
-					}
-					if ((jent.type == JOY_BUTTON) && (jent.num > 11)) {
-						str = QString("Hat ") + hatDirs[jent.num & 3];
-					}
-					res = str;
-					break;
-				case 1:
-					switch(jent.dev) {
-						case JMAP_KEY:
-#if USE_SEQ_BIND
-							str = QString("Key: %0").arg(jent.seq.toString());
-#else
-							str = QString("Key %0").arg(getKeyNameById(jent.key));
-#endif
-							break;
-						case JMAP_JOY:
-							str = "Joystick ";
-							switch (jent.dir) {
-								case XJ_UP: str.append("up"); break;
-								case XJ_DOWN: str.append("down"); break;
-								case XJ_RIGHT: str.append("right"); break;
-								case XJ_LEFT: str.append("left"); break;
-								case XJ_FIRE: str.append("fire"); break;
-								case XJ_BUT2: str.append("button2"); break;
-								case XJ_BUT3: str.append("button3"); break;
-								case XJ_BUT4: str.append("button4"); break;
-								default: str.append("??"); break;
-							}
-							break;
-						case JMAP_MOUSE:
-							str = "Mouse ";
-							switch (jent.dir) {
-								case XM_UP: str.append("up"); break;
-								case XM_DOWN: str.append("down"); break;
-								case XM_LEFT: str.append("left"); break;
-								case XM_RIGHT: str.append("right"); break;
-								case XM_LMB: str.append("LB"); break;
-								case XM_MMB: str.append("MB"); break;
-								case XM_RMB: str.append("RB"); break;
-								case XM_WHEELUP: str.append("wheel up"); break;
-								case XM_WHEELDN: str.append("wheel down"); break;
-								default: str.append("??"); break;
-							}
-					}
-					res = str;
-					break;
-				case 2:
-					if (jent.rpt > 0)
-						res = QString("%0 sec").arg(jent.rpt / 50.0);
-					break;
-			}
-			break;
-	}
-	return res;
-}
-
-void xPadMapModel::update() {
-	endResetModel();
-}

@@ -20,16 +20,10 @@
 
 #include "../libxpeccy/spectrum.h"
 #include "../libxpeccy/filetypes/filetypes.h"
+#include "gamepad.h"
 
 #ifndef USEMUTEX
 #define USEMUTEX 0
-#endif
-
-// QGamepad -> Qt5.7+
-#define USE_QT_GAMEPAD 0 && (QT_VERSION >= QT_VERSION_CHECK(5,7,0)) && (QT_VERSION <= QT_VERSION_CHECK(6,0,0))
-
-#if USE_QT_GAMEPAD
-#include <QGamepad>
 #endif
 
 #define NEW_SMP_METHOD 1
@@ -191,7 +185,8 @@ typedef struct {
 	std::string layName;
 	std::string hwName;
 	std::string rsName;
-	std::string jmapName;
+	std::string jmapNameA;
+	std::string jmapNameB;
 	std::string kmapName;
 	std::string lastDir;
 	std::string palette;
@@ -397,103 +392,6 @@ bool addLayout(std::string, vLayout);
 void rmLayout(std::string);
 xLayout* findLayout(std::string);
 
-// joystick
-
-// use QKeySequence to bind gamepad to pc keyboard, instead of single key
-#define USE_SEQ_BIND 1
-
-enum {
-	JOY_NONE = 0,
-	JOY_AXIS,
-	JOY_BUTTON,
-	JOY_HAT
-};
-
-enum {
-	JMAP_NONE = 0,
-	JMAP_KEY,
-	JMAP_JOY,
-	JMAP_MOUSE
-};
-
-typedef struct {
-	int type;		// axis/button
-	int num;		// number of axis/button
-	int state;		// -x/+x for axis, 0/x for button
-	int dev;		// device for action JMAP_*
-#if USE_SEQ_BIND
-	QKeySequence seq;	// key sequence to activate
-#else
-	int key;		// key XKEY_* for keyboard
-#endif
-	int dir;		// XJ_* for kempston
-	int rps;		// repeat state (0:released, !0:pressed)
-	int rpt;		// repeat period (0 = no repeat)
-	int cnt;		// repeat counter
-} xJoyMapEntry;
-
-enum {
-	GPBACKEND_NONE = 0,
-	GPBACKEND_SDL,
-	GPBACKEND_QT
-};
-
-class xGamepad : public QObject {
-	Q_OBJECT
-	public:
-		xGamepad(int = GPBACKEND_SDL, QObject* = nullptr);
-		~xGamepad();
-		void open(int);
-		void open(QString);
-		void close();
-		void setType(int);
-		int getType();
-		QString name(int = -1);
-		QStringList getList();
-	signals:
-		void buttonChanged(int, bool);
-		void axisChanged(int, double);
-	private:
-		int id;
-		int type;
-		int lasthat;
-		int stid;
-		union {
-			SDL_Joystick* sjptr;
-#if USE_QT_GAMEPAD
-			QGamepad* qjptr;
-#endif
-		};
-#if USE_QT_GAMEPAD
-	private slots:
-		void BAChanged(bool);
-		void BBChanged(bool);
-		void BXChanged(bool);
-		void BYChanged(bool);
-		void BL1Changed(bool);
-		void BL3Changed(bool);
-		void BR1Changed(bool);
-		void BR3Changed(bool);
-		void BUChanged(bool);
-		void BDChanged(bool);
-		void BRChanged(bool);
-		void BLChanged(bool);
-		void BStChanged(bool);
-		void BSeChanged(bool);
-		void BCeChanged(bool);
-		void BGuChanged(bool);
-		void ALXChanged(double);
-		void ALYChanged(double);
-		void ARXChanged(double);
-		void ARYChanged(double);
-		void AL2Changed(double);
-		void AR2Changed(double);
-		void gpListChanged();
-#endif
-	protected:
-		void timerEvent(QTimerEvent*);
-};
-
 // xmap
 
 void load_xmap(QString);
@@ -551,11 +449,7 @@ struct xConfig {
 	} tape;
 	struct {
 		xGamepad* gpad;
-		// int idx;
-		QString curName;
-		int dead;
-		double deadf;
-		QList<xJoyMapEntry> map;	// gamepad map for current profile
+		xGamepad* gpadb;
 	} joy;
 	struct {
 		unsigned noLeds:1;

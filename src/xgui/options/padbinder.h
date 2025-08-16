@@ -8,30 +8,18 @@
 #include "../../xcore/xcore.h"
 #include "ui_padbinder.h"
 
-class xPadMapModel : public QAbstractItemModel {
-	Q_OBJECT
-	public:
-		xPadMapModel(QObject* = NULL);
-		void update();
-	private:
-		QModelIndex index(int, int, const QModelIndex& = QModelIndex()) const;
-		QModelIndex parent(const QModelIndex& = QModelIndex()) const;
-		int rowCount(const QModelIndex& = QModelIndex()) const;
-		int columnCount(const QModelIndex& = QModelIndex()) const;
-		QVariant data(const QModelIndex&, int) const;
-};
-
 class xPadBinder : public QDialog {
 	Q_OBJECT
 	public:
 		xPadBinder(QWidget* = NULL);
 		xJoyMapEntry ent;
-		void start(xJoyMapEntry);
+	public slots:
+		void start(xGamepad*, xJoyMapEntry);
 	signals:
 		void bindReady(xJoyMapEntry);
 	private slots:
+		void reject();
 		void okPress();
-//		void startBindPad();
 		void startBindKey();
 		void setJoyDir();
 		void setMouseDir();
@@ -42,7 +30,8 @@ class xPadBinder : public QDialog {
 		void gpAxisChanged(int, double);
 	private:
 		Ui::PadBinder ui;
-		xPadMapModel* model;
+		xGamepad* gpad;
+//		xPadMapModel* model;
 		int mode;
 //		void close();
 		void setPadButtonText();

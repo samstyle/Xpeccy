@@ -13,6 +13,7 @@
 #include "opt_tapecat.h"
 #include "opt_hotkeytab.h"
 #include "opt_paledit.h"
+#include "opt_gamepad.h"
 
 #include "ui_rsedit.h"
 #include "ui_setupwin.h"
@@ -36,10 +37,13 @@ class SetupWin : public QDialog {
 
 		QDialog* layeditor;
 		QDialog* umadial;
-		xPadMapModel* padModel;
-		xPadBinder* padial;
+//		xPadMapModel* padModel;
 		xKeyEditor* kedit;
 		xPalEditor* paleditor;
+
+		xPadBinder* padial;
+		xGamepadWidget* gpwid_a;
+		xGamepadWidget* gpwid_b;
 
 		QList<QColor> editpal;
 

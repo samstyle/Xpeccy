@@ -51,7 +51,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 
 	set(INC_PATHS local/include include)
 	set(LIB_PATHS lib lib64 local/lib local/lib64)
-	
+
 	set(LIBRARIES ${LIBRARIES} dl)
 
 	if ("${PACK}" STREQUAL "rpm")
@@ -169,8 +169,10 @@ set(MOCFILES
 	./src/xgui/options/opt_tapecat.h
 	./src/xgui/options/opt_hotkeytab.h
 	./src/xgui/options/opt_paledit.h
+	./src/xgui/options/opt_gamepad.h
 	./src/vkeyboard.h
-	./src/xcore/xcore.h
+#	./src/xcore/xcore.h
+	./src/xcore/gamepad.h
 	./src/xgui/xgui.h
 	./src/xgui/classes.h
 	./src/xgui/labelist.h

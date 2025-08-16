@@ -103,9 +103,8 @@ void conf_init(char* wpath, char* confdir) {
 	conf.boot = 1;
 	conf.emu.pause = 0;
 	conf.emu.fast = 0;
-	conf.joy.dead = 8192;
-	conf.joy.deadf = conf.joy.dead / 32768.0;
-	conf.joy.gpad = new xGamepad;
+	conf.joy.gpad = new xGamepad; qDebug() << conf.joy.gpad;
+	conf.joy.gpadb = new xGamepad; qDebug() << conf.joy.gpadb;
 	addProfile("default","xpeccy.conf");
 }
 
@@ -193,8 +192,10 @@ void saveConfig() {
 	fprintf(cfile, "fast = %s\n", YESNO(conf.tape.fast));
 
 	fprintf(cfile, "\n[INPUT]\n\n");
-	fprintf(cfile, "gamepad = %s\n", conf.joy.curName.toLocal8Bit().data());
-	fprintf(cfile, "deadzone = %i\n", conf.joy.dead);
+	fprintf(cfile, "gamepad = %s\n", conf.joy.gpad->name().toLocal8Bit().data());
+	fprintf(cfile, "deadzone = %i\n", conf.joy.gpad->deadZone());
+	fprintf(cfile, "gamepad2 = %s\n", conf.joy.gpadb->name().toLocal8Bit().data());
+	fprintf(cfile, "deadzone2 = %i\n", conf.joy.gpadb->deadZone());
 
 	fprintf(cfile, "\n[LEDS]\n\n");
 	fprintf(cfile, "mouse = %s\n", YESNO(conf.led.mouse));
@@ -387,11 +388,10 @@ void loadConfig() {
 					}
 					break;
 				case SECT_INPUT:
-					if (pnam=="deadzone") {
-						conf.joy.dead = arg.i;
-						conf.joy.deadf = conf.joy.dead / 32768.0;
-					}
-					if (pnam=="gamepad") conf.joy.curName = arg.s;
+					if (pnam=="deadzone") conf.joy.gpad->setDeadZone(arg.i);
+					if (pnam=="deadzone2") conf.joy.gpadb->setDeadZone(arg.i);
+					if (pnam=="gamepad") conf.joy.gpad->open(arg.s); //conf.joy.curName = arg.s;
+					if (pnam=="gamepad2") conf.joy.gpadb->open(arg.s);
 					break;
 				case SECT_VIDEO:
 					if (pnam=="layout") {

@@ -182,10 +182,12 @@ MainWin::MainWin() {
 	leds[led_disk_red].load(":/images/diskRed.png");
 	leds[led_wav].load(":/images/wav.png");
 
-	conf.joy.gpad->open(conf.joy.curName);
+//	conf.joy.gpad->open(); // conf.joy.curName);
 
-	connect(conf.joy.gpad, &xGamepad::buttonChanged, this, &MainWin::gpButtonChanged);
-	connect(conf.joy.gpad, &xGamepad::axisChanged, this, &MainWin::gpAxisChanged);
+	connect(conf.joy.gpad, SIGNAL(buttonChanged(int,bool)), this, SLOT(gpButtonChanged(int,bool)));
+	connect(conf.joy.gpad, SIGNAL(axisChanged(int,double)), this, SLOT(gpAxisChanged(int,double)));
+	connect(conf.joy.gpadb, SIGNAL(buttonChanged(int,bool)), this, SLOT(gpButtonChanged(int,bool)));
+	connect(conf.joy.gpadb, SIGNAL(axisChanged(int,double)), this, SLOT(gpAxisChanged(int,double)));
 
 	initFileDialog(this);
 	initUserMenu();
@@ -242,10 +244,7 @@ MainWin::~MainWin() {
 // gamepad mapper
 // xJoyMapEntry::key is XKEY_*
 
-// TODO: shift+1 is recognised as 1
-
 void MainWin::mapRelease(Computer* comp, xJoyMapEntry ent) {
-//	QKeyEvent* ev;
 	Qt::Key key;
 	Qt::KeyboardModifier mod;
 	int xkey;
@@ -268,6 +267,9 @@ void MainWin::mapRelease(Computer* comp, xJoyMapEntry ent) {
 		case JMAP_JOY:
 			joyRelease(comp->joy, ent.dir);
 			break;
+		case JMAP_JOYB:
+			joyRelease(comp->joyb, ent.dir);
+			break;
 		case JMAP_MOUSE:
 			mouseRelease(comp->mouse, ent.dir);
 			break;
@@ -275,7 +277,6 @@ void MainWin::mapRelease(Computer* comp, xJoyMapEntry ent) {
 }
 
 void MainWin::mapPress(Computer* comp, xJoyMapEntry ent) {
-//	QKeyEvent* ev;
 	Qt::Key key;
 	Qt::KeyboardModifier mod;
 	int xkey;
@@ -299,23 +300,19 @@ void MainWin::mapPress(Computer* comp, xJoyMapEntry ent) {
 		case JMAP_JOY:
 			joyPress(comp->joy, ent.dir);
 			break;
+		case JMAP_JOYB:
+			joyPress(comp->joyb, ent.dir);
+			break;
 		case JMAP_MOUSE:
 			mousePress(comp->mouse, ent.dir, abs(ent.state / 4096));
 			break;
 	}
 }
 
-int sign(int v) {
-	if (v < 0) return -1;
-	if (v > 0) return 1;
-	return 0;
-}
-
-// NOTE: -1 -> 1 | 1 -> -1 = release old one
-
-static QMap<int, QMap<int, int> > jState;
-
-void MainWin::mapJoystick(Computer* comp, int type, int num, int st) {
+// TODO: choose gamepad (gpad/gpadb)
+void MainWin::mapJoystick(xGamepad* gp, Computer* comp, int type, int num, int st) {
+	QList<xJoyMapEntry> presslist = gp->scanMap(type, num, st);
+#if 0
 	int state;
 	int hst;
 	if (type == JOY_HAT) {
@@ -329,10 +326,9 @@ void MainWin::mapJoystick(Computer* comp, int type, int num, int st) {
 	jState[type][num] = state;
 	// xJoyMapEntry xjm;
 	QList<xJoyMapEntry> presslist;
-	// foreach(xJoyMapEntry& xjm, conf.joy.map) {
-	// for(xJoyMapEntry& xjm : conf.joy.map) {
-	for (int i = 0; i < conf.joy.map.size(); i++) {
-		xJoyMapEntry& xjm = conf.joy.map[i];
+	// QList<xJoyMapEntry>::iterator it;
+	for (int i = 0; i < gp->map.size(); i++) {
+		xJoyMapEntry& xjm = gp->map[i];
 		if ((type == xjm.type) && (num == xjm.num)) {
 			if ((state == 0) && (type != JOY_HAT)) {
 				mapRelease(comp, xjm);
@@ -357,8 +353,8 @@ void MainWin::mapJoystick(Computer* comp, int type, int num, int st) {
 								xjm.rps = 1;
 								presslist.append(xjm);
 							} else {			// released
-								mapRelease(comp, xjm);
 								xjm.cnt = 0;
+								mapRelease(comp, xjm);
 							}
 						}
 						break;
@@ -371,8 +367,13 @@ void MainWin::mapJoystick(Computer* comp, int type, int num, int st) {
 			}
 		}
 	}
+#endif
 	foreach(xJoyMapEntry xjm, presslist) {
-		mapPress(comp, xjm);
+		if (xjm.rps) {
+			mapPress(comp, xjm);
+		} else {
+			mapRelease(comp, xjm);
+		}
 	}
 }
 
@@ -382,13 +383,15 @@ void MainWin::mapJoystick(Computer* comp, int type, int num, int st) {
 void MainWin::gpButtonChanged(int n, bool v) {
 	if (conf.emu.pause) return;
 	if (!isActiveWindow()) return;
-	mapJoystick(conf.prof.cur->zx, JOY_BUTTON, n, v);
+	xGamepad* gp = (xGamepad*)sender();
+	mapJoystick(gp, conf.prof.cur->zx, JOY_BUTTON, n, v);
 }
 // LX,LY,Rx,RY,L2,R2
 void MainWin::gpAxisChanged(int n, double v) {
 	if (conf.emu.pause) return;
 	if (!isActiveWindow()) return;
-	mapJoystick(conf.prof.cur->zx, JOY_AXIS, n, v * 32767);
+	xGamepad* gp = (xGamepad*)sender();
+	mapJoystick(gp, conf.prof.cur->zx, JOY_AXIS, n, v * 32767);
 }
 
 // calling on timer every 20ms
@@ -453,9 +456,17 @@ void MainWin::timerEvent(QTimerEvent* ev) {
 		}
 #endif
 // buttons autorepeat switcher
-		// for(xJoyMapEntry& xjm : conf.joy.map) {
-		for (int i = 0; i < conf.joy.map.size(); i++) {
-			xJoyMapEntry& xjm = conf.joy.map[i];
+		QList<xJoyMapEntry> presslist = conf.joy.gpad->repTick();
+		foreach(xJoyMapEntry xjm, presslist) {
+			if (xjm.rps) {
+				mapPress(comp, xjm);
+			} else {
+				mapRelease(comp, xjm);
+			}
+		}
+#if 0
+		for (int i = 0; i < conf.joy.gpad->map.size(); i++) {
+			xJoyMapEntry& xjm = conf.joy.gpad->map[i];
 			if (xjm.cnt > 0) {
 				xjm.cnt--;
 				if (xjm.cnt == 0) {
@@ -469,6 +480,7 @@ void MainWin::timerEvent(QTimerEvent* ev) {
 				}
 			}
 		}
+#endif
 // process mouse auto move
 		comp->mouse->xpos += comp->mouse->autox;
 		comp->mouse->ypos += comp->mouse->autoy;
