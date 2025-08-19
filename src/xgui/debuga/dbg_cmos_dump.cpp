@@ -55,6 +55,10 @@ QVariant xCmosDumpModel::headerData(int sect, Qt::Orientation ori, int role) con
 	return QString::number(sect << 3, 16).toUpper().rightJustified(3,'0');
 }
 
+// table
+
+// TODO
+
 // widget
 
 xCmosDumpWidget::xCmosDumpWidget(QString i, QString t, QWidget* p):xDockWidget(i,t,p) {

@@ -304,6 +304,30 @@ void xTableModel::updateCell(int row, int col) {
 	emit dataChanged(index(row, col), index(row, col));
 }
 
+void xTableModel::setRows(int r) {
+	if (r < row_count) {
+		emit beginRemoveRows(QModelIndex(), r, row_count);
+		row_count = r;
+		emit endRemoveRows();
+	} else if (r > row_count) {
+		emit beginInsertRows(QModelIndex(), row_count, r);
+		row_count = r;
+		emit endInsertRows();
+	}
+}
+
+void xTableModel::setCols(int c) {
+	if (c < col_count) {
+		emit beginRemoveColumns(QModelIndex(), c, col_count);
+		col_count = c;
+		emit endRemoveColumns();
+	} else if (c > col_count) {
+		emit beginInsertColumns(QModelIndex(), col_count, c);
+		col_count = c;
+		emit endInsertColumns();
+	}
+}
+
 // item delegate
 
 xItemDelegate::xItemDelegate(int t) {

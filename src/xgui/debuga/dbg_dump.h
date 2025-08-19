@@ -39,7 +39,6 @@ class xDumpModel : public xTableModel {
 		unsigned int dmpadr;
 		unsigned int maxadr;
 		void setMode(int, int, int, int);
-		void setRows(int);
 		int rowCount(const QModelIndex& = QModelIndex()) const;
 		int columnCount(const QModelIndex& = QModelIndex()) const;
 		Qt::ItemFlags flags(const QModelIndex&) const;
@@ -55,7 +54,6 @@ class xDumpModel : public xTableModel {
 		int page;
 		int pgbase;
 		int pgsize;
-		int row_count;
 		int mrd(int) const;
 		void mwr(int, unsigned char);
 };

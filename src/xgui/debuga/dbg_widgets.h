@@ -303,6 +303,7 @@ class xZXScrWidget : public xDockWidget {
 		void setAddress(int, int);
 	public slots:
 		void draw();
+		void setZoom(int);
 	private:
 		Ui::ZXScrWidget ui;
 		QImage scrImg;

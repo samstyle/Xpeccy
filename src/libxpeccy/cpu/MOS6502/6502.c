@@ -152,7 +152,7 @@ xRegDsc m6502RegTab[] = {
 	{M6502_REG_S, "S", REG_BYTE, 0, offsetof(CPU, regS)},
 	{M6502_REG_F, "P", REG_BYTE, 0, 0},
 	{REG_EMPTY, "SP", REG_WORD, REG_RDMP | REG_SP, offsetof(CPU, regSP)},
-	{REG_NONE, "", 0, 0, 0}
+	{REG_EOT, "", 0, 0, 0}
 };
 
 static char* mosFlags = "NV-BDIZC";
@@ -160,7 +160,7 @@ static char* mosFlags = "NV-BDIZC";
 void m6502_get_regs(CPU* cpu, xRegBunch* bunch) {
 	int idx = 0;
 	xRegister* reg;
-	while(m6502RegTab[idx].id != REG_NONE) {
+	while(m6502RegTab[idx].id != REG_EOT) {
 		reg = &bunch->regs[idx];
 		reg->id = m6502RegTab[idx].id;
 		reg->name = m6502RegTab[idx].name;
@@ -178,7 +178,7 @@ void m6502_get_regs(CPU* cpu, xRegBunch* bunch) {
 	}
 	//memcpy(bunch->flags, "NV-BDIZC", 8);
 	bunch->flags = mosFlags;
-	bunch->regs[idx].id = REG_NONE;
+	bunch->regs[idx].id = REG_EOT;
 }
 
 void m6502_set_regs(CPU* cpu, xRegBunch bunch) {
@@ -191,7 +191,7 @@ void m6502_set_regs(CPU* cpu, xRegBunch bunch) {
 			case M6502_REG_F: mos_set_flag(cpu, bunch.regs[idx].value & 0xff); break;
 			case M6502_REG_X: cpu->regX = bunch.regs[idx].value & 0xff; break;
 			case M6502_REG_Y: cpu->regY = bunch.regs[idx].value & 0xff; break;
-			case REG_NONE: idx = 100; break;
+			case REG_EOT: idx = 100; break;
 		}
 	}
 }

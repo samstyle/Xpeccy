@@ -132,6 +132,7 @@ void xDumpModel::setView(int t) {
 	update();
 }
 
+/*
 void xDumpModel::setRows(int r) {
 	if (r < row_count) {
 		emit beginRemoveRows(QModelIndex(), r, row_count);
@@ -143,6 +144,7 @@ void xDumpModel::setRows(int r) {
 		emit endInsertRows();
 	}
 }
+*/
 
 int xDumpModel::rowCount(const QModelIndex&) const {
 	return row_count;
@@ -447,7 +449,24 @@ void xDumpTable::resizeEvent(QResizeEvent* ev) {
 	int rh = verticalHeader()->defaultSectionSize();
 	int rc = h / rh;
 	model->setRows(rc);
-	setView(view);
+
+	QFontMetrics fm(font());
+	int w = ev->size().width();
+	int w0;
+	int wl;
+// horizontalAdvance() since 5.11, before - width()
+#if (QT_VERSION >= QT_VERSION_CHECK(5,11,0))
+	w0 = fm.horizontalAdvance("0000:0000");
+	wl = fm.horizontalAdvance("00000000");
+#else
+	w0 = fm.width("0000:0000");
+	wl = fm.width("00000000");
+#endif
+	horizontalHeader()->setDefaultSectionSize((w - w0 - wl - 30) / 8);
+	setColumnWidth(0, w0+5);
+	setColumnWidth(9, wl+5);
+
+//	setView(view);
 	update();
 }
 

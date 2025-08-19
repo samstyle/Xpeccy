@@ -199,7 +199,7 @@ xRegDsc lrRegTab[] = {
 	{LR_REG_IE, "IE", REG_WORD, REG_RO, offsetof(CPU, inten)},
 	{REG_EMPTY, "A", REG_BYTE, 0, offsetof(CPU, regA)},
 	{REG_EMPTY, "F", REG_32, 0, 0},
-	{REG_NONE, "", 0, 0, 0}
+	{REG_EOT, "", 0, 0, 0}
 };
 
 static char* lrFlags = "ZNHC----";
@@ -207,7 +207,7 @@ static char* lrFlags = "ZNHC----";
 void lr_get_regs(CPU* cpu, xRegBunch* bunch) {
 	int idx = 0;
 	PAIR(w,h,l)rx;
-	while(lrRegTab[idx].id != REG_NONE) {
+	while(lrRegTab[idx].id != REG_EOT) {
 		bunch->regs[idx].id = lrRegTab[idx].id;
 		bunch->regs[idx].name = lrRegTab[idx].name;
 		bunch->regs[idx].type = lrRegTab[idx].type;
@@ -228,7 +228,7 @@ void lr_get_regs(CPU* cpu, xRegBunch* bunch) {
 		}
 		idx++;
 	}
-	bunch->regs[idx].id = REG_NONE;
+	bunch->regs[idx].id = REG_EOT;
 	bunch->flags = lrFlags;
 	//memcpy(bunch->flags, "ZNHC----", 8);
 }
@@ -248,7 +248,7 @@ void lr_set_regs(CPU* cpu, xRegBunch bunch) {
 			case LR_REG_DE: cpu->regDE = bunch.regs[idx].value; break;
 			case LR_REG_HL: cpu->regHL = bunch.regs[idx].value; break;
 			case LR_FLG_IFF: cpu->flgIFF1 = bunch.regs[idx].value; break;
-			case REG_NONE: idx = 100; break;
+			case REG_EOT: idx = 100; break;
 		}
 	}
 }

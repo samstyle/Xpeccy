@@ -450,6 +450,8 @@ static xShortcut short_tab[] = {
 	{SCG_DEBUGA, XCUT_SAVE_DUMP, "key.dbg.savedump", "DeBUGa: Save dump", QKeySequence(), QKeySequence(Qt::CTRL | Qt::Key_S)},
 	{SCG_DEBUGA, XCUT_FINDER, "key.dbg.finder", "DeBUGa: Find pattern", QKeySequence(), QKeySequence(Qt::CTRL | Qt::Key_F)},
 	{SCG_DEBUGA, XCUT_LABELS, "key.dbg.labels", "DeBUGa: Switch labels", QKeySequence(), QKeySequence(Qt::CTRL | Qt::Key_L)},
+	{SCG_DEBUGA, XCUT_LABLIST, "key.dbg.lablist", "DeBUGa: Show labels list", QKeySequence(), QKeySequence()},
+	{SCG_DEBUGA, XCUT_DBG_RELOAD, "key.dbg.reload", "DeBUGa: Reload snapshot and labels", QKeySequence(), QKeySequence()},
 
 	{SCG_DISASM, XCUT_TOPC, "key.disasm.topc", "Diasm: Jump to PC", QKeySequence(), QKeySequence(Qt::Key_Home)},
 	{SCG_DISASM, XCUT_SETPC, "key.disasm.setpc", "Diasm: Set PC", QKeySequence(), QKeySequence(Qt::Key_End)},

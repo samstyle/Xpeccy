@@ -15,6 +15,8 @@ xZXScrWidget::xZXScrWidget(QString i, QString t, QWidget* p):xDockWidget(i,t,p) 
 	connect(ui.cbScrPix, &QCheckBox::stateChanged, this, &xZXScrWidget::draw);
 	connect(ui.cbScrGrid, &QCheckBox::stateChanged, this, &xZXScrWidget::draw);
 
+	connect(ui.sldScale, &QSlider::valueChanged, this, &xZXScrWidget::setZoom);
+
 	hwList << HWG_ZX << HWG_ALF;
 }
 
@@ -24,7 +26,8 @@ void xZXScrWidget::draw() {
 	flag |= ui.cbScrPix->isChecked() ? 2 : 0;
 	flag |= ui.cbScrGrid->isChecked() ? 4 : 0;
 	vid_get_screen(comp->vid, scrImg.bits(), ui.sbScrBank->value(), ui.leScrAdr->getValue(), flag);
-	xColor bcol;// = comp->vid->pal[comp->vid->nextbrd];
+	// TODO: apply palette
+	xColor bcol;
 	bcol.b = (comp->vid->nextbrd & 1) ? ((comp->vid->nextbrd & 8) ? 0xff : 0xa0) : 0x00;
 	bcol.r = (comp->vid->nextbrd & 2) ? ((comp->vid->nextbrd & 8) ? 0xff : 0xa0) : 0x00;
 	bcol.g = (comp->vid->nextbrd & 4) ? ((comp->vid->nextbrd & 8) ? 0xff : 0xa0) : 0x00;
@@ -34,11 +37,20 @@ void xZXScrWidget::draw() {
 	pnt.fillRect(0,0,276,212,qRgb(bcol.r, bcol.g, bcol.b));
 	pnt.drawImage(10,10,scrImg);
 	pnt.end();
-	ui.scrLabel->setPixmap(xpxm);
+	QSize sz(276*conf.dbg.scrzoom, 212*conf.dbg.scrzoom);
+	ui.scrLabel->setFixedSize(sz);
+	ui.scrLabel->setPixmap(xpxm.scaled(sz));
 	ui.labCurScr->setText(QString::number(comp->vid->curscr, 16).rightJustified(2, '0'));
 }
 
 void xZXScrWidget::setAddress(int adr, int atr) {
 	ui.leScr->setValue(adr);
 	ui.leAtr->setValue(atr);
+}
+
+void xZXScrWidget::setZoom(int z) {
+	if (z < 1) return;
+	if (z > 3) return;
+	conf.dbg.scrzoom = z;
+	draw();
 }

@@ -2,6 +2,7 @@
 
 #include <QTableView>
 #include <QDockWidget>
+#include <QResizeEvent>
 
 #include "../classes.h"
 
@@ -31,6 +32,7 @@ class xDiskDump : public QTableView {
 	private:
 		int drv;
 		xDiskDumpModel* mod;
+		void resizeEvent(QResizeEvent*);
 };
 
 #include "ui_form_fdddump.h"

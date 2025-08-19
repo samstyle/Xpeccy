@@ -100,7 +100,7 @@ void MainWin::socketRead() {
 		xRegister reg;
 		for (cnt = 0; cnt < 32; cnt++) {
 			reg = rb.regs[cnt];
-			if ((reg.id != REG_NONE) && (reg.id != REG_EMPTY)) {
+			if ((reg.id != REG_EOT) && (reg.id != REG_EMPTY)) {
 				sock->write(reg.name);
 				sock->write(" : ");
 				switch(reg.type) {

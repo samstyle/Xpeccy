@@ -60,6 +60,7 @@ void DebugWin::updateStyle() {
 	QColor col;
 	QColor cot;
 	QPalette pal;
+	QString str;
 	SETCOLOR("dbg.window", QPalette::Window);
 	SETCOLOR("dbg.window", QPalette::Button);
 	SETCOLOR("dbg.text", QPalette::WindowText);
@@ -68,7 +69,7 @@ void DebugWin::updateStyle() {
 
 	col = conf.pal["dbg.header.bg"];
 	cot = conf.pal["dbg.header.txt"];
-	QString str = QString("background-color:%0;color:%1").arg(col.name()).arg(cot.name());
+	str = QString("background-color:%0;color:%1").arg(col.name()).arg(cot.name());
 	ui_cpu.labHeadCpu->setStyleSheet(str);
 	ui_asm.labHeadDisasm->setStyleSheet(str);
 	ui_misc.labHeadMem->setStyleSheet(str);
@@ -127,7 +128,6 @@ void DebugWin::start() {
 	if (comp->hw->grp != tabMode) {
 		onPrfChange();		// update tabs
 	}
-//	chLayout();
 	if (!comp->vid->tail)
 		vid_dark_tail(comp->vid);
 
@@ -138,25 +138,19 @@ void DebugWin::start() {
 
 	brk_clear_tmp(comp);		// clear temp breakpoints
 
-//	ui.tabDiskDump->setDrive(ui.cbDrive->currentIndex());
 	updateStyle();		// this will call fillAll
 	show();
 // fillall redrawing all vivisble widgets
 	if (!fillAll()) {
 		ui_asm.dasmTable->setAdr(cpu_get_pc(comp->cpu) + comp->cpu->cs.base);
-		// fillDisasm();
 	}
-//	wid_zxscr->draw();
-//	updateScreen();
-
 	if (memViewer->vis) {
 		memViewer->move(memViewer->winPos);
 		memViewer->show();
 		memViewer->fillImage();
 	}
-//	wid_dump->draw();
 	wid_brk->moved();		// to redraw all icons
-//	chDumpView();
+	wid_zxscr->setZoom(conf.dbg.scrzoom);
 	activateWindow();
 }
 
@@ -743,6 +737,12 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 		case XCUT_LABELS:
 			ui_asm.actShowLabels->setChecked(!conf.dbg.labels);
 			break;
+		case XCUT_LABLIST:
+			labswin->show();
+			break;
+		case XCUT_DBG_RELOAD:
+			reload();
+			break;
 		case XCUT_KEYBOARD:
 			emit wannaKeys();
 			break;
@@ -785,7 +785,7 @@ void DebugWin::customEvent(QEvent* ev) {
 				traceregs = cpuGetRegs(comp->cpu);
 				tracestr = tracemnm.command.leftJustified(24,' ');
 				int i = 0;
-				while (traceregs.regs[i].id != REG_NONE) {
+				while (traceregs.regs[i].id != REG_EOT) {
 					if (i!=0) tracestr.append(" ");
 					if (traceregs.regs[i].id != REG_EMPTY) {			// mustn't be visible
 						tracestr.append(traceregs.regs[i].name).append(":");
@@ -983,7 +983,7 @@ void DebugWin::reFormCPU(xRegBunch* b) {
 	int c = 0;
 	int r = 0;
 	while (r < dbgRegLabs.size()) {
-		if (b->regs[c].id != REG_NONE) {
+		if (b->regs[c].id != REG_EOT) {
 			if (b->regs[c].id != REG_EMPTY) {			// skip 'empty'
 				dbgRegLabs[r]->setText(b->regs[c].name);
 				dbgRegLabs[r]->setProperty("regid", b->regs[c].id);
@@ -1030,7 +1030,7 @@ void DebugWin::fillCPU() {
 	}
 	int c = 0;
 	int r = 0;
-	while (bunch.regs[c].id != REG_NONE) {
+	while (bunch.regs[c].id != REG_EOT) {
 		if (bunch.regs[c].id != REG_EMPTY) {
 			if (bunch.regs[c].type == REG_BIT) {
 				dbgRegBits[r]->setChecked(bunch.regs[c].value);
@@ -1129,7 +1129,7 @@ void DebugWin::setCPU() {
 			}
 			i++;
 		} else {
-			bunch.regs[i].id = REG_NONE;
+			bunch.regs[i].id = REG_EOT;
 		}
 	}
 	cpuSetRegs(cpu, bunch);

@@ -349,7 +349,7 @@ xRegDsc z80RegTab[] = {
 	{Z80_REG_IE, "IE", REG_WORD, 0, offsetof(CPU, inten)},
 	{Z80_REG_IR, "IF", REG_WORD, 0, offsetof(CPU, intrq)},
 #endif
-	{REG_NONE, "", 0, 0, 0}
+	{REG_EOT, "", 0, 0, 0}
 };
 
 static char* z80Flags = "SZ5H3PNC";
@@ -359,7 +359,7 @@ void z80_get_regs(CPU* cpu, xRegBunch* bunch) {
 	int bidx = 0;
 	PAIR(w,h,l)rx;
 	xRegister reg;
-	while(z80RegTab[idx].id != REG_NONE) {
+	while(z80RegTab[idx].id != REG_EOT) {
 		reg.id = z80RegTab[idx].id;
 		reg.name = z80RegTab[idx].name;
 		reg.type = z80RegTab[idx].type;
@@ -398,7 +398,7 @@ void z80_get_regs(CPU* cpu, xRegBunch* bunch) {
 		}
 		idx++;
 	}
-	bunch->regs[idx].id = REG_NONE;
+	bunch->regs[idx].id = REG_EOT;
 	bunch->flags = z80Flags;
 	// memcpy(bunch->flags, "SZ5H3PNC", 8);
 }
@@ -437,7 +437,7 @@ void z80_set_regs(CPU* cpu, xRegBunch bunch) {
 			case Z80_FLG_IFF1: cpu->flgIFF1 = !!rd->value; break;
 			case Z80_FLG_IFF2: cpu->flgIFF2 = !!rd->value; break;
 			case Z80_REG_WZ: cpu->regWZ = rd->value; break;
-			case REG_NONE: idx = 100; break;
+			case REG_EOT: idx = 100; break;
 		}
 	}
 }

@@ -211,6 +211,7 @@ void saveConfig() {
 	fprintf(cfile, "dbsize = %i\n", conf.dbg.dbsize);
 	fprintf(cfile, "dwsize = %i\n", conf.dbg.dwsize);
 	fprintf(cfile, "dmsize = %i\n", conf.dbg.dmsize);
+	fprintf(cfile, "scr.zoom = %i\n", conf.dbg.scrzoom);
 	fprintf(cfile, "font = %s\n", conf.dbg.font.toString().toUtf8().data());
 	fprintf(cfile, "window = %i:%i:%i:%i\n",conf.dbg.pos.x(),conf.dbg.pos.y(),conf.dbg.siz.width(),conf.dbg.siz.height());
 
@@ -298,6 +299,7 @@ void loadConfig() {
 	conf.dbg.dbsize = 8;
 	conf.dbg.dwsize = 4;
 	conf.dbg.dmsize = 127;
+	conf.dbg.scrzoom = 1;
 #if defined(__WIN32)
 	conf.dbg.font = QFont("Consolas", 10);
 #else
@@ -376,6 +378,8 @@ void loadConfig() {
 							fprt = atoi(vect[3].c_str()); if (fprt > 0) conf.dbg.siz.setHeight(fprt);
 						}
 					}
+					if ((pnam == "scr.zoom") && (arg.i > 0) && (arg.i < 4))
+						conf.dbg.scrzoom = arg.i;
 					break;
 				case SECT_BOOKMARK:
 					addBookmark(pnam, pval);

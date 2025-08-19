@@ -8,8 +8,6 @@ xRDumpWidget::xRDumpWidget(QString i, QString t, QWidget* p):xDockWidget(i,t,p) 
 	setWidget(wid);
 	ui.setupUi(wid);
 	setObjectName("REG DUMP");
-	model = new xRDumpModel;
-	ui.tabRegDump->setModel(model);
 	connect(this, &QDockWidget::visibilityChanged, this, &xRDumpWidget::draw);
 	hwList << HWG_ZX << HWG_GB << HWG_MSX << HWG_SPCLST;
 
@@ -17,31 +15,55 @@ xRDumpWidget::xRDumpWidget(QString i, QString t, QWidget* p):xDockWidget(i,t,p) 
 }
 
 void xRDumpWidget::draw() {
+	ui.tabRegDump->update();
+}
+
+// table
+
+xRDumpTable::xRDumpTable(QWidget* p):QTableView(p) {
+	model = new xRDumpModel;
+	setModel(model);
+}
+
+void xRDumpTable::update() {
 	model->refill();
-//	ui.tabRegDump->update();
+}
+
+void xRDumpTable::resizeEvent(QResizeEvent* e) {
+// FIXME: columns added by 2
+//	int w = e->size().width();
+//	if (w < 80) return;
+//	int wd = horizontalHeader()->defaultSectionSize();
+//	int cnt = (w - 80) / wd;
+//	model->setCols(cnt + 1);
+//	setColumnWidth(0, 70);
+//	model->refill();
 }
 
 // model
 
 xRDumpModel::xRDumpModel(QObject* p):xTableModel(p) {
+	row_count = 0;
+	col_count = 12;
 }
 
 int xRDumpModel::columnCount(const QModelIndex&) const {
-	return 12;
+	return col_count;
 }
 
 int xRDumpModel::rowCount(const QModelIndex&) const {
-	return regs.size();
+	return row_count;
 }
 
 void xRDumpModel::refill() {
 	xRegBunch rz = cpuGetRegs(conf.prof.cur->zx->cpu);
 	regs.clear();
-	for (int i = 0; (i < 32) && (rz.regs[i].id != REG_NONE); i++) {
+	for (int i = 0; (i < 32) && (rz.regs[i].id != REG_EOT); i++) {
 		if (rz.regs[i].flag & REG_RDMP) {
 			regs.append(rz.regs[i]);
 		}
 	}
+	setRows(regs.size());
 	update();
 }
 
@@ -50,8 +72,8 @@ QVariant xRDumpModel::data(const QModelIndex& idx, int role) const {
 	if (!idx.isValid()) return res;
 	int row = idx.row();
 	int col = idx.column();
-	if (row >= rowCount()) return res;
-	if (col >= columnCount()) return res;
+	if (row >= row_count) return res;
+	if (col >= col_count) return res;
 	Memory* mem = conf.prof.cur->zx->mem;
 	MemPage* pg;
 	int adr;

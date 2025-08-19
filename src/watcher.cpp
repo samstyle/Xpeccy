@@ -294,7 +294,7 @@ void xWatcher::show() {
 	int work = 1;
 	for(int i = 0; i < 32; i++) {
 		if (work) {
-			if (regs.regs[i].id == REG_NONE) {
+			if (regs.regs[i].id == REG_EOT) {
 				work = 0;
 				regLabels[i]->setVisible(false);
 				regValues[i]->setVisible(false);
@@ -335,7 +335,7 @@ void xWatcher::fillFields(Computer* comp) {
 
 	xRegBunch regs = cpuGetRegs(comp->cpu);
 	int i = 0;
-	while ((i < 32) && (regs.regs[i].id != REG_NONE)) {
+	while ((i < 32) && (regs.regs[i].id != REG_EOT)) {
 		// regLabels[i]->setText(regs.regs[i].name);
 		regValues[i]->setValue(regs.regs[i].value);
 		i++;

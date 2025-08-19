@@ -27,9 +27,8 @@ typedef struct {
 	const char* mnem;
 } xMnem;
 
-// rename REG_NONE, it defined in winnt.h
 // special register id
-#define REG_NONE	0		// end of table
+#define REG_EOT	0		// end of table
 #define REG_EMPTY	-1		// don't show in debuga, but is a register
 // register type
 #define REG_BIT		1

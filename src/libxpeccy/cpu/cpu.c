@@ -54,7 +54,7 @@ void cpu_irq(CPU* cpu, int id) {cpu->xirq(id, cpu->xptr);}
 const char nomnem[] = "undef";
 
 xRegDsc nil_reg_tab[] = {
-	{REG_NONE, "", 0, 0}
+	{REG_EOT, "", 0, 0}
 };
 
 void nil_reset(CPU* cpu) {}
@@ -503,7 +503,7 @@ xRegBunch cpuGetRegs(CPU* cpu) {
 	int i;
 	for (i = 0; i < 32; i++) {
 		bunch.regs[i].name = noname;
-		bunch.regs[i].id = REG_NONE;
+		bunch.regs[i].id = REG_EOT;
 		bunch.regs[i].value = 0;
 		bunch.regs[i].base = 0;
 		bunch.regs[i].type = 0;
@@ -553,11 +553,11 @@ int reg_set_value(CPU* cpu, xRegDsc* dsc, int val) {
 
 xRegister cpuGetReg(CPU* cpu, int id) {
 	xRegister reg;
-	reg.type = REG_NONE;
+	reg.type = REG_EOT;
 	xRegDsc* rt = cpu->core->rdsctab;
 	int i = 0;
 	int work = 1;
-	while (work && (rt[i].id != REG_NONE)) {
+	while (work && (rt[i].id != REG_EOT)) {
 		if (rt[i].id == id) {
 			reg.id = id;
 			reg.type = rt[i].type;
@@ -579,7 +579,7 @@ int cpu_get_reg(CPU* cpu, const char* name, bool* f) {
 	xRegDsc* rt = cpu->core->rdsctab;
 	int i = 0;
 	int work = 1;
-	while (work && (rt[i].id != REG_NONE)) {
+	while (work && (rt[i].id != REG_EOT)) {
 		if (!strcmp(name, rt[i].name) && (rt[i].offset != 0)) {
 			res = reg_get_value(cpu, &rt[i]);
 			if (res >= 0) {
@@ -598,7 +598,7 @@ bool cpu_set_reg(CPU* cpu, const char* name, int val) {
 	int work = 1;
 //	void* ptr;
 	xRegDsc* rt = cpu->core->rdsctab;
-	while (work && (rt[i].id != REG_NONE)) {
+	while (work && (rt[i].id != REG_EOT)) {
 		if (!strcmp(name, rt[i].name) && (rt[i].offset != 0) && !(rt[i].flag & REG_SEG)) {	// TODO: offset==0 -> setflag (no it's not: AF for example)
 			work = !reg_set_value(cpu, &rt[i], val);	// 0 if succes, 1 if error
 /*
@@ -629,7 +629,7 @@ xRegDsc* cpu_find_onmsk(CPU* cpu, int msk) {
 	int i = 0;
 	int work = 1;
 	xRegDsc* rt = cpu->core->rdsctab;
-	while (work && (rt[i].id != REG_NONE)) {
+	while (work && (rt[i].id != REG_EOT)) {
 		if (rt[i].flag & msk) {
 			work = 0;
 		} else {

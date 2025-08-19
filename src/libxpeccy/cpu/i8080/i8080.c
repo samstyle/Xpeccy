@@ -108,7 +108,7 @@ xRegDsc i8080RegTab[] = {
 	{I8080_FLG_IFF, "IFF", REG_BIT, 0, offsetof(CPU, flgIFF1)},
 	{REG_EMPTY, "A", REG_BYTE, 0, offsetof(CPU, regA)},
 	{REG_EMPTY, "F", REG_32, 0, 0},
-	{REG_NONE, "", 0, 0, 0}
+	{REG_EOT, "", 0, 0, 0}
 };
 
 static char* i8080_flags = "SZ5A3P1C";
@@ -116,7 +116,7 @@ static char* i8080_flags = "SZ5A3P1C";
 void i8080_get_regs(CPU* cpu, xRegBunch* bunch) {
 	int idx = 0;
 	PAIR(w,h,l)rx;
-	while(i8080RegTab[idx].id != REG_NONE) {
+	while(i8080RegTab[idx].id != REG_EOT) {
 		bunch->regs[idx].id = i8080RegTab[idx].id;
 		bunch->regs[idx].name = i8080RegTab[idx].name;
 		bunch->regs[idx].type = i8080RegTab[idx].type;
@@ -134,7 +134,7 @@ void i8080_get_regs(CPU* cpu, xRegBunch* bunch) {
 		}
 		idx++;
 	}
-	bunch->regs[idx].id = REG_NONE;
+	bunch->regs[idx].id = REG_EOT;
 	bunch->flags = i8080_flags;
 	//memcpy(bunch->flags, "SZ5A3P1C", 8);
 }
@@ -153,7 +153,7 @@ void i8080_set_regs(CPU* cpu, xRegBunch bunch) {
 			case I8080_REG_BC: cpu->regBC = bunch.regs[idx].value; break;
 			case I8080_REG_DE: cpu->regDE = bunch.regs[idx].value; break;
 			case I8080_REG_HL: cpu->regHL = bunch.regs[idx].value; break;
-			case REG_NONE: idx = 100; break;
+			case REG_EOT: idx = 100; break;
 		}
 	}
 }

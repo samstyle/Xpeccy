@@ -34,19 +34,6 @@ int xDisasmModel::rowCount(const QModelIndex&) const {
 	return row_count;
 }
 
-void xDisasmModel::setRows(int r) {
-	if (r < row_count) {
-		emit beginRemoveRows(QModelIndex(), r, row_count);
-		row_count = r;
-		emit endRemoveRows();
-	} else if (r > row_count) {
-		emit beginInsertRows(QModelIndex(), row_count, r);
-		row_count = r;
-		emit endInsertRows();
-		fill();
-	}
-}
-
 QVariant xDisasmModel::data(const QModelIndex& idx, int role) const {
 	QVariant res;
 //	if (!cptr) return res;
@@ -555,9 +542,9 @@ int adr_of_reg(CPU* cpu, bool* flag, QString nam) {
 	int i = 0;
 	int res;
 	nam = nam.toUpper();
-	while ((bch.regs[i].id != REG_NONE) && (QString(bch.regs[i].name).toUpper() != nam))
+	while ((bch.regs[i].id != REG_EOT) && (QString(bch.regs[i].name).toUpper() != nam))
 		i++;
-	if (bch.regs[i].id == REG_NONE) {
+	if (bch.regs[i].id == REG_EOT) {
 		*flag = false;
 		res = 0;
 	} else {

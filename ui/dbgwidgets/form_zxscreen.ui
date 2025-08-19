@@ -17,6 +17,52 @@
    <item>
     <layout class="QVBoxLayout" name="verticalLayout">
      <item>
+      <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="0,0,10">
+       <item>
+        <widget class="QLabel" name="label">
+         <property name="text">
+          <string>Zoom</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QSlider" name="sldScale">
+         <property name="minimum">
+          <number>1</number>
+         </property>
+         <property name="maximum">
+          <number>3</number>
+         </property>
+         <property name="pageStep">
+          <number>1</number>
+         </property>
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="tickPosition">
+          <enum>QSlider::TicksBelow</enum>
+         </property>
+         <property name="tickInterval">
+          <number>1</number>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="horizontalSpacer">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </item>
+     <item>
       <widget class="QLabel" name="scrLabel">
        <property name="minimumSize">
         <size>
@@ -49,7 +95,7 @@
      <item row="3" column="1">
       <widget class="QCheckBox" name="cbScrPix">
        <property name="text">
-        <string>noPix</string>
+        <string>no pixels</string>
        </property>
       </widget>
      </item>
@@ -132,14 +178,14 @@
      <item row="4" column="1">
       <widget class="QCheckBox" name="cbScrAtr">
        <property name="text">
-        <string>noAtr</string>
+        <string>no colors</string>
        </property>
       </widget>
      </item>
      <item row="5" column="1">
       <widget class="QCheckBox" name="cbScrGrid">
        <property name="text">
-        <string>Grid</string>
+        <string>show grid</string>
        </property>
       </widget>
      </item>

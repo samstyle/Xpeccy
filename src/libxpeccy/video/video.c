@@ -409,6 +409,7 @@ void vid_get_screen(Video* vid, unsigned char* dst, int bank, int shift, int fla
 					apap = (abyte & 0x78) >> 3;
 					for (bitn = 0; bitn < 8; bitn++) {
 						cidx = (sbyte & (128 >> bitn)) ? aink : apap;
+						// TODO: apply palette
 						cb = (cidx & 1) ? ((cidx & 8) ? 0xff : 0xa0) : 0x00;
 						cr = (cidx & 2) ? ((cidx & 8) ? 0xff : 0xa0) : 0x00;
 						cg = (cidx & 4) ? ((cidx & 8) ? 0xff : 0xa0) : 0x00;

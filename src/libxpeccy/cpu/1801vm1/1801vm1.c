@@ -1464,7 +1464,7 @@ xRegDsc pdp11RegTab[] = {
 	{PDP11_REG6, "SP", REG_WORD, REG_RDMP | REG_SP, offsetof(CPU, regRN(6))},
 	{PDP11_REG7, "PC", REG_WORD, REG_RDMP | REG_PC, offsetof(CPU, regRN(7))},
 	{PDP11_REGF, "PSW", REG_32, 0, 0},
-	{REG_NONE, "", 0, 0, 0}
+	{REG_EOT, "", 0, 0, 0}
 };
 
 static char* regNames[8] = {"R0","R1","R2","R3","R4","R5","SP","PC"};
@@ -1488,7 +1488,7 @@ unsigned short pdp_get_reg(CPU* cpu, int id) {
 
 void pdp11_get_regs(CPU* cpu, xRegBunch* bunch) {
 	int idx = 0;
-	while (pdp11RegTab[idx].id != REG_NONE) {
+	while (pdp11RegTab[idx].id != REG_EOT) {
 		bunch->regs[idx].id = pdp11RegTab[idx].id;
 		bunch->regs[idx].name = pdp11RegTab[idx].name;
 		bunch->regs[idx].type = pdp11RegTab[idx].type;
@@ -1496,7 +1496,7 @@ void pdp11_get_regs(CPU* cpu, xRegBunch* bunch) {
 		bunch->regs[idx].value = pdp_get_reg(cpu, pdp11RegTab[idx].id);
 		idx++;
 	}
-	bunch->regs[idx].id = REG_NONE;
+	bunch->regs[idx].id = REG_EOT;
 	//memcpy(bunch->flags, "---TNZVC", 8);
 	bunch->flags = pdpFlags;
 	//int f = pdp_get_flag(cpu);
@@ -1506,7 +1506,7 @@ void pdp11_get_regs(CPU* cpu, xRegBunch* bunch) {
 
 void pdp11_set_regs(CPU* cpu, xRegBunch bunch) {
 	int idx = 0;
-	while (bunch.regs[idx].id != REG_NONE) {
+	while (bunch.regs[idx].id != REG_EOT) {
 		switch (bunch.regs[idx].id) {
 			case PDP11_REG0: cpu->regRN(0) = bunch.regs[idx].value; break;
 			case PDP11_REG1: cpu->regRN(1) = bunch.regs[idx].value; break;

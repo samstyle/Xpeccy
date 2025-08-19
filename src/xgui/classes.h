@@ -10,11 +10,16 @@ class xTableModel : public QAbstractTableModel {
 	public:
 		xTableModel(QObject* = NULL);
 		QModelIndex index(int, int, const QModelIndex& = QModelIndex()) const;
+		void setRows(int);
+		void setCols(int);
 	public slots:
 		void update();
 		void updateRow(int);
 		void updateColumn(int);
 		void updateCell(int, int);
+	protected:
+		int row_count;
+		int col_count;
 	private:
 		int mrd(int);
 		void mwr(int, int);

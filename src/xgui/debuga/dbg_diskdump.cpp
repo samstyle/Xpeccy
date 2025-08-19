@@ -25,6 +25,15 @@ void xDiskDump::toTarget() {
 	scrollTo(mod->index(conf.prof.cur->zx->dif->fdc->flp->pos >> 3, 0));
 }
 
+void xDiskDump::resizeEvent(QResizeEvent* ev) {
+	int w = ev->size().width();
+	int h = ev->size().height();
+	if (h < 1) return;
+	horizontalHeader()->setDefaultSectionSize((w - 150) / 8);;
+	horizontalHeader()->setStretchLastSection(true);
+	setColumnWidth(0, 70);
+}
+
 // model
 
 xDiskDumpModel::xDiskDumpModel(QObject* p):xTableModel(p) {
@@ -145,8 +154,8 @@ xDiskDumpWidget::xDiskDumpWidget(QString i, QString t, QWidget* p):xDockWidget(i
 	setWidget(wid);
 	ui.setupUi(wid);
 	setObjectName("FDDDUMPWIDGET");
-	ui.tabDiskDump->setColumnWidth(0, 70);
-	ui.tabDiskDump->horizontalHeader()->setStretchLastSection(true);
+//	ui.tabDiskDump->setColumnWidth(0, 70);
+//	ui.tabDiskDump->horizontalHeader()->setStretchLastSection(true);
 	connect(ui.cbDrive, SIGNAL(currentIndexChanged(int)), ui.tabDiskDump, SLOT(setDrive(int)));
 	connect(ui.sbTrack, SIGNAL(valueChanged(int)), ui.tabDiskDump, SLOT(setTrack(int)));
 	connect(ui.tbTarget, SIGNAL(released()),this,SLOT(toTarget()));

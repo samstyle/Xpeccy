@@ -33,7 +33,6 @@ class xDisasmModel : public xTableModel {
 	Q_OBJECT
 	public:
 		xDisasmModel(QObject* = NULL);
-		void setRows(int);
 		int rowCount(const QModelIndex& = QModelIndex()) const;
 		int columnCount(const QModelIndex& = QModelIndex()) const;
 		Qt::ItemFlags flags(const QModelIndex&) const;
@@ -49,7 +48,6 @@ class xDisasmModel : public xTableModel {
 	public slots:
 		int update_lst();
 	private:
-		int row_count;
 		int fill();
 };
 

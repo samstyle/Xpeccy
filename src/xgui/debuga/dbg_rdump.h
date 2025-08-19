@@ -1,9 +1,11 @@
 #pragma once
 
 #include <QAbstractTableModel>
+#include <QResizeEvent>
+#include <QTableView>
+
 #include "../classes.h"
 #include "../../xcore/xcore.h"
-#include "ui_form_regdump.h"
 
 class xRDumpModel : public xTableModel {
 	public:
@@ -13,10 +15,20 @@ class xRDumpModel : public xTableModel {
 		int rowCount(const QModelIndex& = QModelIndex()) const;
 		int columnCount(const QModelIndex& = QModelIndex()) const;
 		QVariant data(const QModelIndex&, int) const;
-//		QVariant headerData(int, Qt::Orientation, int = Qt::DisplayRole) const;
-
 		QList<xRegister> regs;
 };
+
+class xRDumpTable : public QTableView {
+	Q_OBJECT
+	public:
+		xRDumpTable(QWidget* = nullptr);
+		void update();
+	private:
+		void resizeEvent(QResizeEvent*);
+		xRDumpModel* model;
+};
+
+#include "ui_form_regdump.h"
 
 class xRDumpWidget : public xDockWidget {
 	Q_OBJECT
@@ -25,6 +37,6 @@ class xRDumpWidget : public xDockWidget {
 	public slots:
 		void draw();
 	private:
-		xRDumpModel* model;
+//		xRDumpModel* model;
 		Ui::RDumpWidget ui;
 };

@@ -307,6 +307,8 @@ enum {
 	XCUT_SAVE_DUMP,
 	XCUT_FINDER,
 	XCUT_LABELS,
+	XCUT_LABLIST,
+	XCUT_DBG_RELOAD,
 
 	XCUT_TOPC,
 	XCUT_SETPC,
@@ -489,6 +491,7 @@ struct xConfig {
 		int dbsize;
 		int dwsize;
 		int dmsize;
+		int scrzoom;
 		QPoint pos;
 		QSize siz;
 	} dbg;
