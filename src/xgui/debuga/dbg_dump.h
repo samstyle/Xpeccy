@@ -38,6 +38,7 @@ class xDumpModel : public xTableModel {
 		int codePage;
 		unsigned int dmpadr;
 		unsigned int maxadr;
+		int dmpsize;
 		void setMode(int, int, int, int);
 		int rowCount(const QModelIndex& = QModelIndex()) const;
 		int columnCount(const QModelIndex& = QModelIndex()) const;
@@ -118,6 +119,10 @@ class xDumpWidget : public xDockWidget {
 		QMenu* cellMenu;
 		int ramBase;
 		int romBase;
+		QItemDelegate* xid_addr;
+		QItemDelegate* xid_byte;
+		QItemDelegate* xid_octw;
+		QItemDelegate* xid_none;
 	private slots:
 		void adr_changed(int);
 		void modeChanged();

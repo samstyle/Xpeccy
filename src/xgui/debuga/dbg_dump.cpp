@@ -9,6 +9,8 @@
 extern int blockStart;
 extern int blockEnd;
 
+#define SECTSIZE 35
+
 // MODEL
 
 QString getDumpString(QByteArray bts, int cp) {
@@ -20,7 +22,7 @@ QString getDumpString(QByteArray bts, int cp) {
 		case XCP_KOI8R: codec = QTextCodec::codecForName("KOI8R"); break;
 	}
 	unsigned char bte;
-	for (int i = 0; i < 8; i++) {
+	for (int i = 0; i < bts.size(); i++) {
 		bte = (unsigned char)bts.at(i);
 		if (bte > 31) {
 			res.append(QChar(bte));
@@ -112,8 +114,10 @@ xDumpModel::xDumpModel(QObject* par):xTableModel(par) {
 	mode = XVIEW_CPU;
 	page = 0;
 	dmpadr = 0;
+	dmpsize = 8;
 	maxadr = MEM_64K;
-	row_count = 11;
+	setRows(11);
+	setCols(18);
 	pgbase = 0;
 	pgsize = MEM_64K;
 }
@@ -132,26 +136,12 @@ void xDumpModel::setView(int t) {
 	update();
 }
 
-/*
-void xDumpModel::setRows(int r) {
-	if (r < row_count) {
-		emit beginRemoveRows(QModelIndex(), r, row_count);
-		row_count = r;
-		emit endRemoveRows();
-	} else if (r > row_count) {
-		emit beginInsertRows(QModelIndex(), row_count, r);
-		row_count = r;
-		emit endInsertRows();
-	}
-}
-*/
-
 int xDumpModel::rowCount(const QModelIndex&) const {
 	return row_count;
 }
 
 int xDumpModel::columnCount(const QModelIndex&) const {
-	return 10;
+	return col_count;
 }
 
 int check_seg(int adr, xSegPtr seg) {
@@ -170,7 +160,7 @@ QVariant xDumpModel::data(const QModelIndex& idx, int role) const {
 	if (row >= rowCount()) return res;
 	if (col < 0) return res;
 	if (col >= columnCount()) return res;
-	int adr = (dmpadr + (row << 3)) % maxadr;
+	int adr = (dmpadr + (row * dmpsize)) % maxadr;
 	int cadr = (adr + col - 1) % maxadr;
 	unsigned short wrd;
 	int flg = mrd(cadr) >> 8;
@@ -182,7 +172,7 @@ QVariant xDumpModel::data(const QModelIndex& idx, int role) const {
 #else
 		case Qt::BackgroundRole:
 #endif
-			if ((col > 0) && (col < 9)) {
+			if ((col > 0) && (col < 17)) {
 				if ((cadr >= blockStart) && (cadr <= blockEnd) && (mode == XVIEW_CPU)) {	// selection
 					clr = conf.pal["dbg.sel.bg"];
 				} else {
@@ -195,7 +185,7 @@ QVariant xDumpModel::data(const QModelIndex& idx, int role) const {
 				res = clr;
 			break;
 		case Qt::ForegroundRole:
-			if ((col > 0) && (col < 9)) {
+			if ((col > 0) && (col < 17)) {
 				if (flg & 0x0f) {								// breakpoint
 					clr = conf.pal["dbg.brk.txt"];
 				} else if ((cadr >= blockStart) && (cadr <= blockEnd) && (mode == XVIEW_CPU)) {	// selection
@@ -210,93 +200,89 @@ QVariant xDumpModel::data(const QModelIndex& idx, int role) const {
 				res = clr;
 			break;
 		case Qt::TextAlignmentRole:
-			switch (col) {
-				case 0: break;
-				case 9: res = Qt::AlignRight; break;
-				default: res = Qt::AlignCenter; break;
+			if (col == 17) {
+				res = Qt::AlignRight;
+			} else if (col != 0) {
+				res = Qt::AlignCenter;
+			} else {
+				// column 0
 			}
 			break;
 		case Qt::EditRole:
-			switch(col) {
-				case 0:
-					if ((mode == XVIEW_RAM) || (mode == XVIEW_ROM))
-						adr &= 0x3fff;
-					switch(view) {
-						case XVIEW_OCTWRD:
-							res = QString::number(adr, 8).rightJustified(6, '0');
-							break;
-						default:
-							res = QString::number(adr, 16).toUpper();
-							break;
-					}
-					break;
-				case 9: break;
-				default:
-					switch(view) {
-						case XVIEW_OCTWRD:
-							wrd = mrd(cadr) & 0xff;
-							wrd += (mrd((cadr + 1) % maxadr) << 8) & 0xff00;
-							res = QString::number(wrd, 8).rightJustified(6,'0');
-							break;
-						default:
-							res = gethexbyte(mrd(cadr) & 0xff);
-							break;
-					}
-					break;
+			if (col == 0) {
+				if ((mode == XVIEW_RAM) || (mode == XVIEW_ROM))
+					adr &= 0x3fff;
+				switch(view) {
+					case XVIEW_OCTWRD:
+						res = QString::number(adr, 8).rightJustified(6, '0');
+						break;
+					default:
+						res = QString::number(adr, 16).toUpper();
+						break;
+				}
+			} else if (col == 17) {
+				// no edit
+			} else {
+				switch(view) {
+					case XVIEW_OCTWRD:
+						wrd = mrd(cadr) & 0xff;
+						wrd += (mrd((cadr + 1) % maxadr) << 8) & 0xff00;
+						res = QString::number(wrd, 8).rightJustified(6,'0');
+						break;
+					default:
+						res = gethexbyte(mrd(cadr) & 0xff);
+						break;
+				}
 			}
 			break;
 		case Qt::DisplayRole:
-			switch(col) {
-				case 0:
-					if (conf.prof.cur->zx->cpu->type == CPU_I80286) {
-						adr %= maxadr;
-						if (!conf.dbg.segment) {
-							res = QString::number(adr, 16).toUpper().rightJustified(6 , '0');
-						} else if (check_seg(adr, conf.prof.cur->zx->cpu->cs)) {
-							adr -= conf.prof.cur->zx->cpu->cs.base;
-							res = QString("CS:").append(gethexword(adr & 0xffff));
-						} else if (check_seg(adr, conf.prof.cur->zx->cpu->ss)) {
-							adr -= conf.prof.cur->zx->cpu->ss.base;
-							res = QString("SS:").append(gethexword(adr & 0xffff));
-						} else if (check_seg(adr, conf.prof.cur->zx->cpu->ds)) {
-							adr -= conf.prof.cur->zx->cpu->ds.base;
-							res = QString("DS:").append(gethexword(adr & 0xffff));
-						} else if (check_seg(adr, conf.prof.cur->zx->cpu->es)) {
-							adr -= conf.prof.cur->zx->cpu->es.base;
-							res = QString("ES:").append(gethexword(adr & 0xffff));
-						} else {
-							res = QString::number(adr, 16).toUpper().rightJustified(6 , '0');
-						}
-						// res = QString("DS:%0").arg(gethexword(adr & 0xffff));
+			if (col == 0) {
+				if (conf.prof.cur->zx->cpu->type == CPU_I80286) {
+					adr %= maxadr;
+					if (!conf.dbg.segment) {
+						res = QString::number(adr, 16).toUpper().rightJustified(6 , '0');
+					} else if (check_seg(adr, conf.prof.cur->zx->cpu->cs)) {
+						adr -= conf.prof.cur->zx->cpu->cs.base;
+						res = QString("CS:").append(gethexword(adr & 0xffff));
+					} else if (check_seg(adr, conf.prof.cur->zx->cpu->ss)) {
+						adr -= conf.prof.cur->zx->cpu->ss.base;
+						res = QString("SS:").append(gethexword(adr & 0xffff));
+					} else if (check_seg(adr, conf.prof.cur->zx->cpu->ds)) {
+						adr -= conf.prof.cur->zx->cpu->ds.base;
+						res = QString("DS:").append(gethexword(adr & 0xffff));
+					} else if (check_seg(adr, conf.prof.cur->zx->cpu->es)) {
+						adr -= conf.prof.cur->zx->cpu->es.base;
+						res = QString("ES:").append(gethexword(adr & 0xffff));
 					} else {
-						if ((mode == XVIEW_RAM) || (mode == XVIEW_ROM)) {
-							adr %= pgsize;
-							adr += pgbase;
-							str = QString::number(page, conf.prof.cur->zx->hw->base).toUpper().rightJustified(2, '0').append(":");
-						}
-						str.append(QString::number(adr, conf.prof.cur->zx->hw->base).toUpper().rightJustified((conf.prof.cur->zx->hw->base == 16) ? 4 : 6, '0'));
-						res = str;
+						res = QString::number(adr, 16).toUpper().rightJustified(6 , '0');
 					}
-					break;
-				case 9:
-					for(int i = 0; i < 8; i++)
-						arr.append(mrd((adr + i) % maxadr) & 0xff);
-					res = getDumpString(arr, codePage);
-					break;
-				default:
-					switch (view) {
-						case XVIEW_OCTWRD:
-							wrd = mrd(cadr) & 0xff;
-							wrd += (mrd((cadr + 1) % maxadr) << 8) & 0xff00;
-							res = QString::number(wrd, 8).rightJustified(6,'0');
-							break;
-						default:
-							res = gethexbyte(mrd(cadr) & 0xff);
-							break;
+					// res = QString("DS:%0").arg(gethexword(adr & 0xffff));
+				} else {
+					if ((mode == XVIEW_RAM) || (mode == XVIEW_ROM)) {
+						adr %= pgsize;
+						adr += pgbase;
+						str = QString::number(page, conf.prof.cur->zx->hw->base).toUpper().rightJustified(2, '0').append(":");
 					}
-					break;
+					str.append(QString::number(adr, conf.prof.cur->zx->hw->base).toUpper().rightJustified((conf.prof.cur->zx->hw->base == 16) ? 4 : 6, '0'));
+					res = str;
+				}
+			} else if (col == 17) {
+				for(int i = 0; i < dmpsize; i++)
+					arr.append(mrd((adr + i) % maxadr) & 0xff);
+				res = getDumpString(arr, codePage);
+			} else {
+				switch (view) {
+					case XVIEW_OCTWRD:
+						wrd = mrd(cadr) & 0xff;
+						wrd += (mrd((cadr + 1) % maxadr) << 8) & 0xff00;
+						res = QString::number(wrd, 8).rightJustified(6,'0');
+						break;
+					default:
+						res = gethexbyte(mrd(cadr) & 0xff);
+						break;
+				}
+				break;
 			}
-			break;
 	}
 	return res;
 }
@@ -304,7 +290,7 @@ QVariant xDumpModel::data(const QModelIndex& idx, int role) const {
 Qt::ItemFlags xDumpModel::flags(const QModelIndex& idx) const {
 	Qt::ItemFlags res = QAbstractItemModel::flags(idx);
 	if (!idx.isValid()) return res;
-	if (idx.column() < columnCount())
+	if (idx.column() < 17)
 		res |= Qt::ItemIsEditable;
 	return res;
 }
@@ -319,19 +305,19 @@ bool xDumpModel::setData(const QModelIndex& idx, const QVariant& val, int role) 
 	if ((row < 0) || (row >= rowCount())) return false;
 	if ((col < 0) || (col >= columnCount())) return false;
 	int fadr;
-	int adr = (dmpadr + (row << 3)) % maxadr;
+	int adr = (dmpadr + row * dmpsize) % maxadr;
 	int nadr;
 	unsigned char bt;
 	QString str = val.toString();
 	if (col == 0) {
 		fadr = str_to_adr(conf.prof.cur->zx, str);
 		if (fadr >= 0) {
-			dmpadr = (fadr - (row << 3)) % maxadr;
+			dmpadr = (fadr - row * dmpsize) % maxadr;
 			update();
 			emit s_adrch(dmpadr);
 			// emit rqRefill();
 		}
-	} else if (col < 9) {
+	} else if (col < 17) {
 		nadr = (adr + col - 1) % maxadr;
 		switch(view) {
 			case XVIEW_OCTWRD:
@@ -357,6 +343,7 @@ xDumpTable::xDumpTable(QWidget* p):QTableView(p) {
 	mode = XVIEW_CPU;
 	model = new xDumpModel();
 	setModel(model);
+	horizontalHeader()->setStretchLastSection(true);
 
 	connect(selectionModel(), SIGNAL(currentChanged(QModelIndex,QModelIndex)), this, SLOT(curAdrChanged()));
 
@@ -376,11 +363,10 @@ void xDumpTable::setView(int t) {
 	view = t;
 	switch(t) {
 		case XVIEW_OCTWRD:
-			for (int i = 0; i < model->rowCount(); i++) {
-				setSpan(i, 1, 1, 2);
-				setSpan(i, 3, 1, 2);
-				setSpan(i, 5, 1, 2);
-				setSpan(i, 7, 1, 2);
+			for (int r = 0; r < model->rowCount(); r++) {
+				for (int c = 1; c < 17; c+=2) {
+					setSpan(r, c, 1, 2);
+				}
 			}
 			break;
 		default:
@@ -396,7 +382,7 @@ int xDumpTable::rows() {
 
 void xDumpTable::setCodePage(int cp) {
 	model->codePage = cp;
-	model->updateColumn(9);
+	model->updateColumn(17);
 }
 
 void xDumpTable::update() {
@@ -435,8 +421,8 @@ int xDumpTable::getCurrentAdr() {
 	QModelIndex idx;
 	idx = currentIndex();
 	col = idx.column();
-	adr = model->dmpadr + (idx.row() << 3);
-	if ((col > 0) && (col < 9)) {
+	adr = model->dmpadr + (idx.row() * model->dmpsize);
+	if ((col > 0) && (col <= model->dmpsize)) {
 		adr += idx.column() - 1;
 	}
 	adr %= model->maxadr;
@@ -454,6 +440,7 @@ void xDumpTable::resizeEvent(QResizeEvent* ev) {
 	int w = ev->size().width();
 	int w0;
 	int wl;
+	int i;
 // horizontalAdvance() since 5.11, before - width()
 #if (QT_VERSION >= QT_VERSION_CHECK(5,11,0))
 	w0 = fm.horizontalAdvance("0000:0000");
@@ -462,11 +449,25 @@ void xDumpTable::resizeEvent(QResizeEvent* ev) {
 	w0 = fm.width("0000:0000");
 	wl = fm.width("00000000");
 #endif
-	horizontalHeader()->setDefaultSectionSize((w - w0 - wl - 30) / 8);
+	int sz = (w - w0 - wl - 30) / 8;
+	if (sz <= SECTSIZE*2) {		// 8
+		sz = (w - w0 - wl - 30) / 8;
+		model->dmpsize = 8;
+		for (i = 9; i < 17; i++) {
+			hideColumn(i);
+		}
+		horizontalHeader()->setDefaultSectionSize(sz);
+		setColumnWidth(17, wl);
+	} else {			// 16
+		sz = (w - w0 - wl*2 - 30) / 16;
+		model->dmpsize = 16;
+		for (i = 9; i < 17; i++) {
+			showColumn(i);
+		}
+		horizontalHeader()->setDefaultSectionSize(sz);
+		setColumnWidth(17, wl*2);
+	}
 	setColumnWidth(0, w0+5);
-	setColumnWidth(9, wl+5);
-
-//	setView(view);
 	update();
 }
 
@@ -522,12 +523,9 @@ void xDumpTable::mousePressEvent(QMouseEvent* ev) {
 	if ((row < 0) || (row >= model->rowCount())) return;
 	if ((col < 0) || (col >= model->columnCount())) return;
 	if (col > 8) return;
-	int adr;
-	if (col == 0) {
-		adr = model->dmpadr + (row << 3);
-	} else {
-		adr = model->dmpadr + (row << 3) + col - 1;
-	}
+	int adr = model->dmpadr + (row * model->dmpsize);
+	if (col != 0)
+		adr += col - 1;
 	adr %= model->maxadr;
 	switch(ev->button()) {
 		case Qt::LeftButton:
@@ -572,10 +570,9 @@ void xDumpTable::mouseMoveEvent(QMouseEvent* ev) {
 	if ((row < 0) || (row >= model->rowCount())) return;
 	if ((col < 0) || (col >= model->columnCount())) return;
 	int adr;
-	if ((col == 0) || (col > 8)) {
-		adr = model->dmpadr + (row << 3);
-	} else {
-		adr = model->dmpadr + (row << 3) + col - 1;
+	adr = model->dmpadr + (row * model->dmpsize);
+	if ((col > 0) && (col < 17)) {
+		adr += col - 1;
 	}
 	adr %= model->maxadr;
 	if ((ev->modifiers() == Qt::NoModifier) && (ev->buttons() & Qt::LeftButton) && (adr != blockStart) && (adr != blockEnd) && (adr != markAdr)) {
@@ -645,10 +642,14 @@ xDumpWidget::xDumpWidget(QString i, QString t, QWidget* p):xDockWidget(i,t,p) {
 #else
 	ui.dumpTable->setColumnWidth(0,fm.width("0000:0000"));
 #endif
+	xid_addr = new xItemDelegate(XTYPE_LABEL);
+	xid_byte = new xItemDelegate(XTYPE_BYTE);
+	xid_octw = new xItemDelegate(XTYPE_OCTWRD);
+	xid_none = new xItemDelegate(XTYPE_NONE);
 
-	ui.dumpTable->setItemDelegate(new xItemDelegate(XTYPE_BYTE)); // xid_byte);
-	ui.dumpTable->setItemDelegateForColumn(0, new xItemDelegate(XTYPE_LABEL)); // ) xid_labl);
-	ui.dumpTable->setItemDelegateForColumn(9, new xItemDelegate(XTYPE_NONE)); // xid_none);
+	ui.dumpTable->setItemDelegate(xid_byte);
+	ui.dumpTable->setItemDelegateForColumn(0, xid_addr);
+	ui.dumpTable->setItemDelegateForColumn(17, xid_none);
 	ui.cbDumpPageSize->setCurrentIndex(6);	// 16K
 
 	connect(ui.dumpTable, &xDumpTable::customContextMenuRequested, this, &xDumpWidget::customMenu);
@@ -720,21 +721,17 @@ void xDumpWidget::customMenuAction(QAction* act) {
 }
 
 void xDumpWidget::setBase(int b, int t) {
-	xItemDelegate* xid_octw = new xItemDelegate(XTYPE_OCTWRD);
-	xItemDelegate* xid_byte = new xItemDelegate(XTYPE_BYTE);
 	switch(b) {
 		case 8:
-			ui.dumpTable->setItemDelegateForColumn(1, xid_octw);
-			ui.dumpTable->setItemDelegateForColumn(3, xid_octw);
-			ui.dumpTable->setItemDelegateForColumn(5, xid_octw);
-			ui.dumpTable->setItemDelegateForColumn(7, xid_octw);
+			for (b = 1; b < 18; b+=2) {
+				ui.dumpTable->setItemDelegateForColumn(b, xid_octw);
+			}
 			ui.dumpTable->setView(XVIEW_OCTWRD);
 			break;
 		default:
-			ui.dumpTable->setItemDelegateForColumn(1, xid_byte);
-			ui.dumpTable->setItemDelegateForColumn(3, xid_byte);
-			ui.dumpTable->setItemDelegateForColumn(5, xid_byte);
-			ui.dumpTable->setItemDelegateForColumn(7, xid_byte);
+			for (b = 1; b < 18; b+=2) {
+				ui.dumpTable->setItemDelegateForColumn(b, xid_byte);
+			}
 			ui.dumpTable->setView(XVIEW_DEF);
 			break;
 	}

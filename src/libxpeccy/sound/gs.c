@@ -122,10 +122,10 @@ GSound* gsCreate() {
 	memSetBank(res->mem, 0xc0, MEM_RAM, 1, MEM_16K, NULL, NULL, NULL);
 	res->pstate = 0x7e;
 	res->stereo = GS_12_34;
-	res->ch1 = 0x80;
-	res->ch2 = 0x80;
-	res->ch3 = 0x80;
-	res->ch4 = 0x80;
+	res->ch1 = 0xff;
+	res->ch2 = 0xff;
+	res->ch3 = 0xff;
+	res->ch4 = 0xff;
 	res->ns_per_tick = 1000 / GS_FRQ;
 	return res;
 }
