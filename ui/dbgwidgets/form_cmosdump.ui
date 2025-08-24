@@ -15,7 +15,7 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QTableView" name="tabCmos">
+    <widget class="xCmosDumpTable" name="tabCmos">
      <property name="alternatingRowColors">
       <bool>true</bool>
      </property>
@@ -31,6 +31,12 @@
      <attribute name="horizontalHeaderDefaultSectionSize">
       <number>40</number>
      </attribute>
+     <attribute name="horizontalHeaderStretchLastSection">
+      <bool>true</bool>
+     </attribute>
+     <attribute name="verticalHeaderVisible">
+      <bool>false</bool>
+     </attribute>
      <attribute name="verticalHeaderDefaultSectionSize">
       <number>21</number>
      </attribute>
@@ -38,6 +44,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>xCmosDumpTable</class>
+   <extends>QTableView</extends>
+   <header location="global">stdlib.h</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

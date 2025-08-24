@@ -33,11 +33,12 @@ void xRDumpTable::resizeEvent(QResizeEvent* e) {
 // FIXME: columns added by 2
 //	int w = e->size().width();
 //	if (w < 80) return;
-//	int wd = horizontalHeader()->defaultSectionSize();
-//	int cnt = (w - 80) / wd;
+//	int wd = 35; // horizontalHeader()->defaultSectionSize();
+//	int cnt = (w - 70) / wd;
+//	printf("setCols %i\n", cnt+1);
 //	model->setCols(cnt + 1);
 //	setColumnWidth(0, 70);
-//	model->refill();
+//	model->update();
 }
 
 // model
@@ -58,10 +59,12 @@ int xRDumpModel::rowCount(const QModelIndex&) const {
 void xRDumpModel::refill() {
 	xRegBunch rz = cpuGetRegs(conf.prof.cur->zx->cpu);
 	regs.clear();
-	for (int i = 0; (i < 32) && (rz.regs[i].id != REG_EOT); i++) {
+	int i = 0;
+	while (rz.regs[i].id != REG_EOT) {
 		if (rz.regs[i].flag & REG_RDMP) {
 			regs.append(rz.regs[i]);
 		}
+		i++;
 	}
 	setRows(regs.size());
 	update();
@@ -89,7 +92,7 @@ QVariant xRDumpModel::data(const QModelIndex& idx, int role) const {
 				switch (pg->type) {
 					case MEM_ROM: res = gethexbyte(mem->romData[fadr & mem->romMask]); break;
 					case MEM_RAM: res = gethexbyte(mem->ramData[fadr & mem->ramMask]); break;
-					case MEM_SLOT: res = gethexbyte(memRd(mem, adr));
+					case MEM_SLOT: res = gethexbyte(memRd(mem, adr)); break;
 					default: res = "--";
 						break;
 				}

@@ -9,7 +9,7 @@
 extern int blockStart;
 extern int blockEnd;
 
-#define SECTSIZE 35
+#define SECTSIZE 25
 
 // MODEL
 

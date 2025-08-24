@@ -32,18 +32,25 @@ QVariant xVMemDumpModel::data(const QModelIndex& idx, int role) const {
 					res = QString::number(radr, 16).rightJustified(5, '0').toUpper();
 					break;
 				case 9:
-					for (i = 0; i < 8; i++) {
-						if (vmem[radr + i] < 32) {
-							str.append(".");
-						} else {
-							str.append(QChar(vmem[radr + i]));
+					if (vmem == nullptr) {
+						res = "????????";
+					} else {
+						for (i = 0; i < 8; i++) {
+							if (vmem[radr + i] < 32) {
+								str.append(".");
+							} else {
+								str.append(QChar(vmem[radr + i]));
+							}
 						}
+						res = str;
 					}
-					res = str;
 					break;
 				default:
-					if (vmem == nullptr) break;
-					res = QString::number(vmem[adr], 16).rightJustified(2, '0').toUpper();
+					if (vmem == nullptr) {
+						res = "??";
+					} else {
+						res = gethexbyte(vmem[adr]);
+					}
 					break;
 			}
 			break;
@@ -100,12 +107,14 @@ Qt::ItemFlags xVMemDumpModel::flags(const QModelIndex& idx) const {
 
 void xVMemDumpModel::setVMem(unsigned char* ptr) {
 	vmem = ptr;
+	update();
 }
 
 // view
 
 xVMemDump::xVMemDump(QWidget *p):QTableView(p) {
 	mod = new xVMemDumpModel(nullptr);
+	setModel(mod);
 	connect(mod, SIGNAL(adr_ch(QModelIndex)), this, SLOT(jumpToIdx(QModelIndex)));
 }
 
@@ -115,13 +124,19 @@ void xVMemDump::update() {
 
 void xVMemDump::setVMem(unsigned char* ptr) {
 	mod->setVMem(ptr);
-	setModel(mod);
-	setColumnWidth(0, 70);
 }
 
 void xVMemDump::jumpToIdx(QModelIndex idx) {
 	setCurrentIndex(idx);
 	scrollTo(idx, QAbstractItemView::PositionAtCenter);
+}
+
+void xVMemDump::resizeEvent(QResizeEvent* e) {
+	int w = e->size().width();
+	int sz = (w - 50 - 70) / 8;
+	horizontalHeader()->setDefaultSectionSize(sz);
+	setColumnWidth(0, 50);
+//	setColumnWidth(9, 70);
 }
 
 // widget

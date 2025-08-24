@@ -1,14 +1,16 @@
-#include "dbg_widgets.h"
+//#include "dbg_widgets.h"
+#include "dbg_cmos_dump.h"
+#include "../../xcore/xcore.h"
 
 xCmosDumpModel::xCmosDumpModel(QObject *p):xTableModel(p) {
 }
 
-int xCmosDumpModel::rowCount(const QModelIndex &) const {
-	return 256/8;
+int xCmosDumpModel::rowCount(const QModelIndex&) const {
+	return 32;
 }
 
-int xCmosDumpModel::columnCount(const QModelIndex &) const {
-	return 8;
+int xCmosDumpModel::columnCount(const QModelIndex&) const {
+	return 9;
 }
 
 QVariant xCmosDumpModel::data(const QModelIndex& idx, int role) const {
@@ -16,9 +18,19 @@ QVariant xCmosDumpModel::data(const QModelIndex& idx, int role) const {
 	int row = idx.row();
 	int col = idx.column();
 	switch(role) {
+		case Qt::TextAlignmentRole:
+			if (col != 0) res = Qt::AlignCenter;
+			break;
 		case Qt::DisplayRole:
+			if (col == 0) {
+				res = gethexbyte(row << 3).prepend("#");		// 00..F8 = address
+			} else {
+				res = gethexbyte(conf.prof.cur->zx->cmos.data[(row << 3) + col - 1] & 0xff);
+			}
+			break;
 		case Qt::EditRole:
-			res = QString::number(conf.prof.cur->zx->cmos.data[(row << 3) + col] & 0xff, 16).toUpper().rightJustified(2,'0');
+			if (col == 0) break;
+			res = gethexbyte(conf.prof.cur->zx->cmos.data[(row << 3) + col - 1] & 0xff);
 			break;
 	}
 	return res;
@@ -27,7 +39,8 @@ QVariant xCmosDumpModel::data(const QModelIndex& idx, int role) const {
 bool xCmosDumpModel::setData(const QModelIndex& idx, const QVariant& val, int role) {
 	int row = idx.row();
 	int col = idx.column();
-	int adr = (row << 3) + col;
+	if (col == 0) return false;
+	int adr = (row << 3) + col - 1;
 	if (adr > 0xff) return false;
 	bool flag;
 	int d;
@@ -44,20 +57,22 @@ bool xCmosDumpModel::setData(const QModelIndex& idx, const QVariant& val, int ro
 
 Qt::ItemFlags xCmosDumpModel::flags(const QModelIndex& idx) const {
 	Qt::ItemFlags f = QAbstractTableModel::flags(idx);
-	f |= Qt::ItemIsEditable;
+	if (idx.column() > 0)
+		f |= Qt::ItemIsEditable;
 	return f;
-}
-
-QVariant xCmosDumpModel::headerData(int sect, Qt::Orientation ori, int role) const {
-	QVariant res;
-	if (ori != Qt::Vertical) return res;
-	if (role != Qt::DisplayRole) return res;
-	return QString::number(sect << 3, 16).toUpper().rightJustified(3,'0');
 }
 
 // table
 
-// TODO
+xCmosDumpTable::xCmosDumpTable(QWidget* p):QTableView(p) {
+
+}
+
+void xCmosDumpTable::resizeEvent(QResizeEvent* e) {
+	int w = e->size().width();
+	int sz = w / 9;
+	horizontalHeader()->setDefaultSectionSize(sz);
+}
 
 // widget
 

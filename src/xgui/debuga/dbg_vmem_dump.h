@@ -2,6 +2,7 @@
 
 #include <QTableView>
 #include <QDockWidget>
+#include <QResizeEvent>
 
 #include "../classes.h"
 
@@ -30,6 +31,7 @@ class xVMemDump : public QTableView {
 		void setVMem(unsigned char*);
 	private:
 		xVMemDumpModel* mod;
+		void resizeEvent(QResizeEvent*);
 	private slots:
 		void jumpToIdx(QModelIndex);
 };
