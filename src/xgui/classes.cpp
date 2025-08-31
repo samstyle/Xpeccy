@@ -101,7 +101,18 @@ int xHexSpin::getMax() {
 	return max;
 }
 
+extern QString getStyleString(QString, QString, int = 0, int = 100);
+
 void xHexSpin::updatePal() {
+#if 1
+	QString str;
+	if (changed) {
+		str = getStyleString("dbg.changed.bg", "dbg.changed.txt");
+	} else {
+		str = ""; // getStyleString("dbg.input.bg", "dbg.input.txt");
+	}
+	setStyleSheet(str);
+#else
 	QPalette pal;
 	if (changed) {
 		pal.setColor(QPalette::Base, conf.pal["dbg.changed.bg"].isValid() ? conf.pal["dbg.changed.bg"] : pal.toolTipBase().color());
@@ -111,6 +122,7 @@ void xHexSpin::updatePal() {
 		pal.setColor(QPalette::Text, conf.pal["dbg.input.txt"].isValid() ? conf.pal["dbg.input.txt"] : pal.text().color());
 	}
 	setPalette(pal);
+#endif
 }
 
 void xHexSpin::setValue(int nval) {

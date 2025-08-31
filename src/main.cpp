@@ -7,6 +7,7 @@
 #include <QUrl>
 
 #include <locale.h>
+#include <string>
 
 #include "xcore/xcore.h"
 #include "xcore/sound.h"
@@ -54,6 +55,19 @@ void help() {
 
 void xApp::d_frame() {
 	postEvent(this, new QEvent(QEvent::User));
+}
+
+void xApp::d_style() {
+	if (conf.style.empty()) {
+		setStyleSheet("");
+	} else {
+		std::string path = conf.path.qssDir + SLASH + conf.style;
+		QFile file(path.c_str());
+		if (file.open(QFile::ReadOnly)) {
+			setStyleSheet(file.readAll().data());
+			file.close();
+		}
+	}
 }
 
 // for apple users
@@ -120,6 +134,8 @@ int main(int ac,char** av) {
 //		dbgw.setFont(QFont(QFontDatabase::applicationFontFamilies(id).first(), 10));
 //	}
 
+	app.d_style();
+
 	mwin.onPrfChange();
 	dbgw.onPrfChange();
 	dbgw.setFont(conf.dbg.font);
@@ -151,6 +167,7 @@ int main(int ac,char** av) {
 	app.connect(&mwin, SIGNAL(s_gamepad_plug()), &optw, SLOT(setPadName()));
 	app.connect(&optw, SIGNAL(closed()), &mwin, SLOT(optApply()));
 	app.connect(&optw, SIGNAL(s_apply()), &dbgw, SLOT(updateStyle()));
+	app.connect(&optw, SIGNAL(s_apply()), &app, SLOT(d_style()));
 	app.connect(&optw, SIGNAL(s_prf_changed()), &mwin, SLOT(onPrfChange()));
 	app.connect(&optw, SIGNAL(s_prf_changed()), &dbgw, SLOT(onPrfChange()));
 

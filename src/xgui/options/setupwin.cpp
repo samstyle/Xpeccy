@@ -92,6 +92,7 @@ void fill_shader_list(QComboBox* box) {
 #endif
 }
 
+/*
 void fill_palette_list(QComboBox* box) {
 	QDir dir(conf.path.palDir.c_str());
 	QFileInfoList lst = dir.entryInfoList(QStringList() << "*.txt", QDir::Files, QDir::Name);
@@ -104,6 +105,19 @@ void fill_palette_list(QComboBox* box) {
 	setRFIndex(box, conf.prof.cur->palette.c_str());
 	if (box->currentIndex() < 0)
 		box->setCurrentIndex(0);
+}
+*/
+
+void fillComboBox(QComboBox* box, QString path, QStringList filt, QString def = "", QString sel = "") {
+	QDir dir(path);
+	QFileInfoList lst = dir.entryInfoList(filt, QDir::Files, QDir::Name);
+	QFileInfo inf;
+	box->clear();
+	if (!def.isEmpty()) box->addItem(def);
+	foreach(inf, lst) {
+		box->addItem(inf.fileName(), inf.fileName());
+	}
+	setRFIndex(box, sel, 0);
 }
 
 // OBJECT
@@ -236,7 +250,8 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	ui.labShader->setVisible(false);
 	ui.cbShader->setVisible(false);
 #endif
-	fill_palette_list(ui.cbPalPreset);
+	//fill_palette_list(ui.cbPalPreset);
+	fillComboBox(ui.cbPalPreset, conf.path.palDir.c_str(), QStringList() << "*.txt" << "*.pal", "default", conf.prof.cur->palette.c_str());
 	paleditor = new xPalEditor(this);
 // sound
 	i = 0;
@@ -456,8 +471,8 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 // palette
 	QToolButton* tbarr[] = {
 		ui.tbDbgChaBG, ui.tbDbgChaFG, ui.tbDbgHeadBG, ui.tbDbgHeadFG,
-		ui.tbDbgTxtCol, ui.tbDbgWinCol, ui.tbDbgInputBG, ui.tbDbgInputFG,
-		ui.tbDbgTableBG, ui.tbDbgTableFG, ui.tbDbgPcBG, ui.tbDbgPcFG,
+		/*ui.tbDbgTxtCol, ui.tbDbgWinCol, ui.tbDbgInputBG, ui.tbDbgInputFG,
+		ui.tbDbgTableBG, ui.tbDbgTableFG,*/ ui.tbDbgPcBG, ui.tbDbgPcFG,
 		ui.tbDbgSelBG, ui.tbDbgSelFG,
 		ui.tbDbgBrkFG,
 		NULL
@@ -552,7 +567,8 @@ void SetupWin::start() {
 	ui.ulaPlus->setChecked(comp->vid->ula->enabled);
 	ui.cbDDp->setChecked(comp->ddpal);
 	fill_shader_list(ui.cbShader);
-	fill_palette_list(ui.cbPalPreset);
+	//fill_palette_list(ui.cbPalPreset);
+	fillComboBox(ui.cbPalPreset, conf.path.palDir.c_str(), QStringList() << "*.txt" << "*.pal", "default", conf.prof.cur->palette.c_str());
 // sound
 	ui.cbGS->setChecked(comp->gs->enable);
 	ui.gsrbox->setChecked(comp->gs->reset);
@@ -686,21 +702,22 @@ void SetupWin::start() {
 	ui.leDbgFont->setText(QString("%0, %1 pt").arg(dbgfnt.family()).arg(dbgfnt.pointSize()));
 	ui.leDbgFont->setFont(dbgfnt);
 // palette
-	setToolButtonColor(ui.tbDbgWinCol, "dbg.window","");
-	setToolButtonColor(ui.tbDbgTxtCol, "dbg.text","");
+	//setToolButtonColor(ui.tbDbgWinCol, "dbg.window","");
+	//setToolButtonColor(ui.tbDbgTxtCol, "dbg.text","");
 	setToolButtonColor(ui.tbDbgChaBG, "dbg.changed.bg","#e0c0c0");
 	setToolButtonColor(ui.tbDbgChaFG, "dbg.changed.txt","#000000");
 	setToolButtonColor(ui.tbDbgHeadBG, "dbg.header.bg","#c0c0e0");
 	setToolButtonColor(ui.tbDbgHeadFG, "dbg.header.txt","#000000");
-	setToolButtonColor(ui.tbDbgInputBG, "dbg.input.bg","");
-	setToolButtonColor(ui.tbDbgInputFG, "dbg.input.txt","");
-	setToolButtonColor(ui.tbDbgTableBG, "dbg.table.bg","");
-	setToolButtonColor(ui.tbDbgTableFG, "dbg.table.txt","");
+	//setToolButtonColor(ui.tbDbgInputBG, "dbg.input.bg","");
+	//setToolButtonColor(ui.tbDbgInputFG, "dbg.input.txt","");
+	//setToolButtonColor(ui.tbDbgTableBG, "dbg.table.bg","");
+	//setToolButtonColor(ui.tbDbgTableFG, "dbg.table.txt","");
 	setToolButtonColor(ui.tbDbgPcBG, "dbg.pc.bg","#80e080");
 	setToolButtonColor(ui.tbDbgPcFG, "dbg.pc.txt","#000000");
 	setToolButtonColor(ui.tbDbgSelBG, "dbg.sel.bg","#c0e0c0");
 	setToolButtonColor(ui.tbDbgSelFG, "dbg.sel.txt","#000000");
 	setToolButtonColor(ui.tbDbgBrkFG, "dbg.brk.txt","#e08080");
+	fillComboBox(ui.cbStyleSheet, conf.path.qssDir.c_str(), QStringList() << "*.qss", "System", conf.style.c_str());
 // profiles
 	ui.defstart->setChecked(conf.defProfile);
 	buildproflist();
@@ -906,6 +923,12 @@ void SetupWin::apply() {
 	conf.dbg.dwsize = ui.sbDwSize->value();
 	conf.dbg.dmsize = ui.sbTextSize->value();
 	conf.dbg.font = dbgfnt;
+	name = getRFSData(ui.cbStyleSheet);
+	if (name.isEmpty()) {
+		conf.style.clear();
+	} else {
+		conf.style = name.toStdString();
+	}
 // profiles
 	conf.defProfile = ui.defstart->isChecked() ? 1 : 0;
 

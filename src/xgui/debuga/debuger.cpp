@@ -54,22 +54,55 @@ typedef struct {
 	QLineEdit* edit;
 } dbgRegPlace;
 
-#define SETCOLOR(_n, _r) col = conf.pal[_n]; if (col.isValid()) pal.setColor(_r, col)
+// #define SETCOLOR(_n, _r) col = conf.pal[_n]; if (col.isValid()) pal.setColor(_r, col)
+
+#define FLG_ALTCOLOR	1
+#define FLG_LIGHTER	(1<<1)
+
+QString getStyleString(QString bgcn, QString txcn, int f = 0, int g = 100) {
+	QString str;
+	QColor col = conf.pal[bgcn];
+	if (col.isValid()) {
+		if (f & FLG_LIGHTER) {
+			str.append(QString("background-color:%0;").arg(col.lighter(g).name()));
+		} else {
+			str.append(QString("background-color:%0;").arg(col.name()));
+		}
+		if (f & FLG_ALTCOLOR) {
+			str.append(QString("alternate-background-color:%0;").arg(col.lighter(g).name()));
+		}
+	}
+	col = conf.pal[txcn];
+	if (col.isValid()) str.append(QString("color:%0;").arg(col.name()));
+	return str;
+}
 
 void DebugWin::updateStyle() {
-	QColor col;
-	QColor cot;
-	QPalette pal;
 	QString str;
-	SETCOLOR("dbg.window", QPalette::Window);
-	SETCOLOR("dbg.window", QPalette::Button);
-	SETCOLOR("dbg.text", QPalette::WindowText);
-	SETCOLOR("dbg.input.bg", QPalette::Base);
-	setPalette(pal);
-
-	col = conf.pal["dbg.header.bg"];
-	cot = conf.pal["dbg.header.txt"];
-	str = QString("background-color:%0;color:%1").arg(col.name()).arg(cot.name());
+#if 0
+	QString bcstr;
+	bcstr = getStyleString("dbg.window", "dbg.text");
+	if (!bcstr.isEmpty()) {
+		str.append("QWidget {").append(bcstr).append("}");		// main color (window + all widgets by default), must be 1st
+		bcstr = getStyleString("dbg.window", "dbg.text", FLG_LIGHTER, 80);
+		str.append("QTabBar::tab {").append(bcstr).append("}");		// by some reason, shape is disappearing
+		bcstr = getStyleString("dbg.window", "dbg.text", FLG_LIGHTER, 120);
+		str.append("QTabBar::tab:selected {").append(bcstr).append("}");
+	}
+	bcstr = getStyleString("dbg.table.bg", "dbg.table.txt", FLG_ALTCOLOR, 80);
+	if (!bcstr.isEmpty()) {
+		// qDebug() << bcstr;
+		str.append("QTableView {").append(bcstr).append("}");
+	}
+	bcstr = getStyleString("dbg.input.bg", "dbg.input.txt");
+	if (!bcstr.isEmpty()) {
+		str.append("QLineEdit {").append(bcstr).append("}");
+		str.append("QComboBox {").append(bcstr).append("}");
+	}
+	setStyleSheet(str);
+#endif
+// headers
+	str = getStyleString("dbg.header.bg", "dbg.header.txt");
 	ui_cpu.labHeadCpu->setStyleSheet(str);
 	ui_asm.labHeadDisasm->setStyleSheet(str);
 	ui_misc.labHeadMem->setStyleSheet(str);
@@ -83,6 +116,7 @@ void DebugWin::updateStyle() {
 		dw = static_cast<xDockWidget*>(ptr);
 		dw->titleBarWidget()->setStyleSheet(str);
 	}
+
 	setFont(conf.dbg.font);
 	foreach(xHexSpin* xhs, dbgRegEdit) {
 		xhs->updatePal();

@@ -59,7 +59,7 @@ int loadSCL(Computer* comp, const char* name, int drv) {
 		memset(buf + 0x8f5, 0x20, 8);		// disk label
 		flp_format_trk(flp, 0, 16, 256, (char*)buf);
 		i = 1;
-		while (!feof(file) && (i < 160)) {
+		while (!feof(file) && (i < 256)) {
 			fread((char*)buf, 0x1000, 1, file);
 			flp_format_trk(flp, i, 16, 256, (char*)buf);
 			i++;

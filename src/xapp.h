@@ -9,6 +9,7 @@ class xApp : public QApplication {
 		xApp(int& ac, char** av, int iv):QApplication(ac, av, iv) {}
 	public slots:
 		void d_frame();
+		void d_style();
 	signals:
 		void s_frame();
 	protected:

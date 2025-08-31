@@ -417,7 +417,8 @@ struct xConfig {
 	QList<xBookmark> bookmarkList;
 	QMap<QString, QColor> pal;
 	QString labpath;
-	unsigned short port;
+	std::string style;
+	unsigned short port;		// port to listen
 	struct {
 		unsigned fast:1;
 		int pause;
@@ -478,7 +479,8 @@ struct xConfig {
 		std::string prfDir;
 		std::string shdDir;
 		std::string palDir;
-		std::string plgDir;
+		std::string plgDir;	// so/dll/dynlib (experimental, works only for CPU)
+		std::string qssDir;	// visual styles
 		std::string font;
 		std::string boot;
 	} path;

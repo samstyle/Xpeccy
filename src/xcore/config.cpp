@@ -66,6 +66,8 @@ void conf_init(char* wpath, char* confdir) {
 	mkdir(conf.path.palDir.c_str() ,0777);
 	conf.path.plgDir = conf.path.confDir + "/plugins";
 	mkdir(conf.path.plgDir.c_str() ,0777);
+	conf.path.qssDir = conf.path.confDir + "/styles";
+	mkdir(conf.path.qssDir.c_str() ,0777);
 	conf.path.confFile = conf.path.confDir + "/config.conf";
 	conf.path.boot = conf.path.confDir + "/boot.$B";
 #elif defined(__WIN32)
@@ -84,6 +86,7 @@ void conf_init(char* wpath, char* confdir) {
 	conf.path.shdDir = conf.path.confDir + "\\shaders";
 	conf.path.palDir = conf.path.confDir + "\\palettes";
 	conf.path.plgDir = conf.path.confDir + "\\plugins";
+	conf.path.qssDir = conf.path.confDir + "\\styles";
 	conf.path.confFile = conf.path.confDir + "\\config.conf";
 	conf.path.boot = conf.path.confDir + "\\boot.$B";
 	mkdir(conf.path.confDir.c_str());
@@ -92,6 +95,7 @@ void conf_init(char* wpath, char* confdir) {
 	mkdir(conf.path.shdDir.c_str());
 	mkdir(conf.path.palDir.c_str());
 	mkdir(conf.path.plgDir.c_str());
+	mkdir(conf.path.qssDir.c_str());
 #endif
 	conf.scrShot.format = "png";
 // Pentagon geometry:
@@ -124,6 +128,7 @@ void saveConfig() {
 	fprintf(cfile, "port = %i\n", conf.port);
 	fprintf(cfile, "winpos = %i,%i\n",conf.xpos,conf.ypos);
 	fprintf(cfile, "flpinterleave = %i\n", flp_get_interleave());
+	fprintf(cfile, "style = %s\n", conf.style.c_str());
 
 	fprintf(cfile, "\n[BOOKMARKS]\n\n");
 	foreach(xBookmark bkm, conf.bookmarkList) {
@@ -533,6 +538,7 @@ void loadConfig() {
 					if (pnam == "addboot") conf.boot = arg.b;
 					if (pnam == "exit.confirm") conf.confexit = arg.b;
 					if (pnam == "flpinterleave") flp_set_interleave(arg.i);
+					if (pnam == "style") conf.style = std::string(arg.s);
 					break;
 				case SECT_TAPE:
 					if (pnam=="autoplay") conf.tape.autostart = arg.b;
