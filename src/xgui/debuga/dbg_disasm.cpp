@@ -777,6 +777,7 @@ xDisasmTable::xDisasmTable(QWidget* p):QTableView(p) {
 	connect(model, SIGNAL(s_adrch(int, int)), this, SLOT(t_update(int, int)));
 	connect(model, SIGNAL(rqRefill()), this, SIGNAL(rqRefill()));		// for updating other widgets
 	connect(model, SIGNAL(rqRefill()), this, SLOT(updContent()));		// for updating itself
+	connect(this, SIGNAL(colChanged()), this, SLOT(updColors()));
 }
 
 void xDisasmTable::resizeEvent(QResizeEvent* ev) {
@@ -800,7 +801,14 @@ void xDisasmTable::resizeEvent(QResizeEvent* ev) {
 	// if (h % rh != 0) rc++;
 	model->setRows(rc);
 	updContent();
+}
 
+void xDisasmTable::updColors() {
+	conf.pal["dbg.pc.bg"] = pc_bgr;
+	conf.pal["dbg.pc.txt"] = pc_txt;
+	conf.pal["dbg.sel.bg"] = blk_bgr;
+	conf.pal["dbg.sel.txt"] = blk_txt;
+	conf.pal["dbg.brk.txt"] = brk_txt;
 }
 
 QVariant xDisasmTable::getData(int row, int col, int role) {
@@ -836,6 +844,7 @@ void xDisasmTable::setAdrX(int adr) {
 }
 
 int xDisasmTable::updContent() {
+	QModelIndex idx;
 	int res = model->update_lst();
 	clearSpans();
 	for (int i = 0; i < model->dasm.size(); i++) {
@@ -847,9 +856,11 @@ int xDisasmTable::updContent() {
 		} else if (model->dasm[i].icon.isEmpty() && model->dasm[i].info.isEmpty()) {
 			setSpan(i, 2, 1, model->columnCount() - 2);
 		}
+		//idx = model->index(i, 0);
+		//itemDelegate(idx)->setProperty("pc", model->dasm[i].ispc);
 	}
 	// prevent case if current cell is invisible (eated by span)
-	QModelIndex idx = currentIndex();
+	idx = currentIndex();
 	int r = idx.row();
 	if (idx.isValid()) {
 		if (model->dasm[r].islab) {

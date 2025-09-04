@@ -218,8 +218,9 @@ sndPair ay_mix_stereo(int volA, int volB, int volC, int id) {
 int ay_chan_vol(aymChip* ay, aymChan* ch) {
 	int vol;
 	// tone 0..5 is beyond 20KHz
-	if ((ch->tdis || ch->lev) && (ch->ndis || ay->chanN.lev)) {
-		vol = ch->een ? ay->chanE.vol : (ch->ndis && !ch->tdis && (ch->per < 0x60)) ? 0 : ch->vol;
+	int lev = (ch->per < 0x60) ? 1 : ch->lev;
+	if ((ch->tdis || /*ch->*/lev) && (ch->ndis || ay->chanN.lev)) {
+		vol = ch->een ? ay->chanE.vol : (ch->ndis && !ch->tdis && !lev/* && (ch->per < 0x60)*/) ? 0 : ch->vol;
 	 } else {
 		vol = 0;
 	 }

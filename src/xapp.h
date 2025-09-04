@@ -2,6 +2,7 @@
 
 #include <QApplication>
 #include <QEvent>
+#include <QColor>
 
 class xApp : public QApplication {
 	Q_OBJECT

@@ -53,6 +53,11 @@ class xDisasmModel : public xTableModel {
 
 class xDisasmTable : public QTableView {
 	Q_OBJECT
+	Q_PROPERTY(QColor pcbgr MEMBER pc_bgr NOTIFY colChanged)
+	Q_PROPERTY(QColor pctxt MEMBER pc_txt NOTIFY colChanged)
+	Q_PROPERTY(QColor blkbgr MEMBER blk_bgr NOTIFY colChanged)
+	Q_PROPERTY(QColor blktxt MEMBER blk_txt NOTIFY colChanged)
+	Q_PROPERTY(QColor brktxt MEMBER brk_txt NOTIFY colChanged)
 	public:
 		xDisasmTable(QWidget* = NULL);
 		QVariant getData(int, int, int);
@@ -64,6 +69,7 @@ class xDisasmTable : public QTableView {
 		void rqRefill();
 		void rqRefillAll();
 		void s_adrch(int);
+		void colChanged();
 	public slots:
 		int updContent();
 		void update();
@@ -71,10 +77,13 @@ class xDisasmTable : public QTableView {
 		void setAdr(int, int = 0);
 		void setAdrX(int);
 		void rowDown();
+	private slots:
+		void updColors();
 	private:
 		int markAdr;
 		xDisasmModel* model;
 		QList<int> history;
+		QColor pc_bgr,pc_txt,blk_bgr,blk_txt,brk_txt;
 
 		void scrolUp(Qt::KeyboardModifiers = Qt::NoModifier);
 		void scrolDn(Qt::KeyboardModifiers = Qt::NoModifier);

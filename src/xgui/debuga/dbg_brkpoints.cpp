@@ -352,8 +352,8 @@ void xBrkManager::edit(xBrkPoint* sbrk) {
 	ui.brkFetch->setChecked(obrk.fetch);
 	ui.brkRead->setChecked(obrk.read);
 	ui.brkWrite->setChecked(obrk.write);
-	//ui.brkAdrHex->setMax(conf.prof.cur->zx->mem->busmask);
-	//ui.brkAdrEnd->setMax(conf.prof.cur->zx->mem->busmask);
+	ui.brkAdrHex->setMax(conf.prof.cur->zx->mem->busmask);
+	ui.brkAdrEnd->setMax(conf.prof.cur->zx->mem->busmask);
 	switch(obrk.type) {
 		case BRK_IOPORT:
 			ui.brkBank->setValue(0);
