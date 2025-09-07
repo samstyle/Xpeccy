@@ -17,6 +17,9 @@ xZXScrWidget::xZXScrWidget(QString i, QString t, QWidget* p):xDockWidget(i,t,p) 
 
 	connect(ui.sldScale, &QSlider::valueChanged, this, &xZXScrWidget::setZoom);
 
+	// setting initial values
+	ui.sldScale->setValue(conf.dbg.scrzoom);
+
 	hwList << HWG_ZX << HWG_ALF;
 }
 
