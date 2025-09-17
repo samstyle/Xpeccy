@@ -215,6 +215,22 @@
    <header location="global">stdlib.h</header>
   </customwidget>
  </customwidgets>
+ <tabstops>
+  <tabstop>brkType</tabstop>
+  <tabstop>brkFetch</tabstop>
+  <tabstop>brkRead</tabstop>
+  <tabstop>brkWrite</tabstop>
+  <tabstop>brkBank</tabstop>
+  <tabstop>leStartOffset</tabstop>
+  <tabstop>brkAdrHex</tabstop>
+  <tabstop>brkMaskHex</tabstop>
+  <tabstop>leEndOffset</tabstop>
+  <tabstop>brkAdrEnd</tabstop>
+  <tabstop>leValue</tabstop>
+  <tabstop>leValMask</tabstop>
+  <tabstop>brkAction</tabstop>
+  <tabstop>pbOK</tabstop>
+ </tabstops>
  <resources>
   <include location="../xpeccy.qrc"/>
  </resources>

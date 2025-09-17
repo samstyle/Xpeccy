@@ -5,7 +5,7 @@ typedef struct {
 	xBrkPoint* ptr;
 } xbpIndex;
 
-xbpIndex brkFind(xBrkPoint brk) {
+xbpIndex brkFind(xBrkPoint* brk) {
 	xbpIndex res;
 	res.ptr = NULL;
 	res.idx = -1;
@@ -14,14 +14,14 @@ xbpIndex brkFind(xBrkPoint brk) {
 	int max = conf.prof.cur->brkList.size();
 	for (i = 0; (i < max) && !res.ptr; i++) {
 		tbrk = &conf.prof.cur->brkList[i];
-		if ((tbrk->type == brk.type) && (tbrk->adr == brk.adr)) {
-			if (brk.type == BRK_IOPORT) {
-				if (tbrk->mask == brk.mask) {
+		if ((tbrk->type == brk->type) && (tbrk->adr == brk->adr)) {
+			if (brk->type == BRK_IOPORT) {
+				if (tbrk->mask == brk->mask) {
 					res.ptr = tbrk;
 					res.idx = i;
 				}
-			} else if (brk.type == BRK_CPUADR) {
-				if (tbrk->eadr == brk.eadr) {
+			} else if (brk->type == BRK_CPUADR) {
+				if (tbrk->eadr == brk->eadr) {
 					res.ptr = tbrk;
 					res.idx = i;
 				}
@@ -45,12 +45,8 @@ xBrkPoint* brk_find(int t, int adr) {
 		}
 	} else {
 		std::map<int, xBrkPoint*>* map = NULL;
-		switch(t) {
-			case BRK_CPUADR: map = &conf.prof.cur->brkMapCpu; break;
-			case BRK_MEMRAM: map = &conf.prof.cur->brkMapRam; break;
-			case BRK_MEMROM: map = &conf.prof.cur->brkMapRom; break;
-			case BRK_MEMSLT: map = &conf.prof.cur->brkMapSlt; break;
-			case BRK_IOPORT: map = &conf.prof.cur->brkMapIO; break;
+		if (conf.prof.cur->brkMap.count(t) > 0) {
+			map = &conf.prof.cur->brkMap[t];
 		}
 		if (map) {
 			std::map<int, xBrkPoint*>::iterator it;
@@ -74,7 +70,7 @@ xBrkPoint* brk_find(int t, int adr) {
 //		full memory address for BRK_MEMCELL
 // mask		address mask for BRK_IOADR
 //		end address for BRK_MEMCELL/BRK_CPUADR (-1 if single address)
-xBrkPoint brkCreate(int type, int flag, int adr, int mask) {
+xBrkPoint brkCreate(int type, int flag, int adr, int mask, int act = BRK_ACT_DBG) {
 	xBrkPoint brk;
 	int adrmask = -1;
 	if (type == BRK_MEMCELL) {
@@ -87,13 +83,13 @@ xBrkPoint brkCreate(int type, int flag, int adr, int mask) {
 		adr &= adrmask;
 		if (mask > 0) mask &= adrmask;
 		brk.adr = adr;
-		if (mask > adr) {
+		if (mask < 0) {
+			brk.eadr = brk.adr;
+		} else if (mask > adr) {
 			brk.eadr = mask;
-		} else if (mask >= 0) {
+		} else {
 			brk.adr = mask;
 			brk.eadr = adr;
-		} else {
-			brk.eadr = brk.adr;
 		}
 		mask = -1;
 	} else if (type == BRK_CPUADR) {
@@ -116,92 +112,21 @@ xBrkPoint brkCreate(int type, int flag, int adr, int mask) {
 		brk.eadr = brk.adr;
 	}
 	brk.off = 0;
-	brk.fetch = (flag & MEM_BRK_FETCH) ? 1 : 0;
-	brk.read = (flag & MEM_BRK_RD) ? 1 : 0;
-	brk.write = (flag & MEM_BRK_WR) ? 1 : 0;
+	brk.fetch = !!(flag & MEM_BRK_FETCH);
+	brk.read = !!(flag & MEM_BRK_RD);
+	brk.write = !!(flag & MEM_BRK_WR);
 	brk.temp = 0;
 	brk.mask = mask;
 	brk.count = 0;
-	brk.action = BRK_ACT_DBG;
+	brk.action = act;
 	return brk;
-}
-
-void brkInstall(xBrkPoint* brk, int del) {
-	if (del) {
-		brkDelete(*brk);
-	} else {
-		unsigned char* ptr = NULL;
-		Computer* comp = conf.prof.cur->zx;
-		unsigned char msk = 0;
-		std::map<int, xBrkPoint*>* map = NULL;
-		int cnt = 1;
-		int adr = -1;
-		if (!brk->off) {
-			if (brk->temp) msk |= MEM_BRK_TFETCH;
-			if (brk->fetch) msk |= MEM_BRK_FETCH;
-			if (brk->read) msk |= MEM_BRK_RD;
-			if (brk->write) msk |= MEM_BRK_WR;
-		}
-		switch(brk->type) {
-			case BRK_IOPORT:
-				for (adr = 0; adr < 0x10000; adr++) {
-					if ((adr & brk->mask) == (brk->adr & brk->mask)) {
-						comp->brkIOMap[adr] = 0;
-						if (!brk->off) {
-							if (brk->read) comp->brkIOMap[adr] |= MEM_BRK_RD;
-							if (brk->write) comp->brkIOMap[adr] |= MEM_BRK_WR;
-						}
-					}
-					if (comp->brkIOMap[adr]) {
-						conf.prof.cur->brkMapIO[adr] = brk;
-					}
-				}
-				break;
-			case BRK_CPUADR:
-				map = &conf.prof.cur->brkMapCpu;
-				ptr = comp->brkAdrMap + (brk->adr & 0xffff);
-				cnt = brk->eadr - brk->adr + 1;
-				break;
-			case BRK_MEMRAM:
-				map = &conf.prof.cur->brkMapRam;
-				ptr = comp->brkRamMap + (brk->adr & comp->mem->ramMask);
-				cnt = brk->eadr - brk->adr + 1;
-				break;
-			case BRK_MEMROM:
-				map = &conf.prof.cur->brkMapRom;
-				ptr = comp->brkRomMap + (brk->adr & comp->mem->romMask);
-				cnt = brk->eadr - brk->adr + 1;
-				break;
-			case BRK_MEMSLT:
-				map = &conf.prof.cur->brkMapSlt;
-				if (!comp->slot->brkMap) break;
-				ptr = comp->slot->brkMap + (brk->adr & comp->slot->memMask);
-				cnt = brk->eadr - brk->adr + 1;
-				break;
-			case BRK_IRQ:
-				comp->brkirq = !brk->off;
-				break;
-		}
-		if (ptr) {
-			adr = brk->adr;
-			while (cnt > 0) {
-				*ptr &= 0xf0;
-				*ptr |= (msk & 0x0f);
-				ptr++;
-				if (map) (*map)[adr++] = brk;
-				cnt--;
-			}
-		}
-	}
-//	if (!del || brk.fetch || brk.read || brk.write || brk.temp) return;
-//	brkDelete(brk);
 }
 
 bool brk_compare(xBrkPoint& bp1, xBrkPoint& bp2) {return (bp1.adr < bp2.adr);}
 void brkSort() {std::sort(conf.prof.cur->brkList.begin(), conf.prof.cur->brkList.end(), brk_compare);}
 
 void brkAdd(xBrkPoint brk) {
-	xbpIndex idx = brkFind(brk);
+	xbpIndex idx = brkFind(&brk);
 	if (idx.ptr) {
 		idx.ptr->fetch = brk.fetch;
 		idx.ptr->read = brk.read;
@@ -221,7 +146,7 @@ void brkSet(int type, int flag, int adr, int mask) {
 
 void brkXor(int type, int flag, int adr, int mask, int del) {
 	xBrkPoint brk = brkCreate(type, flag, adr, mask);
-	xbpIndex idx = brkFind(brk);
+	xbpIndex idx = brkFind(&brk);
 	if (idx.ptr) {
 		idx.ptr->fetch ^= brk.fetch;
 		idx.ptr->read ^= brk.read;
@@ -239,7 +164,7 @@ void brkXor(int type, int flag, int adr, int mask, int del) {
 }
 
 void brkDelete(xBrkPoint dbrk) {
-	int idx = brkFind(dbrk).idx;
+	int idx = brkFind(&dbrk).idx;
 	if (idx < 0) return;
 	if (idx >= (int)conf.prof.cur->brkList.size()) return;
 	conf.prof.cur->brkList.erase(conf.prof.cur->brkList.begin() + idx);
@@ -268,6 +193,75 @@ void clearMap(unsigned char* ptr, int siz) {
 	}
 }
 
+void brkInstall(xBrkPoint* brk, int del) {
+	if (del) {
+		brkDelete(*brk);
+	} else {
+		unsigned char* ptr = NULL;
+		Computer* comp = conf.prof.cur->zx;
+		unsigned char msk = 0;
+		std::map<int, xBrkPoint*>* map = NULL;
+		int cnt = 1;
+		int adr = -1;
+		if (!brk->off) {
+			if (brk->temp) msk |= MEM_BRK_TFETCH;
+			if (brk->fetch) msk |= MEM_BRK_FETCH;
+			if (brk->read) msk |= MEM_BRK_RD;
+			if (brk->write) msk |= MEM_BRK_WR;
+		}
+		if (brk->type != BRK_IRQ)
+			map = &conf.prof.cur->brkMap[brk->type];
+		switch(brk->type) {
+			case BRK_IOPORT:
+				for (adr = 0; adr < 0x10000; adr++) {
+					if ((adr & brk->mask) == (brk->adr & brk->mask)) {
+						comp->brkIOMap[adr] = 0;
+						if (!brk->off) {
+							if (brk->read) comp->brkIOMap[adr] |= MEM_BRK_RD;
+							if (brk->write) comp->brkIOMap[adr] |= MEM_BRK_WR;
+						}
+					}
+					if (comp->brkIOMap[adr]) {
+						conf.prof.cur->brkMap[BRK_IOPORT][adr] = brk;
+						map = NULL;
+					}
+				}
+				break;
+			case BRK_CPUADR:
+				ptr = comp->brkAdrMap + (brk->adr & 0xffff);
+				cnt = brk->eadr - brk->adr + 1;
+				break;
+			case BRK_MEMRAM:
+				ptr = comp->brkRamMap + (brk->adr & comp->mem->ramMask);
+				cnt = brk->eadr - brk->adr + 1;
+				break;
+			case BRK_MEMROM:
+				ptr = comp->brkRomMap + (brk->adr & comp->mem->romMask);
+				cnt = brk->eadr - brk->adr + 1;
+				break;
+			case BRK_MEMSLT:
+				if (!comp->slot->brkMap) break;
+				ptr = comp->slot->brkMap + (brk->adr & comp->slot->memMask);
+				cnt = brk->eadr - brk->adr + 1;
+				break;
+			case BRK_IRQ:
+				comp->brkirq = !brk->off;
+				map = NULL;
+				break;
+		}
+		if (ptr) {
+			adr = brk->adr;
+			while (cnt > 0) {
+				*ptr &= 0xf0;
+				*ptr |= (msk & 0x0f);
+				ptr++;
+				if (map) (*map)[adr++] = brk;
+				cnt--;
+			}
+		}
+	}
+}
+
 void brkInstallAll() {
 	xProfile* prf = conf.prof.cur;
 	Computer* comp = prf->zx;
@@ -277,11 +271,7 @@ void brkInstallAll() {
 	clearMap(comp->brkRomMap, MEM_512K);
 	if (comp->slot->brkMap)
 		clearMap(comp->slot->brkMap, comp->slot->memMask + 1);
-	prf->brkMapCpu.clear();
-	prf->brkMapRam.clear();
-	prf->brkMapRom.clear();
-	prf->brkMapSlt.clear();
-	prf->brkMapIO.clear();
+	prf->brkMap.clear();
 	comp->brkirq = 0;
 	for(auto it = prf->brkList.begin(); it != prf->brkList.end(); it++) {
 		brkInstall(&(*it), 0);

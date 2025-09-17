@@ -151,7 +151,7 @@ void clear_comments();
 enum {
 	BRK_ACT_DBG = 1,
 	BRK_ACT_SCR,
-	BRK_ACT_COUNT
+	BRK_ACT_COUNT,
 };
 
 typedef struct {
@@ -181,23 +181,17 @@ xBrkPoint* brk_find(int, int);
 
 typedef struct {
 	std::string name;
- 	std::string file;
-	std::string layName;
-	std::string hwName;
-	std::string rsName;
-	std::string jmapNameA;
+ 	std::string file;		// config file
+	std::string layName;		// screen layout
+	std::string hwName;		// hardware
+	std::string rsName;		// romset
+	std::string jmapNameA;		// joysticks
 	std::string jmapNameB;
-	std::string kmapName;
+	std::string kmapName;		// keymap
 	std::string lastDir;
 	std::string palette;
-
-	std::vector<xBrkPoint> brkList;
-	std::map<int, xBrkPoint*> brkMapCpu;
-	std::map<int, xBrkPoint*> brkMapRam;
-	std::map<int, xBrkPoint*> brkMapRom;
-	std::map<int, xBrkPoint*> brkMapSlt;
-	std::map<int, xBrkPoint*> brkMapIO;
-
+	std::vector<xBrkPoint> brkList;				// TODO: vector->list
+	std::map<int, std::map<int, xBrkPoint*> > brkMap;	// [type][addr] = pointer
 	Computer* zx;
 	struct {
 		QMap<int, QString> ram;

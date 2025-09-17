@@ -62,7 +62,8 @@ void xThread::tap_catch_load(Computer* comp) {
 			comp->cpu->regHL = 0xff00;
 		}
 		tapNextBlock(comp->tape);
-		comp->cpu->regPC = 0x5df;
+		cpu_set_pc(comp->cpu, 0x5df);
+		// comp->cpu->regPC = 0x5df;
 		free(blkData);
 	} else if (conf.tape.autostart) {
 		emit tapeSignal(TW_STATE,TWS_PLAY);
@@ -87,7 +88,8 @@ void xThread::tap_catch_save(Computer* comp) {
 		tap_add_block(comp->tape, blk);
 		blkClear(&blk);
 		free(buf);
-		comp->cpu->regPC = 0x053e;
+		cpu_set_pc(comp->cpu, 0x53e);
+		// comp->cpu->regPC = 0x053e;
 		comp->cpu->regBC = 0x000e;
 		comp->cpu->regDE = 0xffff;
 		comp->cpu->regHL = 0x0000;
@@ -100,6 +102,7 @@ void xThread::tap_catch_save(Computer* comp) {
 
 void xThread::emuCycle(Computer* comp) {
 	int tm;
+	int brkskip = 0;
 	sndNs = 0;
 	wavNs = 0;
 	conf.snd.fill = 1;
@@ -108,10 +111,18 @@ void xThread::emuCycle(Computer* comp) {
 		if (conf.emu.pause) {
 			sndNs += 1000;
 		} else {
-			tm = compExec(comp);			// TODO: it exits when fetch-brk is occured, pc doesn't changed
+			if (brkskip) {
+				brkskip = comp->debug;
+				comp->debug = 1;		// block breakpoints checking
+				tm = compExec(comp);
+				comp->debug = brkskip;
+				brkskip = 0;
+			} else {
+				tm = compExec(comp);			// TODO: it exits when fetch-brk is occured, pc doesn't changed
+			}
 			sndNs += tm;
 			wavNs += tm;
-			// tape trap
+			// tape trap	TODO: rework it as a system breakpoint
 			int pc = cpu_get_pc(comp->cpu);
 			if ((comp->hw->grp == HWG_ZX) && (comp->mem->map[0].type == MEM_ROM) && comp->rom && !comp->dos && !comp->ext) {
 				if ((pc == 0x56c) || (pc == 0x5e7)) {	// load: ix:addr, de:len (0x580 ?) 56c/559
@@ -154,16 +165,21 @@ void xThread::emuCycle(Computer* comp) {
 #endif
 		if (comp->brk) {
 			// printf("brkt = %i, brka = %X\n", comp->brkt, comp->brka);
-			if (comp->brkt == -1) {
+			if (comp->brkt == -1) {			// irq or tmp
 				conf.emu.pause |= PR_DEBUG;
 				emit dbgRequest();
-			} else {
+			} else {				// others
 				xBrkPoint* ptr = brk_find(comp->brkt, comp->brka);
 				if (ptr) {
 					QString fnams;
 					QFile file;
+					// TODO: fetch break continues to repeat, comp->brk=0 is not enough?
 					switch (ptr->action) {
-						case BRK_ACT_COUNT: ptr->count++; comp->brk = 0; break;
+						case BRK_ACT_COUNT:
+							ptr->count++;
+							comp->brk = 0;
+							if (ptr->fetch) brkskip = 1;
+							break;
 						case BRK_ACT_SCR:
 							fnams = QString(conf.scrShot.dir.c_str()).append(SLASH);
 							fnams.append(QString("xpeccy_%0").arg(QTime::currentTime().toString("HHmmss_zzz")));	// TODO: counter-based name (1ms is not enough)
@@ -176,13 +192,14 @@ void xThread::emuCycle(Computer* comp) {
 							file.write((char*)(comp->mem->ramData + (5 << 14)), 0x1b00);
 							file.close();
 							comp->brk = 0;
+							if (ptr->fetch) brkskip = 1;
 							break;
 						default:					// BRK_ACT_DBG
 							conf.emu.pause |= PR_DEBUG;
 							emit dbgRequest();
 							break;
 					}
-				} else {
+				} else {				// breakpoint didn't found, but bit is set (?)
 					comp->brk = 0;
 				}
 			}
