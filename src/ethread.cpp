@@ -39,8 +39,6 @@ void xThread::stop() {
 #endif
 }
 
-// TODO: do cpu_set_pc instead of comp->regPC=...
-
 void xThread::tap_catch_load(Computer* comp) {
 	int blk = comp->tape->block;
 	if (blk >= comp->tape->blkCount) return;
@@ -50,20 +48,41 @@ void xThread::tap_catch_load(Computer* comp) {
 		TapeBlockInfo inf = tapGetBlockInfo(comp->tape,blk,TFRM_ZX);
 		unsigned char* blkData = (unsigned char*)malloc(inf.size + 2);
 		tapGetBlockData(comp->tape,blk,blkData, inf.size + 2);
+#if 1
+		unsigned char data = 0x01;
+		unsigned char crc = blkData[0];
+		bool overdata = (inf.size < de);
+		int len = overdata ? inf.size : de;
+		int i;
+		for (i = 0; i < len; i++) {
+			data = blkData[i + 1];		// 1st data byte is type, not data
+			crc ^= data;
+			memWr(comp->mem, ix, data);
+			ix++;
+			de--;
+		}
+		if (!overdata) {
+			crc ^= blkData[i + 1];		// xor with tape crc (next byte after de|inf.size bytes)
+		}
+		comp->cpu->regL = data;			// last readed byte
+		comp->cpu->regH = crc;			// all bytes xored (0 if no errors)
+		comp->cpu->regIX = ix;			// next address
+		comp->cpu->regDE = de;			// remaining size (0 if all is good)
+#else
 		if (inf.size >= de) {
 			for (int i = 0; i < de; i++) {
 				memWr(comp->mem,ix,blkData[i + 1]);
 				ix++;
 			}
 			comp->cpu->regIX = ix;
-			comp->cpu->regDE = 0x0000;
-			comp->cpu->regHL = 0x0000;
+			comp->cpu->regDE = 0x0000;	// remaining len
+			comp->cpu->regHL = 0x0000;	// h = calculated_crc ^ tape_crc (=0 if no errors), l = last readed byte
 		} else {
-			comp->cpu->regHL = 0xff00;
+			comp->cpu->regHL = 0xff00;		// error
 		}
+#endif
 		tapNextBlock(comp->tape);
 		cpu_set_pc(comp->cpu, 0x5df);
-		// comp->cpu->regPC = 0x5df;
 		free(blkData);
 	} else if (conf.tape.autostart) {
 		emit tapeSignal(TW_STATE,TWS_PLAY);

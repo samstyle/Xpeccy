@@ -129,7 +129,7 @@ void vid_line(Video* vid) {
 	}
 #endif
 	if (lefSkip > 0)
-		vid_fill_black(vid->ray.lptr, bytesPerLine);
+		vid_fill_black(vid->ray.lptr, lefSkip);
 	vid->ray.ptr = vid->ray.lptr + lefSkip;
 }
 

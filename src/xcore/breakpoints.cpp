@@ -5,15 +5,17 @@ typedef struct {
 	xBrkPoint* ptr;
 } xbpIndex;
 
-xbpIndex brkFind(xBrkPoint* brk) {
+xbpIndex brkFind(xBrkPoint* brk, int flag = 0) {
 	xbpIndex res;
 	res.ptr = NULL;
 	res.idx = -1;
 	xBrkPoint* tbrk;
+	xProfile* prf = conf.prof.cur;
+	std::vector<xBrkPoint>* list = (flag & BRKF_SYSTEM) ? &prf->brk.list_sys : &prf->brk.list;
 	int i;
-	int max = conf.prof.cur->brkList.size();
+	int max = list->size();
 	for (i = 0; (i < max) && !res.ptr; i++) {
-		tbrk = &conf.prof.cur->brkList[i];
+		tbrk = &list->at(i);
 		if ((tbrk->type == brk->type) && (tbrk->adr == brk->adr)) {
 			if (brk->type == BRK_IOPORT) {
 				if (tbrk->mask == brk->mask) {
@@ -38,15 +40,15 @@ xbpIndex brkFind(xBrkPoint* brk) {
 xBrkPoint* brk_find(int t, int adr) {
 	xBrkPoint* ptr = NULL;
 	if (t == BRK_IRQ) {
-		for (auto it = conf.prof.cur->brkList.begin(); it != conf.prof.cur->brkList.end(); it++) {
+		for (auto it = conf.prof.cur->brk.list.begin(); it != conf.prof.cur->brk.list.end(); it++) {
 			if (!it->off && (it->type == t)) {
 				ptr = &(*it);
 			}
 		}
 	} else {
 		std::map<int, xBrkPoint*>* map = NULL;
-		if (conf.prof.cur->brkMap.count(t) > 0) {
-			map = &conf.prof.cur->brkMap[t];
+		if (conf.prof.cur->brk.map.count(t) > 0) {
+			map = &conf.prof.cur->brk.map[t];
 		}
 		if (map) {
 			std::map<int, xBrkPoint*>::iterator it;
@@ -123,17 +125,18 @@ xBrkPoint brkCreate(int type, int flag, int adr, int mask, int act = BRK_ACT_DBG
 }
 
 bool brk_compare(xBrkPoint& bp1, xBrkPoint& bp2) {return (bp1.adr < bp2.adr);}
-void brkSort() {std::sort(conf.prof.cur->brkList.begin(), conf.prof.cur->brkList.end(), brk_compare);}
+void brkSort() {std::sort(conf.prof.cur->brk.list.begin(), conf.prof.cur->brk.list.end(), brk_compare);}
 
-void brkAdd(xBrkPoint brk) {
-	xbpIndex idx = brkFind(&brk);
-	if (idx.ptr) {
-		idx.ptr->fetch = brk.fetch;
-		idx.ptr->read = brk.read;
-		idx.ptr->write = brk.write;
-		brk = *idx.ptr;
+void brkAdd(xBrkPoint brk, int flag) {
+	xBrkPoint* bp = brkFind(&brk, flag & BRKF_SYSTEM).ptr;
+	if (bp) {
+		bp->fetch = brk.fetch;
+		bp->read = brk.read;
+		bp->write = brk.write;
+	} else if (flag & BRKF_SYSTEM) {
+		conf.prof.cur->brk.list_sys.push_back(brk);
 	} else {
-		conf.prof.cur->brkList.push_back(brk);
+		conf.prof.cur->brk.list.push_back(brk);
 	}
 	brkSort();
 	brkInstallAll();
@@ -153,10 +156,10 @@ void brkXor(int type, int flag, int adr, int mask, int del) {
 		idx.ptr->write ^= brk.write;
 		brk = *idx.ptr;
 		if (del && !brk.fetch && !brk.read && !brk.write && !brk.temp) {
-			conf.prof.cur->brkList.erase(conf.prof.cur->brkList.begin() + idx.idx);
+			conf.prof.cur->brk.list.erase(conf.prof.cur->brk.list.begin() + idx.idx);
 		}
 	} else {
-		conf.prof.cur->brkList.push_back(brk);
+		conf.prof.cur->brk.list.push_back(brk);
 	}
 	brkSort();
 	brkInstallAll();
@@ -166,8 +169,8 @@ void brkXor(int type, int flag, int adr, int mask, int del) {
 void brkDelete(xBrkPoint dbrk) {
 	int idx = brkFind(&dbrk).idx;
 	if (idx < 0) return;
-	if (idx >= (int)conf.prof.cur->brkList.size()) return;
-	conf.prof.cur->brkList.erase(conf.prof.cur->brkList.begin() + idx);
+	if (idx >= (int)conf.prof.cur->brk.list.size()) return;
+	conf.prof.cur->brk.list.erase(conf.prof.cur->brk.list.begin() + idx);
 	brkSort();
 	brkInstallAll();
 }
@@ -210,7 +213,7 @@ void brkInstall(xBrkPoint* brk, int del) {
 			if (brk->write) msk |= MEM_BRK_WR;
 		}
 		if (brk->type != BRK_IRQ)
-			map = &conf.prof.cur->brkMap[brk->type];
+			map = &conf.prof.cur->brk.map[brk->type];
 		switch(brk->type) {
 			case BRK_IOPORT:
 				for (adr = 0; adr < 0x10000; adr++) {
@@ -222,7 +225,7 @@ void brkInstall(xBrkPoint* brk, int del) {
 						}
 					}
 					if (comp->brkIOMap[adr]) {
-						conf.prof.cur->brkMap[BRK_IOPORT][adr] = brk;
+						conf.prof.cur->brk.map[BRK_IOPORT][adr] = brk;
 						map = NULL;
 					}
 				}
@@ -246,7 +249,7 @@ void brkInstall(xBrkPoint* brk, int del) {
 				break;
 			case BRK_IRQ:
 				comp->brkirq = !brk->off;
-				map = NULL;
+				ptr = NULL;
 				break;
 		}
 		if (ptr) {
@@ -262,6 +265,13 @@ void brkInstall(xBrkPoint* brk, int del) {
 	}
 }
 
+void brkInstallList(std::vector<xBrkPoint>* list) {
+	std::vector<xBrkPoint>::iterator it;
+	for (it = list->begin(); it != list->end(); it++) {
+		brkInstall(&(*it), 0);
+	}
+}
+
 void brkInstallAll() {
 	xProfile* prf = conf.prof.cur;
 	Computer* comp = prf->zx;
@@ -271,12 +281,17 @@ void brkInstallAll() {
 	clearMap(comp->brkRomMap, MEM_512K);
 	if (comp->slot->brkMap)
 		clearMap(comp->slot->brkMap, comp->slot->memMask + 1);
-	prf->brkMap.clear();
+	prf->brk.map.clear();
 	comp->brkirq = 0;
-	for(auto it = prf->brkList.begin(); it != prf->brkList.end(); it++) {
+#if 1
+	brkInstallList(&prf->brk.list);
+	brkInstallList(&prf->brk.list_sys);
+#else
+	for (auto it = prf->brk.list.begin(); it != prf->brk.list.end(); it++) {
 		brkInstall(&(*it), 0);
 	}
-//	foreach(xBrkPoint brk, conf.prof.cur->brkList) {
-//		brkInstall(brk, 0);
-//	}
+	for (auto it = prf->brk.list_sys.begin(); it != prf->brk.list_sys.end(); it++) {
+		brkInstall(&(*it), 0);
+	}
+#endif
 }

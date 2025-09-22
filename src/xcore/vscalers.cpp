@@ -5,6 +5,7 @@
 
 #include <QApplication>
 #include <QScreen>
+#include <QDebug>
 
 void vid_upd_scale() {
 	QSize scrsz;
@@ -42,6 +43,7 @@ void vid_upd_scale() {
 #endif
 			rigSkip = lefSkip;
 			botSkip = topSkip;
+			// qDebug() << "lefSkip = " << lefSkip << ", rigSkip = " << rigSkip;
 		} else {
 			lefSkip = 0;
 			pixSkip = 0;

@@ -148,6 +148,8 @@ void clear_comments();
 
 #define DELBREAKS 0		// delete breakpoint on FRW=000
 
+#define BRKF_SYSTEM 1
+
 enum {
 	BRK_ACT_DBG = 1,
 	BRK_ACT_SCR,
@@ -170,8 +172,8 @@ typedef struct {
 
 void brkSet(int, int, int, int);
 void brkXor(int, int, int, int, int);
-void brkAdd(xBrkPoint);
-void brkInstall(xBrkPoint*, int);
+void brkAdd(xBrkPoint, int = 0);
+// void brkInstall(xBrkPoint*, int);
 void brkDelete(xBrkPoint);
 void brkInstallAll();
 void brk_clear_tmp(Computer*);
@@ -190,8 +192,11 @@ typedef struct {
 	std::string kmapName;		// keymap
 	std::string lastDir;
 	std::string palette;
-	std::vector<xBrkPoint> brkList;				// TODO: vector->list
-	std::map<int, std::map<int, xBrkPoint*> > brkMap;	// [type][addr] = pointer
+	struct {
+		std::vector<xBrkPoint> list;
+		std::vector<xBrkPoint> list_sys;
+		std::map<int, std::map<int, xBrkPoint*> > map;		// [type][addr] = pointer
+	} brk;
 	Computer* zx;
 	struct {
 		QMap<int, QString> ram;

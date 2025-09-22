@@ -11,7 +11,7 @@ xBreakListModel::xBreakListModel(QObject* par):xTableModel(par) {
 
 int xBreakListModel::rowCount(const QModelIndex&) const {
 	if (!conf.prof.cur) return 0;
-	return conf.prof.cur->brkList.size();
+	return conf.prof.cur->brk.list.size();
 }
 
 int xBreakListModel::columnCount(const QModelIndex&) const {
@@ -64,7 +64,7 @@ QVariant xBreakListModel::data(const QModelIndex& idx, int role) const {
 	int col = idx.column();
 	if ((col < 0) || (col >= columnCount())) return res;
 	if ((row < 0) || (row >= rowCount())) return res;
-	xBrkPoint brk = conf.prof.cur->brkList[row];
+	xBrkPoint brk = conf.prof.cur->brk.list[row];
 	switch (role) {
 		case Qt::CheckStateRole:
 			switch(col) {
@@ -121,12 +121,12 @@ bool xbsName(const xBrkPoint bpa, const xBrkPoint bpb) {
 void xBreakListModel::sort(int col, Qt::SortOrder ord) {
 	if (!conf.prof.cur) return;
 	switch(col) {
-		case 0: std::sort(conf.prof.cur->brkList.begin(), conf.prof.cur->brkList.end(), xbsOff); break;
-		case 1: std::sort(conf.prof.cur->brkList.begin(), conf.prof.cur->brkList.end(), xbsFe); break;
-		case 2: std::sort(conf.prof.cur->brkList.begin(), conf.prof.cur->brkList.end(), xbsRd); break;
-		case 3: std::sort(conf.prof.cur->brkList.begin(), conf.prof.cur->brkList.end(), xbsWr); break;
-		case 4: std::sort(conf.prof.cur->brkList.begin(), conf.prof.cur->brkList.end(), xbsName); break;
-		case 5: std::sort(conf.prof.cur->brkList.begin(), conf.prof.cur->brkList.end(), xbsCnt); break;
+		case 0: std::sort(conf.prof.cur->brk.list.begin(), conf.prof.cur->brk.list.end(), xbsOff); break;
+		case 1: std::sort(conf.prof.cur->brk.list.begin(), conf.prof.cur->brk.list.end(), xbsFe); break;
+		case 2: std::sort(conf.prof.cur->brk.list.begin(), conf.prof.cur->brk.list.end(), xbsRd); break;
+		case 3: std::sort(conf.prof.cur->brk.list.begin(), conf.prof.cur->brk.list.end(), xbsWr); break;
+		case 4: std::sort(conf.prof.cur->brk.list.begin(), conf.prof.cur->brk.list.end(), xbsName); break;
+		case 5: std::sort(conf.prof.cur->brk.list.begin(), conf.prof.cur->brk.list.end(), xbsCnt); break;
 	}
 	emit dataChanged(index(0,0), index(rowCount() - 1, columnCount() - 1));
 }
@@ -164,14 +164,14 @@ void xBreakTable::onCellClick(QModelIndex idx) {
 	int row = idx.row();
 	int col = idx.column();
 	xProfile* prf = conf.prof.cur;
-	xBrkPoint* brk = &prf->brkList[row];
+	xBrkPoint* brk = &prf->brk.list[row];
 	switch(col) {
 		case 0: brk->off ^= 1; break;
 		case 1: brk->fetch ^= 1; break;
 		case 2: brk->read ^= 1; break;
 		case 3: brk->write ^= 1; break;
 	}
-	// brkInstall(prf->brkList[row], 0);
+	// brkInstall(prf->brk.list[row], 0);
 	brkInstallAll();
 	model->updateCell(row, col);
 	emit rqDasmDump();
@@ -180,7 +180,7 @@ void xBreakTable::onCellClick(QModelIndex idx) {
 void xBreakTable::onDoubleClick(QModelIndex idx) {
 	if (!idx.isValid()) return;
 	int row = idx.row();
-	xBrkPoint bp = conf.prof.cur->brkList[row];
+	xBrkPoint bp = conf.prof.cur->brk.list[row];
 	int adr = -1;
 	switch(bp.type) {
 		case BRK_CPUADR: adr = bp.adr; break;
@@ -442,7 +442,7 @@ void xBreakWidget::editBrk() {
 	QModelIndexList idxl = ui.bpList->selectionModel()->selectedRows();
 	if (idxl.size() < 1) return;
 	int row = idxl.first().row();
-	xBrkPoint* brk = &conf.prof.cur->brkList[row];
+	xBrkPoint* brk = &conf.prof.cur->brk.list[row];
 	brkManager->edit(brk);
 }
 
@@ -463,7 +463,7 @@ void xBreakWidget::delBrk() {
 	QModelIndex idx;
 	xBrkPoint brk;
 	foreach(idx, idxl) {
-		brk = conf.prof.cur->brkList[idx.row()];
+		brk = conf.prof.cur->brk.list[idx.row()];
 		brkDelete(brk);
 	}
 	ui.bpList->update();
@@ -474,7 +474,7 @@ void xBreakWidget::resetBrk() {
 	QModelIndexList idxl = ui.bpList->selectionModel()->selectedRows();
 	QModelIndex idx;
 	foreach(idx, idxl) {
-		conf.prof.cur->brkList[idx.row()].count = 0;
+		conf.prof.cur->brk.list[idx.row()].count = 0;
 	}
 	ui.bpList->update();
 	emit updated();		// fill disasm/dump
@@ -518,7 +518,7 @@ void xBreakWidget::openBrk() {
 	int off;
 	bool b0,b1;
 	if (file.open(QFile::ReadOnly)) {
-		conf.prof.cur->brkList.clear();
+		conf.prof.cur->brk.list.clear();
 		while(!file.atEnd()) {
 			line = tr(file.readLine());
 			if (!line.startsWith(";")) {
@@ -594,7 +594,7 @@ void xBreakWidget::openBrk() {
 				}
 				if (b0 && b1) {
 					brk.count = 0;
-					conf.prof.cur->brkList.push_back(brk);
+					conf.prof.cur->brk.list.push_back(brk);
 				}
 			}
 		}
@@ -618,7 +618,7 @@ void xBreakWidget::saveBrk() {
 	QString nm,ar1,ar2,flag,act;
 	if (file.open(QFile::WriteOnly)) {
 		file.write("; Xpeccy deBUGa breakpoints list\n");
-		foreach(brk, conf.prof.cur->brkList) {
+		foreach(brk, conf.prof.cur->brk.list) {
 			switch(brk.type) {
 				case BRK_IOPORT:
 					nm = "IO";

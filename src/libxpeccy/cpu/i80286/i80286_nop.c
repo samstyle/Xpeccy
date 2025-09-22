@@ -63,8 +63,12 @@
 // NOTE: x86 parity counts on LSB
 
 int i286_check_segment_limit(CPU* cpu, xSegPtr* seg, unsigned short adr) {
-	if (!(cpu->regMSW & I286_FPE)) return 1;
-	if (seg->limit < adr) return 0;
+	if (!(cpu->regMSW & I286_FPE)) return 1;	// real mode
+	if (seg->data && seg->ext) {			// data segment from limit to FFFF
+		if (seg->limit >= adr) return 0;
+	} else {					// segment from 0000 to limit
+		if (seg->limit < adr) return 0;
+	}
 	return 1;
 }
 
