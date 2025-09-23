@@ -16,6 +16,9 @@
 #include "dbg_vmem_dump.h"
 #include "dbg_rdump.h"
 
+void drawHBar(QLabel*, int, int);
+void drawVBar(QLabel*, int, int);
+
 // ay
 
 #include "ui_form_ay.h"

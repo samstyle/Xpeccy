@@ -17,19 +17,29 @@ QString getAYmix(aymChan* ch) {
 	return res;
 }
 
-void drawBar(QLabel* lab, int lev, int max) {
+// dir = 1/0 = horiz/vert
+void drawBar(QLabel* lab, int lev, int max, int dir) {
 	if (lev > max) lev = max;
 	if (lev < 0) lev = 0;
 	QPixmap pxm(100, lab->height() / 2);
 	QPainter pnt;
 	pxm.fill(Qt::black);
 	pnt.begin(&pxm);
-	pnt.fillRect(0,0,pxm.width() * lev / max, pxm.height(), Qt::green);
-	pnt.setPen(Qt::red);
-	pnt.drawLine(pxm.width() / 2, 0, pxm.width() / 2, pxm.height());
+	if (dir) {
+		pnt.fillRect(0, 0, pxm.width() * lev / max, pxm.height(), Qt::green);
+		pnt.setPen(Qt::red);
+		pnt.drawLine(pxm.width() / 2, 0, pxm.width() / 2, pxm.height());
+	} else {
+		pnt.fillRect(0, pxm.height() * lev / max, pxm.width(), pxm.height(), Qt::green);
+		pnt.setPen(Qt::red);
+		pnt.drawLine(0, pxm.height() / 2, pxm.width(), pxm.height() / 2);
+	}
 	pnt.end();
 	lab->setPixmap(pxm);
 }
+
+void drawHBar(QLabel* lab, int lev, int max) {drawBar(lab, lev, max, 1);}
+void drawVBar(QLabel* lab, int lev, int max) {drawBar(lab, lev, max, 0);}
 
 void xAYWidget::draw() {
 	Computer* comp = conf.prof.cur->zx;
@@ -52,5 +62,5 @@ void xAYWidget::draw() {
 	ui.labLevC->setText(chp->chanC.lev ? "1" : "0");
 	ui.labLevN->setText(chp->chanN.lev ? "1" : "0");
 
-	drawBar(ui.labBeep, comp->beep->val, 256);
+	drawHBar(ui.labBeep, comp->beep->val, 256);
 }

@@ -43,6 +43,7 @@ xResult getOperand(const char* ptr) {
 	char* rbuf = (char*)malloc(strlen(ptr) + 1);
 	char* bptr;
 	char* rptr;
+	const char* tptr;
 	bool err;
 	memset(buf, 0, strlen(ptr) + 1);
 	int val;
@@ -50,7 +51,10 @@ xResult getOperand(const char* ptr) {
 	QString str;
 
 	// TODO: bc, de recognized as numbers in hex
-	if (isDigit(c, base)) {	// number
+
+	// try to detect number
+	if (isDigit(c, base)) {
+		tptr = res.ptr;
 		if ((c == '0') && (*(res.ptr + 1) == 'x')) {		// 0x... - hex
 			res.ptr += 2;
 			base = 16;
@@ -74,59 +78,71 @@ xResult getOperand(const char* ptr) {
 			res.ptr++;
 			c = *res.ptr;
 		} while (isDigit(c, base));
-	} else if (isLetter(c)) {	// label: collect letters|digits|_|. in buf, search label
-		bptr = buf;
-		rptr = rbuf;
-		do {
-			*bptr = c;
-			if ((c >= 'a') && (c <= 'z')) c = c - 'a' + 'A';
-			*rptr = c;
-			bptr++;
-			rptr++;
-			res.ptr++;
-			c = *res.ptr;
-		} while (isLetter(c) || isDigit(c, base) || (c == '_') || (c == '.') || (c == 0x27));
-		*bptr = 0;
-		*rptr = 0;
-		val = cpu_get_reg(conf.prof.cur->zx->cpu, rbuf, &err);
-		if (err) {
-			str = QString(buf);
-			if (conf.prof.cur->labels.contains(str)) {
-				res.value = conf.prof.cur->labels[str].adr;
-			} else {
-				res.err = 1;
-			}
-		} else {
-			res.value = val;
+		if (c && !strchr("+-*/ )]&|^", c)) {		// allowed symbols after number and /0
+			res.err = 1;
+			res.ptr = tptr;
 		}
 	} else {
-		switch(c) {
-			case '(':		// sub-expression (...)
-				res = xEval(res.ptr + 1, 1);	// stop on )
-				break;
-			case '[':		// [exp] = word(L-H) on address exp
-				res = xEval(res.ptr + 1, 2);	// stop on ]
-				if (!res.err) {
-					val = memRd(conf.prof.cur->zx->mem, res.value);
-					val |= (memRd(conf.prof.cur->zx->mem, res.value + 1) << 8);
-					res.value = val;
-				}
-				break;
-			case '.':		// register: collect letters in buf, ask cpu for value
+		res.err = 1;
+	}
+	// if number detection fails
+	if (res.err) {
+		res.err = 0;
+		c = *ptr;
+		if (isLetter(c)) {	// label: collect letters|digits|_|. in buf, search label
+			bptr = buf;
+			rptr = rbuf;
+			do {
+				*bptr = c;
+				if ((c >= 'a') && (c <= 'z')) c = c - 'a' + 'A';
+				*rptr = c;
+				bptr++;
+				rptr++;
 				res.ptr++;
 				c = *res.ptr;
-				bptr = buf;
-				while (isLetter(c) || (c == 0x27)) {			// 0x27 = '
-					if ((c >= 'a') && (c <= 'z')) c = c - 'a' + 'A';		// to capital
-					*bptr = c;
-					bptr++;
+			} while (isLetter(c) || isDigit(c, base) || (c == '_') || (c == '.') || (c == 0x27));
+			*bptr = 0;
+			*rptr = 0;
+			val = cpu_get_reg(conf.prof.cur->zx->cpu, rbuf, &err);
+			if (err) {
+				str = QString(buf);
+				if (conf.prof.cur->labels.contains(str)) {
+					res.value = conf.prof.cur->labels[str].adr;
+				} else {
+					res.err = 1;
+				}
+			} else {
+				res.value = val;
+			}
+		} else {		// special
+			switch(c) {
+				case '(':		// sub-expression (...)
+					res = xEval(res.ptr + 1, 1);	// stop on )
+					break;
+				case '[':		// [exp] = word(L-H) on address exp
+					res = xEval(res.ptr + 1, 2);	// stop on ]
+					if (!res.err) {
+						val = memRd(conf.prof.cur->zx->mem, res.value);
+						val |= (memRd(conf.prof.cur->zx->mem, res.value + 1) << 8);
+						res.value = val;
+					}
+					break;
+				case '.':		// register: collect letters in buf, ask cpu for value
 					res.ptr++;
 					c = *res.ptr;
-				}
-				*bptr = 0;
-				res.value = cpu_get_reg(conf.prof.cur->zx->cpu, buf, &err);
-				res.err = err;			// 1 if 'no such reg'
-				break;
+					bptr = buf;
+					while (isLetter(c) || (c == 0x27)) {			// 0x27 = '
+						if ((c >= 'a') && (c <= 'z')) c = c - 'a' + 'A';		// to capital
+						*bptr = c;
+						bptr++;
+						res.ptr++;
+						c = *res.ptr;
+					}
+					*bptr = 0;
+					res.value = cpu_get_reg(conf.prof.cur->zx->cpu, buf, &err);
+					res.err = err;			// 1 if 'no such reg'
+					break;
+			}
 		}
 	}
 	free(buf);

@@ -411,21 +411,13 @@ int prf_load_conf(xProfile* prf, std::string cfname, int flag) {
 				case PS_MACHINE:
 					if (pnam == "current") prf->hwName = pval;
 					if (pnam == "cpu.type") {
-						pspl = splitline(pval, '@');
+						pspl = splitline(pval, '@');		// NAME@LIBRARY = CPU from external lib
 						if (pspl.second.empty()) {		// no @, use built-in
 							cpu_set_type(comp->cpu, pval.c_str(), NULL, NULL);
 						} else {
 							str = conf.path.plgDir + SLASH + "cpu";
 							cpu_set_type(comp->cpu, pspl.first.c_str(), str.c_str(), pspl.second.c_str());
 						}
-						/*
-						if (arg.s[0] == '@') {			// @library.so = from library
-							str = conf.path.plgDir+SLASH+"cpu";
-							cpuSetLib(comp->cpu, str.c_str(), arg.s + 1);
-						} else {
-							cpuSetType(comp->cpu, getCoreID(arg.s));
-						}
-						*/
 					}
 					if (pnam == "cpu.frq") {
 						tmp2 = arg.i;
