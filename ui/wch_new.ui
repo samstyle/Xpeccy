@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>290</width>
+    <width>316</width>
     <height>109</height>
    </rect>
   </property>
@@ -15,7 +15,10 @@
   </property>
   <layout class="QGridLayout" name="gridLayout_2">
    <item row="0" column="0">
-    <layout class="QGridLayout" name="gridLayout" columnstretch="0,10">
+    <layout class="QGridLayout" name="gridLayout" columnstretch="0,10,0">
+     <item row="1" column="1">
+      <widget class="QLineEdit" name="leExpression"/>
+     </item>
      <item row="0" column="1">
       <widget class="QComboBox" name="cbType"/>
      </item>
@@ -33,8 +36,16 @@
        </property>
       </widget>
      </item>
-     <item row="1" column="1">
-      <widget class="QLineEdit" name="leExpression"/>
+     <item row="1" column="2">
+      <widget class="QToolButton" name="tbLabel">
+       <property name="text">
+        <string>...</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../xpeccy.qrc">
+         <normaloff>:/images/label.png</normaloff>:/images/label.png</iconset>
+       </property>
+      </widget>
      </item>
     </layout>
    </item>

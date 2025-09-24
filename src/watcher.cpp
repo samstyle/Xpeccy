@@ -289,11 +289,15 @@ xWatcher::xWatcher(QWidget* p):QDialog(p) {
 	}
 //	ui.regGrid->setRowStretch(32, 10);
 
+	labswin = new xLabeList;
+
 	newWch = new QDialog(this);
 	nui.setupUi(newWch);
 	nui.cbType->addItem("CPU addr", WUT_CPU);
 	nui.cbType->addItem("RAM addr", WUT_RAM);
 	nui.cbType->addItem("ROM addr", WUT_ROM);
+	connect(nui.tbLabel, SIGNAL(released()), labswin, SLOT(show()));
+	connect(labswin, SIGNAL(labSelected(QString)), this, SLOT(insertLabel(QString)));
 
 	for(i = 0; i < 14; i++) ui.wchMemTab->setColumnWidth(i, 30);
 
@@ -395,6 +399,10 @@ void xWatcher::confirmNew() {
 	}
 }
 
+void xWatcher::insertLabel(QString lab) {
+	nui.leExpression->insert(lab);
+}
+
 void xWatcher::delWatcher() {
 	int row = getCurRow();
 	if (row < 0) return;
@@ -442,7 +450,7 @@ void xWatchModel::insertRow(int row, const QModelIndex& idx) {
 }
 
 void xWatchModel::removeRow(int row, const QModelIndex& idx) {
-	emit beginRemoveRows(idx,row,row);
+	emit beginRemoveRows(idx,row*2,row*2+1);
 	emit endRemoveRows();
 }
 
@@ -476,8 +484,7 @@ void xWatchModel::setItem(int idx, int type, QString exp) {
 void xWatchModel::delItem(int idx) {
 	if (idx < explist.size()) {
 		explist.removeAt(idx);
-		removeRow(idx * 2);
-		removeRow(idx * 2 + 1);
+		removeRow(idx);
 	}
 }
 
@@ -517,23 +524,3 @@ QVariant xWatchModel::data(const QModelIndex& idx, int role) const {
 	}
 	return res;
 }
-
-/*
-QString xwhdname[5] = {"Addr","Bytes"};
-
-QVariant xWatchModel::headerData(int col, Qt::Orientation orien, int role) const {
-	QVariant res;
-	switch (role) {
-		case Qt::DisplayRole:
-			switch (orien) {
-				case Qt::Vertical:
-					break;
-				case Qt::Horizontal:
-					if (col < 2) res = xwhdname[col];
-					break;
-			}
-			break;
-	}
-	return res;
-}
-*/

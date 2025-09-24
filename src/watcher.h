@@ -61,10 +61,12 @@ class xWatcher : public QDialog {
 		int getCurRow();
 
 		QDialog* newWch;
+		xLabeList* labswin;
 		Ui::WatcherAdd nui;
 	private slots:
 		void newWatcher();
 		void delWatcher();
 		void edtWatcher();
 		void confirmNew();
+		void insertLabel(QString);
 };
