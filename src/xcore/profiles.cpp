@@ -72,7 +72,7 @@ xProfile* addProfile(std::string nm, std::string fp) {
 #endif
 	prf_load_cmos(nprof, conf.path.prfDir + SLASH + nprof->name + SLASH + nprof->name + ".cmos");
 	prf_load_nvram(nprof, conf.path.prfDir + SLASH + nprof->name + SLASH + nprof->name + ".nvram");
-	compSetHardware(nprof->zx,"Dummy");
+	prfSetHardware(nprof,"Dummy");
 	conf.prof.list.push_back(nprof);
 	return nprof;
 }
@@ -150,7 +150,7 @@ bool prfSetCurrent(std::string nm) {
 	conf.joy.gpad->loadMap(nprf->jmapNameA);
 	conf.joy.gpadb->loadMap(nprf->jmapNameB);
 	loadKeys();
-	compSetHardware(nprf->zx, NULL);
+	prfSetHardware(nprf, "");
 	return true;
 }
 
@@ -186,6 +186,11 @@ void prfChangeLayName(std::string oldName, std::string newName) {
 		if (conf.prof.list[i]->layName == oldName)
 			conf.prof.list[i]->layName = newName;
 	}
+}
+
+int prfSetHardware(xProfile* prf, std::string nm) {
+	// todo: if HWG_ZX, set system breakpoints for tape traps
+	return compSetHardware(prf->zx, nm.empty() ? NULL : nm.c_str());
 }
 
 // load-save
@@ -497,11 +502,11 @@ int prf_load_conf(xProfile* prf, std::string cfname, int flag) {
 
 	tmp2 = PLOAD_OK;
 
-	if (!compSetHardware(comp, prf->hwName.c_str())) {
+	if (!prfSetHardware(prf, prf->hwName)) {
 		sprintf(buf, "Profile: %s\nHardware was set to 'dummy'", prf->name.c_str());
 		shitHappens(buf);
 		tmp2 = PLOAD_HW;
-		compSetHardware(comp,"Dummy");
+		prfSetHardware(prf, "Dummy");
 	} else if (conf.storePaths) {			// loading files
 		if (comp->tape->path) {
 			load_file(comp, comp->tape->path, FG_TAPE, 0);

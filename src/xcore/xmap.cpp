@@ -18,6 +18,19 @@ int qfgeti(QFile& f) {
 	return v;
 }
 
+int xadr_type_by_name(QString str, int t = -1) {
+	if (str == "RAM") {
+		t = MEM_RAM;
+	} else if (str == "ROM") {
+		t = MEM_ROM;
+	} else if (str == "SLT") {
+		t = MEM_SLOT;
+	} else if (str == "IO") {
+		t = MEM_IO;
+	}
+	return t;
+}
+
 void load_xmap(QString path) {
 	QFile file;
 	char buf[8];
@@ -73,15 +86,7 @@ void load_xmap(QString path) {
 						lst = str.split(":", X_SkipEmptyParts);
 						if (lst.size() > 2) {
 							str = lst.at(0);
-							if (str == "RAM") {
-								xadr.type = MEM_RAM;
-							} else if (str == "ROM") {
-								xadr.type = MEM_ROM;
-							} else if (str == "CPU") {
-								xadr.type = MEM_EXT;
-							} else {
-								xadr.type = -1;
-							}
+							xadr.type = xadr_type_by_name(str, -1);
 							if (xadr.type >= 0) {
 								xadr.abs = lst.at(1).toInt(nullptr, 16);
 								xadr.adr = xadr.abs & 0xffff;
@@ -103,13 +108,7 @@ void load_xmap(QString path) {
 						lst = str.split(":", X_SkipEmptyParts);
 						if (lst.size() > 2) {
 							str = lst.at(0);
-							if (str == "RAM") {
-								xadr.type = MEM_RAM;
-							} else if (str == "ROM") {
-								xadr.type = MEM_ROM;
-							} else {
-								xadr.type = MEM_EXT;
-							}
+							xadr.type = xadr_type_by_name(str, MEM_EXT);
 							xadr.abs = lst.at(1).toInt(nullptr, 16);
 							str = lst.at(2);
 							if (!str.isEmpty()) {
@@ -138,15 +137,15 @@ void qfputi(QFile& f, int v) {
 	f.putChar((v >> 24) & 0xff);
 }
 
-void xputcomments(QByteArray& arr, QMap<int, QString>& map, QString prefix) {
+void xputcomments(QByteArray& arr, QMap<int, QString>* map, QString prefix) {
 	int adr;
 	QString str;
-	foreach(adr, map.keys()) {
+	foreach(adr, map->keys()) {
 		str = prefix;
 		str.append(":");
 		str.append(QString::number(adr, 16).rightJustified(8, '0'));
 		str.append(":");
-		str.append(map[adr]);
+		str.append(map->value(adr));
 		arr.append(str.toUtf8());
 		arr.append((char)0x0a);
 	}
@@ -188,20 +187,27 @@ void save_xmap(QString path) {
 				switch(xadr.type) {
 					case MEM_RAM: str = "RAM:"; adr = xadr.abs; break;
 					case MEM_ROM: str = "ROM:"; adr = xadr.abs; break;
-					default: str = "CPU:"; adr = xadr.adr; break;
+					case MEM_SLOT: str = "SLT:"; adr = xadr.abs; break;
+					case MEM_IO: str = "IO:"; adr = xadr.abs; break;
+					default: str.clear(); adr = 0; break;
 				}
-				str.append(QString::number(adr, 16).rightJustified(8, '0'));
-				str.append(":").append(lab);
-				arr.append(str.toUtf8());
-				arr.append((char)0x0a);
+				if (!str.isEmpty()) {
+					str.append(QString::number(adr, 16).rightJustified(8, '0'));
+					str.append(":").append(lab);
+					arr.append(str.toUtf8());
+					arr.append((char)0x0a);
+				}
 			}
 			qfputi(file, arr.size());
 			file.write(arr.data(), arr.size());
 			arr.clear();
 			// comments
 			file.write("comments", 8);
-			xputcomments(arr, conf.prof.cur->comments.ram, "RAM");
-			xputcomments(arr, conf.prof.cur->comments.rom, "ROM");
+			xputcomments(arr, &conf.prof.cur->commap[MEM_RAM], "RAM");
+			xputcomments(arr, &conf.prof.cur->commap[MEM_ROM], "ROM");
+			xputcomments(arr, &conf.prof.cur->commap[MEM_SLOT], "SLT");
+			xputcomments(arr, &conf.prof.cur->commap[MEM_IO], "IO");
+			xputcomments(arr, &conf.prof.cur->commap[MEM_EXT], "EXT");
 			qfputi(file, arr.size());
 			file.write(arr.data(), arr.size());
 		} else {

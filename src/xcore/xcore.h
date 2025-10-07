@@ -195,19 +195,12 @@ typedef struct {
 	struct {
 		std::vector<xBrkPoint> list;
 		std::vector<xBrkPoint> list_sys;
-		std::map<int, std::map<int, xBrkPoint*> > map;		// [type][addr] = pointer
+		std::map<int, std::map<int, xBrkPoint*> > map;		// [memtype][addr] = pointer
 	} brk;
 	Computer* zx;
-	struct {
-		QMap<int, QString> ram;
-		QMap<int, QString> rom;
-	} comments;
-	struct {
-		QMap<int, QString> ram;
-		QMap<int, QString> rom;
-		QMap<int, QString> cpu;
-	} labmap;
-	QMap<QString,xAdr> labels;
+	QMap<int, QMap<int, QString> > commap;	// comments: [memtype][addr] = string
+	QMap<int, QMap<int, QString> > labmap;	// [memtype][addr] = name
+	QMap<QString,xAdr> labels;		// name->xAdr
 } xProfile;
 
 #define	DELP_ERR	-1
@@ -223,6 +216,7 @@ void prfLoadAll();
 bool prfSetCurrent(std::string);
 void prfSetRomset(xProfile*, std::string);
 bool prfSetLayout(xProfile*, std::string);
+int prfSetHardware(xProfile*, std::string);
 
 void prfChangeRsName(std::string, std::string);
 void prfChangeLayName(std::string, std::string);

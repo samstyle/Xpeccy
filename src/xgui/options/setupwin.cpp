@@ -733,7 +733,7 @@ void SetupWin::apply() {
 	std::string new_hwname = std::string(getRFSData(ui.machbox).toUtf8().data());
 	if (prof->hwName != new_hwname) {
 		prof->hwName = new_hwname;
-		compSetHardware(prof->zx,prof->hwName.c_str());
+		prfSetHardware(prof, prof->hwName);
 	}
 	prof->rsName = getRFText(ui.rsetbox);
 	prfSetRomset(prof, prof->rsName);
