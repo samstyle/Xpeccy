@@ -479,7 +479,7 @@ void xDumpTable::keyPressEvent(QKeyEvent* ev) {
 				QTableView::keyPressEvent(ev);
 				emit s_adrch(model->dmpadr);
 			} else {
-				setAdr(model->dmpadr - 8);
+				setAdr(model->dmpadr - model->dmpsize);
 			}
 			break;
 		case Qt::Key_Down:
@@ -487,7 +487,7 @@ void xDumpTable::keyPressEvent(QKeyEvent* ev) {
 				QTableView::keyPressEvent(ev);
 				emit s_adrch(model->dmpadr);
 			} else {
-				setAdr(model->dmpadr + 8);
+				setAdr(model->dmpadr + model->dmpsize);
 			}
 			break;
 		case Qt::Key_Left:
@@ -496,10 +496,10 @@ void xDumpTable::keyPressEvent(QKeyEvent* ev) {
 			// emit s_adrch(model->dmpadr);
 			break;
 		case Qt::Key_PageUp:
-			setAdr(model->dmpadr - (rows() * 8));
+			setAdr(model->dmpadr - (rows() * model->dmpsize));
 			break;
 		case Qt::Key_PageDown:
-			setAdr(model->dmpadr + (rows() * 8));
+			setAdr(model->dmpadr + (rows() * model->dmpsize));
 			break;
 		case Qt::Key_Return:
 			if (state() == QAbstractItemView::EditingState) break;
@@ -593,9 +593,9 @@ void xDumpTable::mouseMoveEvent(QMouseEvent* ev) {
 
 void xDumpTable::wheelEvent(QWheelEvent* ev) {
 	if (ev->yDelta < 0) {
-		setAdr(model->dmpadr + 8);
+		setAdr(model->dmpadr + model->dmpsize);
 	} else if (ev->yDelta > 0) {
-		setAdr(model->dmpadr - 8);
+		setAdr(model->dmpadr - model->dmpsize);
 	}
 }
 
