@@ -49,6 +49,7 @@ xResult getOperand(const char* ptr) {
 	int val;
 	int base = conf.prof.cur->zx->hw->base;
 	QString str;
+	xAdr xadr;
 
 	// TODO: bc, de recognized as numbers in hex
 
@@ -106,11 +107,20 @@ xResult getOperand(const char* ptr) {
 			val = cpu_get_reg(conf.prof.cur->zx->cpu, rbuf, &err);
 			if (err) {
 				str = QString(buf);
+#if 1
+				xadr = find_label(str);
+				if (xadr.type >= 0) {
+					res.value = xadr.adr;
+				} else {
+					res.err = 1;
+				}
+#else
 				if (conf.prof.cur->labels.contains(str)) {
 					res.value = conf.prof.cur->labels[str].adr;
 				} else {
 					res.err = 1;
 				}
+#endif
 			} else {
 				res.value = val;
 			}

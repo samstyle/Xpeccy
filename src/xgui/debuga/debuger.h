@@ -129,6 +129,9 @@ class DebugWin : public QMainWindow {
 		xBrkManager* brkManager;
 		xLabeList* labswin;
 
+		QMenu* labMenu;
+		QMenu* labSetMenu;
+
 		QMenu* cellMenu;
 		void doBreakPoint(unsigned short);
 		int getAdr();

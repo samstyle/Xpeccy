@@ -2,8 +2,10 @@
 
 #include <QAbstractListModel>
 #include <QDialog>
+#include "../xcore/xcore.h"
 
 #include "ui_labelist.h"
+#include "ui_labelset.h"
 
 class xLabelistModel : public QAbstractListModel {
 	Q_OBJECT
@@ -26,9 +28,15 @@ class xLabeList : public QDialog {
 		void show();
 	signals:
 		void labSelected(QString);
+		void labSetChanged();
 	private slots:
 		void listDoubleClicked(QModelIndex);
+		void changeLabelSet();
+		void newGroup();
+		void editGroup();
+		void delGroup();
 	private:
 		Ui::LabList ui;
 		xLabelistModel* mod;
+		void fillSetList();
 };

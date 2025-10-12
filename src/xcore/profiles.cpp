@@ -63,6 +63,7 @@ xProfile* addProfile(std::string nm, std::string fp) {
 	nprof->file = fp;
 	nprof->layName = std::string("default");
 	nprof->zx = compCreate();
+	nprof->curlabset = nullptr;
 	std::string fname;
 	fname = conf.path.prfDir + SLASH + nprof->name;
 #if defined(__linux) || defined(__APPLE__) || defined(__BSD)

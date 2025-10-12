@@ -40,6 +40,9 @@
     <layout class="QHBoxLayout" name="horizontalLayout_4">
      <item>
       <widget class="QToolButton" name="tbBreak">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Breakpoints&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <property name="text">
         <string>...</string>
        </property>
@@ -53,7 +56,27 @@
       </widget>
      </item>
      <item>
+      <widget class="QToolButton" name="tbLabels">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Labels&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="text">
+        <string>...</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../../xpeccy.qrc">
+         <normaloff>:/images/label.png</normaloff>:/images/label.png</iconset>
+       </property>
+       <property name="popupMode">
+        <enum>QToolButton::InstantPopup</enum>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QToolButton" name="tbView">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;View&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <property name="text">
         <string>...</string>
        </property>
@@ -68,6 +91,9 @@
      </item>
      <item>
       <widget class="QToolButton" name="tbTrace">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Trace&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <property name="text">
         <string>...</string>
        </property>
@@ -82,6 +108,9 @@
      </item>
      <item>
       <widget class="QToolButton" name="tbTool">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Tools&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <property name="text">
         <string>...</string>
        </property>
@@ -96,6 +125,9 @@
      </item>
      <item>
       <widget class="QToolButton" name="tbDbgOpt">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Options&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <property name="text">
         <string>...</string>
        </property>
@@ -520,6 +552,18 @@
    </property>
    <property name="text">
     <string>Labels list</string>
+   </property>
+  </action>
+  <action name="actLabManager">
+   <property name="icon">
+    <iconset resource="../../xpeccy.qrc">
+     <normaloff>:/images/star.png</normaloff>:/images/star.png</iconset>
+   </property>
+   <property name="text">
+    <string>Labels Manager</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
    </property>
   </action>
  </widget>

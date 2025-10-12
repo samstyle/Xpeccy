@@ -586,11 +586,14 @@ int str_to_adr(Computer* comp, QString str) {
 		adr = str.toInt(&flag, 16);
 	} else if (str.startsWith("0x")) {			// 0xnnnn : hex adr
 		adr = str.toInt(&flag, 16);
-	} else if (conf.prof.cur->labels.contains(str)) {	// NAME : label name
-		adr = conf.prof.cur->labels[str].adr;
-		flag = true;
-	} else {						// other : adr in base of comp hardware (16 | 8)
-		adr = str.toInt(&flag, comp->hw->base);
+	} else {
+		xAdr xadr = find_label(str);			// NAME : label name
+		if (xadr.type >= 0) {
+			adr = xadr.adr;
+			flag = true;
+		} else {						// other : adr in base of comp hardware (16 | 8)
+			adr = str.toInt(&flag, comp->hw->base);
+		}
 	}
 	if (!flag) adr = -1;
 	return adr;
@@ -720,8 +723,9 @@ bool xDisasmModel::setData(const QModelIndex& cidx, const QVariant& val, int rol
 				}
 			} else if (str.startsWith("dw ", Qt::CaseInsensitive)) {	// word/addr
 				str = str.mid(3);
-				if (conf.prof.cur->labels.contains(str)) {				// check label
-					idx = conf.prof.cur->labels[str].adr;
+				xadr = find_label(str);
+				if (xadr.type >= 0) {				// check label
+					idx = xadr.adr;
 					*ptr &= 0x0f;
 					*ptr |= DBG_VIEW_ADDR;
 					ptr++;

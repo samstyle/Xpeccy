@@ -43,11 +43,14 @@ void load_xmap(QString path) {
 	xAdr xadr;
 	Computer* comp = conf.prof.cur->zx;
 	file.setFileName(path);
+	xLabelSet* set;
+	int cnt = 0;
 	if (file.open(QFile::ReadOnly)) {
 		file.read(buf, 8);
 		if (memcmp(buf, "XMEMMAP ", 8)) {
 			shitHappens("File signature mismatching");
 		} else {
+			clear_all_labels();
 			while(!file.atEnd()) {
 				file.read(buf, 8);
 				len = qfgeti(file);
@@ -75,7 +78,7 @@ void load_xmap(QString path) {
 						}
 					}
 				} else if (!memcmp(buf, "labels  ", 8)) {
-					clear_labels();
+					set = newLabelSet(QString("xmap.%0").arg(cnt));
 					arr = file.read(len);
 					qb.setData(arr);
 					qb.open(QIODevice::ReadOnly);
@@ -91,7 +94,7 @@ void load_xmap(QString path) {
 								xadr.abs = lst.at(1).toInt(nullptr, 16);
 								xadr.adr = xadr.abs & 0xffff;
 								xadr.bank = xadr.abs >> 8;
-								add_label(xadr, lst.at(2));
+								add_label(xadr, lst.at(2), set);
 							}
 						}
 					}
@@ -181,26 +184,28 @@ void save_xmap(QString path) {
 				qfputi(file, 0);
 			}
 			// labels
-			file.write("labels  ", 8);
-			foreach(lab, conf.prof.cur->labels.keys()) {
-				xadr = conf.prof.cur->labels[lab];
-				switch(xadr.type) {
-					case MEM_RAM: str = "RAM:"; adr = xadr.abs; break;
-					case MEM_ROM: str = "ROM:"; adr = xadr.abs; break;
-					case MEM_SLOT: str = "SLT:"; adr = xadr.abs; break;
-					case MEM_IO: str = "IO:"; adr = xadr.abs; break;
-					default: str.clear(); adr = 0; break;
+			foreach(xLabelSet* set, conf.prof.cur->labsets) {
+				file.write("labels  ", 8);
+				foreach(lab, set->list.keys()) {
+					xadr = set->list.value(lab);
+					switch(xadr.type) {
+						case MEM_RAM: str = "RAM:"; adr = xadr.abs; break;
+						case MEM_ROM: str = "ROM:"; adr = xadr.abs; break;
+						case MEM_SLOT: str = "SLT:"; adr = xadr.abs; break;
+						case MEM_IO: str = "IO:"; adr = xadr.abs; break;
+						default: str.clear(); adr = 0; break;
+					}
+					if (!str.isEmpty()) {
+						str.append(QString::number(adr, 16).rightJustified(8, '0'));
+						str.append(":").append(lab);
+						arr.append(str.toUtf8());
+						arr.append((char)0x0a);
+					}
 				}
-				if (!str.isEmpty()) {
-					str.append(QString::number(adr, 16).rightJustified(8, '0'));
-					str.append(":").append(lab);
-					arr.append(str.toUtf8());
-					arr.append((char)0x0a);
-				}
+				qfputi(file, arr.size());
+				file.write(arr.data(), arr.size());
+				arr.clear();
 			}
-			qfputi(file, arr.size());
-			file.write(arr.data(), arr.size());
-			arr.clear();
 			// comments
 			file.write("comments", 8);
 			xputcomments(arr, &conf.prof.cur->commap[MEM_RAM], "RAM");

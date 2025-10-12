@@ -250,11 +250,9 @@ int main(int ac,char** av) {
 				loadDUMP(conf.prof.cur->zx, av[i], adr);
 				i++;
 			} else if (!strcmp(parg,"--bp")) {
-				if (conf.prof.cur->labels.contains(av[i])) {
-					xadr = conf.prof.cur->labels[av[i]];
-					if (xadr.adr >= 0) {
-						brkSet(BRK_CPUADR, MEM_BRK_FETCH, xadr.adr & 0xffff, -1);
-					}
+				xadr = find_label(av[i]);
+				if (xadr.type >= 0) {
+					brkSet(BRK_CPUADR, MEM_BRK_FETCH, xadr.adr & 0xffff, -1);
 				} else {
 					brkSet(BRK_CPUADR, MEM_BRK_FETCH, strtol(av[i],NULL,0) & 0xffff, -1);
 				}

@@ -129,10 +129,21 @@ typedef struct {
 
 // labels
 
-void add_label(xAdr, QString);
+typedef struct {
+	QString name;
+	QMap<QString, xAdr> list;
+} xLabelSet;
+
+xLabelSet* newLabelSet(QString);
+int delLabelSet(QString);
+xLabelSet* setLabelSet(QString);
+
+void add_label(xAdr, QString, xLabelSet* = nullptr);
 void del_label(QString);
 QString find_label(xAdr);
+xAdr find_label(QString);
 void clear_labels();
+void clear_all_labels();
 
 int loadLabels(const char*);
 int saveLabels(const char*);
@@ -200,7 +211,9 @@ typedef struct {
 	Computer* zx;
 	QMap<int, QMap<int, QString> > commap;	// comments: [memtype][addr] = string
 	QMap<int, QMap<int, QString> > labmap;	// [memtype][addr] = name
-	QMap<QString,xAdr> labels;		// name->xAdr
+	QList<xLabelSet*> labsets;
+	xLabelSet* curlabset;			// curlabset->list = labels
+//	QMap<QString,xAdr> labels;		// name->xAdr
 } xProfile;
 
 #define	DELP_ERR	-1

@@ -22,7 +22,7 @@ int blockEnd = -1;
 int tmpcnt = 0;
 
 int getRFIData(QComboBox*);
-void setRFIndex(QComboBox* box, QVariant data);
+void setRFIndex(QComboBox*, QVariant, int);
 int dasmSome(Computer*, int, dasmData&);
 
 // trace type
@@ -423,6 +423,12 @@ DebugWin::DebugWin(QWidget* par):QMainWindow(par) {
 	ui_asm.tbBreak->addAction(ui_asm.actRead);
 	ui_asm.tbBreak->addAction(ui_asm.actWrite);
 
+	ui_asm.tbLabels->addAction(ui_asm.actShowLabels);
+	ui_asm.tbLabels->addAction(ui_asm.actLoadLabels);
+	ui_asm.tbLabels->addAction(ui_asm.actSaveLabels);
+	ui_asm.tbLabels->addAction(ui_asm.actLabelsList);
+//	ui_asm.tbLabels->addAction(ui_asm.actLabManager);
+
 	ui_asm.tbView->addAction(ui_asm.actViewOpcode);
 	ui_asm.tbView->addAction(ui_asm.actViewByte);
 	ui_asm.tbView->addAction(ui_asm.actViewText);
@@ -432,8 +438,8 @@ DebugWin::DebugWin(QWidget* par):QMainWindow(par) {
 	ui_asm.tbSaveDasm->addAction(ui_asm.actDisasm);
 	ui_asm.tbSaveDasm->addAction(ui_asm.actLoadDump);
 	ui_asm.tbSaveDasm->addAction(ui_asm.actSaveDump);
-	ui_asm.tbSaveDasm->addAction(ui_asm.actLoadLabels);
-	ui_asm.tbSaveDasm->addAction(ui_asm.actSaveLabels);
+//	ui_asm.tbSaveDasm->addAction(ui_asm.actLoadLabels);
+//	ui_asm.tbSaveDasm->addAction(ui_asm.actSaveLabels);
 	ui_asm.tbSaveDasm->addAction(ui_asm.actLoadMap);
 	ui_asm.tbSaveDasm->addAction(ui_asm.actSaveMap);
 
@@ -447,9 +453,9 @@ DebugWin::DebugWin(QWidget* par):QMainWindow(par) {
 	ui_asm.tbTool->addAction(ui_asm.actSprScan);
 	ui_asm.tbTool->addAction(ui_asm.actShowKeys);
 	ui_asm.tbTool->addAction(ui_asm.actWutcha);
-	ui_asm.tbTool->addAction(ui_asm.actLabelsList);
+//	ui_asm.tbTool->addAction(ui_asm.actLabelsList);
 
-	ui_asm.tbDbgOpt->addAction(ui_asm.actShowLabels);
+//	ui_asm.tbDbgOpt->addAction(ui_asm.actShowLabels);
 	ui_asm.tbDbgOpt->addAction(ui_asm.actHideAddr);
 	ui_asm.tbDbgOpt->addAction(ui_asm.actShowSeg);
 	ui_asm.tbDbgOpt->addAction(ui_asm.actRomWr);
@@ -485,6 +491,7 @@ DebugWin::DebugWin(QWidget* par):QMainWindow(par) {
 
 	connect(ui_asm.actLabelsList, &QAction::triggered, labswin, &xLabeList::show);
 	connect(labswin, &xLabeList::labSelected, this, &DebugWin::jumpToLabel);
+	connect(labswin, &xLabeList::labSetChanged, this, &DebugWin::fillDisasm);
 
 	connect(ui_asm.actShowLabels, &QAction::toggled, this, &DebugWin::setShowLabels);
 	connect(ui_asm.actHideAddr, &QAction::toggled, this, &DebugWin::fillDisasm);
@@ -1223,8 +1230,10 @@ void DebugWin::dbgLLab() {
 void DebugWin::dbgSLab() {saveLabels(NULL);}
 
 void DebugWin::jumpToLabel(QString lab) {
-	if (conf.prof.cur->labels.contains(lab))
-		ui_asm.dasmTable->setAdr(conf.prof.cur->labels[lab].adr, 1);
+	xAdr xadr = find_label(lab);
+	if (xadr.type >= 0) {
+		ui_asm.dasmTable->setAdr(xadr.adr, 1);
+	}
 }
 
 // disasm table
