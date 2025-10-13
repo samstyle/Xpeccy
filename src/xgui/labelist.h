@@ -5,7 +5,6 @@
 #include "../xcore/xcore.h"
 
 #include "ui_labelist.h"
-#include "ui_labelset.h"
 
 class xLabelistModel : public QAbstractListModel {
 	Q_OBJECT
