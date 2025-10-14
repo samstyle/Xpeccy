@@ -13,7 +13,10 @@ class xLabelistModel : public QAbstractListModel {
 		QStringList list;
 	public slots:
 		void reset(QString = QString());
+		void setCpuMode(bool);
 	protected:
+		QString fstr;
+		bool cpuMode;
 		int rowCount(const QModelIndex& = QModelIndex()) const;
 		QVariant data(const QModelIndex&, int) const;
 		QModelIndex index(int, int, const QModelIndex& = QModelIndex()) const;

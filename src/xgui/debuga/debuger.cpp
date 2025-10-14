@@ -1232,7 +1232,10 @@ void DebugWin::dbgSLab() {saveLabels(NULL);}
 void DebugWin::jumpToLabel(QString lab) {
 	xAdr xadr = find_label(lab);
 	if (xadr.type >= 0) {
-		ui_asm.dasmTable->setAdr(xadr.adr, 1);
+		int cadr = memFindAdr(conf.prof.cur->zx->mem, xadr.type, xadr.abs);
+		if (cadr >= 0) {
+			ui_asm.dasmTable->setAdr(cadr, 1);
+		}
 	}
 }
 

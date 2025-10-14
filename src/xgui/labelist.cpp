@@ -28,6 +28,7 @@ QStringList filter(QStringList lst, QString f) {
 
 void xLabelistModel::reset(QString f) {
 	// list = conf.labels.keys().filter(f, Qt::CaseInsensitive);
+	fstr = f;
 	xLabelSet* set = conf.prof.cur->curlabset;
 	if (set) {
 		list = filter(set->list.keys(), f);
@@ -36,6 +37,11 @@ void xLabelistModel::reset(QString f) {
 		list.clear();
 	}
 	emit dataChanged(index(0,0), index(0, list.size()));
+}
+
+void xLabelistModel::setCpuMode(bool f) {
+	cpuMode = f;
+	reset(fstr);
 }
 
 QModelIndex xLabelistModel::index(int row, int col, const QModelIndex&) const {
@@ -49,18 +55,36 @@ QVariant xLabelistModel::data(const QModelIndex& idx, int role) const {
 	if (row < 0) return res;
 	if (row >= rowCount()) return res;
 	QString str;
+	QString adrstr;
+	bool pref = false;
+	int zadr;
 	xAdr xadr;
 	switch (role) {
 		case Qt::DisplayRole:
 			str = list.at(row);
 			xadr = find_label(str);
-			switch(xadr.type) {
-				case MEM_RAM: str.append(" | RAM:").append(gethexint(xadr.abs)); break;
-				case MEM_ROM: str.append(" | ROM:").append(gethexint(xadr.abs)); break;
-				case MEM_SLOT: str.append(" | SLT:").append(gethexint(xadr.abs)); break;
-				case MEM_EXT: str.append(" | EXT:").append(gethexint(xadr.abs)); break;
-				case MEM_IO: str.append(" | CPU:").append(gethexint(xadr.adr)); break;
+			if (cpuMode) {
+				zadr = memFindAdr(conf.prof.cur->zx->mem, xadr.type, xadr.abs);
+				if (zadr < 0) {
+					adrstr = QString("%0:%1").arg(gethexbyte(xadr.abs >> 14), gethexword(xadr.abs & 0x3fff));
+					pref = true;
+				} else {
+					adrstr = QString("CPU:%0").arg(gethexword(zadr));
+				}
+			} else {
+				adrstr = gethexint(xadr.abs);
+				pref = true;
 			}
+			if (pref) {
+				switch(xadr.type) {
+					case MEM_RAM: adrstr.prepend("RAM:"); break;
+					case MEM_ROM: adrstr.prepend("ROM:"); break;
+					case MEM_SLOT: adrstr.prepend("SLT:"); break;
+					case MEM_EXT: adrstr.prepend("EXT:"); break;
+					case MEM_IO: adrstr = QString("CPU:%0").arg(gethexword(xadr.adr));
+				}
+			}
+			str.prepend(" | ").prepend(adrstr);
 			res = str;
 			break;
 	}
@@ -77,8 +101,6 @@ xLabeList::xLabeList(QWidget* p):QDialog(p) {
 	mod = new xLabelistModel();
 	ui.list->setModel(mod);
 
-	connect(ui.cbLabelSet, SIGNAL(currentIndexChanged(int)), this, SIGNAL(labSetChanged()));
-
 	connect(ui.name, SIGNAL(textChanged(QString)), mod, SLOT(reset(QString)));
 	connect(ui.list, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(listDoubleClicked(QModelIndex)));
 	connect(ui.cbLabelSet, SIGNAL(currentIndexChanged(int)), this, SLOT(changeLabelSet()));
@@ -86,19 +108,21 @@ xLabeList::xLabeList(QWidget* p):QDialog(p) {
 	connect(ui.tbAddGrp, SIGNAL(released()), this, SLOT(newGroup()));
 	connect(ui.tbEditGrp, SIGNAL(released()), this, SLOT(editGroup()));
 	connect(ui.tbDelGrp, SIGNAL(released()), this, SLOT(delGroup()));
+	connect(ui.cbAdrCpu, SIGNAL(clicked(bool)), mod, SLOT(setCpuMode(bool)));
 }
 
 void xLabeList::listDoubleClicked(QModelIndex idx) {
 	if (!idx.isValid()) return;
 	QString str = mod->list.at(idx.row());
 	emit labSelected(str);
-	close();
+//	close();
 }
 
 void xLabeList::changeLabelSet() {
 	QString str = getRFSData(ui.cbLabelSet);
 	setLabelSet(str);
 	mod->reset(ui.name->text());
+	emit labSetChanged();
 }
 
 void xLabeList::newGroup() {
@@ -138,6 +162,7 @@ void xLabeList::fillSetList() {
 	} else {
 		ui.cbLabelSet->setCurrentIndex(-1);
 	}
+	emit labSetChanged();
 }
 
 void xLabeList::show() {

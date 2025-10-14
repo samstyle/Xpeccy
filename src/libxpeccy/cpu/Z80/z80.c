@@ -265,7 +265,7 @@ xMnem z80_mnem(CPU* cpu, int qadr, cbdmr mrd, void* data) {
 		} else if ((op & 0xe7) == 0x20) {							// jr cc
 			mn.cond = 1;
 			//mn.met = (cpu->f & z80_cnd[(op >> 4) & 1] ? 0 : 1);
-			mn.met = (op & 0x10) ? !cpu->flgZ : !cpu->flgC;
+			mn.met = (op & 0x10) ? !cpu->flgC : !cpu->flgZ;
 			if (op & 8)
 				mn.met ^= 1;
 		}
