@@ -159,7 +159,7 @@ int loadLabels(const char* fn) {
 	if (path.isEmpty())
 		path = QFileDialog::getOpenFileName(NULL, "Load SJASM labels",QString(),QString(),nullptr,QFileDialog::DontUseNativeDialog);
 	if (!path.isEmpty()) {
-		xLabelSet* set = newLabelSet(QFileInfo(fn).fileName());
+		xLabelSet* set = newLabelSet(QFileInfo(path).fileName());
 		setLabelSet(set);
 		clear_labels();
 		file.setFileName(path);

@@ -31,29 +31,23 @@ void xRDumpTable::update() {
 
 void xRDumpTable::resizeEvent(QResizeEvent* e) {
 // FIXME: columns added by 2
-//	int w = e->size().width();
-//	if (w < 80) return;
-//	int wd = 35; // horizontalHeader()->defaultSectionSize();
-//	int cnt = (w - 70) / wd;
-//	printf("setCols %i\n", cnt+1);
-//	model->setCols(cnt + 1);
-//	setColumnWidth(0, 70);
-//	model->update();
+//	int w = width();
+//	if (w >= 110) {
+//		int wd = horizontalHeader()->defaultSectionSize();
+//		int cnt = (w - 100) / wd;
+//		printf("setCols %i\n", cnt+1);
+//		model->setCols(cnt + 1);
+//		setColumnWidth(0, 70);
+//		model->update();
+//	}
+	QTableView::resizeEvent(e);
 }
 
 // model
 
 xRDumpModel::xRDumpModel(QObject* p):xTableModel(p) {
-	row_count = 0;
-	col_count = 12;
-}
-
-int xRDumpModel::columnCount(const QModelIndex&) const {
-	return col_count;
-}
-
-int xRDumpModel::rowCount(const QModelIndex&) const {
-	return row_count;
+	row_count = 1;
+	col_count = 9;
 }
 
 void xRDumpModel::refill() {
@@ -67,7 +61,7 @@ void xRDumpModel::refill() {
 		i++;
 	}
 	setRows(regs.size());
-	update();
+//	update();
 }
 
 QVariant xRDumpModel::data(const QModelIndex& idx, int role) const {

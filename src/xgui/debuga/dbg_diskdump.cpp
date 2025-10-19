@@ -46,6 +46,9 @@ void xDiskDumpModel::setDrive(int dr) {
 	drv = dr & 3;
 	Floppy* flp = conf.prof.cur->zx->dif->fdc->flop[drv];
 	int new_rcnt = (flp->trklen / 8) + ((flp->trklen & 7) ? 1 : 0);
+#if 1
+	setRows(new_rcnt);
+#else
 	if (new_rcnt < rcnt) {
 		emit beginRemoveRows(QModelIndex(), new_rcnt, rcnt - new_rcnt);
 		rcnt = new_rcnt;
@@ -56,11 +59,13 @@ void xDiskDumpModel::setDrive(int dr) {
 		emit endInsertRows();
 	}
 	emit dataChanged(index(0, 0), index(rowCount(), columnCount()));
+#endif
 }
 
 void xDiskDumpModel::setTrack(int tr) {
 	trk = tr;
-	emit dataChanged(index(0, 0), index(rowCount(), columnCount()));
+	update();
+//	emit dataChanged(index(0, 0), index(rowCount(), columnCount()));
 }
 
 int xDiskDumpModel::rowCount(const QModelIndex&) const {

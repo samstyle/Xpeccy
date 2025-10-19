@@ -9,7 +9,7 @@
 // model
 
 xLabelistModel::xLabelistModel(QObject* p):QAbstractListModel(p) {
-
+	cpuMode = false;
 }
 
 int xLabelistModel::rowCount(const QModelIndex&) const {
@@ -32,7 +32,7 @@ void xLabelistModel::reset(QString f) {
 	xLabelSet* set = conf.prof.cur->curlabset;
 	if (set) {
 		list = filter(set->list.keys(), f);
-		list.sort();
+//		list.sort();		// useless
 	} else {
 		list.clear();
 	}
@@ -153,6 +153,7 @@ void xLabeList::delGroup() {
 }
 
 void xLabeList::fillSetList() {
+	ui.cbLabelSet->blockSignals(true);		// prevent index changing -> slot calling -> current labset changing
 	ui.cbLabelSet->clear();
 	foreach(xLabelSet* set, conf.prof.cur->labsets) {
 		ui.cbLabelSet->addItem(set->name, set->name);
@@ -162,6 +163,7 @@ void xLabeList::fillSetList() {
 	} else {
 		ui.cbLabelSet->setCurrentIndex(-1);
 	}
+	ui.cbLabelSet->blockSignals(false);
 	emit labSetChanged();
 }
 

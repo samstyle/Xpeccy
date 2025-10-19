@@ -340,6 +340,14 @@ void xTableModel::setCols(int c) {
 	}
 }
 
+int xTableModel::columnCount(const QModelIndex&) const {
+	return col_count;
+}
+
+int xTableModel::rowCount(const QModelIndex&) const {
+	return row_count;
+}
+
 // item delegate
 
 xItemDelegate::xItemDelegate(int t) {

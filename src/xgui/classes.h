@@ -12,6 +12,8 @@ class xTableModel : public QAbstractTableModel {
 		QModelIndex index(int, int, const QModelIndex& = QModelIndex()) const;
 		void setRows(int);
 		void setCols(int);
+		int rowCount(const QModelIndex& = QModelIndex()) const;
+		int columnCount(const QModelIndex& = QModelIndex()) const;
 	public slots:
 		void update();
 		void updateRow(int);

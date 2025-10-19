@@ -12,8 +12,8 @@ class xRDumpModel : public xTableModel {
 		xRDumpModel(QObject* = nullptr);
 		void refill();
 	private:
-		int rowCount(const QModelIndex& = QModelIndex()) const;
-		int columnCount(const QModelIndex& = QModelIndex()) const;
+//		int rowCount(const QModelIndex& = QModelIndex()) const;
+//		int columnCount(const QModelIndex& = QModelIndex()) const;
 		QVariant data(const QModelIndex&, int) const;
 		QList<xRegister> regs;
 };
