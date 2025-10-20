@@ -9,7 +9,7 @@
 extern int blockStart;
 extern int blockEnd;
 
-#define SECTSIZE 25
+// #define SECTSIZE 25
 
 // MODEL
 
@@ -438,6 +438,7 @@ void xDumpTable::resizeEvent(QResizeEvent* ev) {
 
 	QFontMetrics fm(font());
 	int w = ev->size().width();
+	int wd = horizontalHeader()->minimumSectionSize();
 	int w0;
 	int wl;
 	int i;
@@ -449,9 +450,9 @@ void xDumpTable::resizeEvent(QResizeEvent* ev) {
 	w0 = fm.width("0000:0000");
 	wl = fm.width("00000000");
 #endif
-	int sz = (w - w0 - wl - 30) / 8;
-	if (sz <= SECTSIZE*2) {		// 8
-		sz = (w - w0 - wl - 30) / 8;
+	int sz = (w - w0 - wl * 2 - 10) / 16;	// check size if 16 bytes/row
+	if (sz <= wd) {		// 8		// not enough, 8 bytes
+		sz = (w - w0 - wl - 10) / 8;
 		model->dmpsize = 8;
 		for (i = 9; i < 17; i++) {
 			hideColumn(i);
@@ -459,7 +460,7 @@ void xDumpTable::resizeEvent(QResizeEvent* ev) {
 		horizontalHeader()->setDefaultSectionSize(sz);
 		setColumnWidth(17, wl);
 	} else {			// 16
-		sz = (w - w0 - wl*2 - 30) / 16;
+		//sz = (w - w0 - wl*2 - 10) / 16;
 		model->dmpsize = 16;
 		for (i = 9; i < 17; i++) {
 			showColumn(i);
@@ -467,7 +468,7 @@ void xDumpTable::resizeEvent(QResizeEvent* ev) {
 		horizontalHeader()->setDefaultSectionSize(sz);
 		setColumnWidth(17, wl*2);
 	}
-	setColumnWidth(0, w0+5);
+	setColumnWidth(0, w0 + 5);
 	update();
 }
 
@@ -576,8 +577,8 @@ void xDumpTable::mouseMoveEvent(QMouseEvent* ev) {
 	}
 	adr %= model->maxadr;
 	if ((ev->modifiers() == Qt::NoModifier) && (ev->buttons() & Qt::LeftButton) && (adr != blockStart) && (adr != blockEnd) && (adr != markAdr)) {
-		if ((col == 0) || (col > 8))
-			adr += 7;
+		if ((col == 0) || (col > 17))
+			adr += model->dmpsize;
 		if (adr < blockStart) {
 			blockStart = adr;
 			blockEnd = markAdr;
@@ -715,8 +716,8 @@ void xDumpWidget::customMenuAction(QAction* act) {
 				case MEM_EXT: emit s_brkrq(BRK_MEMEXT, bt, xadr.abs); break;
 			}
 			break;
-		case XVIEW_ROM: emit s_brkrq(BRK_MEMROM, bt, adr); break;
-		case XVIEW_RAM: emit s_brkrq(BRK_MEMRAM, bt, adr); break;
+		case XVIEW_ROM: emit s_brkrq(BRK_MEMROM, bt, (adr & 0x3fff) | (ui.sbDumpPage->value() << 14)); break;
+		case XVIEW_RAM: emit s_brkrq(BRK_MEMRAM, bt, (adr & 0x3fff) | (ui.sbDumpPage->value() << 14)); break;
 	}
 }
 
