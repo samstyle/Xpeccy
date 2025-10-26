@@ -321,13 +321,12 @@ void xTableModel::setRows(int r) {
 		emit beginRemoveRows(QModelIndex(), r, row_count-1);
 		row_count = r;
 		emit endRemoveRows();
-		update();
 	} else if (r > row_count) {
 		emit beginInsertRows(QModelIndex(), row_count, r-1);
 		row_count = r;
 		emit endInsertRows();
-		update();
 	}
+	update();
 }
 
 void xTableModel::setCols(int c) {
@@ -335,13 +334,12 @@ void xTableModel::setCols(int c) {
 		emit beginRemoveColumns(QModelIndex(), c, col_count-1);
 		col_count = c;
 		emit endRemoveColumns();
-		update();
 	} else if (c > col_count) {
 		emit beginInsertColumns(QModelIndex(), col_count, c-1);
 		col_count = c;
 		emit endInsertColumns();
-		update();
 	}
+	update();
 }
 
 int xTableModel::columnCount(const QModelIndex&) const {

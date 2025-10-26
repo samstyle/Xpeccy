@@ -493,7 +493,7 @@ void xGamepad::timerEvent(QTimerEvent* e) {
 		// hats
 		while (h > 0) {
 			h--;
-			state = SDL_JoystickGetHat(sjptr, n);
+			state = SDL_JoystickGetHat(sjptr, h);
 			lasthat ^= state;	// bit n = 1 -> changed
 			if (lasthat & SDL_HAT_UP) emit buttonChanged(12 + h * 4, !!(state & SDL_HAT_UP));
 			if (lasthat & SDL_HAT_DOWN) emit buttonChanged(13 + h * 4, !!(state & SDL_HAT_DOWN));
