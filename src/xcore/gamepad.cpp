@@ -464,8 +464,12 @@ void xGamepad::timerEvent(QTimerEvent* e) {
 			}
 		}
 #else
+		// hats (init counter here, logic is bealow)
+		int h = SDL_JoystickNumHats(sjptr);
 		// buttons
 		int n = SDL_JoystickNumButtons(sjptr);
+		// clamp if HAT is present: skip virtual D-Pad buttons (>=12)
+		if (h > 0 && n > 12) n = 12;
 		int state;
 		while (n > 0) {
 			n--;
@@ -487,15 +491,14 @@ void xGamepad::timerEvent(QTimerEvent* e) {
 			}
 		}
 		// hats
-		n = SDL_JoystickNumHats(sjptr);
-		while (n > 0) {
-			n--;
+		while (h > 0) {
+			h--;
 			state = SDL_JoystickGetHat(sjptr, n);
 			lasthat ^= state;	// bit n = 1 -> changed
-			if (lasthat & SDL_HAT_UP) emit buttonChanged(12 + n * 4, !!(state & SDL_HAT_UP));
-			if (lasthat & SDL_HAT_DOWN) emit buttonChanged(13 + n * 4, !!(state & SDL_HAT_DOWN));
-			if (lasthat & SDL_HAT_LEFT) emit buttonChanged(14 + n * 4, !!(state & SDL_HAT_LEFT));
-			if (lasthat & SDL_HAT_RIGHT) emit buttonChanged(15 + n * 4, !!(state & SDL_HAT_RIGHT));
+			if (lasthat & SDL_HAT_UP) emit buttonChanged(12 + h * 4, !!(state & SDL_HAT_UP));
+			if (lasthat & SDL_HAT_DOWN) emit buttonChanged(13 + h * 4, !!(state & SDL_HAT_DOWN));
+			if (lasthat & SDL_HAT_LEFT) emit buttonChanged(14 + h * 4, !!(state & SDL_HAT_LEFT));
+			if (lasthat & SDL_HAT_RIGHT) emit buttonChanged(15 + h * 4, !!(state & SDL_HAT_RIGHT));
 			lasthat = state;
 		}
 		SDL_Event ev;
