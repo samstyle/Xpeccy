@@ -469,7 +469,7 @@ void xGamepad::timerEvent(QTimerEvent* e) {
 		// buttons
 		int n = SDL_JoystickNumButtons(sjptr);
 		// clamp if HAT is present: skip virtual D-Pad buttons (>=12)
-		if (h > 0 && n > 11) n = 11;
+		if (h > 0 && n > 12) n = 12;
 		int state;
 		while (n > 0) {
 			n--;
