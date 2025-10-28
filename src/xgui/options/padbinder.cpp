@@ -127,7 +127,8 @@ void xPadBinder::setPadButtonText() {
 			ui.pbPadBind->setText(QString("Hat %0 %1").arg(ent.num).arg(dir));
 			break;
 		case JOY_BUTTON:
-			ui.pbPadBind->setText(QString("Button %0").arg(ent.num));
+			//ui.pbPadBind->setText(QString("Button %0").arg(ent.num));
+			ui.pbPadBind->setText(xGamepad::getButtonName(ent.num));
 			break;
 		case JOY_AXIS:
 			ui.pbPadBind->setText(QString("Axis %0 %1").arg(ent.num).arg((ent.state < 0) ? "-" : "+"));

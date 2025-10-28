@@ -12,6 +12,8 @@
 #include "xcore.h"
 #include "gamepad.h"
 
+#define VIRTKEYBASE 12
+
 typedef struct {
 	char ch;
 	int val;
@@ -147,10 +149,10 @@ void xGamepad::loadMap(std::string mapname) {
 					case JOY_HAT:		// HU HD HR HL
 						jent.type = JOY_BUTTON;				// convert hat->button for xGamepad
 						switch(ptr[idx]) {
-							case 'U': jent.num = 12; break;
-							case 'D': jent.num = 13; break;
-							case 'L': jent.num = 14; break;
-							case 'R': jent.num = 15; break;
+							case 'U': jent.num = VIRTKEYBASE; break;
+							case 'D': jent.num = VIRTKEYBASE+1; break;
+							case 'L': jent.num = VIRTKEYBASE+2; break;
+							case 'R': jent.num = VIRTKEYBASE+3; break;
 							default: jent.type = JOY_HAT; jent.state = padGetId(ptr[idx], hatChars); break;
 						}
 						idx++;
@@ -440,10 +442,10 @@ void xGamepad::timerEvent(QTimerEvent* e) {
 				case SDL_JOYHATMOTION:
 					//if (ev.jhat.which != id) break;
 					lasthat ^= ev.jhat.value;	// bit n = 1 -> changed
-					if (lasthat & SDL_HAT_UP) emit buttonChanged(12 + ev.jhat.hat * 4, !!(ev.jhat.value & SDL_HAT_UP));
-					if (lasthat & SDL_HAT_DOWN) emit buttonChanged(13 + ev.jhat.hat * 4, !!(ev.jhat.value & SDL_HAT_DOWN));
-					if (lasthat & SDL_HAT_LEFT) emit buttonChanged(14 + ev.jhat.hat * 4, !!(ev.jhat.value & SDL_HAT_LEFT));
-					if (lasthat & SDL_HAT_RIGHT) emit buttonChanged(15 + ev.jhat.hat * 4, !!(ev.jhat.value & SDL_HAT_RIGHT));
+					if (lasthat & SDL_HAT_UP) emit buttonChanged(VIRTKEYBASE + ev.jhat.hat * 4, !!(ev.jhat.value & SDL_HAT_UP));
+					if (lasthat & SDL_HAT_DOWN) emit buttonChanged(VIRTKEYBASE + 1 + ev.jhat.hat * 4, !!(ev.jhat.value & SDL_HAT_DOWN));
+					if (lasthat & SDL_HAT_LEFT) emit buttonChanged(VIRTKEYBASE + 2 + ev.jhat.hat * 4, !!(ev.jhat.value & SDL_HAT_LEFT));
+					if (lasthat & SDL_HAT_RIGHT) emit buttonChanged(VIRTKEYBASE + 3 + ev.jhat.hat * 4, !!(ev.jhat.value & SDL_HAT_RIGHT));
 					lasthat = ev.jhat.value;
 					break;
 // SDL: gamepad connect/disconnect events
@@ -468,8 +470,8 @@ void xGamepad::timerEvent(QTimerEvent* e) {
 		int h = SDL_JoystickNumHats(sjptr);
 		// buttons
 		int n = SDL_JoystickNumButtons(sjptr);
-		// clamp if HAT is present: skip virtual D-Pad buttons (>=12)
-		if (h > 0 && n > 12) n = 12;
+		// clamp if HAT is present: skip virtual D-Pad buttons (>=VIRTKEYBASE)
+		if (h > 0 && n > VIRTKEYBASE) n = VIRTKEYBASE;
 		int state;
 		while (n > 0) {
 			n--;
@@ -495,10 +497,10 @@ void xGamepad::timerEvent(QTimerEvent* e) {
 			h--;
 			state = SDL_JoystickGetHat(sjptr, h);
 			lasthat ^= state;	// bit n = 1 -> changed
-			if (lasthat & SDL_HAT_UP) emit buttonChanged(12 + h * 4, !!(state & SDL_HAT_UP));
-			if (lasthat & SDL_HAT_DOWN) emit buttonChanged(13 + h * 4, !!(state & SDL_HAT_DOWN));
-			if (lasthat & SDL_HAT_LEFT) emit buttonChanged(14 + h * 4, !!(state & SDL_HAT_LEFT));
-			if (lasthat & SDL_HAT_RIGHT) emit buttonChanged(15 + h * 4, !!(state & SDL_HAT_RIGHT));
+			if (lasthat & SDL_HAT_UP) emit buttonChanged(VIRTKEYBASE + h * 4, !!(state & SDL_HAT_UP));
+			if (lasthat & SDL_HAT_DOWN) emit buttonChanged(VIRTKEYBASE + 1 + h * 4, !!(state & SDL_HAT_DOWN));
+			if (lasthat & SDL_HAT_LEFT) emit buttonChanged(VIRTKEYBASE + 2 + h * 4, !!(state & SDL_HAT_LEFT));
+			if (lasthat & SDL_HAT_RIGHT) emit buttonChanged(VIRTKEYBASE + 3 + h * 4, !!(state & SDL_HAT_RIGHT));
 			lasthat = state;
 		}
 		SDL_Event ev;
@@ -544,7 +546,9 @@ QString xGamepad::name(int devid) {
 QStringList xGamepad::getList() {
 	QStringList lst;
 	int id, cnt;
+#if USE_QT_GAMEPAD
 	QList<int> devlist;
+#endif
 	switch(type) {
 #if USE_QT_GAMEPAD
 		case GPBACKEND_QT:
@@ -562,6 +566,22 @@ QStringList xGamepad::getList() {
 			break;
 	}
 	return lst;
+}
+
+QString xGamepad::getButtonName(int n) {
+	QString nm;
+	if (n < VIRTKEYBASE) {
+		nm = QString("Button %0").arg(n);
+	} else {
+		n -= VIRTKEYBASE;
+		switch(n & 3) {
+			case 0: nm = QString("Hat %0 up").arg(n >> 2); break;
+			case 1: nm = QString("Hat %0 down").arg(n >> 2); break;
+			case 2: nm = QString("Hat %0 left").arg(n >> 2); break;
+			case 3: nm = QString("Hat %0 right").arg(n >> 2); break;
+		}
+	}
+	return nm;
 }
 
 void xGamepad::setType(int t) {
@@ -627,10 +647,10 @@ void xGamepad::BCeChanged(bool b) {emit buttonChanged(this, 8, b);}
 void xGamepad::BL3Changed(bool b) {emit buttonChanged(this, 9, b);}
 void xGamepad::BR3Changed(bool b) {emit buttonChanged(this, 10, b);}
 void xGamepad::BGuChanged(bool b) {emit buttonChanged(this, 11, b);}
-void xGamepad::BUChanged(bool b) {emit buttonChanged(this, 12, b);}
-void xGamepad::BDChanged(bool b) {emit buttonChanged(this, 13, b);}
-void xGamepad::BLChanged(bool b) {emit buttonChanged(this, 14, b);}
-void xGamepad::BRChanged(bool b) {emit buttonChanged(this, 15, b);}
+void xGamepad::BUChanged(bool b) {emit buttonChanged(this, VIRTKEYBASE, b);}
+void xGamepad::BDChanged(bool b) {emit buttonChanged(this, VIRTKEYBASE + 1, b);}
+void xGamepad::BLChanged(bool b) {emit buttonChanged(this, VIRTKEYBASE + 2, b);}
+void xGamepad::BRChanged(bool b) {emit buttonChanged(this, VIRTKEYBASE + 3, b);}
 
 void xGamepad::ALXChanged(double v) {emit axisChanged(this, 0, (absd(v) < deadf) ? 0 : v);}
 void xGamepad::ALYChanged(double v) {emit axisChanged(this, 1, (absd(v) < deadf) ? 0 : v);}

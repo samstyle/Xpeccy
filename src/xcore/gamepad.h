@@ -69,6 +69,7 @@ class xGamepad : public QObject {
 		int deadZone();
 		QString name(int = -1);
 		QStringList getList();
+		static QString getButtonName(int);
 
 		int mapSize();
 		void mapClear();
