@@ -66,7 +66,7 @@ QVariant xPadMapModel::data(const QModelIndex& idx, int role) const {
 							break;
 					}
 					if ((jent.type == JOY_BUTTON) && (jent.num > 11)) {
-						str = QString("Hat ") + hatDirs[jent.num & 3];
+						str = xGamepad::getButtonName(jent.num); // QString("Hat ") + hatDirs[jent.num & 3];
 					}
 					res = str;
 					break;

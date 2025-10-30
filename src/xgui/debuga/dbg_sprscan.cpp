@@ -19,6 +19,7 @@ MemViewer::MemViewer(QWidget* p):QDialog(p) {
 	connect(ui.cbInvert, SIGNAL(toggled(bool)), this, SLOT(fillImage()));
 	connect(ui.cbGrid, SIGNAL(toggled(bool)), this, SLOT(fillImage()));
 	connect(ui.cbScreen, SIGNAL(toggled(bool)), this, SLOT(fillImage()));
+	connect(ui.cbColumns, SIGNAL(toggled(bool)), this, SLOT(fillImage()));
 
 	connect(ui.adrHex, SIGNAL(valueChanged(int)), this, SLOT(adrChanged(int)));
 	connect(ui.scrollbar, SIGNAL(valueChanged(int)), this, SLOT(memScroll(int)));
@@ -86,38 +87,55 @@ void MemViewer::fillImage() {
 	unsigned char byt;
 	unsigned char inv = ui.cbInvert->isChecked() ? 0xff : 0x00;
 	int bit;
+	int num = 0;
 	int row,col;
 	QRgb blk = qRgb(0,0,0);
 	QRgb wht = qRgb(255,255,255);
+	QRgb grn = qRgb(128,255,128);
+	QRgb dgrn = qRgb(100,200,100);
 	QRgb lgry = qRgb(160,160,160);
 	QRgb dgry = qRgb(32,32,32);
 	if (!ui.cbGrid->isChecked()) {
 		lgry = wht;
 		dgry = blk;
+		dgrn = grn;
 	}
 	QRgb clr;
 	int alt;
-	for (row = 0; row < high; row++) {
-		for (col = 0; (col < wid) && (col < 32); col++) {
-			byt = rdMem(adr + col) ^ inv;
-			alt = ((row >> 3) ^ col) & 1;
-			for (bit = 0; bit < 8; bit++) {
-				clr = (byt & 0x80) ? (alt ? wht : lgry) : (alt ? blk : dgry);
-				img.setPixel((col << 3) | bit, row, clr);
-				byt <<= 1;
+	int shift = 0;
+	do {
+		for (row = 0; row < high; row++) {
+			for (col = 0; (col < wid) && (col < 32); col++) {
+				byt = rdMem(adr + col) ^ inv;
+				alt = ((row >> 3) ^ col) & 1;
+				for (bit = 0; bit < 8; bit++) {
+					if (byt & 0x80) {
+						if (alt) {
+							clr = (num & 1) ? grn : wht;
+						} else {
+							clr = (num & 1) ? dgrn : lgry;
+						}
+					} else {
+						clr = alt ? blk : dgry;
+					}
+					img.setPixel(((col + shift) << 3) | bit, row, clr);
+					byt <<= 1;
+				}
 			}
-		}
-		adr += wid;
-		if (ui.cbScreen->isChecked()) {
-			adr += 0xe0;
-			if ((row & 0x07) == 0x07) {
-				adr -= 0x7e0;
-				if ((row & 0x3f) == 0x3f) {
-					adr += 0x700;
+			adr += wid;
+			if (ui.cbScreen->isChecked()) {
+				adr += 0xe0;
+				if ((row & 0x07) == 0x07) {
+					adr -= 0x7e0;
+					if ((row & 0x3f) == 0x3f) {
+						adr += 0x700;
+					}
 				}
 			}
 		}
-	}
+		num++;
+		shift += wid;
+	} while ((shift + wid <= 32) && ui.cbColumns->isChecked());
 	QPixmap pxm = QPixmap::fromImage(img.scaled(512,512));
 	ui.view->setPixmap(pxm);
 	int pg = wid << 3;
