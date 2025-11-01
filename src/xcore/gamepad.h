@@ -91,6 +91,7 @@ class xGamepad : public QObject {
 		int stid;			// timer id (for sdl events)
 		int dead;
 		double deadf;
+		QString s_name;
 		QList<xJoyMapEntry> map;			// gamepad map for gamepad
 		QMap<int, QMap<int, int> > jState;	// buttons/axis/hats state: -1 -> 1 | 1 -> -1 = release old one
 		union {

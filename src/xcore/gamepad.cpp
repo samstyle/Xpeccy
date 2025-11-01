@@ -275,10 +275,13 @@ xGamepad::xGamepad(int t, QObject* p):QObject(p) {
 	qjptr = new QGamepad;
 #endif
 	setType(t);
+
+	stid = startTimer(20);
 }
 
 xGamepad::~xGamepad() {
 	close();
+	killTimer(stid);
 }
 
 void xGamepad::open(int devid) {
@@ -293,6 +296,7 @@ void xGamepad::open(int devid) {
 			if (gpidlist.size() > devid) {
 				id = devid;
 				qjptr->setDeviceId(gpidlist.at(devid));
+				s_name = name();
 			}
 			break;
 #endif
@@ -300,7 +304,7 @@ void xGamepad::open(int devid) {
 			sjptr = SDL_JoystickOpen(devid);
 			if (sjptr) {
 				id = SDL_JoystickInstanceID(sjptr);
-				stid = startTimer(20);
+				s_name = name();
 			}
 			break;
 	}
@@ -323,7 +327,6 @@ void xGamepad::close() {
 #endif
 		case GPBACKEND_SDL:
 			if (sjptr) {
-				killTimer(stid);
 				SDL_JoystickClose(sjptr);
 			}
 			break;
@@ -503,20 +506,28 @@ void xGamepad::timerEvent(QTimerEvent* e) {
 			if (lasthat & SDL_HAT_RIGHT) emit buttonChanged(VIRTKEYBASE + 3 + h * 4, !!(state & SDL_HAT_RIGHT));
 			lasthat = state;
 		}
-		SDL_Event ev;
-		while (SDL_PollEvent(&ev)) {
-			switch (ev.type) {
-				case SDL_JOYDEVICEREMOVED:
-					if (ev.jdevice.which == id) {	// current removed, close it
-						close();
-					}
-					break;
-			}
-		}
 #endif
 	}
+#if HAVESDL2
+	SDL_Event ev;
+	while (SDL_PollEvent(&ev)) {
+		switch (ev.type) {
+			case SDL_JOYDEVICEREMOVED:
+				if (ev.jdevice.which == id) {	// current removed, close it
+					close();
+				}
+				break;
+			case SDL_JOYDEVICEADDED:
+				if (QString(SDL_JoystickNameForIndex(ev.jdevice.which)) == s_name) {	// gamepad with same name added, reopen
+					open(s_name);
+				}
+				break;
+		}
+	}
+#endif
 }
 
+// TODO: return s_name, if devid>=0
 QString xGamepad::name(int devid) {
 	QString nm;
 	if (devid < 0) devid = id;
