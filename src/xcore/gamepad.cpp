@@ -271,6 +271,8 @@ xGamepad::xGamepad(int t, QObject* p):QObject(p) {
 	id = -1;
 	dead = 8192;
 	deadf = 8192 / 32768.0;
+    // Start persistent timer (20 ms) — used to check gamepad reconnection status
+	stid = startTimer(20);
 #if USE_QT_GAMEPAD
 	qjptr = new QGamepad;
 #endif
@@ -300,7 +302,6 @@ void xGamepad::open(int devid) {
 			sjptr = SDL_JoystickOpen(devid);
 			if (sjptr) {
 				id = SDL_JoystickInstanceID(sjptr);
-				stid = startTimer(20);
 			}
 			break;
 	}
@@ -323,7 +324,6 @@ void xGamepad::close() {
 #endif
 		case GPBACKEND_SDL:
 			if (sjptr) {
-				killTimer(stid);
 				SDL_JoystickClose(sjptr);
 			}
 			break;
@@ -417,6 +417,10 @@ QList<xJoyMapEntry> xGamepad::repTick() {
 // TODO: Axis 4,5 (triggers): Qt: 0->32767; SDL: -32768->32767 (allways catched as negative)
 // TODO: Don't poll events, check buttons/axis/hats state, on changes map immediately and signal(xJoyMapEntry)
 void xGamepad::timerEvent(QTimerEvent* e) {
+    // Attempt to reconnect if gamepad is currently disconnected but a stored name exists
+	if (id < 0 && !s_name.isEmpty() ) {
+		open(s_name);
+	}
 	if ((type == GPBACKEND_SDL) && (id > -1)) {
 #if GP_USESDLEVENTS
 		SDL_Event ev;
@@ -541,6 +545,14 @@ QString xGamepad::name(int devid) {
 			break;
 	}
 	return nm;
+}
+
+void xGamepad::setStoredName(QString name) {
+	s_name = name;
+}
+
+QString xGamepad::getStoredName() {
+	return s_name;
 }
 
 QStringList xGamepad::getList() {
