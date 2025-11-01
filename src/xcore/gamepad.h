@@ -67,6 +67,8 @@ class xGamepad : public QObject {
 		int getType();
 		void setDeadZone(int);
 		int deadZone();
+		void setStoredName(QString name);	// save the name of the selected gamepad
+		QString getStoredName();			// retrieve the stored gamepad name
 		QString name(int = -1);
 		QStringList getList();
 		static QString getButtonName(int);
@@ -91,6 +93,7 @@ class xGamepad : public QObject {
 		int stid;			// timer id (for sdl events)
 		int dead;
 		double deadf;
+		QString s_name;						// cached name of the selected gamepad
 		QList<xJoyMapEntry> map;			// gamepad map for gamepad
 		QMap<int, QMap<int, int> > jState;	// buttons/axis/hats state: -1 -> 1 | 1 -> -1 = release old one
 		union {

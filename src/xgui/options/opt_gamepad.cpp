@@ -196,13 +196,16 @@ void xGamepadWidget::update(std::string mapname) {
 	lst = gpad->getList();
 	lst.prepend("none");
 	cbGPName->addItems(lst);
-	str = gpad->name();
-	if (str.isEmpty()) {
-		cbGPName->setCurrentIndex(0);
-	} else {
-		cbGPName->setCurrentIndex(cbGPName->findText(str));
-	}
+    // After a reconnect, gpad->name() may be empty.
+    // Use the stored name as the source of truth for selection.
+    // TODO: investigate why name() returns empty after reconnect.
+	str = gpad->getStoredName();
+    // Fallback to index 0 ("none") if the name is not found.
+	cbGPName->setCurrentIndex(std::max(0,cbGPName->findText(str)));
 	cbGPName->blockSignals(false);
+	// Disable dropdown if only "none" is available to avoid overwriting config
+	// when gamepad is disconnected or sleeping.
+	cbGPName->setEnabled(lst.size() > 1);
 
 	sldDeadZone->setValue(gpad->deadZone());
 
@@ -224,8 +227,15 @@ void xGamepadWidget::apply() {
 	gpad->setDeadZone(sldDeadZone->value());
 	if (cbGPName->currentIndex() < 1) {
 		gpad->close();
+        // If the list actually had devices, explicit "none" selection
+        // should clear the stored name.
+		if(cbGPName->count() > 1)
+			gpad->setStoredName("");
 	} else {
-		gpad->open(cbGPName->currentText());
+        // Persist the explicit selection and open the device.
+		const QString gpname = cbGPName->currentText();
+		gpad->setStoredName(gpname);
+		gpad->open(gpname);
 	}
 }
 
@@ -241,6 +251,10 @@ void xGamepadWidget::devChanged(int idx) {
 		gpad->open(idx-1);
 	} else {
 		gpad->close();
+        // If the list actually had devices, explicit "none" selection
+        // should clear the stored name.
+		if(cbGPName->count() > 1)
+			gpad->setStoredName("");
 	}
 }
 
