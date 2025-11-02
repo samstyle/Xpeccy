@@ -191,19 +191,21 @@ xGamepadWidget::xGamepadWidget(xGamepad* gp, QWidget* p):QWidget(p) {
 void xGamepadWidget::update(std::string mapname) {
 	QStringList lst;
 	QString str;
-	cbGPName->blockSignals(true);
-	cbGPName->clear();
 	lst = gpad->getList();
 	lst.prepend("none");
+	cbGPName->blockSignals(true);			// don't call devChanged automaticly
+	cbGPName->clear();
 	cbGPName->addItems(lst);
-	str = gpad->name();
+	str = gpad->lastName();
 	if (str.isEmpty()) {
 		cbGPName->setCurrentIndex(0);
 	} else {
-		cbGPName->setCurrentIndex(cbGPName->findText(str));
+		int i = cbGPName->findText(str);
+		if (i < 0) i = 0;			// no such gamepad, reset to 'none'
+		cbGPName->setCurrentIndex(i);
 	}
+	devChanged(cbGPName->currentIndex());		// update current gamepad
 	cbGPName->blockSignals(false);
-
 	sldDeadZone->setValue(gpad->deadZone());
 
 	QDir dir(conf.path.confDir.c_str());
@@ -241,6 +243,7 @@ void xGamepadWidget::devChanged(int idx) {
 		gpad->open(idx-1);
 	} else {
 		gpad->close();
+		gpad->setName("");
 	}
 }
 
