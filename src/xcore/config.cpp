@@ -197,9 +197,9 @@ void saveConfig() {
 	fprintf(cfile, "fast = %s\n", YESNO(conf.tape.fast));
 
 	fprintf(cfile, "\n[INPUT]\n\n");
-	fprintf(cfile, "gamepad = %s\n", conf.joy.gpad->name().toLocal8Bit().data());
+	fprintf(cfile, "gamepad = %s\n", conf.joy.gpad->lastName().toLocal8Bit().data());
 	fprintf(cfile, "deadzone = %i\n", conf.joy.gpad->deadZone());
-	fprintf(cfile, "gamepad2 = %s\n", conf.joy.gpadb->name().toLocal8Bit().data());
+	fprintf(cfile, "gamepad2 = %s\n", conf.joy.gpadb->lastName().toLocal8Bit().data());
 	fprintf(cfile, "deadzone2 = %i\n", conf.joy.gpadb->deadZone());
 
 	fprintf(cfile, "\n[LEDS]\n\n");
@@ -399,8 +399,8 @@ void loadConfig() {
 				case SECT_INPUT:
 					if (pnam=="deadzone") conf.joy.gpad->setDeadZone(arg.i);
 					if (pnam=="deadzone2") conf.joy.gpadb->setDeadZone(arg.i);
-					if (pnam=="gamepad") conf.joy.gpad->open(arg.s); //conf.joy.curName = arg.s;
-					if (pnam=="gamepad2") conf.joy.gpadb->open(arg.s);
+					if (pnam=="gamepad") conf.joy.gpad->setName(arg.s);
+					if (pnam=="gamepad2") conf.joy.gpadb->setName(arg.s);
 					break;
 				case SECT_VIDEO:
 					if (pnam=="layout") {
@@ -557,6 +557,8 @@ void loadConfig() {
 			}
 		}
 	}
+	conf.joy.gpad->open();
+	conf.joy.gpadb->open();
 	vid_set_zoom(conf.vid.scale);
 	vid_set_fullscreen(conf.vid.fullScreen);
 	vid_set_ratio(conf.vid.keepRatio);

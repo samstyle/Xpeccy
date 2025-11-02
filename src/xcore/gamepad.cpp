@@ -296,7 +296,6 @@ void xGamepad::open(int devid) {
 			if (gpidlist.size() > devid) {
 				id = devid;
 				qjptr->setDeviceId(gpidlist.at(devid));
-				s_name = name();
 			}
 			break;
 #endif
@@ -304,7 +303,6 @@ void xGamepad::open(int devid) {
 			sjptr = SDL_JoystickOpen(devid);
 			if (sjptr) {
 				id = SDL_JoystickInstanceID(sjptr);
-				s_name = name();
 			}
 			break;
 	}
@@ -313,7 +311,14 @@ void xGamepad::open(int devid) {
 void xGamepad::open(QString name) {
 	QStringList lst = getList();
 	int idx = lst.indexOf(name);
-	if (idx >= 0) open(idx);
+	if (idx >= 0) {
+		open(idx);
+		s_name = name;
+	}
+}
+
+void xGamepad::open() {
+	open(s_name);
 }
 
 void xGamepad::close() {
@@ -332,6 +337,14 @@ void xGamepad::close() {
 			break;
 	}
 	id = -1;
+}
+
+int xGamepad::isOpened() {
+	return !(id < 0);
+}
+
+int xGamepad::getId() {
+	return id;
 }
 
 int sign(int v) {
@@ -420,114 +433,117 @@ QList<xJoyMapEntry> xGamepad::repTick() {
 // TODO: Axis 4,5 (triggers): Qt: 0->32767; SDL: -32768->32767 (allways catched as negative)
 // TODO: Don't poll events, check buttons/axis/hats state, on changes map immediately and signal(xJoyMapEntry)
 void xGamepad::timerEvent(QTimerEvent* e) {
-	if ((type == GPBACKEND_SDL) && (id > -1)) {
+	if (type == GPBACKEND_SDL) {
+		if (id > -1) {
 #if GP_USESDLEVENTS
-		SDL_Event ev;
-		SDL_JoystickUpdate();
-		double v;
-		// WARNING: SDL_PollEvent gets ALL events (for ALL gamepads). Need to filter for current gamepad (!)
-		while(SDL_PollEvent(&ev)) {
-			switch(ev.type) {
-				case SDL_JOYAXISMOTION:
-					//if (ev.jaxis.which != id) break;	// need return ev to queue ???
-					v = ev.jaxis.value / 32768.0;
-					if (abs(v) < deadf) v = 0;
-					emit axisChanged(ev.jaxis.axis, v);
-					break;
-				case SDL_JOYBUTTONDOWN:
-					//if (ev.jbutton.which != id) break;
-					emit buttonChanged(ev.jbutton.button, true);
-					break;
-				case SDL_JOYBUTTONUP:
-					//if (ev.jbutton.which != id) break;
-					emit buttonChanged(ev.jbutton.button, false);
-					break;
-				case SDL_JOYHATMOTION:
-					//if (ev.jhat.which != id) break;
-					lasthat ^= ev.jhat.value;	// bit n = 1 -> changed
-					if (lasthat & SDL_HAT_UP) emit buttonChanged(VIRTKEYBASE + ev.jhat.hat * 4, !!(ev.jhat.value & SDL_HAT_UP));
-					if (lasthat & SDL_HAT_DOWN) emit buttonChanged(VIRTKEYBASE + 1 + ev.jhat.hat * 4, !!(ev.jhat.value & SDL_HAT_DOWN));
-					if (lasthat & SDL_HAT_LEFT) emit buttonChanged(VIRTKEYBASE + 2 + ev.jhat.hat * 4, !!(ev.jhat.value & SDL_HAT_LEFT));
-					if (lasthat & SDL_HAT_RIGHT) emit buttonChanged(VIRTKEYBASE + 3 + ev.jhat.hat * 4, !!(ev.jhat.value & SDL_HAT_RIGHT));
-					lasthat = ev.jhat.value;
-					break;
-// SDL: gamepad connect/disconnect events
+			SDL_Event ev;
+			SDL_JoystickUpdate();
+			double v;
+			// WARNING: SDL_PollEvent gets ALL events (for ALL gamepads). Need to filter for current gamepad (!)
+			while(SDL_PollEvent(&ev)) {
+				switch(ev.type) {
+					case SDL_JOYAXISMOTION:
+						//if (ev.jaxis.which != id) break;	// need return ev to queue ???
+						v = ev.jaxis.value / 32768.0;
+						if (abs(v) < deadf) v = 0;
+						emit axisChanged(ev.jaxis.axis, v);
+						break;
+					case SDL_JOYBUTTONDOWN:
+						//if (ev.jbutton.which != id) break;
+						emit buttonChanged(ev.jbutton.button, true);
+						break;
+					case SDL_JOYBUTTONUP:
+						//if (ev.jbutton.which != id) break;
+						emit buttonChanged(ev.jbutton.button, false);
+						break;
+					case SDL_JOYHATMOTION:
+						//if (ev.jhat.which != id) break;
+						lasthat ^= ev.jhat.value;	// bit n = 1 -> changed
+						if (lasthat & SDL_HAT_UP) emit buttonChanged(VIRTKEYBASE + ev.jhat.hat * 4, !!(ev.jhat.value & SDL_HAT_UP));
+						if (lasthat & SDL_HAT_DOWN) emit buttonChanged(VIRTKEYBASE + 1 + ev.jhat.hat * 4, !!(ev.jhat.value & SDL_HAT_DOWN));
+						if (lasthat & SDL_HAT_LEFT) emit buttonChanged(VIRTKEYBASE + 2 + ev.jhat.hat * 4, !!(ev.jhat.value & SDL_HAT_LEFT));
+						if (lasthat & SDL_HAT_RIGHT) emit buttonChanged(VIRTKEYBASE + 3 + ev.jhat.hat * 4, !!(ev.jhat.value & SDL_HAT_RIGHT));
+						lasthat = ev.jhat.value;
+						break;
+						// SDL: gamepad connect/disconnect events
 #if HAVESDL2
-				// TODO: select device, if there is more than one
+						// TODO: select device, if there is more than one
+					case SDL_JOYDEVICEREMOVED:
+						if (ev.jdevice.which == id) {	// current removed, close it
+							close();
+						}
+						break;
+					case SDL_JOYDEVICEADDED:
+						// Nothing to do, let user to select new gamepad in options
+						//if (id < 0) {			// if no gamepad opened, try to open last one by name
+						//	open();			// conf.joy.curName);
+						//}
+						break;
+#endif
+				}
+			}
+#else
+			// hats (init counter here, logic is bealow)
+			int h = SDL_JoystickNumHats(sjptr);
+			// buttons
+			int n = SDL_JoystickNumButtons(sjptr);
+			// clamp if HAT is present: skip virtual D-Pad buttons (>=VIRTKEYBASE)
+			if (h > 0 && n > VIRTKEYBASE) n = VIRTKEYBASE;
+			int state;
+			while (n > 0) {
+				n--;
+				state = SDL_JoystickGetButton(sjptr, n);
+				if (jState[JOY_BUTTON][n] != state) {
+					emit buttonChanged(n, state);
+				}
+			}
+			// axis
+			n = SDL_JoystickNumAxes(sjptr);
+			while (n > 0) {
+				n--;
+				state = SDL_JoystickGetAxis(sjptr, n);
+				if (abs(state) < dead)
+					state = 0;
+				state = sign(state);
+				if (jState[JOY_AXIS][n] != state) {
+					emit axisChanged(n, state);
+				}
+			}
+			// hats
+			while (h > 0) {
+				h--;
+				state = SDL_JoystickGetHat(sjptr, h);
+				lasthat ^= state;	// bit n = 1 -> changed
+				if (lasthat & SDL_HAT_UP) emit buttonChanged(VIRTKEYBASE + h * 4, !!(state & SDL_HAT_UP));
+				if (lasthat & SDL_HAT_DOWN) emit buttonChanged(VIRTKEYBASE + 1 + h * 4, !!(state & SDL_HAT_DOWN));
+				if (lasthat & SDL_HAT_LEFT) emit buttonChanged(VIRTKEYBASE + 2 + h * 4, !!(state & SDL_HAT_LEFT));
+				if (lasthat & SDL_HAT_RIGHT) emit buttonChanged(VIRTKEYBASE + 3 + h * 4, !!(state & SDL_HAT_RIGHT));
+				lasthat = state;
+			}
+		}
+		// emit signals, not handle events - don't skip other gamepad connect/disconnect
+		SDL_Event ev;
+		while (SDL_PollEvent(&ev)) {
+			switch (ev.type) {
 				case SDL_JOYDEVICEREMOVED:
-					if (ev.jdevice.which == id) {	// current removed, close it
-						close();
-					}
-					break;
-				case SDL_JOYDEVICEADDED:
-					// Nothing to do, let user to select new gamepad in options
-					//if (id < 0) {			// if no gamepad opened, try to open last one by name
-					//	open();			// conf.joy.curName);
+					emit deviceRemoved(ev.jdevice.which);
+					//if (ev.jdevice.which == id) {	// current removed, close it
+					//	close();
 					//}
 					break;
-#endif
+				case SDL_JOYDEVICEADDED:		// TODO: if this is other gamepad, don't ignore this event
+					emit deviceAdded(QString(SDL_JoystickNameForIndex(ev.jdevice.which)));
+					//qDebug() << "joy added idx" << ev.jdevice.which << "name" << SDL_JoystickNameForIndex(ev.jdevice.which) << ":" << s_name;
+					//if (QString(SDL_JoystickNameForIndex(ev.jdevice.which)) == s_name) {	// gamepad with same name added, reopen
+					//	open(s_name);
+					//}
+					break;
 			}
-		}
-#else
-		// hats (init counter here, logic is bealow)
-		int h = SDL_JoystickNumHats(sjptr);
-		// buttons
-		int n = SDL_JoystickNumButtons(sjptr);
-		// clamp if HAT is present: skip virtual D-Pad buttons (>=VIRTKEYBASE)
-		if (h > 0 && n > VIRTKEYBASE) n = VIRTKEYBASE;
-		int state;
-		while (n > 0) {
-			n--;
-			state = SDL_JoystickGetButton(sjptr, n);
-			if (jState[JOY_BUTTON][n] != state) {
-				emit buttonChanged(n, state);
-			}
-		}
-		// axis
-		n = SDL_JoystickNumAxes(sjptr);
-		while (n > 0) {
-			n--;
-			state = SDL_JoystickGetAxis(sjptr, n);
-			if (abs(state) < dead)
-				state = 0;
-			state = sign(state);
-			if (jState[JOY_AXIS][n] != state) {
-				emit axisChanged(n, state);
-			}
-		}
-		// hats
-		while (h > 0) {
-			h--;
-			state = SDL_JoystickGetHat(sjptr, h);
-			lasthat ^= state;	// bit n = 1 -> changed
-			if (lasthat & SDL_HAT_UP) emit buttonChanged(VIRTKEYBASE + h * 4, !!(state & SDL_HAT_UP));
-			if (lasthat & SDL_HAT_DOWN) emit buttonChanged(VIRTKEYBASE + 1 + h * 4, !!(state & SDL_HAT_DOWN));
-			if (lasthat & SDL_HAT_LEFT) emit buttonChanged(VIRTKEYBASE + 2 + h * 4, !!(state & SDL_HAT_LEFT));
-			if (lasthat & SDL_HAT_RIGHT) emit buttonChanged(VIRTKEYBASE + 3 + h * 4, !!(state & SDL_HAT_RIGHT));
-			lasthat = state;
 		}
 #endif
 	}
-#if HAVESDL2
-	SDL_Event ev;
-	while (SDL_PollEvent(&ev)) {
-		switch (ev.type) {
-			case SDL_JOYDEVICEREMOVED:
-				if (ev.jdevice.which == id) {	// current removed, close it
-					close();
-				}
-				break;
-			case SDL_JOYDEVICEADDED:
-				if (QString(SDL_JoystickNameForIndex(ev.jdevice.which)) == s_name) {	// gamepad with same name added, reopen
-					open(s_name);
-				}
-				break;
-		}
-	}
-#endif
 }
 
-// TODO: return s_name, if devid>=0
 QString xGamepad::name(int devid) {
 	QString nm;
 	if (devid < 0) devid = id;
@@ -552,6 +568,14 @@ QString xGamepad::name(int devid) {
 			break;
 	}
 	return nm;
+}
+
+QString xGamepad::lastName() {
+	return s_name;
+}
+
+void xGamepad::setName(QString nm) {
+	s_name = nm;
 }
 
 QStringList xGamepad::getList() {

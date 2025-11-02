@@ -60,14 +60,19 @@ class xGamepad : public QObject {
 	public:
 		xGamepad(int = GPBACKEND_SDL, QObject* = nullptr);
 		~xGamepad();
-		void open(int);
-		void open(QString);
+		void open(int);		// by index/id
+		void open(QString);	// by name
+		void open();		// by last name
 		void close();
+		int isOpened();
+		int getId();
 		void setType(int);
 		int getType();
 		void setDeadZone(int);
 		int deadZone();
-		QString name(int = -1);
+		QString name(int = -1);		// real name by index (name() is empty if gamepad not opened)
+		QString lastName();		// name from config / last successfuly opened gamepad
+		void setName(QString);
 		QStringList getList();
 		static QString getButtonName(int);
 
@@ -84,6 +89,8 @@ class xGamepad : public QObject {
 	signals:
 		void buttonChanged(int, bool);
 		void axisChanged(int, double);
+		void deviceRemoved(int);
+		void deviceAdded(QString);
 	private:
 		int id;
 		int type;

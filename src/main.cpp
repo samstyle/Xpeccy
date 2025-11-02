@@ -70,6 +70,23 @@ void xApp::d_style() {
 	}
 }
 
+// open only if gamepad is closed and name is equal
+void xApp::addGamepad(QString nm) {
+	if (nm == conf.joy.gpad->lastName() && !conf.joy.gpad->isOpened()) {
+		conf.joy.gpad->open();
+	} else if (nm == conf.joy.gpadb->lastName() && !conf.joy.gpadb->isOpened()) {
+		conf.joy.gpadb->open();
+	}
+}
+
+void xApp::rmGamepad(int idx) {
+	if ((idx == conf.joy.gpad->getId()) && conf.joy.gpad->isOpened()) {
+		conf.joy.gpad->close();
+	} else if ((idx == conf.joy.gpadb->getId()) && conf.joy.gpadb->isOpened()) {
+		conf.joy.gpadb->close();
+	}
+}
+
 // for apple users
 bool xApp::event(QEvent* ev) {
 	QFileOpenEvent* fev;
@@ -191,6 +208,11 @@ int main(int ac,char** av) {
 	app.connect(&mwin, SIGNAL(s_keywin_rall(Keyboard*)), &keyw, SLOT(rall(Keyboard*)));
 	app.connect(&keyw, SIGNAL(s_key_press(QKeyEvent*)), &mwin, SLOT(kPress(QKeyEvent*)));
 	app.connect(&keyw, SIGNAL(s_key_release(QKeyEvent*)), &mwin, SLOT(kRelease(QKeyEvent*)));
+
+	app.connect(conf.joy.gpad, SIGNAL(deviceAdded(QString)), &app, SLOT(addGamepad(QString)));
+	app.connect(conf.joy.gpadb, SIGNAL(deviceAdded(QString)), &app, SLOT(addGamepad(QString)));
+	app.connect(conf.joy.gpad, SIGNAL(deviceRemoved(int)), &app, SLOT(rmGamepad(int)));
+	app.connect(conf.joy.gpadb, SIGNAL(deviceRemoved(int)), &app, SLOT(rmGamepad(int)));
 
 	int i = 1;
 	char* parg;
