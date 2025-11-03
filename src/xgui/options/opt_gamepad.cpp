@@ -196,6 +196,7 @@ void xGamepadWidget::update(std::string mapname) {
 	cbGPName->blockSignals(true);			// don't call devChanged automaticly
 	cbGPName->clear();
 	cbGPName->addItems(lst);
+	cbGPName->setEnabled(lst.size() > 1);
 	str = gpad->lastName();
 	if (str.isEmpty()) {
 		cbGPName->setCurrentIndex(0);
@@ -204,7 +205,7 @@ void xGamepadWidget::update(std::string mapname) {
 		if (i < 0) i = 0;			// no such gamepad, reset to 'none'
 		cbGPName->setCurrentIndex(i);
 	}
-	devChanged(cbGPName->currentIndex());		// update current gamepad
+	// devChanged(cbGPName->currentIndex());		// update current gamepad
 	cbGPName->blockSignals(false);
 	sldDeadZone->setValue(gpad->deadZone());
 
