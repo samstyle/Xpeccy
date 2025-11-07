@@ -191,6 +191,7 @@ xGamepadWidget::xGamepadWidget(xGamepad* gp, QWidget* p):QWidget(p) {
 void xGamepadWidget::update(std::string mapname) {
 	QStringList lst;
 	QString str;
+	int i;
 	lst = gpad->getList();
 	lst.prepend("none");
 	cbGPName->blockSignals(true);			// don't call devChanged automaticly
@@ -201,7 +202,7 @@ void xGamepadWidget::update(std::string mapname) {
 	if (str.isEmpty()) {
 		cbGPName->setCurrentIndex(0);
 	} else {
-		int i = cbGPName->findText(str);
+		i = cbGPName->findText(str);
 		if (i < 0) i = 0;			// no such gamepad, reset to 'none'
 		cbGPName->setCurrentIndex(i);
 	}
@@ -217,7 +218,9 @@ void xGamepadWidget::update(std::string mapname) {
 	if (mapname.empty()) {
 		cbMapFile->setCurrentIndex(0);
 	} else {
-		cbMapFile->setCurrentIndex(cbMapFile->findText(mapname.c_str()));
+		i = cbMapFile->findText(mapname.c_str());
+		if (i < 0) i = 0;
+		cbMapFile->setCurrentIndex(i);
 	}
 
 	padmodel->update();

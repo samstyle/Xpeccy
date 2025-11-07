@@ -456,10 +456,11 @@ struct xConfig {
 		unsigned autostart:1;
 		unsigned fast:1;
 	} tape;
-	struct {
-		xGamepad* gpad;
-		xGamepad* gpadb;
-	} joy;
+//	struct {
+//		xGamepad* gpad;
+//		xGamepad* gpadb;
+//	} joy;
+	xGamepadController* gpctrl;
 	struct {
 		unsigned noLeds:1;
 		unsigned noBorder:1;

@@ -70,6 +70,7 @@ void xApp::d_style() {
 	}
 }
 
+#if 0
 // open only if gamepad is closed and name is equal
 void xApp::addGamepad(QString nm) {
 	if (nm == conf.joy.gpad->lastName() && !conf.joy.gpad->isOpened()) {
@@ -86,6 +87,7 @@ void xApp::rmGamepad(int idx) {
 		conf.joy.gpadb->close();
 	}
 }
+#endif
 
 // for apple users
 bool xApp::event(QEvent* ev) {
@@ -208,11 +210,6 @@ int main(int ac,char** av) {
 	app.connect(&mwin, SIGNAL(s_keywin_rall(Keyboard*)), &keyw, SLOT(rall(Keyboard*)));
 	app.connect(&keyw, SIGNAL(s_key_press(QKeyEvent*)), &mwin, SLOT(kPress(QKeyEvent*)));
 	app.connect(&keyw, SIGNAL(s_key_release(QKeyEvent*)), &mwin, SLOT(kRelease(QKeyEvent*)));
-
-	app.connect(conf.joy.gpad, SIGNAL(deviceAdded(QString)), &app, SLOT(addGamepad(QString)));
-	app.connect(conf.joy.gpadb, SIGNAL(deviceAdded(QString)), &app, SLOT(addGamepad(QString)));
-	app.connect(conf.joy.gpad, SIGNAL(deviceRemoved(int)), &app, SLOT(rmGamepad(int)));
-	app.connect(conf.joy.gpadb, SIGNAL(deviceRemoved(int)), &app, SLOT(rmGamepad(int)));
 
 	int i = 1;
 	char* parg;

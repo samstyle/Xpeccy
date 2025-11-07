@@ -148,8 +148,8 @@ bool prfSetCurrent(std::string nm) {
 	comp_kbd_release(nprf->zx);
 	mouseReleaseAll(nprf->zx->mouse);
 	//padLoadConfig(nprf->jmapName);
-	conf.joy.gpad->loadMap(nprf->jmapNameA);
-	conf.joy.gpadb->loadMap(nprf->jmapNameB);
+	conf.gpctrl->gpada->loadMap(nprf->jmapNameA);
+	conf.gpctrl->gpadb->loadMap(nprf->jmapNameB);
 	loadKeys();
 	prfSetHardware(nprf, "");
 	return true;

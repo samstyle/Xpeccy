@@ -11,9 +11,6 @@ class xApp : public QApplication {
 	public slots:
 		void d_frame();
 		void d_style();
-
-		void addGamepad(QString);
-		void rmGamepad(int);
 	signals:
 		void s_frame();
 	protected:

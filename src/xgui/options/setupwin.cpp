@@ -203,8 +203,8 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	layeditor->setModal(true);
 
 	padial = new xPadBinder(this);
-	gpwid_a = new xGamepadWidget(conf.joy.gpad);
-	gpwid_b = new xGamepadWidget(conf.joy.gpadb);
+	gpwid_a = new xGamepadWidget(conf.gpctrl->gpada);
+	gpwid_b = new xGamepadWidget(conf.gpctrl->gpadb);
 	connect(gpwid_a, &xGamepadWidget::s_edit_entry, padial, &xPadBinder::start);
 	connect(gpwid_b, &xGamepadWidget::s_edit_entry, padial, &xPadBinder::start);
 	connect(padial, &xPadBinder::bindReady, this, &SetupWin::bindAccept);

@@ -184,10 +184,10 @@ MainWin::MainWin() {
 
 //	conf.joy.gpad->open(); // conf.joy.curName);
 
-	connect(conf.joy.gpad, SIGNAL(buttonChanged(int,bool)), this, SLOT(gpButtonChanged(int,bool)));
-	connect(conf.joy.gpad, SIGNAL(axisChanged(int,double)), this, SLOT(gpAxisChanged(int,double)));
-	connect(conf.joy.gpadb, SIGNAL(buttonChanged(int,bool)), this, SLOT(gpButtonChanged(int,bool)));
-	connect(conf.joy.gpadb, SIGNAL(axisChanged(int,double)), this, SLOT(gpAxisChanged(int,double)));
+	connect(conf.gpctrl->gpada, SIGNAL(buttonChanged(int,bool)), this, SLOT(gpButtonChanged(int,bool)));
+	connect(conf.gpctrl->gpada, SIGNAL(axisChanged(int,double)), this, SLOT(gpAxisChanged(int,double)));
+	connect(conf.gpctrl->gpadb, SIGNAL(buttonChanged(int,bool)), this, SLOT(gpButtonChanged(int,bool)));
+	connect(conf.gpctrl->gpadb, SIGNAL(axisChanged(int,double)), this, SLOT(gpAxisChanged(int,double)));
 
 	initFileDialog(this);
 	initUserMenu();
@@ -455,9 +455,18 @@ void MainWin::timerEvent(QTimerEvent* ev) {
 			pause(false, PR_RZX);
 		}
 #endif
-// buttons autorepeat switcher
-		QList<xJoyMapEntry> presslist = conf.joy.gpad->repTick();
-		foreach(xJoyMapEntry xjm, presslist) {
+// buttons autorepeat switcher (added: for 2nd gamepad too)
+		QList<xJoyMapEntry> presslist = conf.gpctrl->gpada->repTick();
+		xJoyMapEntry xjm;
+		foreach(xjm, presslist) {
+			if (xjm.rps) {
+				mapPress(comp, xjm);
+			} else {
+				mapRelease(comp, xjm);
+			}
+		}
+		presslist = conf.gpctrl->gpadb->repTick();
+		foreach(xjm, presslist) {
 			if (xjm.rps) {
 				mapPress(comp, xjm);
 			} else {
