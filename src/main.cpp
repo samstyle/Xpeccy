@@ -70,25 +70,6 @@ void xApp::d_style() {
 	}
 }
 
-#if 0
-// open only if gamepad is closed and name is equal
-void xApp::addGamepad(QString nm) {
-	if (nm == conf.joy.gpad->lastName() && !conf.joy.gpad->isOpened()) {
-		conf.joy.gpad->open();
-	} else if (nm == conf.joy.gpadb->lastName() && !conf.joy.gpadb->isOpened()) {
-		conf.joy.gpadb->open();
-	}
-}
-
-void xApp::rmGamepad(int idx) {
-	if ((idx == conf.joy.gpad->getId()) && conf.joy.gpad->isOpened()) {
-		conf.joy.gpad->close();
-	} else if ((idx == conf.joy.gpadb->getId()) && conf.joy.gpadb->isOpened()) {
-		conf.joy.gpadb->close();
-	}
-}
-#endif
-
 // for apple users
 bool xApp::event(QEvent* ev) {
 	QFileOpenEvent* fev;
@@ -163,8 +144,7 @@ int main(int ac,char** av) {
 	if ((conf.xpos >= 0) && (conf.ypos >= 0))
 		mwin.move(conf.xpos, conf.ypos);
 
-//	app.connect(&ethread, SIGNAL(s_frame()), &mwin, SLOT(d_frame()));	// don't use connection between threads
-	app.connect(&ethread, SIGNAL(s_frame()), &app, SLOT(d_frame()));	// double connection xThread->xApp->MainWin to be thread-safe
+	app.connect(&ethread, SIGNAL(s_frame()), &app, SLOT(d_frame()));
 	app.connect(&app, SIGNAL(s_frame()), &mwin, SLOT(d_frame()));
 
 	app.connect(&ethread, SIGNAL(dbgRequest()), &mwin, SLOT(doDebug()));	// same shit?
@@ -178,7 +158,6 @@ int main(int ac,char** av) {
 
 	app.connect(&mwin, SIGNAL(s_debug()), &dbgw, SLOT(start()));
 	app.connect(&mwin, SIGNAL(s_debug_off()), &dbgw, SLOT(close()));
-//	app.connect(&mwin, SIGNAL(s_prf_change(xProfile*)), &dbgw, SLOT(onPrfChange(xProfile*)));
 	app.connect(&mwin, SIGNAL(s_step()), &dbgw, SLOT(doStep()));
 	app.connect(&mwin, SIGNAL(s_scradr(int,int)), &dbgw, SLOT(setScrAtr(int,int)));
 

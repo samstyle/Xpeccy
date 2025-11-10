@@ -1,6 +1,7 @@
 #include "opt_tapecat.h"
 #include "xcore/xcore.h"
 
+#include <QHeaderView>
 //#include <QDebug>
 
 // model
@@ -124,4 +125,5 @@ void xTapeCatTable::fill(Tape* tape) {
 	model->fill(tape);
 	scrollTo(model->index(tape->block, 0), QAbstractItemView::EnsureVisible);
 	setEnabled(tape->blkCount > 0);
+	horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
 }

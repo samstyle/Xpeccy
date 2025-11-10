@@ -1317,7 +1317,7 @@ void SetupWin::buildmenulist() {
 	}
 	ui.umlist->setColumnWidth(0,100);
 	ui.umlist->selectRow(0);
-};
+}
 
 void SetupWin::buildproflist() {
 	ui.twProfileList->setRowCount(conf.prof.list.size());

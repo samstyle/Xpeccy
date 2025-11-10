@@ -7,6 +7,7 @@
 #include <QToolButton>
 
 #include "../../xcore/gamepad.h"
+#include "ui_opt_gpadwidget.h"
 
 class xPadMapModel : public QAbstractItemModel {
 	Q_OBJECT
@@ -31,21 +32,15 @@ class xGamepadWidget : public QWidget {
 		void apply();
 	public slots:
 		void entryReady(xJoyMapEntry);
+	private slots:
+		void updateList();
 	signals:
 		void s_edit_entry(xGamepad*, xJoyMapEntry);
 	private:
+		Ui::GPWidget ui;
 		int bindidx;
 		xGamepad* gpad;
-		QComboBox* cbGPName;
-		QSlider* sldDeadZone;
-		QComboBox* cbMapFile;
-		QTableView* tvMapView;
 		xPadMapModel* padmodel;
-		QToolButton* tbAddMap;
-		QToolButton* tbDelMap;
-		QToolButton* tbAddEntry;
-		QToolButton* tbEditEntry;
-		QToolButton* tbDelEntry;
 	private slots:
 		void devChanged(int);
 		void mapChanged(int);
