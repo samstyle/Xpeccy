@@ -2239,6 +2239,7 @@ void i286_opC5(CPU* cpu) {
 }
 
 // c6,mod,ib: mov ea,ib
+// TODO:c6/0 only
 void i286_opC6(CPU* cpu) {
 	i286_rd_ea(cpu, 0);
 	cpu->lwr = i286_rd_imm(cpu);
@@ -2246,8 +2247,7 @@ void i286_opC6(CPU* cpu) {
 }
 
 // c7,mod,iw: mov ea,iw
-// mod 44
-// [01:byte offset][000:ax][100:si+offset]
+// TODO:c7/0 only
 void i286_opC7(CPU* cpu) {
 	i286_rd_ea(cpu, 1);
 	cpu->twrd = i286_rd_immw(cpu);
@@ -3289,8 +3289,8 @@ opCode i80286_tab[256] = {
 	{0, 1, i286_opC3, 0, "ret"},
 	{OF_MODRM | OF_WORD, 1, i286_opC4, 0, "les :r,:e"},
 	{OF_MODRM | OF_WORD, 1, i286_opC5, 0, "lds :r,:e"},
-	{OF_MODRM | OF_GEN, 1, i286_opC6, x86_tabC6, "mov :e,:1"},			// 1+ /0 mov, /1../7 undef !!!
-	{OF_MODRM | OF_WORD |  OF_GEN, 1, i286_opC7, x86_tabC7, "mov :e,:2"},		// 1+ /0 mov, /1../7 undef
+	{OF_MODRM, 1, i286_opC6, 0, "mov :e,:1"},			// /0 mov, /1../7 undef !!!
+	{OF_MODRM | OF_WORD, 1, i286_opC7, 0, "mov :e,:2"},		// /0 mov, /1../7 undef
 	{OF_GEN, 1, i286_opC8, x86_tabC8, "enter :2,:1"},				// 1+
 	{OF_GEN, 1, i286_opC9, x86_tabC9, "leave"},					// 1+
 	{0, 1, i286_opCA, 0, "retf :2"},

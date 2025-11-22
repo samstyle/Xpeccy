@@ -13,7 +13,7 @@
 #include "i8080/i8080.h"
 #undef flgT
 #undef flgN
-#include "i80286/i80286.h"
+#include "x86/i80286.h"
 #undef flgC
 #undef flgN
 #undef flgZ

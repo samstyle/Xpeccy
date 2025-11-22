@@ -2,7 +2,7 @@
 
 #include "hardware.h"
 #include "../video/vga.h"
-#include "../cpu/i80286/i80286.h"
+#include "../cpu/x86/i80286.h"
 
 clock_t tClock;
 
