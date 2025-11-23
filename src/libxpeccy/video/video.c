@@ -915,13 +915,13 @@ static xVideoMode vidModeTab[] = {
 
 	{VID_SPCLST, spcv_ini, spc_dot, NULL, NULL, NULL, NULL},
 
-	{CGA_TXT_L, cga_t40_ini, cga_lores_dot, NULL, cga_t40_line, cga_t40_frm, NULL},
-	{CGA_TXT_H, cga_t80_ini, cga_t40_dot, NULL, cga_t40_line, cga_t40_frm, NULL},
-	{CGA_GRF_L, NULL, cga_lores_dot, NULL, cga320_2bpp_line, cga_t40_frm, NULL},
-	{CGA_GRF_H, NULL, cga_t40_dot, NULL, cga640_1bpp_line, cga_t40_frm, NULL},
-	{VGA_GRF_L, vga_glo_ini, cga_t40_dot, NULL, vga320_4bpp_line, cga_t40_frm, NULL},
-	{VGA_GRF_H, vga_ghi_ini, cga_t40_dot, NULL, vga640_4bpp_line, cga_t40_frm, NULL},
-	{VGA_GRF_256, vga_glo_ini, cga_lores_dot, NULL, vga256_line, cga_t40_frm, NULL},
+	{CGA_TXT_L, cga_t40_ini, cga_lores_dot, NULL, cga_t40_line, NULL, cga_t40_frm},
+	{CGA_TXT_H, cga_t80_ini, cga_t40_dot, NULL, cga_t40_line, NULL, cga_t40_frm},
+	{CGA_GRF_L, NULL, cga_lores_dot, NULL, cga320_2bpp_line, NULL, cga_t40_frm},
+	{CGA_GRF_H, NULL, cga_t40_dot, NULL, cga640_1bpp_line, NULL, cga_t40_frm},
+	{VGA_GRF_L, vga_glo_ini, cga_t40_dot, NULL, vga320_4bpp_line, NULL, cga_t40_frm},
+	{VGA_GRF_H, vga_ghi_ini, cga_t40_dot, NULL, vga640_4bpp_line, NULL, cga_t40_frm},
+	{VGA_GRF_256, vga_glo_ini, cga_lores_dot, NULL, vga256_line, NULL, cga_t40_frm},
 
 	{VID_UNKNOWN, NULL, vidDrawBorder, NULL, NULL, NULL, NULL}
 };

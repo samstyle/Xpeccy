@@ -20,6 +20,7 @@
 // interrupt types
 enum {
 	IRQ_BRK = 1,	// common: call deBUGa
+	IRQ_STOP,	// emulator exit
 	IRQ_VID_INT,	// video
 	IRQ_VID_INTV,
 	IRQ_VID_IEND,

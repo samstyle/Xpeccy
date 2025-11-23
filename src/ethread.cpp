@@ -187,6 +187,8 @@ void xThread::emuCycle(Computer* comp) {
 			if (comp->brkt == -1) {			// irq or tmp
 				conf.emu.pause |= PR_DEBUG;
 				emit dbgRequest();
+			} else if (comp->brkt == -2) {
+				emit s_close();
 			} else {				// others
 				xBrkPoint* ptr = brk_find(comp->brkt, comp->brka);
 				if (ptr) {
@@ -223,7 +225,7 @@ void xThread::emuCycle(Computer* comp) {
 				}
 			}
 		}
-	};
+	}
 	comp->brk = 0;
 	comp->nmiRequest = 0;
 }

@@ -612,7 +612,7 @@ void ibm_irq(Computer* comp, int t) {
 			}
 			break;		// reg61.bit2: enable pit.ch2.out->speaker
 		case IRQ_RESET: cpu_reset(comp->cpu); break;
-		case IRQ_BRK: comp->brk = 1; comp->brkt = -1; break;		// debug: any device breakpoint
+//		case IRQ_BRK: comp->brk = 1; comp->brkt = -1; break;		// debug: any device breakpoint
 	}
 }
 

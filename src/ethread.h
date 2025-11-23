@@ -15,6 +15,7 @@ class xThread : public QThread {
 	public slots:
 		void stop();
 	signals:
+		void s_close();
 		void s_frame();
 		void dbgRequest();
 		void scrRequest();

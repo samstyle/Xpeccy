@@ -294,6 +294,10 @@ void comp_irq(int t, void* ptr) {
 			vid_sync(comp->vid, (comp->cpu->t - res4) * comp->nsPerTick);
 			res4 = comp->cpu->t;
 			break;
+		case IRQ_STOP:
+			comp->brk = 1;
+			comp->brkt = -2;
+			break;
 	}
 	if (comp->hw->irq) comp->hw->irq(comp, t);
 }

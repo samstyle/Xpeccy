@@ -144,6 +144,8 @@ int main(int ac,char** av) {
 	if ((conf.xpos >= 0) && (conf.ypos >= 0))
 		mwin.move(conf.xpos, conf.ypos);
 
+	app.connect(&ethread, SIGNAL(s_close()), &mwin, SLOT(close()));
+
 	app.connect(&ethread, SIGNAL(s_frame()), &app, SLOT(d_frame()));
 	app.connect(&app, SIGNAL(s_frame()), &mwin, SLOT(d_frame()));
 

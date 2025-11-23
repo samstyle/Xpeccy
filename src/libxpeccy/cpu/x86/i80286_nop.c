@@ -827,6 +827,11 @@ void i286_op0F(CPU* cpu) {
 	cpu->opTab = i286_0f_tab;
 }
 
+void i086_op0F(CPU* cpu) {		// pop cs (8086,80186)
+	cpu->tmpw = i286_pop(cpu);
+	cpu->cs = i286_cash_seg(cpu, cpu->tmpw);
+}
+
 // 10,mod: adc eb,rb
 void i286_op10(CPU* cpu) {
 	i286_rd_ea(cpu, 0);
@@ -2975,10 +2980,12 @@ opCode i286_tabFF[8] = {
 // tab[i] - opCode for generation i (0,1,2)
 
 opCode x86_tab0F[3] = {
-	{0, 1, i8086_nodef, NULL, "nodef"},
-	{0, 1, i8086_nodef, NULL, "nodef"},
+	{0, 1, i086_op0F, NULL, "pop cs"},
+	{0, 1, i086_op0F, NULL, "pop cs"},
 	{OF_PREFIX, 1, i286_op0F, NULL, "prefix 0F"}
 };
+
+// CHECK: i8086 0x60-0x6F == 0x70-0x7F
 
 opCode x86_tab60[3] = {
 	{0, 1, i8086_nodef, NULL, "nodef"},
@@ -3051,6 +3058,8 @@ opCode x86_tab6F[3] = {
 	{OF_SKIPABLE, 1, i286_op6F, 0, ":Loutsw [:D::si]"},
 	{OF_SKIPABLE, 1, i286_op6F, 0, ":Loutsw [:D::si]"}
 };
+
+// CHECK: i8086 Cx is not fully decoded (C0 = C2 etc)
 
 opCode x86_tabC0[3] = {
 	{0, 1, i8086_nodef, NULL, "nodef"},
