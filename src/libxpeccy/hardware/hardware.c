@@ -4,6 +4,8 @@
 // layout = v9938:342:313:16:13:57:80:64:0:0:256:192
 // {{full},{border},{blank},{screen},{ipos},ilen}
 
+int hwflags = 0;
+
 //static vLayout gbcLay = {{228,154},{0,0},{68,10},{160,144},{0,0},64};
 static vLayout gbcLay = {{456,154},{0,0},{296,10},{160,144},{0,0},64};		// 456x154 @ 4.2MHz dot
 static vLayout bkLay = {{256+96,256+24},{0,0},{96,24},{256,256},{0,0},0};

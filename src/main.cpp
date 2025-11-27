@@ -212,6 +212,9 @@ int main(int ac,char** av) {
 		} else if (!strcmp(parg,"-h") || !strcmp(parg,"--help")) {
 			help();
 			hlp = 1;
+		} else if (!strcmp(parg,"--panic")) {
+			cpuflags |= CFLG_PANIC;
+			hwflags |= HFLG_PANIC;
 #ifdef __WIN32
 		} else if (!strcmp(parg,"-c") || !strcmp(parg,"--console")) {
 			AllocConsole();

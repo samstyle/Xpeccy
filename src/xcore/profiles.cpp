@@ -228,7 +228,7 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 	prf->rsName = rnm;
 	xRomset* rset = findRomset(rnm);
 	std::string fpath;
-	int romsz = prf->zx->mem->romSize;
+	int romsz = MEM_16K; // prf->zx->mem->romSize;	// 0?
 	int foff;
 	int fsze;
 	int roff;
@@ -252,7 +252,7 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 					romsz = toLimits(roff + fsze, MEM_256, MEM_512K);
 					romsz = toPower(romsz);
 				}
-				if (roff + fsze > romsz)
+				if (roff + fsze > romsz)	// check again (if 512K limit)
 					fsze = romsz - roff;
 				if ((foff >= 0) && (roff >= 0) && (roff < MEM_512K) && (fsze > 0)) {	// load rom if all is ok
 					fseek(file, foff, SEEK_SET);

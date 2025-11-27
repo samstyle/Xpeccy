@@ -274,6 +274,7 @@ Computer* compCreate();
 void compDestroy(Computer*);
 void compReset(Computer*,int);
 int compExec(Computer*);
+void comp_irq(int, void*);
 
 //void compKeyPress(Computer*, int, keyEntry*);
 //void compKeyRelease(Computer*, int, keyEntry*);

@@ -125,6 +125,10 @@ typedef struct {
 	int value;
 } xPortValue;
 
+extern int hwflags;
+
+#define HFLG_PANIC	1
+
 int hwIn(xPort* ptab, Computer* comp, int port);
 void hwOut(xPort* ptab, Computer* comp, int port, int val, int mult);
 xPortValue* hwGetPorts(Computer*);

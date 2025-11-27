@@ -94,6 +94,10 @@ typedef int(*cbdmr)(int, void*);
 #define OF_GEN		(1<<10)		// opcode depends on cpu generation (86/186/286 or vm1/vm2) cpu->tab is sub-table[cpu->gen]
 #define OF_MODCOM	(OF_MODRM | OF_COMEXT)
 
+extern int cpuflags;
+
+#define CFLG_PANIC 1
+
 typedef struct CPU CPU;
 typedef struct opCode opCode;
 

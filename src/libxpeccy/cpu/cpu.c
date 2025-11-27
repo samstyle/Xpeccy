@@ -32,6 +32,8 @@
 
 // common
 
+int cpuflags = 0;
+
 int parity(int val) {
 	int parity = 1;
 	while (val) {
