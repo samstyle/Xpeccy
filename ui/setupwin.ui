@@ -447,13 +447,6 @@
                 </item>
                </layout>
               </item>
-              <item row="4" column="2">
-               <widget class="QLabel" name="labNoflic">
-                <property name="text">
-                 <string>%</string>
-                </property>
-               </widget>
-              </item>
               <item row="3" column="2">
                <widget class="QLabel" name="bszlab">
                 <property name="minimumSize">
@@ -467,26 +460,10 @@
                 </property>
                </widget>
               </item>
-              <item row="5" column="0">
+              <item row="4" column="0">
                <widget class="QLabel" name="labShader">
                 <property name="text">
                  <string>Shader</string>
-                </property>
-               </widget>
-              </item>
-              <item row="4" column="1">
-               <widget class="QSlider" name="sldNoflic">
-                <property name="maximum">
-                 <number>50</number>
-                </property>
-                <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
-                </property>
-                <property name="tickPosition">
-                 <enum>QSlider::TicksBelow</enum>
-                </property>
-                <property name="tickInterval">
-                 <number>5</number>
                 </property>
                </widget>
               </item>
@@ -522,15 +499,8 @@
                 </property>
                </widget>
               </item>
-              <item row="5" column="1">
+              <item row="4" column="1">
                <widget class="QComboBox" name="cbShader"/>
-              </item>
-              <item row="4" column="0">
-               <widget class="QLabel" name="label_12">
-                <property name="text">
-                 <string>Noflick</string>
-                </property>
-               </widget>
               </item>
               <item row="2" column="0">
                <widget class="QLabel" name="labPalPreset">
@@ -556,6 +526,124 @@
                  </widget>
                 </item>
                </layout>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item>
+            <widget class="QGroupBox" name="antiflickerGBox">
+             <property name="title">
+              <string>Anti-flicker</string>
+             </property>
+             <layout class="QGridLayout" name="antiFlickerGridLayout">
+              <item row="0" column="0">
+               <widget class="QLabel" name="label_12">
+                <property name="maximumSize">
+                 <size>
+                  <width>55</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>Intensity</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1" colspan="3">
+               <widget class="QSlider" name="sldNoflic">
+                <property name="maximum">
+                 <number>50</number>
+                </property>
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="tickPosition">
+                 <enum>QSlider::TicksBelow</enum>
+                </property>
+                <property name="tickInterval">
+                 <number>5</number>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="4">
+               <widget class="QLabel" name="labNoflic">
+                <property name="maximumSize">
+                 <size>
+                  <width>83</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>%</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="antiflickerModeLabel">
+                <property name="toolTip">
+                  <string>Blending method:
+2-frames (Gigascreen)
+3-frames (3Color)</string>
+                </property>
+                <property name="text">
+                 <string>Mode</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QComboBox" name="cbNoflicMode">
+                <item>
+                 <property name="text">
+                  <string>2-frames</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>3-frames</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+              <item row="1" column="2">
+               <widget class="QLabel" name="antiflickerGammaLabel">
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+                <property name="toolTip">
+                  <string>Gamma value for colors blending</string>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>30</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>Gamma</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="3">
+                <widget class="QDoubleSpinBox" name="sbNoflicGamma">
+                <property name="toolTip">
+                  <string>Typical values: 1.8–2.4 (2.2 ≈ CRT, 1.0 = linear blending)</string>
+                </property>
+                <property name="decimals">
+                  <number>2</number>
+                </property>
+                <property name="minimum">
+                  <double>1.0</double>
+                </property>
+                <property name="maximum">
+                  <double>3.0</double>
+                </property>
+                <property name="singleStep">
+                  <double>0.1</double>
+                </property>
+                <property name="value">
+                  <double>2.2</double>
+                </property>
+                </widget>
               </item>
              </layout>
             </widget>
