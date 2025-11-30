@@ -60,7 +60,7 @@ void scrMix(unsigned char* src, unsigned char* dst, int size, double mass) {
 	unsigned char cur;
 	while (size > 0) {
 		cur = *dst;
-		*dst = srgb_to_linear[int(linear_to_srgb[*src] * (1.0 - mass) + linear_to_srgb[*dst] * mass)];
+		*dst = srgb_to_linear[int(linear_to_srgb[*src] * mass + linear_to_srgb[*dst] * (1.0 - mass))];
 		*src = cur;
 		src++;
 		dst++;
