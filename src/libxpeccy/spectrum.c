@@ -294,6 +294,9 @@ void comp_irq(int t, void* ptr) {
 			vid_sync(comp->vid, (comp->cpu->t - res4) * comp->nsPerTick);
 			res4 = comp->cpu->t;
 			break;
+		case IRQ_CPU_UNDEF:
+			if (compflags & CFLG_PANIC) comp_irq(IRQ_STOP, comp);
+			break;
 		case IRQ_STOP:
 			comp->brk = 1;
 			comp->brkt = -2;

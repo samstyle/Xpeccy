@@ -717,12 +717,9 @@ void i286_wr_ea(CPU* cpu, int val, int wrd) {
 }
 
 void i8086_nodef(CPU* cpu) {
-	if (cpuflags & CFLG_PANIC) {
-		printf("undef opcode @ %X : %.2X\n", cpu->cs.base + cpu->regIP, cpu->com);
-		cpu_irq(cpu, IRQ_STOP);
-	} else {
-		THROW(I286_INT_UD);
-	}
+	printf("undef opcode @ %X : %.2X\n", cpu->cs.base + cpu->regIP, cpu->com);
+	cpu_irq(cpu, IRQ_CPU_UNDEF);
+	THROW(I286_INT_UD);
 }
 
 // add/adc

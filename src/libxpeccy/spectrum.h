@@ -33,6 +33,10 @@ extern "C" {
 	#include <zlib.h>
 #endif
 
+extern int compflags;
+
+#define CFLG_PANIC	1
+
 // hw reset rompage
 enum {
 	RES_DEFAULT = 0,

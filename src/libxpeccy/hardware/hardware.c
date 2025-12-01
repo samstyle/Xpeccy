@@ -203,6 +203,7 @@ void stdMWr(Computer *comp, int adr, int val) {
 int hwIn(xPort* ptab, Computer* comp, int port) {
 	int res = 0xff;
 	int idx = 0;
+	int catch = 0;
 	xPort* itm;
 	do {
 		itm = &ptab[idx];
@@ -212,10 +213,13 @@ int hwIn(xPort* ptab, Computer* comp, int port) {
 				((itm->rom & 2) || (itm->rom == comp->rom)) &&\
 				((itm->cpm & 2) || (itm->cpm == comp->cpm))) {
 			res = itm->in(comp, port);
-			break;
+			catch = !!itm->mask;
 		}
 		idx++;
-	} while (itm->mask != 0);
+	} while (!catch && (itm->mask != 0));
+	if (!catch && (compflags & CFLG_PANIC)) {
+		comp_irq(IRQ_STOP, comp);
+	}
 	return res;
 }
 
@@ -235,6 +239,9 @@ void hwOut(xPort* ptab, Computer* comp, int port, int val, int mult) {
 		}
 		idx++;
 	} while ((itm->mask != 0) && !catch);
+	if (!catch && (compflags & CFLG_PANIC)) {
+		comp_irq(IRQ_STOP, comp);
+	}
 }
 
 // max 32 ports

@@ -496,7 +496,6 @@ void ibm_dumiwr(Computer* comp, int adr, int val) {}
 
 int ibm_inDBG(Computer* comp, int adr) {
 	printf("ibm %.4X:%.4X: in %.4X\n",comp->cpu->cs.idx,comp->cpu->oldpc, adr & 0xffff);
-	if (hwflags & HFLG_PANIC) comp_irq(IRQ_STOP, comp);
 //	comp_brk(comp);
 //	assert(0);
 	return -1;
@@ -504,7 +503,6 @@ int ibm_inDBG(Computer* comp, int adr) {
 
 void ibm_outDBG(Computer* comp, int adr, int val) {
 	printf("ibm %.4X:%.4X: out %.4X,%.2X\n",comp->cpu->cs.idx,comp->cpu->oldpc, adr & 0xffff, val & 0xff);
-	if (hwflags & HFLG_PANIC) comp_irq(IRQ_STOP, comp);
 //	comp_brk(comp);
 //	assert(0);
 }
