@@ -591,18 +591,7 @@
                </widget>
               </item>
               <item row="1" column="1">
-               <widget class="QComboBox" name="cbNoflicMode">
-                <item>
-                 <property name="text">
-                  <string>2-frames</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>3-frames</string>
-                 </property>
-                </item>
-               </widget>
+               <widget class="QComboBox" name="cbNoflicMode"/>
               </item>
               <item row="1" column="2">
                <widget class="QLabel" name="antiflickerGammaLabel">

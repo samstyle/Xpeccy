@@ -18,6 +18,7 @@
 #include "xcore/gamepad.h"
 #include "xcore/xcore.h"
 #include "xcore/sound.h"
+#include "xcore/vfilters.h"
 #include "libxpeccy/spectrum.h"
 #include "libxpeccy/filetypes/filetypes.h"
 #include "libxpeccy/input.h"
@@ -253,6 +254,10 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	//fill_palette_list(ui.cbPalPreset);
 	fillComboBox(ui.cbPalPreset, conf.path.palDir.c_str(), QStringList() << "*.txt" << "*.pal", "default", conf.prof.cur->palette.c_str());
 	paleditor = new xPalEditor(this);
+	ui.cbNoflicMode->addItem("2-frames (adaptive)", AF_2C_ADAPTIVE);
+	ui.cbNoflicMode->addItem("3-frames (adaptive)", AF_3C_ADAPTIVE);
+	ui.cbNoflicMode->addItem("2-frames (fullscreen)", AF_2C_FULL);
+	ui.cbNoflicMode->addItem("3-frames (fullscreen)", AF_3C_FULL);
 // sound
 	i = 0;
 	while (sndTab[i].name) {
