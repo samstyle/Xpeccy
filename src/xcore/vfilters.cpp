@@ -49,7 +49,7 @@ static void rebuild_gamma_lut(float gamma) {
 
 // - Blending functions --------------------------------------------------------
 // Gigascreen blending via LUTs
-static inline uint32_t blend_2c(uint32_t p0, uint32_t p1, float ratio) {
+static uint32_t blend_2c(uint32_t p0, uint32_t p1, float ratio) {
 	const double ratio_rev = 1.0 - ratio;
 
 	// Extract RGB pixel components for current frame (RGBA packed format)
@@ -69,7 +69,7 @@ static inline uint32_t blend_2c(uint32_t p0, uint32_t p1, float ratio) {
 }
 
 // 3-Color blending in linear light using LUTs
-static inline uint32_t blend_3c(uint32_t p0, uint32_t p1, uint32_t p2, float ratio) {
+static uint32_t blend_3c(uint32_t p0, uint32_t p1, uint32_t p2, float ratio) {
 	const double ratio_rev = 1.0 - ratio;
 
 	// Decode RGB components from RGBA encoded space to linear colorspace (sRGB -> linear)
@@ -92,7 +92,7 @@ static inline uint32_t blend_3c(uint32_t p0, uint32_t p1, uint32_t p2, float rat
 }
 
 // Check if RGBA pixel has more than one color component
-static inline bool rgb_has_multi_component(uint32_t c) {
+static bool rgb_has_multi_component(uint32_t c) {
 
     // Components
     uint32_t r = c & 0x000000FF; // Red
@@ -114,6 +114,22 @@ void scrMix(unsigned char* src, unsigned char* dst, int size, double ratio, floa
 	// Rebuild gamma LUTs if Gamma value has changed
 	if (last_gamma != gamma) { rebuild_gamma_lut(gamma); }
 
+#undef LEGACY_ANTIFLICK
+#ifdef LEGACY_ANTIFLICK
+	unsigned char cur;
+	const double ratio_rev = 1.0 - ratio;
+
+	while (size > 0) {
+		cur = *dst;
+		if (size %4 != 1)
+		*dst = linear_to_srgb[int(srgb_to_linear[*src] * ratio + srgb_to_linear[*dst] * ratio_rev)];
+		*src = cur;
+		src++;
+		dst++;
+		size--;
+	}
+#else
+
 	// screen is in GL_RGBA 32-bit format: Red,Green,Blue,Alpha
 	size /= 4;
 	// re-cast pointer to uint32_t* as we're going to process RGB-data at once
@@ -126,51 +142,63 @@ void scrMix(unsigned char* src, unsigned char* dst, int size, double ratio, floa
 	ring_rotate();
 
 	while (size > 0) {
-		uint32_t current_color = *p0;
-		uint32_t output_color = current_color;
+		const uint32_t c0 = *p0; // current pixel color
+	    const uint32_t c1 = *p1;
+    	const uint32_t c2 = *p2;
+		const uint32_t c3 = *p3;
+		const uint32_t c4 = *p4;
+		const uint32_t c5 = *p5;
+		uint32_t output_color = c0;
 		bool multi_components;
 
 		switch (mode) {
 		// 2C+3C (adaptive)
 		case AF_3C_ADAPTIVE:
-			// 3Color simple check
-			multi_components =	rgb_has_multi_component(*p0) ||
-								rgb_has_multi_component(*p1) ||
-								rgb_has_multi_component(*p2);
+			// skip static pixels
+			if (c0 == c1 && c0 == c2)
+				break;
 
-			if (!multi_components && *p0 == *p3 && *p1 == *p4 && *p2 == *p5) {
-				output_color = blend_3c(*p0, *p1, *p2, ratio_x2);
+			// 3Color simple check
+			multi_components =	rgb_has_multi_component(c0) ||
+								rgb_has_multi_component(c1) ||
+								rgb_has_multi_component(c2);
+			// static RGB-image check
+			if (!multi_components && c0 == c3 && c1 == c4 && c2 == c5) {
+				output_color = blend_3c(c0, c1, c2, ratio_x2);
 			} else {
-			if (*p0 == *p2 && *p0 != *p1)
-				output_color = blend_2c(*p0, *p1, ratio);
+				// fallback to 2C blending
+				if (c0 == c2 && c0 != c1)
+					output_color = blend_2c(c0, c1, ratio);
 			}
 			break;
 
 		// 2C only (adaptive)
 		case AF_2C_ADAPTIVE:
-			if (*p0 == *p2 && *p0 != *p1)
-				output_color = blend_2c(*p0, *p1, ratio);
+			if (c0 == c2 && c0 != c1)
+				output_color = blend_2c(c0, c1, ratio);
 			break;
 
 		// 2C only (fullscreen)
 		case AF_2C_FULL:
-			output_color = blend_2c(*p0, *p1, ratio);
+			// blend only on changed pixel
+			if (c0 != c1)
+				output_color = blend_2c(c0, c1, ratio);
 			break;
 
-		// 2C+3C (fullscreen)
+		// 3C only (fullscreen)
 		case AF_3C_FULL:
-			if (*p0 == *p3 && *p1 == *p4 && *p2 == *p5) {
-				output_color = blend_3c(*p0, *p1, *p2, ratio_x2);
-			} else {
-				output_color = blend_2c(*p0, *p1, ratio);
-			}
+			// skip static pixels
+			if (c0 == c1 && c0 == c2)
+				break;
+
+			output_color = blend_3c(c0, c1, c2, ratio_x2);
 			break;
 
 		default:
 			break;
 		}
 
-		*p5++ = current_color;	// replace most expired buffer with fresh data
+		*p5++ = c0;				// replace most expired buffer with fresh data
 		*p0++ = output_color;	// update current screen buffer with calculated color
 		p1++;
 		p2++;
@@ -178,4 +206,5 @@ void scrMix(unsigned char* src, unsigned char* dst, int size, double ratio, floa
 		p4++;
 		size--;
 	}
+#endif
 }
