@@ -9,7 +9,7 @@ static unsigned char srgb_to_linear[256];
 
 // helper for clamping values
 static inline float clampf(float x, float lo, float hi) {
-    return fminf(fmaxf(x, lo), hi);
+	return fminf(fmaxf(x, lo), hi);
 }
 
 #define RING_FRAMES 5
@@ -27,23 +27,23 @@ static uint32_t *ring_get_frame(int i, int size) { // i = 0..4, 0 = last, 1 = la
 
 static void rebuild_gamma_lut(float gamma) {
 
-    gamma = fmaxf(1.0, gamma);	// gamma <= 1 == linear blending
+	gamma = fmaxf(1.0, gamma);	// gamma <= 1 == linear blending
 
-    const float igamma = 1.0f / gamma;
-    const float maxvalue = (float)(256 - 1);
+	const float igamma = 1.0f / gamma;
+	const float maxvalue = (float)(256 - 1);
 
 	// generating sRGB colorspace conversion tables
-    for (int i = 0; i < 256; i++) {
-        const float component = (float)i / maxvalue;
+	for (int i = 0; i < 256; i++) {
+		const float component = (float)i / maxvalue;
 
-        // building Linear->sRGB conversion table
-        float v_fwd = component <= 0.0031308f ? 12.92f * component : (1.055f * powf(component, igamma) - 0.055f) * maxvalue;
-        linear_to_srgb[i] = (unsigned char)(clampf(v_fwd, 0.0f, maxvalue) + 0.5f);
+		// building Linear->sRGB conversion table
+		float v_fwd = component <= 0.0031308f ? 12.92f * component : (1.055f * powf(component, igamma) - 0.055f) * maxvalue;
+		linear_to_srgb[i] = (unsigned char)(clampf(v_fwd, 0.0f, maxvalue) + 0.5f);
 
-        // building sRGB->Linear conversion table
-        float v_rev = component <= 0.04045f ? component / 12.92f : powf((component + 0.055f) / 1.055f, gamma) * maxvalue;
-        srgb_to_linear[i] = (unsigned char)(clampf(v_rev, 0.0f, maxvalue) + 0.5f);
-    }
+		// building sRGB->Linear conversion table
+		float v_rev = component <= 0.04045f ? component / 12.92f : powf((component + 0.055f) / 1.055f, gamma) * maxvalue;
+		srgb_to_linear[i] = (unsigned char)(clampf(v_rev, 0.0f, maxvalue) + 0.5f);
+	}
 	last_gamma = gamma;
 }
 
@@ -94,13 +94,13 @@ static uint32_t blend_3c(uint32_t p0, uint32_t p1, uint32_t p2, float ratio) {
 // Check if RGBA pixel has more than one color component
 static bool rgb_has_multi_component(uint32_t c) {
 
-    // Components
-    uint32_t r = c & 0x000000FF; // Red
-    uint32_t g = c & 0x0000FF00; // Green
-    uint32_t b = c & 0x00FF0000; // Blue
+	// Components
+	uint32_t r = c & 0x000000FF; // Red
+	uint32_t g = c & 0x0000FF00; // Green
+	uint32_t b = c & 0x00FF0000; // Blue
 
-    // More than one non-zero component?
-    return ((r != 0) + (g != 0) + (b != 0)) > 1;
+	// More than one non-zero component?
+	return ((r != 0) + (g != 0) + (b != 0)) > 1;
 }
 
 // blend src into dst with weight `mass` in linear space (sRGB-correct),
