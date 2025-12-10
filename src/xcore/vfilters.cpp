@@ -37,11 +37,13 @@ static void rebuild_gamma_lut(float gamma) {
 		const float component = (float)i / maxvalue;
 
 		// building Linear->sRGB conversion table
-		float v_fwd = component <= 0.0031308f ? 12.92f * component : (1.055f * powf(component, igamma) - 0.055f) * maxvalue;
+		float v_fwd = component <= 0.0031308f ? (12.92f * component) * maxvalue
+											: (1.055f * powf(component, igamma) - 0.055f) * maxvalue;
 		linear_to_srgb[i] = (unsigned char)(clampf(v_fwd, 0.0f, maxvalue) + 0.5f);
 
 		// building sRGB->Linear conversion table
-		float v_rev = component <= 0.04045f ? component / 12.92f : powf((component + 0.055f) / 1.055f, gamma) * maxvalue;
+		float v_rev = component <= 0.04045f ? (component / 12.92f) * maxvalue
+											: powf((component + 0.055f) / 1.055f, gamma) * maxvalue;
 		srgb_to_linear[i] = (unsigned char)(clampf(v_rev, 0.0f, maxvalue) + 0.5f);
 	}
 	last_gamma = gamma;
