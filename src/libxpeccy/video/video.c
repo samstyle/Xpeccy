@@ -15,6 +15,8 @@
 int bytesPerLine = 768;
 int greyScale = 0;
 int noflic = 0;
+int noflicMode = 0;
+float noflicGamma = 2.2f;
 int scanlines = 0;
 
 static unsigned char bufa[SCRBUF_SIZE];
@@ -32,7 +34,10 @@ int rigSkip = 0;
 int topSkip = 0;
 int botSkip = 0;
 
-unsigned char pscr[SCRBUF_SIZE];		// previous screen (raw)
+// Ring buffer is used for antiflicker to store the history of frames.
+// At least 5 frames are required to perform basic 3-Color mode detection.
+#define RING_FRAMES 5
+unsigned char pscr[SCRBUF_SIZE*RING_FRAMES] __attribute__((aligned(4)));
 
 #if !defined(USEOPENGL)
 static int xpos = 0;
