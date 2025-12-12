@@ -18,6 +18,7 @@
 #include "xcore/gamepad.h"
 #include "xcore/xcore.h"
 #include "xcore/sound.h"
+#include "xcore/vfilters.h"
 #include "libxpeccy/spectrum.h"
 #include "libxpeccy/filetypes/filetypes.h"
 #include "libxpeccy/input.h"
@@ -253,6 +254,10 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	//fill_palette_list(ui.cbPalPreset);
 	fillComboBox(ui.cbPalPreset, conf.path.palDir.c_str(), QStringList() << "*.txt" << "*.pal", "default", conf.prof.cur->palette.c_str());
 	paleditor = new xPalEditor(this);
+	ui.cbNoflicMode->addItem("2-frames (fullscreen)", AF_2C_FULL);
+	ui.cbNoflicMode->addItem("2-frames (adaptive)", AF_2C_ADAPTIVE);
+	ui.cbNoflicMode->addItem("3-frames (fullscreen)", AF_3C_FULL);
+	ui.cbNoflicMode->addItem("2-/3-frames (adaptive)", AF_3C_ADAPTIVE);
 // sound
 	i = 0;
 	while (sndTab[i].name) {
@@ -545,6 +550,8 @@ void SetupWin::start() {
 	ui.cbKeepRatio->setChecked(conf.vid.keepRatio);
 	ui.sbScale->setValue(conf.vid.scale);
 	ui.sldNoflic->setValue(noflic); chaflc();
+	ui.cbNoflicMode->setCurrentIndex(noflicMode);
+	ui.sbNoflicGamma->setValue(noflicGamma);
 	ui.grayscale->setChecked(greyScale);
 //	ui.cbScanlines->setChecked(scanlines);
 	ui.border4T->setChecked(comp->vid->brdstep & 0x06);
@@ -770,6 +777,8 @@ void SetupWin::apply() {
 	conf.vid.keepRatio = ui.cbKeepRatio->isChecked() ? 1 : 0;
 	conf.vid.scale = ui.sbScale->value();
 	noflic = ui.sldNoflic->value();
+	noflicMode = ui.cbNoflicMode->currentIndex();
+	noflicGamma = ui.sbNoflicGamma->value();
 	vid_set_grey(ui.grayscale->isChecked() ? 1 : 0);
 //	scanlines = ui.cbScanlines->isChecked() ? 1 : 0;
 	conf.scrShot.dir = std::string(ui.pathle->text().toLocal8Bit().data());
@@ -1555,7 +1564,10 @@ void SetupWin::fillDiskCat() {
 // video
 
 void SetupWin::chabsz() {ui.bszlab->setText(QString("%0%").arg(ui.bszsld->value()));}
-void SetupWin::chaflc() {ui.labNoflic->setText(QString("%0%").arg(ui.sldNoflic->value() * 2));}
+void SetupWin::chaflc() {
+	int val = ui.sldNoflic->value() * 2;
+	ui.labNoflic->setText(val == 0 ? "0% (off)" : QString("%0%").arg(val));
+}
 
 void SetupWin::selsspath() {
 	QString fpath = QFileDialog::getExistingDirectory(this,"Screenshots folder",QString::fromLocal8Bit(conf.scrShot.dir.c_str()),QFileDialog::ShowDirsOnly);

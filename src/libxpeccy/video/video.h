@@ -83,6 +83,8 @@ extern int bytesPerLine;
 extern int greyScale;
 //extern int scanlines;
 extern int noflic;
+extern int noflicMode;
+extern float noflicGamma;
 
 extern unsigned char* scrimg;
 extern unsigned char* bufimg;

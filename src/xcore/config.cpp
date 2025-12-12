@@ -165,6 +165,8 @@ void saveConfig() {
 //	fprintf(cfile, "scanlines = %s\n", YESNO(scanlines));
 	fprintf(cfile, "bordersize = %i\n", int(conf.brdsize * 100));
 	fprintf(cfile, "noflick = %i\n", noflic);
+	fprintf(cfile, "noflick.mode = %i\n", noflicMode);
+	fprintf(cfile, "noflick.gamma = %f\n", noflicGamma);
 	fprintf(cfile, "shader = %s\n", conf.vid.shader.c_str());
 
 	fprintf(cfile, "\n[ROMSETS]\n");
@@ -440,6 +442,12 @@ void loadConfig() {
 					}
 					if (pnam=="noflic") noflic = arg.b ? 50 : 25;		// old parameter
 					if (pnam=="noflick") noflic = getRanged(arg.s, 0, 50);	// new parameter
+					if (pnam=="noflick.mode") noflicMode = arg.i;
+					if (pnam=="noflick.gamma") {
+						noflicGamma = arg.d;
+						if (noflicGamma < 1) noflicGamma = 1;
+						if (noflicGamma > 3) noflicGamma = 3;
+					}
 					if (pnam=="greyscale") vid_set_grey(arg.b);
 //					if (pnam=="scanlines") scanlines = arg.b;
 					if (pnam=="shader") conf.vid.shader = pval;
