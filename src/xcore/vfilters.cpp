@@ -145,8 +145,8 @@ void scrMix(unsigned char* src, unsigned char* dst, int size, double ratio, floa
 
 	while (size > 0) {
 		const uint32_t c0 = *p0; // current pixel color
-	    const uint32_t c1 = *p1;
-    	const uint32_t c2 = *p2;
+		const uint32_t c1 = *p1;
+		const uint32_t c2 = *p2;
 		const uint32_t c3 = *p3;
 		const uint32_t c4 = *p4;
 		const uint32_t c5 = *p5;
