@@ -106,10 +106,10 @@ void memSetBank(Memory* mem, int page, int type, int bank, int siz, extmrd rd, e
 	pg.type = type;
 	pg.num = bank;
 	if (type == MEM_RAM) {
-		pg.rd = rd ? rd : memStdRd;		// replace std callback if not NULL
-		pg.wr = wr ? wr : memStdWr;
+		pg.rd = rd ? rd : (data ? NULL : memStdRd);	// (rd || data) ?
+		pg.wr = wr ? wr : (data ? NULL : memStdWr);
 	} else if (type == MEM_ROM) {
-		pg.rd = rd ? rd : memStdRd;
+		pg.rd = rd ? rd : (data ? NULL : memStdRd);
 		pg.wr = wr;
 	} else {
 		pg.rd = rd;

@@ -32,7 +32,8 @@ enum {
 	HW_BK0010,	// BK0010
 	HW_BK0011M,	// BK0011m
 	HW_SPCLST,	// PC Specialist
-	HW_IBM_PC
+	HW_IBM_PC,	// IBM PC AT/XT
+	HW_PC9801	// NEC PC 9801
 };
 
 // hw group
@@ -46,7 +47,8 @@ enum {
 	HWG_COMMODORE,
 	HWG_BK,
 	HWG_SPCLST,
-	HWG_PC
+	HWG_PC,
+	HWG_PC98XX
 };
 
 enum {
