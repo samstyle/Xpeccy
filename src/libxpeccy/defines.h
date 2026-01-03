@@ -58,7 +58,8 @@ enum {
 	IRQ_VIC,
 	IRQ_TAP_0,	// tape
 	IRQ_TAP_1,
-	IRQ_TAP_BLK
+	IRQ_TAP_BLK,
+	IRQ_RTC_TP,	// upd4990 tp
 };
 
 typedef void(*cbirq)(int, void*);

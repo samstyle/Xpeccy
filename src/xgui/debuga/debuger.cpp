@@ -238,7 +238,8 @@ void DebugWin::onPrfChange() {
 	foreach(xHexSpin* xhs, dbgRegEdit) {
 		xhs->setBase(comp->hw->base);
 	}
-	unsigned int lim = (comp->hw->id == HW_IBM_PC) ? MEM_4M : MEM_64K;
+	unsigned int lim = (1 << comp->hw->adrbus);
+	printf("adrbus: %i -> %X\n", comp->hw->adrbus, lim);
 	wid_dump->setLimit(lim);
 	ui_asm.dasmScroll->setMaximum(lim - 1);
 

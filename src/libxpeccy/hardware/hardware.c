@@ -14,6 +14,7 @@ static vLayout nesPALLay = {{342,312},{0,0},{85,72},{256,240},{0,0},64};	// 342x
 static vLayout v9938Lay = {{342,313},{16,13},{57,80},{256,192},{0,0},64};
 static vLayout cmdrLay = {{512,312},{24,30},{144,44},{320,200},{0,0},64};
 static vLayout ibmLay = {{720,492},{0,0},{80,12},{640,480},{0,0},1};
+static vLayout pc98xxLay = {{720,412},{0,0},{80,12},{640,400},{0,0},1};		// check
 
 // pent
 xPortDsc zx_port_tab_a[] = {
@@ -144,8 +145,8 @@ HardWare hwTab[] = {
 		ibm_init,ibm_mem_map,ibm_iowr,ibm_iord,ibm_mrd,ibm_mwr,ibm_irq,ibm_ack,ibm_reset,ibm_sync,ibm_keyp,ibm_keyr,ibm_vol
 	},{
 #if 0
-		HW_PC9801,HWG_PC98XX,"NEC PC 9801","PC9801",16,MEM_1M,1.0,&ibmLay,20,NULL,
-		NULL,pc98xx_mem_map,pc98xx_iowr,pc98xx_iord,pc98xx_mrd,pc98xx_mwr,pc98xx_irq,NULL,pc98xx_reset,NULL,NULL,NULL,NULL
+		HW_PC9801,HWG_PC98XX,"NEC PC 9801","PC9801",16,MEM_1M,1.0,&pc98xxLay,20,NULL,
+		NULL,pc98xx_mem_map,pc98xx_iowr,pc98xx_iord,pc98xx_mrd,pc98xx_mwr,pc98xx_irq,NULL,pc98xx_reset,pc98xx_sync,NULL,NULL,pc98xx_vol
 #endif
 	},{
 		HW_NULL,HWG_NULL,NULL,NULL,16,0,1.0,NULL,16,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL		// eot
