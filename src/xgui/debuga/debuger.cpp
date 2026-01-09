@@ -937,7 +937,7 @@ int dbg_get_reg_adr(CPU* cpu, xRegister* reg) {
 	int a = reg->value;
 	if (reg->flag & REG_SEG) {
 		a = reg->base;
-	} else if (cpu->type == CPU_I80286) {
+	} else if (cpu->core->group == CPUG_X86) {
 		a += reg->base;
 	}
 	return a;

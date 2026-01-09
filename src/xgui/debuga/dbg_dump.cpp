@@ -41,7 +41,7 @@ int xDumpModel::mrd(int adr) const {
 	MemPage* pg;
 	int fadr;
 	int res = 0xff;
-	if (comp->cpu->type == CPU_I80286) {
+	if (comp->cpu->core->group == CPUG_X86) {
 		res = comp->hw->mrd(comp, adr, 0);
 	} else {
 		switch(mode) {
@@ -77,7 +77,7 @@ void xDumpModel::mwr(int adr, unsigned char bt) {
 	Computer* comp = conf.prof.cur->zx;
 	MemPage* pg;
 	int fadr;
-	if (comp->cpu->type == CPU_I80286) {
+	if (comp->cpu->core->group == CPUG_X86) {
 		comp->hw->mwr(comp, adr, bt);
 	} else {
 		switch(mode) {
@@ -237,7 +237,7 @@ QVariant xDumpModel::data(const QModelIndex& idx, int role) const {
 			break;
 		case Qt::DisplayRole:
 			if (col == 0) {
-				if (conf.prof.cur->zx->cpu->type == CPU_I80286) {
+				if (conf.prof.cur->zx->cpu->core->group == CPUG_X86) {
 					adr %= maxadr;
 					if (!conf.dbg.segment) {
 						res = QString::number(adr, 16).toUpper().rightJustified(6 , '0');

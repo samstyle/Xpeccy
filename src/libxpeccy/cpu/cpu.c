@@ -79,7 +79,7 @@ void nil_set_regs(CPU* cpu, xRegBunch bunch) {}
 int nil_get_flag(CPU* cpu) {return 0;}
 void nil_set_flag(CPU* cpu, int v) {}
 
-cpuCore dumCore = {CPU_NONE, 0, "none", nil_reg_tab, NULL, nil_reset, nil_exec, nil_asm, nil_mnem, nil_get_regs, nil_set_regs, nil_get_flag, nil_set_flag};
+cpuCore dumCore = {CPU_NONE, CPUG_NONE, 0, "none", nil_reg_tab, 8, 8, NULL, nil_reset, nil_exec, nil_asm, nil_mnem, nil_get_regs, nil_set_regs, nil_get_flag, nil_set_flag};
 
 extern xRegDsc z80RegTab[];
 extern xRegDsc m6502RegTab[];
@@ -89,16 +89,16 @@ extern xRegDsc i286RegTab[];
 extern xRegDsc pdp11RegTab[];
 
 cpuCore cpuTab[] = {
-	{CPU_Z80, 0,"Z80", z80RegTab, NULL, z80_reset, z80_exec, z80_asm, z80_mnem, z80_get_regs, z80_set_regs, z80_get_flag, z80_set_flag},
-	{CPU_I8080, 0,"i8080", i8080RegTab, NULL, i8080_reset, i8080_exec, i8080_asm, i8080_mnem, i8080_get_regs, i8080_set_regs, i8080_get_flag, i8080_set_flag},
-	{CPU_I8086, 0,"i8086", i286RegTab, NULL, i286_reset, i286_exec, i286_asm, i286_mnem, i286_get_regs, i286_set_regs, x86_get_flag, x86_set_flag},
-	{CPU_I80186, 1,"i80186", i286RegTab, NULL, i286_reset, i286_exec, i286_asm, i286_mnem, i286_get_regs, i286_set_regs, x86_get_flag, x86_set_flag},
-	{CPU_I80286, 2,"i80286", i286RegTab, NULL, i286_reset, i286_exec, i286_asm, i286_mnem, i286_get_regs, i286_set_regs, x86_get_flag, x86_set_flag},
-	{CPU_LR35902, 0, "LR35902", lrRegTab, NULL, lr_reset, lr_exec, lr_asm, lr_mnem, lr_get_regs, lr_set_regs, lr_get_flag, lr_set_flag},
-	{CPU_6502, 0, "MOS6502", m6502RegTab, NULL, m6502_reset, m6502_exec, m6502_asm, m6502_mnem, m6502_get_regs, m6502_set_regs, mos_get_flag, mos_set_flag},
-	{CPU_VM1, 0, "1801VM1", pdp11RegTab, NULL, pdp11_reset, pdp11_exec, pdp11_asm, pdp11_mnem, pdp11_get_regs, pdp11_set_regs, pdp_get_flag, pdp_set_flag},
-	{CPU_VM2, 1, "1801VM2", pdp11RegTab, NULL, pdp11_reset, pdp11_exec, pdp11_asm, pdp11_mnem, pdp11_get_regs, pdp11_set_regs, pdp_get_flag, pdp_set_flag},
-	{CPU_NONE, 0, "none", nil_reg_tab, NULL, nil_reset, nil_exec, nil_asm, nil_mnem, nil_get_regs, nil_set_regs, nil_get_flag, nil_set_flag}
+	{CPU_Z80, CPUG_X80, 0,"Z80", z80RegTab, 16, 8, NULL, z80_reset, z80_exec, z80_asm, z80_mnem, z80_get_regs, z80_set_regs, z80_get_flag, z80_set_flag},
+	{CPU_I8080, CPUG_X80, 0,"i8080", i8080RegTab, 16, 8, NULL, i8080_reset, i8080_exec, i8080_asm, i8080_mnem, i8080_get_regs, i8080_set_regs, i8080_get_flag, i8080_set_flag},
+	{CPU_I8086, CPUG_X86, 0,"i8086", i286RegTab, 20, 16, NULL, i286_reset, i286_exec, i286_asm, i286_mnem, i286_get_regs, i286_set_regs, x86_get_flag, x86_set_flag},
+	{CPU_I80186, CPUG_X86, 1,"i80186", i286RegTab, 20, 16, NULL, i286_reset, i286_exec, i286_asm, i286_mnem, i286_get_regs, i286_set_regs, x86_get_flag, x86_set_flag},
+	{CPU_I80286, CPUG_X86, 2,"i80286", i286RegTab, 24, 16, NULL, i286_reset, i286_exec, i286_asm, i286_mnem, i286_get_regs, i286_set_regs, x86_get_flag, x86_set_flag},
+	{CPU_LR35902, CPUG_X80, 0, "LR35902", lrRegTab, 16, 8, NULL, lr_reset, lr_exec, lr_asm, lr_mnem, lr_get_regs, lr_set_regs, lr_get_flag, lr_set_flag},
+	{CPU_6502, CPUG_MOS, 0, "MOS6502", m6502RegTab, 16, 8, NULL, m6502_reset, m6502_exec, m6502_asm, m6502_mnem, m6502_get_regs, m6502_set_regs, mos_get_flag, mos_set_flag},
+	{CPU_VM1, CPUG_PDP, 0, "1801VM1", pdp11RegTab, 16, 16, NULL, pdp11_reset, pdp11_exec, pdp11_asm, pdp11_mnem, pdp11_get_regs, pdp11_set_regs, pdp_get_flag, pdp_set_flag},
+	{CPU_VM2, CPUG_PDP, 1, "1801VM2", pdp11RegTab, 16, 16, NULL, pdp11_reset, pdp11_exec, pdp11_asm, pdp11_mnem, pdp11_get_regs, pdp11_set_regs, pdp_get_flag, pdp_set_flag},
+	{CPU_NONE, CPUG_NONE, 0, "none", nil_reg_tab, 8, 8, NULL, nil_reset, nil_exec, nil_asm, nil_mnem, nil_get_regs, nil_set_regs, nil_get_flag, nil_set_flag}
 };
 
 cpuCore* findCore(int type) {

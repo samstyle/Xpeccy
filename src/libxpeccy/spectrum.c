@@ -415,9 +415,8 @@ Computer* compCreate() {
 	comp->spic = pic_create(0, comp_irq, comp);
 	comp->pit = pit_create(comp_irq, comp);
 	comp->com1 = uart_create(IRQ_COM1, comp_irq, comp);
-//	pit_reset(&comp->pit);
-//	comp->mpic.master = 1;
-//	comp->spic.master = 0;
+// pc9801;
+	comp->rtc = upd4990_create(comp_irq, comp);
 // baseconf
 	memcpy(comp->evo.blVer,blnm,16);
 	memcpy(comp->evo.bcVer,bcnm,16);
@@ -463,6 +462,7 @@ void compDestroy(Computer* comp) {
 	pit_destroy(comp->pit);
 	cia_destroy(comp->c64.cia1);
 	cia_destroy(comp->c64.cia2);
+	upd4990_destroy(comp->rtc);
 	free(comp);
 }
 
@@ -682,18 +682,6 @@ unsigned char* getBrkPtr(Computer* comp, int madr) {
 	if (!ptr) {
 		dumBrk = 0;
 		ptr = &dumBrk;
-	/*
-	} else {
-		if (!comp->brk && (*ptr & 0x0f)) {
-			comp->brka = xadr.abs;
-			switch (xadr.type) {
-				case MEM_RAM: comp->brkt = BRK_MEMRAM; break;
-				case MEM_ROM: comp->brkt = BRK_MEMROM; break;
-				case MEM_SLOT: comp->brkt = BRK_MEMSLT; break;
-				default: comp->brkt = BRK_MEMEXT; break;
-			}
-		}
-	*/
 	}
 	return ptr;
 }

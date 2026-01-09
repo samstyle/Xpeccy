@@ -21,6 +21,7 @@ extern "C" {
 #include "i8237_dma.h"
 #include "mos6526_cia.h"
 #include "uart8250.h"
+#include "upd4990_rtc.h"
 
 #include "sound/ayym.h"
 #include "sound/gs.h"
@@ -168,6 +169,7 @@ typedef struct {
 	int fCount;		// T in last frame
 	int nsPerTick;
 
+	bool flag[64];
 	unsigned char reg[512];		// internal registers
 	unsigned short wdata;
 	memEntry memMap[16];			// memory map for ATM2, PentEvo
@@ -269,6 +271,7 @@ typedef struct {
 	PS2Ctrl* ps2c;
 	i8237DMA* dma1;		// 8-bit dma
 	i8237DMA* dma2;		// 16-bit dma
+	upd4990* rtc;
 	UART* com1;		// com1 (mouse) controller
 } Computer;
 

@@ -443,5 +443,9 @@ void z80_set_regs(CPU* cpu, xRegBunch bunch) {
 }
 
 // test:
-static cpuCore z80core = {CPU_Z80, 0,"Z80ext", z80RegTab, NULL, z80_reset, z80_exec, z80_asm, z80_mnem, z80_get_regs, z80_set_regs, z80_get_flag, z80_set_flag};
-EXPORTDLL cpuCore* getCore() {return &z80core;}
+static cpuCore z80core[] = {
+	{CPU_Z80, CPUG_X80, 0,"Z80ext", z80RegTab, 16, 8, NULL, z80_reset, z80_exec, z80_asm, z80_mnem, z80_get_regs, z80_set_regs, z80_get_flag, z80_set_flag},
+	{CPU_NONE, CPUG_NONE, 0, "none", NULL, 8, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL}
+};
+
+EXPORTDLL cpuCore* getCore() {return z80core;}

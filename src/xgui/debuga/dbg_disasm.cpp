@@ -131,7 +131,7 @@ int dasmrd(int adr, void* ptr) {
 	unsigned char res = 0xff;
 	int fadr;
 	MemPage* pg;
-	if (comp->cpu->type == CPU_I80286) {
+	if (comp->cpu->core->group == CPUG_X86) {
 		res = comp->hw->mrd(comp, adr, 0) & 0xff;
 	} else {
 		switch (mode) {
@@ -158,36 +158,31 @@ int dasmrd(int adr, void* ptr) {
 
 void dasmwr(Computer* comp, int adr, int bt) {
 	adr &= comp->mem->busmask;
-//	if (comp->cpu->type == CPU_I80286) return;
 	int fadr;
 	MemPage* pg;
-//	if (comp->cpu->type == CPU_I80286) {
-//		comp->hw->mwr(comp, adr, bt);
-//	} else {
-		switch(mode) {
-			case XVIEW_CPU:
-				pg = mem_get_page(comp->mem, adr);		// = &comp->mem->map[(adr >> 8) & 0xff];
-				fadr = mem_get_phys_adr(comp->mem, adr);	// pg->num << 8) | (adr & 0xff);
-				switch (pg->type) {
-					// no writings to slot
-					case MEM_ROM:
-						if (conf.dbg.romwr)
-							comp->mem->romData[fadr & comp->mem->romMask] = bt & 0xff;
-						break;
-					case MEM_RAM:
-						comp->mem->ramData[fadr & comp->mem->ramMask] = bt & 0xff;
-						break;
-				}
-				break;
-			case XVIEW_RAM:
-				comp->mem->ramData[((adr & 0x3fff) | (page << 14)) & comp->mem->ramMask] = bt & 0xff;
-				break;
-			case XVIEW_ROM:
-				if (conf.dbg.romwr)
-					comp->mem->romData[((adr & 0x3fff) | (page << 14)) & comp->mem->romMask] = bt & 0xff;
-				break;
-		}
-//	}
+	switch(mode) {
+		case XVIEW_CPU:
+			pg = mem_get_page(comp->mem, adr);		// = &comp->mem->map[(adr >> 8) & 0xff];
+			fadr = mem_get_phys_adr(comp->mem, adr);	// pg->num << 8) | (adr & 0xff);
+			switch (pg->type) {
+				// no writings to slot
+				case MEM_ROM:
+					if (conf.dbg.romwr)
+						comp->mem->romData[fadr & comp->mem->romMask] = bt & 0xff;
+					break;
+				case MEM_RAM:
+					comp->mem->ramData[fadr & comp->mem->ramMask] = bt & 0xff;
+					break;
+			}
+			break;
+		case XVIEW_RAM:
+			comp->mem->ramData[((adr & 0x3fff) | (page << 14)) & comp->mem->ramMask] = bt & 0xff;
+			break;
+		case XVIEW_ROM:
+			if (conf.dbg.romwr)
+				comp->mem->romData[((adr & 0x3fff) | (page << 14)) & comp->mem->romMask] = bt & 0xff;
+			break;
+	}
 }
 
 void placeLabel(Computer* comp, dasmData& drow) {
@@ -270,7 +265,7 @@ int dasmAddr(Computer* comp, int adr, dasmData& drow) {
 	word |= (dasmrd(adr + 1, comp) << 8);
 /*
 	xAdr xadr;
-	if (comp->cpu->type == CPU_I80286) {
+	if (comp->cpu->core->group == CPUG_X86) {
 		xadr = mem_get_xadr(comp->mem, word + comp->cpu->cs.base);
 	} else {
 		xadr = mem_get_xadr(comp->mem, word);
@@ -424,7 +419,7 @@ QList<dasmData> getDisasm(Computer* comp, int& adr) {
 		list.append(drow);
 	}
 	drow.islab = 0;			// next line is addr
-	if (comp->cpu->type == CPU_I80286) {
+	if (comp->cpu->core->group == CPUG_X86) {
 		offset = adr - comp->cpu->cs.base;
 		if ((offset < 0) || (offset > comp->cpu->cs.limit)) {
 			drow.aname = QString::number(adr, comp->hw->base).toUpper().rightJustified(6, '0');

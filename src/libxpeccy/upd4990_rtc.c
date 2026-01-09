@@ -1,7 +1,8 @@
-#include "upd4990.h"
+#include "upd4990_rtc.h"
 
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #define RTC_PERIOD 244140
 
@@ -68,7 +69,11 @@ void upd4990_set_period(upd4990* rtc, int per) {
 	rtc->time = RTC_PERIOD;
 }
 
+int toBCD(int);
 void upd4990_wr(upd4990* rtc, int val) {
+	unsigned char fcom;
+	time_t rtime;
+	struct tm* ctime;
 	rtc->com = val & 7;
 	if (rtc->clk && !(val & 16)) {	// clk 1->0
 		rtc->coma >>= 1;
@@ -82,7 +87,7 @@ void upd4990_wr(upd4990* rtc, int val) {
 	}
 	rtc->clk = !!(val & 16);
 	if (rtc->stb && !(val & 8)) {	// stb 1->0
-		unsigned char fcom = rtc->com;
+		fcom = rtc->com;
 		if (fcom == 7) {
 			fcom = rtc->coma;
 		} else {
@@ -93,6 +98,18 @@ void upd4990_wr(upd4990* rtc, int val) {
 			case 1: rtc->rh = 0; break;
 			case 2: break;			// TODO
 			case 3:				// time read: to form reg
+				time(&rtime);
+				ctime = localtime(&rtime);
+				rtc->reg = toBCD(ctime->tm_sec);
+				rtc->reg |= toBCD(ctime->tm_min) << 8;
+				rtc->reg |= toBCD(ctime->tm_hour) << 16;
+				rtc->reg |= toBCD(ctime->tm_mday) << 24;
+				rtc->reg |= (long long)(ctime->tm_mon) << 32;			// 4bits
+				// 40 bits: for main command, year is not in here
+				if (rtc->com == 7) {
+					rtc->reg |= (long long)(toBCD(ctime->tm_year) & 0xff) << 36;	// 8bits
+					// 44 bits... and 4 bits for cmd, 48. where is 52?
+				}
 				break;
 			case 4:	upd4990_set_period(rtc, 64); break;		// 64 Hz (4096/64 = 64)
 			case 5:	upd4990_set_period(rtc, 16); break;		// 256 Hz (4096/256 = 16)

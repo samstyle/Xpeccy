@@ -106,7 +106,7 @@ void ppi_wr(PPI* ppi, int adr, int val) {
 				ppi_wr(ppi, 1, ppi->b.val);
 				ppi_wr(ppi, 2, (ppi->ch.val & 0xf0) | (ppi->cl.val & 0x0f));
 			} else {
-				mask = (1 << ((val & 0xe0) >> 1));	// bit mask
+				mask = (1 << ((val >> 1) & 7));	// bit mask
 				if (val & 1) {		// set
 					ppi_wr(ppi, 2, (ppi->cl.val | ppi->ch.val) | mask);
 				} else {

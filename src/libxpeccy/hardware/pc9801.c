@@ -12,9 +12,14 @@
 // e8000-fffff - bios
 // reset @ ffff:0000 = ffff0
 
-#define portA	reg[64]
+//#define portA	reg[64] = DIPSW1
 #define portB	reg[65]
 #define portC	reg[66]
+#define DIPSW1	reg[71]
+#define DIPSW2	reg[72]
+#define DIPSW3	reg[73]
+
+#define flgNMI	flag[0]
 
 #include "../spectrum.h"
 
@@ -90,8 +95,8 @@ void pc98xx_reset(Computer* comp) {
 int pc98xx_sys_rd(Computer* comp, int adr) {
 	int res = -1;
 	switch((adr >> 1) & 3) {
-		case 0:			// port A - system switch
-			res = comp->portA;
+		case 0:			// port A - system switch (dipsw1)
+			res = comp->DIPSW1;
 			break;
 		case 1:			// port B
 			res = comp->portB;
@@ -131,8 +136,8 @@ void pc98xx_pit_wr(Computer* comp, int adr, int val) {
 }
 
 // uPD8259 - PIC
-// b3:0-master,1-slave
-// b1:PIC A0
+// a3:0-master,1-slave
+// a1:PIC A0
 // pic	master	0:timer
 //		1:keyboard
 //		2:crtv (vsync)
@@ -156,25 +161,155 @@ void pc98xx_pic_wr(Computer* comp, int adr, int val) {
 
 // uPD4990 - clock/calendar RTC (serial data transfer) (20,33)
 void pc98xx_rtc_wr(Computer* comp, int adr, int val) {
-	// upd4990_wr(comp->upd4990, val);
+	upd4990_wr(comp->rtc, val);
+}
+
+// uPD8237 - DMA controller
+// ch0: HDD
+// ch1: not used
+// ch2: uPD765, 1MB fdd
+// ch3: uPD765, 640K fdd
+
+static const int dma_ctrl_regs[8] = {DMA_CR, DMA_RR, DMA_CMR, DMA_MR, DMA_BTR, DMA_RES, DMA_MRES, DMA_WAMR};
+
+int pc98xx_dma_rd(Computer* comp, int adr) {
+	int res = -1;
+	int ch = (adr >> 2) & 3;
+	if (adr & 0x20) {
+		// bank
+		switch ((adr >> 1) & 3) {
+			case 0: res = dma_rd(comp->dma1, DMA_CH_PAR, 2); break;
+			case 2: res = dma_rd(comp->dma1, DMA_CH_PAR, 3); break;
+			case 3: res = dma_rd(comp->dma1, DMA_CH_PAR, 0); break;
+		}
+	} else if (adr & 0x10) {
+		res = dma_rd(comp->dma1, dma_ctrl_regs[(adr >> 1) & 7], 0);
+	} else {
+		res = dma_rd(comp->dma1, (adr & 2) ? DMA_CH_CAR : DMA_CH_CWR, ch);
+	}
+	return res;
+}
+
+void pc98xx_dma_wr(Computer* comp, int adr, int val) {
+	int ch = (adr >> 2) & 3;
+	if (adr & 0x20) {
+		switch ((adr >> 1) & 3) {
+			case 0: dma_wr(comp->dma1, DMA_CH_PAR, 2, val); break;
+			case 2: dma_wr(comp->dma1, DMA_CH_PAR, 3, val); break;
+			case 3: dma_wr(comp->dma1, DMA_CH_PAR, 0, val); break;
+		}
+		// bank
+	} else if (adr & 0x10) {	// b1,2,3 = command
+		dma_wr(comp->dma1, dma_ctrl_regs[(adr >> 1) & 7], 0, val);
+	} else {		// b1 = adr/cnt, b2,3 = channel
+		dma_wr(comp->dma1, (adr & 2) ? DMA_CH_BAR : DMA_CH_BWCR, ch, val);
+	}
 }
 
 // uPD8251 - keyboard controller (r:41,rw:43)
-// video(txt)
+
+// uPD7220 - video(txt)
 // text GDC
 // CRTC
-// video(gra)
-// FDC
-// RS232
+// 60	rd	b6:hblank
+//		b5:vsync
+//		b2:fifo buffer full
+//		b1:fifo buffer empty
+//		b0:data ready
+// 60	wr	gdc parameter write
+// 62	rd	gdc data read
+// 62	wr	gdc command write
+// 64	wr	crt interrupt reset
+// 68	wr	mode flip-flop
+//		b0:flag
+//		b1,2,3:param.nr:
+//		000:atr4 (graph / vertical line)
+//		001:graph mode (mono / color)
+//		010:column size (40 / 80 chars)
+//		011:font size (7x13 / 6x8)
+//		100:88 graph mode (200 lines / other)
+//		101:kanji access (bitmap / code)
+//		110:static memory (enable / disable)
+//		111:allow display (enable / disable)
+// 6a	wr	mode flip-flop 2
+//		b0:flag
+//		b1-7:param nr:
+//		0000000:color select (16col/8col)
+//		0000010:enhanced mode (enhanced / compatible)
+//		others:reserved
+// 6c	wr	border color: b4,5,6 = b,r,g
+
+// 70	wr	Character Position Lines Number
+// 72	wr	Body Face Lines Number
+// 74	wr	Character Lines Number
+// 76	wr	Smooth Scroll Lines Count
+// 78	wr	Scroll Area Above Position Lines Number
+// 7a	wr	Scroll Area Lines Number
+// 7c	wr	Fast Graphics Mode Register:
+//		b0..3: p0..3 disable
+//		b6:rmw mode
+//		b7:cg mode
+// 7e	wr	Tile Register 0-3
+
+// uPD7220 - video(gra)
+// uPD765 - FDC x 2
+// 80,82: 5" flop
+// 90,92,94,96: 1MB flop
+
+// uPD8251 - RS232
 // mouse
-// printer
+
+// uPD8255 - printer
+// 40 wr data
+// 42 rd 1.0.mod.sw1-3.sw1-8.!bsy.acpu.0
+//	mod: system clock 0:10MHz, 1:8MHz - how?
+//	sw1-3: printer display on/off
+//	sw1-8: color depth. 1:16col, 0:8col
+//	acpu: 1 for V30, 0 for others
+// 44 rw pstb.0.0.0.0.0.0.0
+// 46 rd 82
+// 46 wr 8255 control word/mode
+//	b7:!pstb
+
+int pc98xx_prn_rd(Computer* comp, int adr) {
+	int res = 0;
+	switch ((adr >> 1) & 3) {
+		case 0: break;
+		case 1: res = 0xa4;
+			if (comp->DIPSW1 & 0x08) res |= 0x10;
+			if (comp->DIPSW1 & 0x80) res |= 0x08;
+			break;
+		case 2: break;
+		case 3: res = 0x82;
+			break;
+	}
+	return res;
+}
+
+void pc98xx_prn_wr(Computer* comp, int adr, int val) {
+	switch ((adr >> 1) & 3) {
+		case 0:		// printer data
+			break;
+		case 2:		// b7:pstb
+			break;
+		case 3:		// 0E:pstb on, 0F:pstb off
+			break;
+	}
+}
+
+// uPD7261 - HDD controller
 // fm sound (Yamaha 2203 ?)
+
+// nmi flipflop (A1):
+void pc98xx_nmi_wr(Computer* comp, int adr, int val) {
+	comp->flgNMI = !!(adr & 2);
+}
 
 // deBUG
 int pc98xx_dbg_rd(Computer* comp, int adr) {
 	printf("pc98xx: ird %X\n", adr);
 	comp_irq(IRQ_BRK, comp);
-	return -1;
+	return 0x00;
 }
 
 void pc98xx_dbg_wr(Computer* comp, int adr, int val) {
@@ -185,17 +320,22 @@ void pc98xx_dbg_wr(Computer* comp, int adr, int val) {
 // TODO: fill this table
 // ports from 'pc9801 programmers bible'
 // NOTE: run with --panic argument to exit on unknown i/o address
+// 439 - ???
 // 43d - switch rom pages ???
+// NOTE: check this:
+// 000..3FF is copies of 00..FF
+// 400..FFF is copies of 000..3FF for ext.devices
+// 1000..FFFF is copies of 000..FFF
 xPort pc98xx_io_map[] = {
 	{0xcf1, 0x000, 0, 0, 0, pc98xx_pic_rd,	pc98xx_pic_wr},		// 00,02,08,0a PIC, b3:slave, b1:A0
-//	{0xce1, 0x001, 0, 0, 0, pc98xx_dma_rd,	pc98xx_dma_wr},		// upd8237, dma controller (official docs: dma & pic ports conflicted)
-//	{0xcf1, 0x020, 0, 0, 0, NULL,		pc98xx_rtc_wr},		// 20: upd4990,rtc
-//	{0xcf1, 0x021, 0, 0, 0, NULL,		NULL},			// 21,23,25,27: dma bank
+	{0xce1, 0x001, 0, 0, 0, pc98xx_dma_rd,	pc98xx_dma_wr},		// upd8237, dma controller
+	{0xcf1, 0x020, 0, 0, 0, NULL,		pc98xx_rtc_wr},		// 20: upd4990,rtc
+	{0xcf1, 0x021, 0, 0, 0, pc98xx_dma_rd,	pc98xx_dma_wr},		// 21,23,25,27: dma bank
 //	{0xcf1, 0x030, 0, 0, 0, NULL,		NULL},			// 30,32: rs232 on upd8251
 	{0xcf1, 0x031, 0, 0, 0, pc98xx_sys_rd,	pc98xx_sys_wr},		// 31,33,35,37: system ports on upd8255
-//	{0xcf1, 0x040, 0, 0, 0, NULL,		NULL},			// 40,42,44,46: printer on upd8255
+	{0xcf1, 0x040, 0, 0, 0, pc98xx_prn_rd,	pc98xx_prn_wr},		// 40,42,44,46: printer on upd8255
 //	{0xcf1, 0x041, 0, 0, 0, NULL,		NULL},			// 41,43: keyboard on upd8251
-//	{0xcf1, 0x050, 0, 0, 0, NULL,		NULL},			// 50,52: NMI controller
+	{0xcf1, 0x050, 0, 0, 0, NULL,		pc98xx_nmi_wr},		// 50,52: NMI controller: wr:A1 = nmi on/off
 //	{0xcf1, 0x060, 0, 0, 0, NULL,		NULL},			// 60,62,64,66,68,6a,6c,6e: text video upd7220a
 //	{0xcf1, 0x070, 0, 0, 0, NULL,		NULL},			// 70,72,74,76,78,7a,7c,7e: crtc, grcg
 	{0xcf1, 0x071, 0, 0, 0, pc98xx_pit_rd,	pc98xx_pit_wr},		// 71,73,75,77: PIT on upd8253
@@ -215,7 +355,7 @@ xPort pc98xx_io_map[] = {
 //	{0xfffb,0x3fdb,0, 0, 0, NULL,		NULL},			// 3fdb/f: upd8253 (timer for beeper)
 //	{0xffff,0xbfdb,0, 0, 0, NULL,		NULL},			// bfdb: mouse interrupt ?
 //	{0xcf9, 0x0f0, 0, 0, 0, NULL,		NULL},			// f0,f2,f4,f6: cpu ?
-//	{0xcf8, 0x0f8, 0, 0, 0, NULL,		NULL},			// f8..ff: ndp ?
+//	{0xcf8, 0x0f8, 0, 0, 0, NULL,		NULL},			// f8..ff: ndp (x87)
 	{0x000, 0x000, 0, 0, 0, pc98xx_dbg_rd,	pc98xx_dbg_wr}
 };
 
