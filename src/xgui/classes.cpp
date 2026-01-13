@@ -294,7 +294,10 @@ QString xTreeBox::currentFile() {
 
 // base table model
 
-xTableModel::xTableModel(QObject* p):QAbstractTableModel(p) {}
+xTableModel::xTableModel(QObject* p):QAbstractTableModel(p) {
+	row_count = 0;
+	col_count = 0;
+}
 
 QModelIndex xTableModel::index(int row, int col, const QModelIndex& p) const {
 	return createIndex(row, col);
