@@ -144,9 +144,9 @@ HardWare hwTab[] = {
 		HW_IBM_PC,HWG_PC,"IBM PC","IBM PC",16,MEM_1M | MEM_2M | MEM_4M,1.0,&ibmLay,24,NULL,
 		ibm_init,ibm_mem_map,ibm_iowr,ibm_iord,ibm_mrd,ibm_mwr,ibm_irq,ibm_ack,ibm_reset,ibm_sync,ibm_keyp,ibm_keyr,ibm_vol
 	},{
-#if 0
+#if ISDEBUG
 		HW_PC9801,HWG_PC98XX,"NEC PC 9801","PC9801",16,MEM_1M,1.0,&pc98xxLay,20,NULL,
-		NULL,pc98xx_mem_map,pc98xx_iowr,pc98xx_iord,pc98xx_mrd,pc98xx_mwr,pc98xx_irq,NULL,pc98xx_reset,pc98xx_sync,NULL,NULL,pc98xx_vol
+		pc98xx_init,pc98xx_mem_map,pc98xx_iowr,pc98xx_iord,pc98xx_mrd,pc98xx_mwr,pc98xx_irq,NULL,pc98xx_reset,pc98xx_sync,NULL,NULL,pc98xx_vol
 #endif
 	},{
 		HW_NULL,HWG_NULL,NULL,NULL,16,0,1.0,NULL,16,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL		// eot

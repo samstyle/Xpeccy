@@ -370,6 +370,7 @@ void ibm_keyr(Computer*, keyEntry);
 sndPair ibm_vol(Computer*, sndVolume*);
 
 // pc98xx
+void pc98xx_init(Computer*);
 void pc98xx_reset(Computer*);
 void pc98xx_mem_map(Computer*);
 int pc98xx_mrd(Computer*, int, int);

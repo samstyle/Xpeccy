@@ -12,6 +12,10 @@
 // e8000-fffff - bios
 // reset @ ffff:0000 = ffff0
 
+#include "../video/upd7220.h"
+
+#define kbdStatus reg[50]
+#define kbdCom	reg[51]
 //#define portA	reg[64] = DIPSW1
 #define portB	reg[65]
 #define portC	reg[66]
@@ -92,37 +96,26 @@ void pc98xx_reset(Computer* comp) {
 // portC (37w)	b0:DT
 //		b1,2,3:ADR0,1,2
 //		meaning: write bit(ADR)=DT
-int pc98xx_sys_rd(Computer* comp, int adr) {
-	int res = -1;
-	switch((adr >> 1) & 3) {
-		case 0:			// port A - system switch (dipsw1)
-			res = comp->DIPSW1;
-			break;
-		case 1:			// port B
-			res = comp->portB;
-			break;
-		case 2:			// port C
-			res = comp->portC;
-			break;
-	}
+
+int pc98xx_ppia_rd(void* comp) {return ((Computer*)comp)->DIPSW1;}
+int pc98xx_ppib_rd(void* ptr) {
+	Computer* comp = (Computer*)ptr;
+	int res = ((Computer*)comp)->portB & 0xfe;
+	if (((Computer*)comp)->rtc->data) res |= 1;
 	return res;
+}
+int pc98xx_ppic_rd(void* comp) {return ((Computer*)comp)->portC;}
+void pc98xx_ppia_wr(int val, void* comp) {}
+void pc98xx_ppib_wr(int val, void* comp) {}
+void pc98xx_ppich_wr(int val, void* comp) {((Computer*)comp)->portC &= 0x0f; ((Computer*)comp)->portC |= (val & 0xf0);}
+void pc98xx_ppicl_wr(int val, void* comp) {((Computer*)comp)->portC &= 0xf0; ((Computer*)comp)->portC |= (val & 0x0f);}
+
+int pc98xx_sys_rd(Computer* comp, int adr) {
+	return ppi_rd(comp->ppi, (adr >> 1) & 3);
 }
 
 void pc98xx_sys_wr(Computer* comp, int adr, int val) {
-	int msk;
-	switch((adr >> 1) & 3) {
-		case 2:			// port C
-			comp->portC = val & 0xff;
-			break;
-		case 3:			// port C (alt). b1,2,3 = bit nr, b0 = bit state
-			msk = 1 << ((val >> 1) & 7);
-			if (val & 1) {		// set
-				comp->portC |= msk;
-			} else {		// reset
-				comp->portC &= ~msk;
-			}
-			break;
-	}
+	ppi_wr(comp->ppi, (adr >> 1) & 3, val);
 }
 
 // uPD8253 - PIT (rw:71,73,75, w:77), timer
@@ -206,11 +199,47 @@ void pc98xx_dma_wr(Computer* comp, int adr, int val) {
 	}
 }
 
-// uPD8251 - keyboard controller (r:41,rw:43)
+
+// uPD8251 - usart, keyboard controller (rw:41,rw:43)
+// 41 - data
+// 43 - status/cmd
+// status:
+// b5 FE:framing error
+// b4 OE:overrun error
+// b3 PE:parity error
+// b1 RxRDY: data is ready (=rd drq)
+// cmd:
+// b6 IR:internal reset (0->1  =  reset?)
+// b5 RTS:request send
+// b4 ER:error reset
+// b3 SBRX:send break reset char
+// b2 RE:reciever enabled (ctrl-dev enable?)
+// b1 DTR:data terminal ready
+// b0 TxEN:(comp-ctrl enable?)
+
+int pc98xx_kbd_rd(Computer* comp, int adr) {
+	int res = 0;
+	if (adr & 2) {	// 43:status
+		if (comp->keyb->outbuf & 0xff)
+			res |= 1;	// data ready
+		// no errors
+	} else {	// 41
+		res = xt_read(comp->keyb);	// FF if no code
+	}
+	return res;
+}
+
+void pc98xx_kbd_wr(Computer* comp, int adr, int val) {
+	if (adr & 2) {	// 43
+		comp->kbdCom = val & 0xff;
+	} else {	// 41
+		// write to keyboard
+	}
+}
 
 // uPD7220 - video(txt)
 // text GDC
-// CRTC
+// == 60, 62 - upd7220 rd/wr
 // 60	rd	b6:hblank
 //		b5:vsync
 //		b2:fifo buffer full
@@ -219,6 +248,7 @@ void pc98xx_dma_wr(Computer* comp, int adr, int val) {
 // 60	wr	gdc parameter write
 // 62	rd	gdc data read
 // 62	wr	gdc command write
+// == CRTC
 // 64	wr	crt interrupt reset
 // 68	wr	mode flip-flop
 //		b0:flag
@@ -251,11 +281,30 @@ void pc98xx_dma_wr(Computer* comp, int adr, int val) {
 //		b7:cg mode
 // 7e	wr	Tile Register 0-3
 
+int pc98xx_gdc_rd(Computer* comp, int adr) {
+	int res = -1;
+	adr = (adr >> 1) & 7;
+	switch (adr) {
+		case 0:
+		case 1: res = upd7220_rd(comp->vid, adr); break;
+		case 2: break;
+		case 3: break;
+		case 4: break;
+		case 5: break;
+		case 6: break;
+		case 7: break;
+	}
+	return res;
+}
+
+void pc98xx_gdc_wr(Computer* comp, int adr, int val) {
+
+}
+
 // uPD7220 - video(gra)
 // uPD765 - FDC x 2
 // 80,82: 5" flop
 // 90,92,94,96: 1MB flop
-
 // uPD8251 - RS232
 // mouse
 
@@ -273,6 +322,7 @@ void pc98xx_dma_wr(Computer* comp, int adr, int val) {
 
 int pc98xx_prn_rd(Computer* comp, int adr) {
 	int res = 0;
+	printf("prn rd %.4X\n", adr);
 	switch ((adr >> 1) & 3) {
 		case 0: break;
 		case 1: res = 0xa4;
@@ -327,36 +377,36 @@ void pc98xx_dbg_wr(Computer* comp, int adr, int val) {
 // 400..FFF is copies of 000..3FF for ext.devices
 // 1000..FFFF is copies of 000..FFF
 xPort pc98xx_io_map[] = {
-	{0xcf1, 0x000, 0, 0, 0, pc98xx_pic_rd,	pc98xx_pic_wr},		// 00,02,08,0a PIC, b3:slave, b1:A0
-	{0xce1, 0x001, 0, 0, 0, pc98xx_dma_rd,	pc98xx_dma_wr},		// upd8237, dma controller
-	{0xcf1, 0x020, 0, 0, 0, NULL,		pc98xx_rtc_wr},		// 20: upd4990,rtc
-	{0xcf1, 0x021, 0, 0, 0, pc98xx_dma_rd,	pc98xx_dma_wr},		// 21,23,25,27: dma bank
-//	{0xcf1, 0x030, 0, 0, 0, NULL,		NULL},			// 30,32: rs232 on upd8251
-	{0xcf1, 0x031, 0, 0, 0, pc98xx_sys_rd,	pc98xx_sys_wr},		// 31,33,35,37: system ports on upd8255
-	{0xcf1, 0x040, 0, 0, 0, pc98xx_prn_rd,	pc98xx_prn_wr},		// 40,42,44,46: printer on upd8255
-//	{0xcf1, 0x041, 0, 0, 0, NULL,		NULL},			// 41,43: keyboard on upd8251
-	{0xcf1, 0x050, 0, 0, 0, NULL,		pc98xx_nmi_wr},		// 50,52: NMI controller: wr:A1 = nmi on/off
-//	{0xcf1, 0x060, 0, 0, 0, NULL,		NULL},			// 60,62,64,66,68,6a,6c,6e: text video upd7220a
-//	{0xcf1, 0x070, 0, 0, 0, NULL,		NULL},			// 70,72,74,76,78,7a,7c,7e: crtc, grcg
-	{0xcf1, 0x071, 0, 0, 0, pc98xx_pit_rd,	pc98xx_pit_wr},		// 71,73,75,77: PIT on upd8253
-//	{0x0fd, 0x080, 0, 0, 0, NULL,		NULL},			// 80,82: hard disk inerface
-//	{0xff9, 0x188, 0, 0, 0, NULL,		NULL},			// 188,18a,18c,18e: ym2203
-//	{0x0f9, 0x089, 0, 0, 0, NULL,		NULL},			// 89,8b,8d,8f: network interface
-//	{0x0f1, 0x090, 0, 0, 0, NULL,		NULL},			// 90,92,94,96: hd fdd on upd765
-//	{0x0fd, 0x099, 0, 0, 0, NULL,		NULL},			// 99,9b: gp-ib switch
-//	{0xcf1, 0x0a0, 0, 0, 0, NULL,		NULL},			// a0,a2,a4,a6,a8,aa,ac,ae: graphic video upd7220a
-//	{0xcf1, 0x1a0, 0, 0, 0, NULL,		NULL},			// ecg
-//	{0xff1, 0x9a0, 0, 0, 0, NULL,		NULL},			// graphic control
-//	{0xcf1, 0x0a1, 0, 0, 0, NULL,		NULL},			// kanjirom
-//	{0x0f0, 0x0b0, 0, 0, 0, NULL,		NULL},			// b0..bf: communication controller / rs232 expansion interface; 0xbe: fdd switcher
-//	{0x0f9, 0x0c8, 0, 0, 0, NULL,		NULL},			// c8,ca,cc,ce: dd drive on upd765
-//	{0x0f1, 0x0c1, 0, 0, 0, NULL,		NULL},			// gp-ib on upd7210
-//	{0xfff9,0x7fd9,0, 0, 0, NULL,		NULL},			// 7fd9/b/d/f: mouse controller on upd8255
-//	{0xfffb,0x3fdb,0, 0, 0, NULL,		NULL},			// 3fdb/f: upd8253 (timer for beeper)
-//	{0xffff,0xbfdb,0, 0, 0, NULL,		NULL},			// bfdb: mouse interrupt ?
-//	{0xcf9, 0x0f0, 0, 0, 0, NULL,		NULL},			// f0,f2,f4,f6: cpu ?
-//	{0xcf8, 0x0f8, 0, 0, 0, NULL,		NULL},			// f8..ff: ndp (x87)
-	{0x000, 0x000, 0, 0, 0, pc98xx_dbg_rd,	pc98xx_dbg_wr}
+	{0xcf1, 0x000, 2, 2, 2, pc98xx_pic_rd,	pc98xx_pic_wr},		// 00,02,08,0a PIC, b3:slave, b1:A0
+	{0xce1, 0x001, 2, 2, 2, pc98xx_dma_rd,	pc98xx_dma_wr},		// upd8237, dma controller
+	{0xcf1, 0x020, 2, 2, 2, NULL,		pc98xx_rtc_wr},		// 20: upd4990,rtc
+	{0xcf1, 0x021, 2, 2, 2, pc98xx_dma_rd,	pc98xx_dma_wr},		// 21,23,25,27: dma bank
+//	{0xcf1, 0x030, 2, 2, 2, NULL,		NULL},			// 30,32: rs232 on upd8251
+	{0xcf1, 0x031, 2, 2, 2, pc98xx_sys_rd,	pc98xx_sys_wr},		// 31,33,35,37: system ports on upd8255
+	{0xcf1, 0x040, 2, 2, 2, pc98xx_prn_rd,	pc98xx_prn_wr},		// 40,42,44,46: printer on upd8255
+	{0xcf1, 0x041, 2, 2, 2, pc98xx_kbd_rd,	pc98xx_kbd_wr},		// 41,43: keyboard on upd8251
+	{0xcf1, 0x050, 2, 2, 2, NULL,		pc98xx_nmi_wr},		// 50,52: NMI controller: wr:A1 = nmi on/off
+	{0xcf1, 0x060, 2, 2, 2, pc98xx_gdc_rd,	pc98xx_gdc_wr},		// 60,62,64,66,68,6a,6c,6e: text video upd7220a
+//	{0xcf1, 0x070, 2, 2, 2, NULL,		NULL},			// 70,72,74,76,78,7a,7c,7e: crtc, grcg
+	{0xcf1, 0x071, 2, 2, 2, pc98xx_pit_rd,	pc98xx_pit_wr},		// 71,73,75,77: PIT on upd8253
+//	{0x0fd, 0x080, 2, 2, 2, NULL,		NULL},			// 80,82: hard disk inerface
+//	{0xff9, 0x188, 2, 2, 2, NULL,		NULL},			// 188,18a,18c,18e: ym2203
+//	{0x0f9, 0x089, 2, 2, 2, NULL,		NULL},			// 89,8b,8d,8f: network interface
+//	{0x0f1, 0x090, 2, 2, 2, NULL,		NULL},			// 90,92,94,96: hd fdd on upd765
+//	{0x0fd, 0x099, 2, 2, 2, NULL,		NULL},			// 99,9b: gp-ib switch
+//	{0xcf1, 0x0a0, 2, 2, 2, NULL,		NULL},			// a0,a2,a4,a6,a8,aa,ac,ae: graphic video upd7220a
+//	{0xcf1, 0x1a0, 2, 2, 2, NULL,		NULL},			// ecg
+//	{0xff1, 0x9a0, 2, 2, 2, NULL,		NULL},			// graphic control
+//	{0xcf1, 0x0a1, 2, 2, 2, NULL,		NULL},			// kanjirom
+//	{0x0f0, 0x0b0, 2, 2, 2, NULL,		NULL},			// b0..bf: communication controller / rs232 expansion interface; 0xbe: fdd switcher
+//	{0x0f9, 0x0c8, 2, 2, 2, NULL,		NULL},			// c8,ca,cc,ce: dd drive on upd765
+//	{0x0f1, 0x0c1, 2, 2, 2, NULL,		NULL},			// gp-ib on upd7210
+//	{0xfff9,0x7fd9,2, 2, 2, NULL,		NULL},			// 7fd9/b/d/f: mouse controller on upd8255
+//	{0xfffb,0x3fdb,2, 2, 2, NULL,		NULL},			// 3fdb/f: upd8253 (timer for beeper)
+//	{0xffff,0xbfdb,2, 2, 2, NULL,		NULL},			// bfdb: mouse interrupt ?
+//	{0xcf9, 0x0f0, 2, 2, 2, NULL,		NULL},			// f0,f2,f4,f6: cpu ?
+//	{0xcf8, 0x0f8, 2, 2, 2, NULL,		NULL},			// f8..ff: ndp (x87)
+	{0x000, 0x000, 2, 2, 2, pc98xx_dbg_rd,	pc98xx_dbg_wr}
 };
 
 int pc98xx_iord(Computer* comp, int adr) {
@@ -385,6 +435,10 @@ void pc98xx_irq(Computer* comp, int id) {
 
 void pc98xx_sync(Computer* comp, int ns) {
 	pit_sync(comp->pit, ns);		// timers
+}
+
+void pc98xx_init(Computer* comp) {
+	ppi_set_cb(comp->ppi, comp, pc98xx_ppia_rd, pc98xx_ppia_wr, pc98xx_ppib_rd, pc98xx_ppib_wr, pc98xx_ppic_rd, pc98xx_ppich_wr, pc98xx_ppic_rd, pc98xx_ppicl_wr);
 }
 
 sndPair pc98xx_vol(Computer* comp, sndVolume* vol) {

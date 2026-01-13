@@ -204,12 +204,12 @@ struct Video {
 
 	unsigned sprblock:1;	// hw block sprites
 	unsigned bgblock:1;	// hw block bg
-	unsigned greyscale:1;
 	vCoord scrsize;		// << tsconf.xSize, tsconf.ySize, v9938::wid
 	vCoord sc;		// screen scroll registers
 	// nes
 	unsigned ntsc:1;	// set if ntsc, prerender line is 1 dot shorter each other frame
 	unsigned ppu_vb:1;	// set at vbs line, reset at vbrline or reading reg2
+	unsigned greyscale:1;	// show in greyscale
 	int vadr;		// nes videomem access addr
 	int fadr;
 	unsigned short tadr;	// nes tmp vadr
@@ -353,6 +353,7 @@ struct Video {
 	unsigned char ram[MEM_256K];			// video memory
 	unsigned char oam[MEM_256];			// nes/gb oam memory
 	unsigned char reg[256];				// max 256 registers
+//	bool flag[256];
 
 	ulaPlus* ula;
 
