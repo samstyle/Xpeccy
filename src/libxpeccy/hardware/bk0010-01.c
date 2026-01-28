@@ -86,7 +86,7 @@ void bk_scr_wr(Computer* comp, int adr, int val) {
 		comp->vid->sc.y = val & 0xff;
 	}
 	if (comp->cpu->regNOD & 2) {
-		comp->vid->cutscr = (val & 0x0200) ? 0 : 1;
+		comp->vid->cutscr = !(val & 0x0200);
 	}
 }
 

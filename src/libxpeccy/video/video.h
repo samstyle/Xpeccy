@@ -65,10 +65,6 @@ enum {
 // specialist
 	VID_SPCLST,
 // cga/ega/vga
-	VID_CGA_T40,
-	VID_CGA_T80,
-	VID_CGA_G320,
-	VID_CGA_G640,
 	CGA_TXT_L,	// txt 40
 	CGA_TXT_H,	// txt 80
 	CGA_GRF_L,	// grf 320 2bpp (cga)
@@ -126,7 +122,7 @@ struct Video {
 	unsigned debug:1;
 	unsigned upd:1;
 	unsigned tail:1;
-	unsigned cutscr:1;
+	unsigned cutscr:1;	// bk only: cut screen
 	unsigned linedbl:1;	// lines doubler
 
 	unsigned hblank:1;	// HBlank signal
@@ -168,11 +164,6 @@ struct Video {
 
 	int vmode;
 	xVideoMode* cb;
-//	cbvid cbDot;		// call every dot
-//	cbvid cbHBlank;		// call every line
-//	cbvid cbVBlank;
-//	cbvid cbLine;		// @ hblank end
-//	cbvid cbFrame;		// call every frame
 	cbvid cbCount;		// call when busy count down to 0
 
 	cbxrd mrd;		// external memory reading
@@ -186,7 +177,6 @@ struct Video {
 	size_t frmsz;
 	size_t vBytes;
 	vRay ray;
-//	vLayout lay;
 	vCoord full;
 	vCoord blank;
 	vCoord bord;
@@ -232,11 +222,7 @@ struct Video {
 	unsigned short bgmapadr;
 	unsigned char wline;
 	int xpos;
-//	unsigned char wtline[256];	// win layer with priority
-//	unsigned char wbline[256];	// win layer without priority
-//	unsigned char stline[256];	// spr layer with priority
-//	unsigned char sbline[256];	// spr layer without priority
-	vCoord win;			// win layout position
+	vCoord win;		// win layout position
 	// v9938
 	unsigned high:1;
 	unsigned latch:1;
@@ -260,13 +246,13 @@ struct Video {
 	int finex;
 	int finey;
 //	int lines;
-	int inth;	// interrupts
+	int inth;		// interrupts
 	int intf;
 	int nt;
-	int dpb;	// dots per byte
+	int dpb;		// dots per byte
 	int count;
-	unsigned char com;		// executed command
-	unsigned char arg;		// command argument
+	unsigned char com;	// executed command
+	unsigned char arg;	// command argument
 	unsigned char dat;
 	int BGTiles;
 	int BGMap;

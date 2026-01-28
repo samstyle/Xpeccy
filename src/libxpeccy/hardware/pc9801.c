@@ -249,8 +249,8 @@ void pc98xx_kbd_wr(Computer* comp, int adr, int val) {
 // 62	rd	gdc data read
 // 62	wr	gdc command write
 // == CRTC
-// 64	wr	crt interrupt reset
-// 68	wr	mode flip-flop
+// 64:2	wr	crt interrupt reset
+// 68:4	wr	mode flip-flop
 //		b0:flag
 //		b1,2,3:param.nr:
 //		000:atr4 (graph / vertical line)
@@ -261,13 +261,13 @@ void pc98xx_kbd_wr(Computer* comp, int adr, int val) {
 //		101:kanji access (bitmap / code)
 //		110:static memory (enable / disable)
 //		111:allow display (enable / disable)
-// 6a	wr	mode flip-flop 2
+// 6a:5	wr	mode flip-flop 2
 //		b0:flag
 //		b1-7:param nr:
 //		0000000:color select (16col/8col)
 //		0000010:enhanced mode (enhanced / compatible)
 //		others:reserved
-// 6c	wr	border color: b4,5,6 = b,r,g
+// 6c:6	wr	border color: b4,5,6 = b,r,g
 
 // 70	wr	Character Position Lines Number
 // 72	wr	Body Face Lines Number
@@ -302,11 +302,59 @@ void pc98xx_gdc_wr(Computer* comp, int adr, int val) {
 }
 
 // uPD7220 - video(gra)
+// a0 rd:gdc status	wr:gdc par
+// a2 rd:gdc data	wr:gdc com
+// a4 wr:displaying access mode - b0:plane 1/0
+// a6 wr:drawing access mode - b0:plane 1/0
+// a8,aa,ac,ae: palete registers
+
+// egc: 04A.xxx.0
+// kanjirom: 00A.xxx.1
+
+int pc98xx_gra_rd(Computer* comp, int adr) {
+	int res = -1;
+	switch ((adr >> 1) & 7) {
+		case 0: break;
+		case 1: break;
+		case 2: break;
+		case 3: break;
+		case 4: break;
+		case 5: break;
+		case 6: break;
+		case 7: break;
+	}
+	return res;
+}
+
+void pc98xx_gra_wr(Computer* comp, int adr, int val) {
+
+}
+
+
 // uPD765 - FDC x 2
 // 80,82: 5" flop
 // 90,92,94,96: 1MB flop
 // uPD8251 - RS232
-// mouse
+
+// uPD8255: mouse
+// 7fe9 rd: mouse data: left.x.right.x.md3..0
+// 7fed wr: control flags: hc.sxy.shl.!int.x.x.x.x;
+// 7fef wr:	1xxxxxxx: wr mode	rd:93?
+//		0xxxnnnd: wr flag (111:hc, 100:!int)
+int pc98xx_mou_rd(Computer* comp, int adr) {
+	int res = 0;
+	switch((adr >> 1) & 3) {
+		case 0: res = 0;
+			break;
+		default:
+			break;
+	}
+	return res;
+}
+
+void pc98xx_mou_wr(Computer* comp, int adr, int val) {
+
+}
 
 // uPD8255 - printer
 // 40 wr data
@@ -386,7 +434,7 @@ xPort pc98xx_io_map[] = {
 	{0xcf1, 0x040, 2, 2, 2, pc98xx_prn_rd,	pc98xx_prn_wr},		// 40,42,44,46: printer on upd8255
 	{0xcf1, 0x041, 2, 2, 2, pc98xx_kbd_rd,	pc98xx_kbd_wr},		// 41,43: keyboard on upd8251
 	{0xcf1, 0x050, 2, 2, 2, NULL,		pc98xx_nmi_wr},		// 50,52: NMI controller: wr:A1 = nmi on/off
-	{0xcf1, 0x060, 2, 2, 2, pc98xx_gdc_rd,	pc98xx_gdc_wr},		// 60,62,64,66,68,6a,6c,6e: text video upd7220a
+	{0xcf1, 0x060, 2, 2, 2, pc98xx_gdc_rd,	pc98xx_gdc_wr},		// 60,62:text gdc, 64,66,68,6a,6c,6e: crtc
 //	{0xcf1, 0x070, 2, 2, 2, NULL,		NULL},			// 70,72,74,76,78,7a,7c,7e: crtc, grcg
 	{0xcf1, 0x071, 2, 2, 2, pc98xx_pit_rd,	pc98xx_pit_wr},		// 71,73,75,77: PIT on upd8253
 //	{0x0fd, 0x080, 2, 2, 2, NULL,		NULL},			// 80,82: hard disk inerface
@@ -394,14 +442,14 @@ xPort pc98xx_io_map[] = {
 //	{0x0f9, 0x089, 2, 2, 2, NULL,		NULL},			// 89,8b,8d,8f: network interface
 //	{0x0f1, 0x090, 2, 2, 2, NULL,		NULL},			// 90,92,94,96: hd fdd on upd765
 //	{0x0fd, 0x099, 2, 2, 2, NULL,		NULL},			// 99,9b: gp-ib switch
-//	{0xcf1, 0x0a0, 2, 2, 2, NULL,		NULL},			// a0,a2,a4,a6,a8,aa,ac,ae: graphic video upd7220a
+	{0xcf1, 0x0a0, 2, 2, 2, pc98xx_gra_rd,	pc98xx_gra_wr},		// a0,a2,a4,a6,a8,aa,ac,ae: graphic video upd7220a
 //	{0xcf1, 0x1a0, 2, 2, 2, NULL,		NULL},			// ecg
 //	{0xff1, 0x9a0, 2, 2, 2, NULL,		NULL},			// graphic control
 //	{0xcf1, 0x0a1, 2, 2, 2, NULL,		NULL},			// kanjirom
 //	{0x0f0, 0x0b0, 2, 2, 2, NULL,		NULL},			// b0..bf: communication controller / rs232 expansion interface; 0xbe: fdd switcher
 //	{0x0f9, 0x0c8, 2, 2, 2, NULL,		NULL},			// c8,ca,cc,ce: dd drive on upd765
 //	{0x0f1, 0x0c1, 2, 2, 2, NULL,		NULL},			// gp-ib on upd7210
-//	{0xfff9,0x7fd9,2, 2, 2, NULL,		NULL},			// 7fd9/b/d/f: mouse controller on upd8255
+	{0xfff9,0x7fd9,2, 2, 2, pc98xx_mou_rd,	pc98xx_mou_wr},		// 7fd9/b/d/f: mouse controller on upd8255
 //	{0xfffb,0x3fdb,2, 2, 2, NULL,		NULL},			// 3fdb/f: upd8253 (timer for beeper)
 //	{0xffff,0xbfdb,2, 2, 2, NULL,		NULL},			// bfdb: mouse interrupt ?
 //	{0xcf9, 0x0f0, 2, 2, 2, NULL,		NULL},			// f0,f2,f4,f6: cpu ?

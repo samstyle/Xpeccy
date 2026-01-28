@@ -103,6 +103,7 @@ xLabeList::xLabeList(QWidget* p):QDialog(p) {
 
 	connect(ui.name, SIGNAL(textChanged(QString)), mod, SLOT(reset(QString)));
 	connect(ui.list, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(listDoubleClicked(QModelIndex)));
+	connect(ui.list, SIGNAL(activated(QModelIndex)), this, SLOT(listDoubleClicked(QModelIndex)));		// maybe this is better than doubleClicked ? os-depending
 	connect(ui.cbLabelSet, SIGNAL(currentIndexChanged(int)), this, SLOT(changeLabelSet()));
 
 	connect(ui.tbAddGrp, SIGNAL(released()), this, SLOT(newGroup()));
