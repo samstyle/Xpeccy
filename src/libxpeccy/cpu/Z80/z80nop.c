@@ -41,11 +41,26 @@ void z80_call(CPU* cpu, unsigned short a) {
 	cpu->regWZ = a;
 	z80_push(cpu, cpu->regPC);
 	cpu->regPC = cpu->regWZ;
+	if (cpu->flgRetBRK) {
+		if (cpu->regCallCnt < 65000) {
+			cpu->regCallCnt++;
+		} else {
+			cpu->flgRetBRK = 0;
+		}
+	}
 }
 
 void z80_ret(CPU* cpu) {
 	cpu->regPC = z80_pop(cpu);
 	cpu->regWZ = cpu->regPC;
+	if (cpu->flgRetBRK) {				// if there is possibility to break on ret
+		if (cpu->regCallCnt == 0) {
+			cpu->flgRetBRK = 0;
+			cpu_irq(cpu, IRQ_BRK);
+		} else {
+			cpu->regCallCnt--;
+		}
+	}
 }
 
 // opcodes
@@ -645,8 +660,9 @@ void nprC4(CPU* cpu) {
 	cpu->regWZh = z80_mrd(cpu, cpu->regPC++);
 	if (!cpu->flgZ) {
 		cpu->t++;
-		z80_push(cpu, cpu->regPC);
-		cpu->regPC = cpu->regWZ;
+		z80_call(cpu, cpu->regWZ);
+		//z80_push(cpu, cpu->regPC);
+		//cpu->regPC = cpu->regWZ;
 	}
 }
 
@@ -694,17 +710,20 @@ void nprCC(CPU* cpu) {
 	cpu->regWZh = z80_mrd(cpu, cpu->regPC++);
 	if (cpu->flgZ) {
 		cpu->t++;
-		z80_push(cpu, cpu->regPC);
-		cpu->regPC = cpu->regWZ;
+		z80_call(cpu, cpu->regWZ);
+		//z80_push(cpu, cpu->regPC);
+		//cpu->regPC = cpu->regWZ;
 	}
 }
 
 // cd	call nn		4 3rd 4rd 3wr 3wr		wz = nn
 void nprCD(CPU* cpu) {
 	cpu->regWZl = z80_mrd(cpu, cpu->regPC++);
-	cpu->regWZh = z80_mrd(cpu, cpu->regPC++); cpu->t++;
-	z80_push(cpu, cpu->regPC);
-	cpu->regPC = cpu->regWZ;
+	cpu->regWZh = z80_mrd(cpu, cpu->regPC++);
+	cpu->t++;
+	z80_call(cpu, cpu->regWZ);
+	//z80_push(cpu, cpu->regPC);
+	//cpu->regPC = cpu->regWZ;
 }
 
 // ce	adc a,n		4 3rd
@@ -749,8 +768,9 @@ void nprD4(CPU* cpu) {
 	cpu->regWZh = z80_mrd(cpu, cpu->regPC++);
 	if (!cpu->flgC) {
 		cpu->t++;
-		z80_push(cpu, cpu->regPC);
-		cpu->regPC = cpu->regWZ;
+		z80_call(cpu, cpu->regWZ);
+		//z80_push(cpu, cpu->regPC);
+		//cpu->regPC = cpu->regWZ;
 	}
 }
 
@@ -802,8 +822,9 @@ void nprDC(CPU* cpu) {
 	cpu->regWZh = z80_mrd(cpu, cpu->regPC++);
 	if (cpu->flgC) {
 		cpu->t++;
-		z80_push(cpu, cpu->regPC);
-		cpu->regPC = cpu->regWZ;
+		z80_call(cpu, cpu->regWZ);
+		//z80_push(cpu, cpu->regPC);
+		//cpu->regPC = cpu->regWZ;
 	}
 }
 
@@ -854,8 +875,9 @@ void nprE4(CPU* cpu) {
 	cpu->regWZh = z80_mrd(cpu, cpu->regPC++);
 	if (!cpu->flgPV) {
 		cpu->t++;
-		z80_push(cpu, cpu->regPC);
-		cpu->regPC = cpu->regWZ;
+		z80_call(cpu, cpu->regWZ);
+		//z80_push(cpu, cpu->regPC);
+		//cpu->regPC = cpu->regWZ;
 	}
 }
 
@@ -903,8 +925,9 @@ void nprEC(CPU* cpu) {
 	cpu->regWZh = z80_mrd(cpu, cpu->regPC++);
 	if (cpu->flgPV) {
 		cpu->t++;
-		z80_push(cpu, cpu->regPC);
-		cpu->regPC = cpu->regWZ;
+		z80_call(cpu, cpu->regWZ);
+		//z80_push(cpu, cpu->regPC);
+		//cpu->regPC = cpu->regWZ;
 	}
 }
 
@@ -956,8 +979,9 @@ void nprF4(CPU* cpu) {
 	cpu->regWZh = z80_mrd(cpu, cpu->regPC++);
 	if (!cpu->flgS) {
 		cpu->t++;
-		z80_push(cpu, cpu->regPC);
-		cpu->regPC = cpu->regWZ;
+		z80_call(cpu, cpu->regWZ);
+		//z80_push(cpu, cpu->regPC);
+		//cpu->regPC = cpu->regWZ;
 	}
 }
 
@@ -1010,8 +1034,9 @@ void nprFC(CPU* cpu) {
 	cpu->regWZh = z80_mrd(cpu, cpu->regPC++);
 	if (cpu->flgS) {
 		cpu->t++;
-		z80_push(cpu, cpu->regPC);
-		cpu->regPC = cpu->regWZ;
+		z80_call(cpu, cpu->regWZ);
+		//z80_push(cpu, cpu->regPC);
+		//cpu->regPC = cpu->regWZ;
 	}
 }
 

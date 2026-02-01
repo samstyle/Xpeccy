@@ -169,6 +169,7 @@ void DebugWin::start() {
 	comp->vid->debug = 1;
 	comp->debug = 1;
 	comp->brk = 0;
+	comp->cpu->flgRetBRK = 0;
 
 	brk_clear_tmp(comp);		// clear temp breakpoints
 
@@ -752,6 +753,11 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 			} else {
 				doStep();
 			}
+			break;
+		case XCUT_STEPOUT:
+			comp->cpu->flgRetBRK = 1;
+			comp->cpu->regCallCnt = 0;
+			stop();
 			break;
 		case XCUT_FASTSTEP:
 			for (i = 10; i > 0; i--)

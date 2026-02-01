@@ -167,6 +167,9 @@ enum {
 #define flgWAIT	flags[59]		// ALL: WAIT signal (dummy 1T)
 #define flgACK	flags[58]		// Z80: acknowledge INT after execution (prevent last-1T INT)
 #define flgLOCK flags[57]		// LR35902: CPU locked
+#define flgRetBRK flags[56]
+
+#define regCallCnt regs[63].ih
 
 struct CPU {
 	// common part

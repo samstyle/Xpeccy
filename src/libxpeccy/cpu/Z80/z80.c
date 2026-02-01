@@ -49,6 +49,7 @@ void z80_reset(CPU* cpu) {
 	cpu->intrq = 0;
 	cpu->inten = Z80_NMI;	// NMI allways enabled, INT is controlled by ei/di
 	cpu->flgWAIT = 0;
+	cpu->flgRetBRK = 0;
 }
 
 // https://sinclair.wiki.zxnet.co.uk/wiki/Contended_memory
@@ -102,6 +103,9 @@ int z80_int(CPU* cpu) {
 				cpu->flgPV = 0;
 			}
 			cpu->opTab = npTab;
+			if (cpu->flgRetBRK) {
+				cpu->regCallCnt++;
+			}
 			switch(cpu->regIM) {
 				case 0:
 					cpu->t = 2;

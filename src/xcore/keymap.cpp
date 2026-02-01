@@ -443,6 +443,7 @@ static xShortcut short_tab[] = {
 
 	{SCG_DEBUGA, XCUT_STEPIN, "key.dbg.stepin", "DeBUGa: Step in", QKeySequence(), QKeySequence(Qt::Key_F7)},
 	{SCG_DEBUGA, XCUT_STEPOVER, "key.dbg.stepover", "DeBUGa: Step over", QKeySequence(), QKeySequence(Qt::Key_F8)},
+	{SCG_DEBUGA, XCUT_STEPOUT, "key.dbg.stepout", "DeBUGa: Step out", QKeySequence(), QKeySequence(Qt::Key_F6)},
 	{SCG_DEBUGA, XCUT_FASTSTEP, "key.dbg.faststep", "DeBUGa: Fast step", QKeySequence(), QKeySequence(Qt::ALT | Qt::Key_F7)},
 	{SCG_DEBUGA, XCUT_TMPBRK, "key.dbg.runtohere", "DeBUGa: Stop here", QKeySequence(), QKeySequence(Qt::Key_F9)},
 	{SCG_DEBUGA, XCUT_TRACE, "key.dbg.trace", "DeBUGa: Trace", QKeySequence(), QKeySequence(Qt::CTRL | Qt::Key_T)},
