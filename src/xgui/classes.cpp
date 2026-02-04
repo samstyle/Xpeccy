@@ -20,6 +20,7 @@ xHexSpin::xHexSpin(QWidget* p):QLineEdit(p) {
 	setMinimumWidth(60);
 	setAutoFillBackground(true);
 	setUpdatesEnabled(true);
+	setMinimumHeight(25);
 	//vldtr.setRegExp(QRegExp(""));
 	setRegExp(vldtr, "");
 	min = 0x0000;

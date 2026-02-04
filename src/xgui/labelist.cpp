@@ -171,5 +171,6 @@ void xLabeList::fillSetList() {
 void xLabeList::show() {
 	fillSetList();
 	mod->reset(ui.name->text());
+	ui.name->setFocus();
 	QWidget::show();
 }

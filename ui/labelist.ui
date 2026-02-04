@@ -9,7 +9,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>367</width>
+    <width>556</width>
     <height>383</height>
    </rect>
   </property>
@@ -82,15 +82,7 @@
     </layout>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout_3">
-     <item>
-      <widget class="QCheckBox" name="cbAdrCpu">
-       <property name="text">
-        <string>Convert address to CPU address space</string>
-       </property>
-      </widget>
-     </item>
-    </layout>
+    <layout class="QHBoxLayout" name="horizontalLayout_3"/>
    </item>
    <item>
     <widget class="QListView" name="list">
@@ -102,6 +94,13 @@
      </property>
      <property name="selectionBehavior">
       <enum>QAbstractItemView::SelectRows</enum>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QCheckBox" name="cbAdrCpu">
+     <property name="text">
+      <string>Convert address to CPU address space</string>
      </property>
     </widget>
    </item>
