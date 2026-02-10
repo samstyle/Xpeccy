@@ -1,6 +1,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <fstream>
+#include <iostream>
 #include <stdio.h>
 
 #include <QtCore>
@@ -56,9 +57,31 @@ void conf_init(char* wpath, char* confdir) {
 		conf.path.confDir = std::string(confdir);
 	}
 	mkdir(conf.path.confDir.c_str(), 0777);
-	conf.path.romDir = conf.path.confDir + "/roms";
-	mkdir(conf.path.romDir.c_str() ,0777);
-	conf.path.prfDir = conf.path.confDir + "/profiles";
+
+    fs::path dataDirsSuffix = "samstyle/xpeccy";
+
+    conf.path.dataHomeDir = xdg::DataHomeDir() / dataDirsSuffix;
+    fs::create_directories(conf.path.dataHomeDir);
+
+	conf.path.romHomeDir = conf.path.dataHomeDir / "roms";
+
+    // TEMPORARY, to handle legacy setups:
+    // ROMs should be in the XDG "data" directory rather than in the "config" one.
+    // Detect if the user has ROMs in the "config" directory and move them where they belong.
+    auto oldRomDir = fs::path{conf.path.confDir} / "roms";
+    if (fs::exists(oldRomDir) && !fs::exists(conf.path.romHomeDir)) {
+        std::cout << "Moving " << oldRomDir << " -> " << conf.path.romHomeDir << std::endl;
+        fs::rename(oldRomDir, conf.path.romHomeDir);
+    }
+
+    fs::create_directory(conf.path.romHomeDir);
+
+    for (auto &dir : xdg::DataDirs()) {
+        conf.path.romDataDirs.emplace_back(dir / dataDirsSuffix / "roms");
+    }
+
+
+    conf.path.prfDir = conf.path.confDir + "/profiles";
 	mkdir(conf.path.prfDir.c_str() ,0777);
 	conf.path.shdDir = conf.path.confDir + "/shaders";
 	mkdir(conf.path.shdDir.c_str() ,0777);
@@ -81,7 +104,7 @@ void conf_init(char* wpath, char* confdir) {
 	} else {
 		conf.path.confDir = std::string(confdir);
 	}
-	conf.path.romDir = conf.path.confDir + "\\roms";
+	conf.path.romHomeDir = conf.path.confDir + "\\roms";
 	conf.path.prfDir = conf.path.confDir + "\\profiles";
 	conf.path.shdDir = conf.path.confDir + "\\shaders";
 	conf.path.palDir = conf.path.confDir + "\\palettes";
@@ -90,7 +113,7 @@ void conf_init(char* wpath, char* confdir) {
 	conf.path.confFile = conf.path.confDir + "\\config.conf";
 	conf.path.boot = conf.path.confDir + "\\boot.$B";
 	mkdir(conf.path.confDir.c_str());
-	mkdir(conf.path.romDir.c_str());
+	mkdir(conf.path.romHomeDir.c_str());
 	mkdir(conf.path.prfDir.c_str());
 	mkdir(conf.path.shdDir.c_str());
 	mkdir(conf.path.palDir.c_str());
@@ -269,7 +292,7 @@ void loadConfig() {
 		strcat(fname, SLASH);
 		strcat(fname, "xpeccy.conf");
 		copyFile(":/conf/xpeccy.conf", fname);
-		strcpy(fname, conf.path.romDir.c_str());
+		strcpy(fname, conf.path.romHomeDir.c_str());
 		strcat(fname, SLASH);
 		strcat(fname, "1982.rom");
 		copyFile(":/conf/1982.rom", fname);
