@@ -173,27 +173,61 @@ void upd7220_wr(Video* vid, int adr, int val) {
 // 8col - 0,1,2. plane 3 unused
 // mono - each plane is separate screen
 
-static xreg16 cdata;
-static xreg16 catr;
-
 void upd7220_dot(Video* vid) {
-	int c = 0;
-	if (!(vid->ray.xs & 7)) {	// 640pix / 80 char = 8 pix/char. NOTE: but char width is 16x16 pix ?
-		int adr = ((vid->ray.ys & 0xf0) * 10) + (vid->ray.x >> 2);	// char address
-		catr.l = vid->ram[adr | 0x2000];
-		catr.h = vid->ram[adr | 0x2001];
-		int chr = (vid->ram[adr] & 0xff) | (vid->ram[adr + 1] << 8);	// char code
-		chr = (chr << 5) | ((vid->ray.ys & 0x0f) << 1);			// char data addr in kanjirom (32 bytes/char)
-		//cdata.l = vid->font[chr];					// read data, msb is 1st to out
-		//cdata.h = vid->font[chr + 1];
-	}
-	vid_dot_half(vid, (cdata.w & 0x80) ? c : 0);
-	vid_dot_half(vid, (cdata.w & 0x40) ? c : 0);
-	cdata.w <<= 2;
+	int pos = vid->ray.xs << 1;
+	int tc = vid->line[pos];
+	int gc = vid->linb[pos];
+	vid_dot_half(vid, tc ? tc : gc);
+	pos++;
+	tc = vid->line[pos];
+	gc = vid->linb[pos];
+	vid_dot_half(vid, tc ? tc : gc);
 }
 
 void upd7220_line(Video* vid) {
-
+// form text line (vid->line)
+	int c = 7;
+	int adr = (vid->ray.ys & 0xf0) * 10;		// adr of line start
+	int pos = 0;
+	int clin = vid->ray.ys & 0x0f;			// line inside char
+	int i, j;
+	int chr;
+	int atr;
+	for (i = 0; i < 80; i++) {
+		chr = (vid->ram[adr] & 0xff) | (vid->ram[adr + 1] << 8);		// char code (TODO: lowres mode, 40 ch/line)
+		atr = (vid->ram[adr | 0x2000] & 0xff) | (vid->ram[adr | 0x2001] << 8);	// char attribute
+		chr = (chr << 5) | (clin << 1);						// char data address (current line)
+		//chr = (vid->font[chr] << 8) | (vid->font[chr | 1] & 0xff);		// 16 bit of pixels, do something with 283K kanjirom
+		// TODO: atr.invert, atr.blink, atr.stroked
+		for (j = 0; j < 16; j++) {
+			// TODO: fg/bg color for text mode
+			// TODO: lowres mode
+			vid->line[pos++] = (chr & 0x8000) ? c : 0;
+		}
+		adr += 2;								// next char
+	}
+// form graphic line (vid->linb)
+	int pln0, pln1, pln2, pln3;	// data from planes
+	pos = 0;
+	adr = vid->ray.ys * 80;
+	for (i = 0; i < 80; i++) {
+		pln0 = vid->ram[0x8000 + adr];
+		pln1 = vid->ram[0x10000 + adr];
+		pln2 = vid->ram[0x18000 + adr];
+		pln3 = vid->ram[0x20000 + adr];
+		chr = 0x80;
+		for (j = 0; j < 8; j++) {
+			c = 0;
+			if (pln0 & chr) c |= 1;
+			if (pln1 & chr) c |= 2;
+			if (pln2 & chr) c |= 4;
+			if (pln3 & chr) c |= 8;
+			vid->linb[pos++] = c;
+			vid->linb[pos++] = c;
+			chr >>= 1;
+		}
+		adr++;
+	}
 }
 
 void upd7220_frame(Video* vid) {

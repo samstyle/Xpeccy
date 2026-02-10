@@ -20,7 +20,6 @@ xHexSpin::xHexSpin(QWidget* p):QLineEdit(p) {
 	setMinimumWidth(60);
 	setAutoFillBackground(true);
 	setUpdatesEnabled(true);
-	setMinimumHeight(25);
 	//vldtr.setRegExp(QRegExp(""));
 	setRegExp(vldtr, "");
 	min = 0x0000;
@@ -108,7 +107,7 @@ void xHexSpin::updatePal() {
 #if 1
 	QString str;
 	if (changed) {
-		str = getStyleString("dbg.changed.bg", "dbg.changed.txt");
+		str = getStyleString("dbg.changed.bg", "dbg.changed.txt");		// NOTE: font changing to default
 	} else {
 		str = ""; // getStyleString("dbg.input.bg", "dbg.input.txt");
 	}

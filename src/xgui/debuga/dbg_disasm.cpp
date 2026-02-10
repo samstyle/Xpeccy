@@ -769,7 +769,9 @@ bool xDisasmModel::setData(const QModelIndex& cidx, const QVariant& val, int rol
 // TABLE
 
 xDisasmTable::xDisasmTable(QWidget* p):QTableView(p) {
-	//cptr = NULL;
+	for (int i = 0; i < 4; i++) {
+		storedAddress[i] = -1;
+	}
 	model = new xDisasmModel();
 	setModel(model);
 	connect(model, SIGNAL(s_comenter()), this, SLOT(rowDown()));
@@ -931,6 +933,16 @@ void xDisasmTable::copyToCbrd() {
 	}
 }
 
+void xDisasmTable::jumpMarked(int idx, Qt::KeyboardModifiers mod) {
+	if ((idx < 0) || (idx > 4)) return;
+	if (mod & Qt::ControlModifier) {
+		int adr = storedAddress[idx];
+		if (adr >= 0) setAdr(adr);
+	} else if (mod & Qt::AltModifier) {
+		storedAddress[idx] = getAdr();
+	}
+}
+
 void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 	QModelIndex idx = currentIndex();
 	int i;
@@ -938,7 +950,8 @@ void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 	int bpr;
 	int adr;
 	xAdr xadr;
-	int key = shortcut_check(SCG_DISASM, QKeySequence(ev->key() | ev->modifiers()));
+	Qt::KeyboardModifiers mod = ev->modifiers();
+	int key = shortcut_check(SCG_DISASM, QKeySequence(ev->key() | mod));
 	if (key < 0)
 		key = shortcut_check(SCG_DISASM, QKeySequence(ev->key()));
 	if (key < 0)
@@ -946,16 +959,21 @@ void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 	Computer* comp = conf.prof.cur->zx;
 	int pc = cpu_get_pc(comp->cpu);
 	switch (key) {
+		case Qt::Key_1: jumpMarked(0, mod); break;
+		case Qt::Key_2: jumpMarked(1, mod); break;
+		case Qt::Key_3: jumpMarked(2, mod); break;
+		case Qt::Key_4: jumpMarked(3, mod); break;
+		case Qt::Key_5: jumpMarked(4, mod); break;
 		case Qt::Key_Up:
-			if ((ev->modifiers() & Qt::ControlModifier) || (idx.row() == 0)) {
-				scrolUp(ev->modifiers());
+			if ((mod & Qt::ControlModifier) || (idx.row() == 0)) {
+				scrolUp(mod);
 			} else {
 				QTableView::keyPressEvent(ev);
 			}
 			break;
 		case Qt::Key_Down:
-			if ((ev->modifiers() & Qt::ControlModifier) || (idx.row() == model->rowCount() - 1)) {
-				scrolDn(ev->modifiers());
+			if ((mod & Qt::ControlModifier) || (idx.row() == model->rowCount() - 1)) {
+				scrolDn(mod);
 			} else {
 				QTableView::keyPressEvent(ev);
 			}
@@ -993,7 +1011,7 @@ void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 			break;
 		case XCUT_SETBRK:
 			adr = getData(idx.row(), 0, Qt::UserRole).toInt();	// bus addr
-			if (ev->modifiers() & Qt::ShiftModifier) {
+			if (mod & Qt::ShiftModifier) {
 				bpr = BRK_CPUADR;
 				bpt = 0;
 			} else {
@@ -1013,9 +1031,9 @@ void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 				// adr = xadr.abs;
 			}
 			// modifiers doesn't work with new hotkeys (hotkey not detected)
-			if (ev->modifiers() & Qt::AltModifier) {
+			if (mod & Qt::AltModifier) {
 				bpt |= MEM_BRK_RD;
-			} else if (ev->modifiers() & Qt::ControlModifier) {
+			} else if (mod & Qt::ControlModifier) {
 				bpt |= MEM_BRK_WR;
 			} else {
 				bpt |= MEM_BRK_FETCH;
@@ -1045,7 +1063,7 @@ void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 			edit(currentIndex());
 			break;
 		case Qt::Key_C:
-			if (ev->modifiers() & Qt::ControlModifier)
+			if (mod & Qt::ControlModifier)
 				copyToCbrd();
 			break;
 		default:

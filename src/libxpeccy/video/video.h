@@ -325,7 +325,7 @@ struct Video {
 	} vga;
 
 	unsigned char line[0x500];		// buffer for render sprites & tiles
-	unsigned char linb[0x200];		// buffer for rendered bitplane
+	unsigned char linb[0x500];		// buffer for rendered bitplane
 	unsigned char font[0x2000];		// ATM/C64/CGA text mode font (8K for CGA font)		NOTE: pc98xx kanji.rom size is 282KB
 
 	unsigned char sprxspr;			// c64 spr-spr collisions

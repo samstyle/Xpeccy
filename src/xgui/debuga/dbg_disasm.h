@@ -84,11 +84,13 @@ class xDisasmTable : public QTableView {
 		xDisasmModel* model;
 		QList<int> history;
 		QColor pc_bgr,pc_txt,blk_bgr,blk_txt,brk_txt;
+		int storedAddress[5];
 
 		void scrolUp(Qt::KeyboardModifiers = Qt::NoModifier);
 		void scrolDn(Qt::KeyboardModifiers = Qt::NoModifier);
 
 		void copyToCbrd();
+		void jumpMarked(int, Qt::KeyboardModifiers);
 
 		void keyPressEvent(QKeyEvent*);
 		void mousePressEvent(QMouseEvent*);

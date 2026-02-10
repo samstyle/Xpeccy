@@ -187,6 +187,7 @@ void DebugWin::start() {
 	wid_brk->moved();		// to redraw all icons
 	wid_zxscr->setZoom(conf.dbg.scrzoom);
 	activateWindow();
+	ui_asm.dasmTable->setFocus();
 }
 
 void DebugWin::stop() {
@@ -360,6 +361,7 @@ DebugWin::DebugWin(QWidget* par):QMainWindow(par) {
 		xhs->setVisible(false);
 		xhs->setFrame(false);
 		xhs->setFixedWidth(60);
+		xhs->setMinimumHeight(25);
 		xhs->setAlignment(Qt::AlignCenter);
 		qcb = new QCheckBox;
 		qcb->setVisible(false);
