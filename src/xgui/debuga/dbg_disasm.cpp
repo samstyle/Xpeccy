@@ -769,7 +769,7 @@ bool xDisasmModel::setData(const QModelIndex& cidx, const QVariant& val, int rol
 // TABLE
 
 xDisasmTable::xDisasmTable(QWidget* p):QTableView(p) {
-	for (int i = 0; i < 4; i++) {
+	for (int i = 0; i < 5; i++) {
 		storedAddress[i] = -1;
 	}
 	model = new xDisasmModel();
@@ -935,10 +935,10 @@ void xDisasmTable::copyToCbrd() {
 
 void xDisasmTable::jumpMarked(int idx, Qt::KeyboardModifiers mod) {
 	if ((idx < 0) || (idx > 4)) return;
-	if (mod & Qt::ControlModifier) {
+	if (mod & Qt::AltModifier) {
 		int adr = storedAddress[idx];
 		if (adr >= 0) setAdr(adr);
-	} else if (mod & Qt::AltModifier) {
+	} else if (mod & Qt::ControlModifier) {
 		storedAddress[idx] = getAdr();
 	}
 }
