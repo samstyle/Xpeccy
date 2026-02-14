@@ -106,11 +106,13 @@ extern QString getStyleString(QString, QString, int = 0, int = 100);
 void xHexSpin::updatePal() {
 #if 1
 	QString str;
+	QWidget* p = parentWidget();
 	if (changed) {
-		str = getStyleString("dbg.changed.bg", "dbg.changed.txt");		// NOTE: font changing to default
+		str = getStyleString("dbg.changed.bg", "dbg.changed.txt");
 	} else {
-		str = ""; // getStyleString("dbg.input.bg", "dbg.input.txt");
+		str = p ? p->styleSheet() : ""; // getStyleString("dbg.input.bg", "dbg.input.txt");
 	}
+	if (p) setFont(p->font());
 	setStyleSheet(str);
 #else
 	QPalette pal;
