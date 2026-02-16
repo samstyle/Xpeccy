@@ -213,6 +213,8 @@ Video* vidCreate(cbxrd cb, cbirq ci, void* dptr) {
 	vid->inten = 0x01;		// FRAME INT for all
 
 	vid->ula = ula_create();
+	vid->txt7220 = upd7220_create();
+	vid->grf7220 = upd7220_create();
 
 	vid_set_border(vid, 0.5);
 
@@ -234,6 +236,8 @@ Video* vidCreate(cbxrd cb, cbirq ci, void* dptr) {
 
 void vidDestroy(Video* vid) {
 	ula_destroy(vid->ula);
+	upd7220_destroy(vid->txt7220);
+	upd7220_destroy(vid->grf7220);
 	free(vid);
 }
 

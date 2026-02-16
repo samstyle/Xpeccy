@@ -18,6 +18,7 @@ typedef struct Video Video;
 #include "v9938.h"
 #include "gbcvideo.h"
 #include "nesppu.h"
+#include "upd7220.h"
 
 #define vid_irq(_v, _n) _v->xirq(_n, _v->xptr)
 
@@ -342,7 +343,8 @@ struct Video {
 //	bool flag[256];
 
 	ulaPlus* ula;
-
+	upd7220* txt7220;
+	upd7220* grf7220;
 };
 
 Video* vidCreate(cbxrd, cbirq, void*);

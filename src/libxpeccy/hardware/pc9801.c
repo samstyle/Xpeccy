@@ -286,7 +286,7 @@ int pc98xx_gdc_rd(Computer* comp, int adr) {
 	adr = (adr >> 1) & 7;
 	switch (adr) {
 		case 0:
-		case 1: res = upd7220_rd(comp->vid, adr); break;
+		case 1: res = upd7220_rd(comp->vid, comp->vid->txt7220, adr); break;
 		case 2: break;
 		case 3: break;
 		case 4: break;
@@ -313,9 +313,10 @@ void pc98xx_gdc_wr(Computer* comp, int adr, int val) {
 
 int pc98xx_gra_rd(Computer* comp, int adr) {
 	int res = -1;
-	switch ((adr >> 1) & 7) {
-		case 0: break;
-		case 1: break;
+	adr = (adr >> 1) & 7;
+	switch (adr) {
+		case 0:
+		case 1: res = upd7220_rd(comp->vid, comp->vid->grf7220, adr); break;
 		case 2: break;
 		case 3: break;
 		case 4: break;

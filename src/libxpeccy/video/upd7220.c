@@ -1,4 +1,20 @@
-#include "video.h"
+#include <string.h>
+
+#include "upd7220.h"
+
+upd7220* upd7220_create() {
+	upd7220* upd = (upd7220*)malloc(sizeof(upd7220));
+	if (upd) {
+		memset(upd, 0x00, sizeof(upd7220));
+	}
+	return upd;
+}
+
+void upd7220_destroy(upd7220* upd) {
+	if (upd) {
+		free(upd);
+	}
+}
 
 // a0: 0 - rd:status, wr:param fifo
 // a0: 1 - rd:fifo rd, wr:command fifo
@@ -12,15 +28,6 @@
 // b2: fifo empty
 // b1: fifo full
 // b0: data ready
-
-// reg[00..0F] = fifo for commands, com + params
-// reg[10..1F] = output data buffer
-#define regCom	reg[0]
-#define fifoPos	reg[32]	// +1 each internal rd
-#define fifoSiz reg[33]	// +1 each cpu writing, -1 each internal rd. queue size
-#define parCnt	reg[34]	// parameters command want to get
-#define dOutPos reg[35]	// =0x10 when form output packet, +1 each cpu rd
-#define dOutSiz	reg[36]	// output data packet size (0 = no data), -1 each cpu rd
 
 // execute command. reg[0] = com, reg[1..15] = params
 // commands,parameters
@@ -47,18 +54,26 @@
 // 001ww1mm	0	dmaw
 // 101ww1mm	0	dmar
 
+void upd7220_start(Video* vid, upd7220* upd) {
+	upd->off = 0;
+}
+
+void upd7220_stop(Video* vid, upd7220* upd) {
+	upd->off = 1;
+}
+
 struct upd7220com {
 	int mask;
 	int com;
 	int pcnt;
-	void(*exec)(Video*);
+	void(*exec)(Video*, upd7220*);
 } gdc_com_tab[] = {
 	{0xff, 0x00, 0, NULL},	// reset
 	{0xfe, 0x0e, 8, NULL},	// sync
 	{0xfe, 0x6e, 0, NULL},	// select chip
-	{0xff, 0x6b, 0, NULL},	// start - enable output
-	{0xff, 0x0d, 0, NULL},	// start - (same)
-	{0xff, 0x0c, 0, NULL},	// stop - disable output
+	{0xff, 0x6b, 0, upd7220_start},	// start - enable output
+	{0xff, 0x0d, 0, upd7220_start},	// start - (same)
+	{0xff, 0x0c, 0, upd7220_stop},	// stop - disable output
 	{0xff, 0x46, 1, NULL},	// zoom
 	{0xf0, 0x70, 16, NULL},	// scroll
 	{0xff, 0x4b, 4, NULL},	// csrform
@@ -78,24 +93,24 @@ struct upd7220com {
 	{0,0,0, NULL}		// (eot)
 };
 
-void upd7220_exec(Video* vid) {
+void upd7220_exec(Video* vid, upd7220* upd) {
 	int adr = 0;
-	while (gdc_com_tab[adr].mask && ((vid->regCom ^ gdc_com_tab[adr].com) & gdc_com_tab[adr].mask)) {
+	while (gdc_com_tab[adr].mask && ((upd->inbuf.data[0] ^ gdc_com_tab[adr].com) & gdc_com_tab[adr].mask)) {
 		adr++;
 	}
 	if (gdc_com_tab[adr].exec != NULL) {
-		gdc_com_tab[adr].exec(vid);
+		gdc_com_tab[adr].exec(vid, upd);
 	}
 }
 
-int upd7220_rd(Video* vid, int adr) {
+int upd7220_rd(Video* vid, upd7220* upd, int adr) {
 	int res = 0;
 	if (adr & 1) {
 		// out data rd
-		if (vid->dOutSiz > 0) {
-			res = vid->reg[vid->dOutPos];
-			vid->dOutPos++;
-			vid->dOutSiz--;
+		if (upd->outbuf.cnt > 0) {
+			res = upd->outbuf.data[upd->outbuf.pos];
+			upd->outbuf.pos++;
+			upd->outbuf.cnt--;
 		} else {
 			res = 0xff;
 		}
@@ -103,43 +118,42 @@ int upd7220_rd(Video* vid, int adr) {
 		// status rd
 		if (vid->hblank) res |= 0x40;
 		if (vid->vblank) res |= 0x20;
-		if (vid->fifoSiz > 15) {
+		if (upd->inbuf.cnt > 16) {
 			res |= 0x02;
-		} else if (vid->fifoSiz == 0) {
+		} else if (upd->inbuf.cnt == 0) {
 			res |= 0x04;
 		}
-		if (vid->dOutSiz > 0) res |= 0x01;
+		if (upd->outbuf.cnt > 0) res |= 0x01;
 	}
 	return res;
 }
 
-void upd7220_wr(Video* vid, int adr, int val) {
+void upd7220_wr(Video* vid, upd7220* upd, int adr, int val) {
 	if (adr & 1) {
 		// fifo wr:command
-		vid->regCom = val & 0xff;
-		vid->fifoPos = 0;
-		vid->fifoSiz = 1;
+		upd->inbuf.data[0] = val & 0xff;
+		upd->inbuf.cnt = 0;
+		upd->inbuf.pos = 1;
 		adr = 0;
 		while (gdc_com_tab[adr].mask && ((val ^ gdc_com_tab[adr].com) & gdc_com_tab[adr].mask)) {
 			adr++;
 		}
 		if (gdc_com_tab[adr].mask) {	// valid
-			vid->parCnt = gdc_com_tab[adr].pcnt;
-			if (vid->parCnt == 0) {	// no params
-				upd7220_exec(vid);
+			upd->inbuf.cnt = gdc_com_tab[adr].pcnt;
+			if (upd->inbuf.cnt == 0) {	// no params
+				upd7220_exec(vid, upd);
 			}
 		} else {			// not valid
 			// ...
 		}
-
 	} else {
 		// fifo wr:param
-		if (vid->parCnt > 0) {
-			vid->reg[vid->fifoSiz & 15] = val & 15;
-			vid->parCnt--;
-			vid->fifoSiz++;
-			if (vid->parCnt == 0) {
-				upd7220_exec(vid);
+		if (upd->inbuf.cnt > 0) {
+			upd->inbuf.data[upd->inbuf.pos] = val & 0xff;
+			upd->inbuf.cnt--;
+			upd->inbuf.pos++;
+			if (upd->inbuf.cnt == 0) {
+				upd7220_exec(vid, upd);
 			}
 		}
 	}
@@ -193,40 +207,48 @@ void upd7220_line(Video* vid) {
 	int i, j;
 	int chr;
 	int atr;
-	for (i = 0; i < 80; i++) {
-		chr = (vid->ram[adr] & 0xff) | (vid->ram[adr + 1] << 8);		// char code (TODO: lowres mode, 40 ch/line)
-		atr = (vid->ram[adr | 0x2000] & 0xff) | (vid->ram[adr | 0x2001] << 8);	// char attribute
-		chr = (chr << 5) | (clin << 1);						// char data address (current line)
-		//chr = (vid->font[chr] << 8) | (vid->font[chr | 1] & 0xff);		// 16 bit of pixels, do something with 283K kanjirom
-		// TODO: atr.invert, atr.blink, atr.stroked
-		for (j = 0; j < 16; j++) {
-			// TODO: fg/bg color for text mode
-			// TODO: lowres mode
-			vid->line[pos++] = (chr & 0x8000) ? c : 0;
+	if (vid->txt7220->off) {
+		memset(vid->line, 0x00, 0x500);
+	} else {
+		for (i = 0; i < 80; i++) {
+			chr = (vid->ram[adr] & 0xff) | (vid->ram[adr + 1] << 8);		// char code (TODO: lowres mode, 40 ch/line)
+			atr = (vid->ram[adr | 0x2000] & 0xff) | (vid->ram[adr | 0x2001] << 8);	// char attribute
+			chr = (chr << 5) | (clin << 1);						// char data address (current line)
+			//chr = (vid->font[chr] << 8) | (vid->font[chr | 1] & 0xff);		// 16 bit of pixels, do something with 283K kanjirom
+			// TODO: atr.invert, atr.blink, atr.stroked
+			for (j = 0; j < 16; j++) {
+				// TODO: fg/bg color for text mode
+				// TODO: lowres mode
+				vid->line[pos++] = (chr & 0x8000) ? c : 0;
+			}
+			adr += 2;								// next char
 		}
-		adr += 2;								// next char
 	}
 // form graphic line (vid->linb)
-	int pln0, pln1, pln2, pln3;	// data from planes
-	pos = 0;
-	adr = vid->ray.ys * 80;
-	for (i = 0; i < 80; i++) {
-		pln0 = vid->ram[0x8000 + adr];
-		pln1 = vid->ram[0x10000 + adr];
-		pln2 = vid->ram[0x18000 + adr];
-		pln3 = vid->ram[0x20000 + adr];
-		chr = 0x80;
-		for (j = 0; j < 8; j++) {
-			c = 0;
-			if (pln0 & chr) c |= 1;
-			if (pln1 & chr) c |= 2;
-			if (pln2 & chr) c |= 4;
-			if (pln3 & chr) c |= 8;
-			vid->linb[pos++] = c;
-			vid->linb[pos++] = c;
-			chr >>= 1;
+	if (vid->grf7220->off) {
+		memset(vid->linb, 0x00, 0x500);
+	} else {
+		int pln0, pln1, pln2, pln3;	// data from planes
+		pos = 0;
+		adr = vid->ray.ys * 80;
+		for (i = 0; i < 80; i++) {
+			pln0 = vid->ram[0x8000 + adr];
+			pln1 = vid->ram[0x10000 + adr];
+			pln2 = vid->ram[0x18000 + adr];
+			pln3 = vid->ram[0x20000 + adr];
+			chr = 0x80;
+			for (j = 0; j < 8; j++) {
+				c = 0;
+				if (pln0 & chr) c |= 1;
+				if (pln1 & chr) c |= 2;
+				if (pln2 & chr) c |= 4;
+				if (pln3 & chr) c |= 8;
+				vid->linb[pos++] = c;
+				vid->linb[pos++] = c;
+				chr >>= 1;
+			}
+			adr++;
 		}
-		adr++;
 	}
 }
 
