@@ -238,7 +238,7 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 		foreach(xRomFile xrf, rset->roms) {
 			foff = xrf.foffset * 1024;
 			roff = xrf.roffset * 1024;
-			fpath = conf.path.romDir + SLASH + xrf.name;
+			fpath = conf.path.findRom(xrf.name);
 			file = fopen(fpath.c_str(), "rb");
 			if (file) {
 				if (xrf.fsize <= 0) {			// check part size
@@ -266,7 +266,7 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 		memSetSize(prf->zx->mem, -1, romsz);
 // load GS ROM
 		if (!rset->gsFile.empty()) {
-			fpath = conf.path.romDir + SLASH + rset->gsFile;
+			fpath = conf.path.findRom(rset->gsFile);
 			file = fopen(fpath.c_str(), "rb");
 			if (file) {
 				fread(prf->zx->gs->mem->romData, MEM_32K, 1, file);
@@ -278,7 +278,7 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 		}
 // load ATM2 font data
 		if (!rset->fntFile.empty()) {
-			fpath = conf.path.romDir + SLASH + rset->fntFile;
+			fpath = conf.path.findRom(rset->fntFile);
 			file = fopen(fpath.c_str(), "rb");
 			if (file) {
 				fread(prf->zx->vid->font, MEM_8K, 1, file);
@@ -289,7 +289,7 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 		memset(prf->zx->vid->bios, 0xff, MEM_64K);
 		prf->zx->vid->vga.cga = 1;
 		if (!rset->vBiosFile.empty()) {
-			fpath = conf.path.romDir + SLASH + rset->vBiosFile;
+			fpath = conf.path.findRom(rset->vBiosFile);
 			file = fopen(fpath.c_str(), "rb");
 			if (file) {
 				fread(prf->zx->vid->bios, MEM_64K, 1, file);
