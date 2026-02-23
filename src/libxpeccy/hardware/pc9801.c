@@ -14,8 +14,11 @@
 
 #include "../video/upd7220.h"
 
-#define kbdStatus reg[50]
-#define kbdCom	reg[51]
+#define regKBDm reg[50]		// mode
+#define regKBDc reg[51]		// command
+#define regKBDs	reg[52]		// status (oe,fe,pe)
+#define regKBDd	reg[53]		// last transfered byte
+
 //#define portA	reg[64] = DIPSW1
 #define portB	reg[65]
 #define portC	reg[66]
@@ -24,6 +27,7 @@
 #define DIPSW3	reg[73]
 
 #define flgNMI	flag[0]
+#define flgKBDm flag[1]	// upd8251 mode (0:mode, 1:command)
 
 #include "../spectrum.h"
 
@@ -71,6 +75,8 @@ void pc98xx_mem_map(Computer* comp) {
 void pc98xx_reset(Computer* comp) {
 	cpu_reset(comp->cpu);
 	comp->portC = 0xff;
+	comp->flgKBDm = 0;
+	comp->regKBDs = 0;
 	pc98xx_mem_map(comp);
 }
 
@@ -199,55 +205,77 @@ void pc98xx_dma_wr(Computer* comp, int adr, int val) {
 	}
 }
 
+// TODO: add uart type UPD_8251 and move to uart*.c on comp->uart
 
 // uPD8251 - usart, keyboard controller (rw:41,rw:43)
 // 41 - data
 // 43 - status/cmd
 // status:
 // b5 FE:framing error
-// b4 OE:overrun error
+// b4 OE:overrun error (pressing key w/o reading previous one)
 // b3 PE:parity error
 // b1 RxRDY: data is ready (=rd drq)
+// mode:
+// b0,1: bitrate (00:no, 01:x1, 10:x16, 11:x64)
+// b2,3: symbol size (00:5bits, 01:6bits, 10:7bits, 11:8bits)
+// b4: parity check on
+// b5: parity mode (1:odd, 0:even)
+// b6,7: stop bit count (00:no, 01:1bit, 10:1.5bits???, 11:2bits)
 // cmd:
-// b6 IR:internal reset (0->1  =  reset?)
-// b5 RTS:request send
-// b4 ER:error reset
-// b3 SBRX:send break reset char
-// b2 RE:reciever enabled (ctrl-dev enable?)
-// b1 DTR:data terminal ready
-// b0 TxEN:(comp-ctrl enable?)
+// b6 IR:internal reset (1:go to initial mode)
+// b5 RTS:1:stop keycode generation
+// b4 ER:error reset (reset FE,OE,PE in status reg)
+// b3 RST:reset
+// b2 RXE:reciever enabled usart->comp enabled
+// b1 RTY:1:retry last symbol
+// b0 TXEN: comp->usart enabled
+
+#define F_ERR_FE	0x20
+#define F_ERR_OE	0x10
+#define F_ERR_PE	0x08
+#define F_RXRDY		0x02
 
 int pc98xx_kbd_rd(Computer* comp, int adr) {
 	int res = 0;
 	if (adr & 2) {	// 43:status
+		res = comp->regKBDs & (F_ERR_FE | F_ERR_OE | F_ERR_PE);
 		if (comp->keyb->outbuf & 0xff)
-			res |= 1;	// data ready
-		// no errors
+			res |= F_RXRDY;	// data ready
 	} else {	// 41
 		res = xt_read(comp->keyb);	// FF if no code
+		comp->regKBDd = res;
 	}
 	return res;
 }
 
 void pc98xx_kbd_wr(Computer* comp, int adr, int val) {
 	if (adr & 2) {	// 43
-		comp->kbdCom = val & 0xff;
-	} else {	// 41
-		// write to keyboard
+		if (!comp->flgKBDm) {		// 1st time after reset: write mode
+			comp->regKBDm = val;
+			comp->flgKBDm = 1;
+		} else {
+			// others: write command
+			comp->regKBDc = val;
+			if (val & 0x40) comp->regKBDm = 0;
+			comp->keyb->lock = !!(val & 0x20);
+			if (val & 0x10) comp->regKBDs &= ~(F_ERR_FE | F_ERR_OE | F_ERR_PE);
+		}
+	} else {
+		// no 41 wr?
 	}
 }
 
 // uPD7220 - video(txt)
 // text GDC
 // == 60, 62 - upd7220 rd/wr
-// 60	rd	b6:hblank
+// 60:0	rd	b6:hblank
 //		b5:vsync
 //		b2:fifo buffer full
 //		b1:fifo buffer empty
 //		b0:data ready
-// 60	wr	gdc parameter write
-// 62	rd	gdc data read
-// 62	wr	gdc command write
+// 60:0	wr	gdc parameter write
+// 62:1	rd	gdc data read
+// 62:1	wr	gdc command write
 // == CRTC
 // 64:2	wr	crt interrupt reset
 // 68:4	wr	mode flip-flop
@@ -268,18 +296,19 @@ void pc98xx_kbd_wr(Computer* comp, int adr, int val) {
 //		0000010:enhanced mode (enhanced / compatible)
 //		others:reserved
 // 6c:6	wr	border color: b4,5,6 = b,r,g
+// 6e:7		?
 
-// 70	wr	Character Position Lines Number
-// 72	wr	Body Face Lines Number
-// 74	wr	Character Lines Number
-// 76	wr	Smooth Scroll Lines Count
-// 78	wr	Scroll Area Above Position Lines Number
-// 7a	wr	Scroll Area Lines Number
-// 7c	wr	Fast Graphics Mode Register:
+// 70:0	wr	Character 1st line (0)
+// 72:1	wr	Character last line (15)
+// 74:2	wr	Character Lines Number (15)
+// 76:3	wr	Smooth Scroll Lines Count
+// 78:4	wr	Scroll Area Above Position Lines Number
+// 7a:5	wr	Scroll Area Lines Number
+// 7c:6	wr	Fast Graphics Mode Register:
 //		b0..3: p0..3 disable
 //		b6:rmw mode
 //		b7:cg mode
-// 7e	wr	Tile Register 0-3
+// 7e:7	wr	Tile Register 0-3
 
 int pc98xx_gdc_rd(Computer* comp, int adr) {
 	int res = -1;

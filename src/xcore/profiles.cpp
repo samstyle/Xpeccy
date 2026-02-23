@@ -228,7 +228,7 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 	prf->rsName = rnm;
 	xRomset* rset = findRomset(rnm);
 	std::string fpath;
-	int romsz = MEM_16K; // prf->zx->mem->romSize;	// 0?
+	int romsz = MEM_256; // prf->zx->mem->romSize;	// 0?
 	int foff;
 	int fsze;
 	int roff;

@@ -59,7 +59,7 @@ xDmaWidget::xDmaWidget(QString i, QString t, QWidget* p):xDockWidget(i,t,p) {
 	ui.setupUi(wid);
 	setObjectName("DMAWIDGET");
 	ui.tableDMA->setModel(new xDmaTableModel());
-	hwList << HWG_PC;
+	hwList << HWG_PC << HWG_PC98XX;
 }
 
 void xDmaWidget::draw() {

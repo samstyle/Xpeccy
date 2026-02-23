@@ -69,7 +69,7 @@ xPitWidget::xPitWidget(QString i, QString t, QWidget* p):xDockWidget(i,t,p) {
 	ui.setupUi(wid);
 	setObjectName("PITWIDGET");
 	ui.tabPit->setModel(new xPitModel());
-	hwList << HWG_PC;
+	hwList << HWG_PC << HWG_PC98XX;
 }
 
 void xPitWidget::draw() {

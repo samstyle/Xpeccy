@@ -118,3 +118,5 @@ extern clock_t tClock;
 #define MEM_1M	(1<<20)
 #define MEM_2M	(1<<21)
 #define MEM_4M	(1<<22)
+#define MEM_8M	(1<<23)
+#define MEM_16M	(1<<24)

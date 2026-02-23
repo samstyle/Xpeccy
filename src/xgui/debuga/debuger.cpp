@@ -241,7 +241,6 @@ void DebugWin::onPrfChange() {
 		xhs->setBase(comp->hw->base);
 	}
 	unsigned int lim = (1 << comp->hw->adrbus);
-	printf("adrbus: %i -> %X\n", comp->hw->adrbus, lim);
 	wid_dump->setLimit(lim);
 	ui_asm.dasmScroll->setMaximum(lim - 1);
 
@@ -683,6 +682,17 @@ void DebugWin::doTrace(QAction* act) {
 		if (path.isEmpty()) return;
 		logfile.setFileName(path);
 		if (!logfile.open(QFile::WriteOnly)) return;
+		logfile.write("addr|command");
+		xRegBunch regs = cpuGetRegs(conf.prof.cur->zx->cpu);
+		int i = 0;
+		while (regs.regs[i].id != REG_EOT) {
+			if (regs.regs[i].id != REG_EMPTY) {
+				logfile.write("|");
+				logfile.write(regs.regs[i].name);
+			}
+			i++;
+		}
+		logfile.write("\n");
 	}
 
 	trace = 1;
@@ -827,18 +837,28 @@ extern int dasmrd(int, void*);
 
 void DebugWin::customEvent(QEvent* ev) {
 	Computer* comp = conf.prof.cur->zx;
+	int pcadr = cpu_get_pc(comp->cpu);
 	switch(ev->type()) {
 		case DBG_EVENT_STEP:
 			if ((traceType == DBG_TRACE_LOG) && logfile.isOpen()) {
-				dasmSome(comp, cpu_get_pc(comp->cpu) + comp->cpu->cs.base, tracemnm);
+				dasmSome(comp, pcadr + comp->cpu->cs.base, tracemnm);
+				tracestr = "\"";			// to avoid numbers conversion, like 3e4->3000
+				if (comp->cpu->core->group == CPUG_X86) {
+					tracestr.append(gethexword(comp->cpu->cs.idx));
+					tracestr.append(":");
+					tracestr.append(gethexword(pcadr));
+				} else {
+					tracestr.append(gethexword(pcadr));
+				}
+				tracestr.append("\"|");
 				doStep();
 				traceregs = cpuGetRegs(comp->cpu);
-				tracestr = tracemnm.command.leftJustified(24,' ');
+				tracestr.append(tracemnm.command);
 				int i = 0;
 				while (traceregs.regs[i].id != REG_EOT) {
-					if (i!=0) tracestr.append(" ");
 					if (traceregs.regs[i].id != REG_EMPTY) {			// mustn't be visible
-						tracestr.append(traceregs.regs[i].name).append(":");
+						tracestr.append("|\"");
+						// tracestr.append(traceregs.regs[i].name).append(":");
 						switch(traceregs.regs[i].type) {
 							case REG_BIT: tracestr.append(traceregs.regs[i].value ? "1" : "0"); break;
 							case REG_BYTE: tracestr.append(gethexbyte(traceregs.regs[i].value)); break;
@@ -846,6 +866,7 @@ void DebugWin::customEvent(QEvent* ev) {
 							case REG_24: tracestr.append(gethex6(traceregs.regs[i].value)); break;
 							case REG_32: tracestr.append(gethexint(traceregs.regs[i].value)); break;
 						}
+						tracestr.append("\"");
 					}
 					i++;
 				}

@@ -2,10 +2,25 @@
 
 #include "defines.h"
 
+enum {
+	UART_8250 = 1,
+	UPD_8251,
+};
+
 typedef int(*xurdcb)(void*);
 typedef void(*xuwrcb)(int, void*);
 
+typedef struct UART UART;
+
 typedef struct {
+	int id;
+	void(*reset)(UART*);
+	int(*rd)(UART*,int);
+	void(*wr)(UART*,int,int);
+	void(*sync)(UART*,int);
+} UARTCore;
+
+struct UART {
 	unsigned drqr:1;	// byte from device is ready to be read
 	unsigned drqw:1;	// need byte to write to device
 	unsigned ready:1;	// device is ready to send byte (set on device signal, reset when all data is readed)
@@ -15,6 +30,12 @@ typedef struct {
 	xurdcb devrd;	// read from device callback
 	xuwrcb devwr;	// write to device callback
 	void* devptr;	// device pointer
+
+	int irqn;	// int id
+	cbirq xirq;	// INTR callback
+	void* xptr;
+
+	const UARTCore* core;	// type depended callbacks
 
 	int datar;	// dev->cpu
 	int dataw;	// cpu->dev
@@ -26,17 +47,15 @@ typedef struct {
 	int msr;
 	int scr;
 	int div;	// div * clock / 16: freq.of bits transmitting
-
-	int irqn;	// int id
-	cbirq xirq;	// INTR callback
-	void* xptr;
-} UART;
+};
 
 UART* uart_create(int, cbirq, void*);
 void uart_destroy(UART*);
 void uart_set_dev(UART*, xurdcb, xuwrcb, void*);
 void uart_ready(UART*);
 
+void uart_set_type(UART*, int);
+void uart_set_rate(UART*, int);
 void uart_sync(UART*, int);
 int uart_rd(UART*, int);
 void uart_wr(UART*, int, int);

@@ -548,9 +548,9 @@ xRegDsc i286RegTab[] = {
 	{REG_EOT, "", 0, 0, 0}
 };
 
-xRegDsc i8086RegTab[] = {
-	{I286_IP, "IP", REG_WORD, REG_RDMP, offsetof(CPU, regIP)},
-	{I286_SP, "SP", REG_WORD, REG_RDMP, offsetof(CPU, regSP)},
+xRegDsc i086RegTab[] = {
+	{I286_IP, "IP", REG_WORD, REG_RDMP | REG_PC, offsetof(CPU, regIP)},
+	{I286_SP, "SP", REG_WORD, REG_RDMP | REG_SP, offsetof(CPU, regSP)},
 	{I286_BP, "BP", REG_WORD, REG_RDMP, offsetof(CPU, regBP)},
 	{I286_SI, "SI", REG_WORD, REG_RDMP, offsetof(CPU, regSI)},
 	{I286_DI, "DI", REG_WORD, REG_RDMP, offsetof(CPU, regDI)},
@@ -572,18 +572,20 @@ xAsmScan i286_asm(int adr, const char* mnm, char* buf) {
 }
 
 char* i286_flags = "-N**ODITSZ-A-P-C";
+char* i086_flags = "SZ-A-P-C";
 
 void i286_get_regs(CPU* cpu, xRegBunch* bnch) {
 	int idx = 0;
 	int val, bas;
-	while (i286RegTab[idx].id != REG_EOT) {
-		bnch->regs[idx].id = i286RegTab[idx].id;
-		bnch->regs[idx].name = i286RegTab[idx].name;
-		bnch->regs[idx].type = i286RegTab[idx].type;
-		bnch->regs[idx].flag = i286RegTab[idx].flag;
+	xRegDsc* tab = cpu->core->rdsctab;
+	while (tab[idx].id != REG_EOT) {
+		bnch->regs[idx].id = tab[idx].id;
+		bnch->regs[idx].name = tab[idx].name;
+		bnch->regs[idx].type = tab[idx].type;
+		bnch->regs[idx].flag = tab[idx].flag;
 		val = -1;
 		bas = 0;
-		switch (i286RegTab[idx].id) {
+		switch (tab[idx].id) {
 			case I286_IP: val = cpu->regIP; bas = cpu->cs.base; break;
 			case I286_SP: val = cpu->regSP; bas = cpu->ss.base; break;
 			case I286_BP: val = cpu->regBP; bas = cpu->ss.base; break;
@@ -608,7 +610,7 @@ void i286_get_regs(CPU* cpu, xRegBunch* bnch) {
 		idx++;
 	}
 	bnch->regs[idx].id = REG_EOT;
-	bnch->flags = i286_flags;
+	bnch->flags = (cpu->core->gen > 1) ? i286_flags : i086_flags;
 }
 
 void i286_set_regs(CPU* cpu, xRegBunch bnch) {

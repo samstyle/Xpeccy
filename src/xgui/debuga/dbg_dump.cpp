@@ -780,7 +780,7 @@ void xDumpWidget::refill() {
 	int psize;
 	Computer* comp = conf.prof.cur->zx;
 	if (mode == XVIEW_CPU) {
-		psize = (comp->hw->id == HW_IBM_PC) ? MEM_4M : MEM_64K;
+		psize = (1 << comp->hw->adrbus); // (comp->hw->id == HW_IBM_PC) ? MEM_4M : MEM_64K;
 	} else {
 		psize = getRFIData(ui.cbDumpPageSize);
 	}

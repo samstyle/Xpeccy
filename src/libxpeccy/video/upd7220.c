@@ -1,4 +1,5 @@
 #include <string.h>
+#include <stdio.h>
 
 #include "upd7220.h"
 
@@ -54,6 +55,17 @@ void upd7220_destroy(upd7220* upd) {
 // 001ww1mm	0	dmaw
 // 101ww1mm	0	dmar
 
+void upd7220_reset_buf(x7220buf* buf) {
+	buf->pos = 0;
+	buf->cnt = 0;
+}
+
+void upd7220_reset(Video* vid, upd7220* upd) {
+	upd7220_reset_buf(&upd->inbuf);
+	upd7220_reset_buf(&upd->outbuf);
+	upd->off = 1;
+}
+
 void upd7220_start(Video* vid, upd7220* upd) {
 	upd->off = 0;
 }
@@ -68,7 +80,7 @@ struct upd7220com {
 	int pcnt;
 	void(*exec)(Video*, upd7220*);
 } gdc_com_tab[] = {
-	{0xff, 0x00, 0, NULL},	// reset
+	{0xff, 0x00, 0, upd7220_reset},	// reset
 	{0xfe, 0x0e, 8, NULL},	// sync
 	{0xfe, 0x6e, 0, NULL},	// select chip
 	{0xff, 0x6b, 0, upd7220_start},	// start - enable output
@@ -95,11 +107,14 @@ struct upd7220com {
 
 void upd7220_exec(Video* vid, upd7220* upd) {
 	int adr = 0;
+	upd7220_reset_buf(&upd->inbuf);
 	while (gdc_com_tab[adr].mask && ((upd->inbuf.data[0] ^ gdc_com_tab[adr].com) & gdc_com_tab[adr].mask)) {
 		adr++;
 	}
 	if (gdc_com_tab[adr].exec != NULL) {
-		gdc_com_tab[adr].exec(vid, upd);
+		gdc_com_tab[adr].exec(vid, upd);	// execute command
+	} else if (gdc_com_tab[adr].com != 0) {
+		printf("upd7220 command %.2X not implemented\n", upd->inbuf.data[0]);
 	}
 }
 
@@ -118,7 +133,7 @@ int upd7220_rd(Video* vid, upd7220* upd, int adr) {
 		// status rd
 		if (vid->hblank) res |= 0x40;
 		if (vid->vblank) res |= 0x20;
-		if (upd->inbuf.cnt > 16) {
+		if (upd->inbuf.cnt > 17) {
 			res |= 0x02;
 		} else if (upd->inbuf.cnt == 0) {
 			res |= 0x04;

@@ -149,7 +149,7 @@ xVMemDumpWidget::xVMemDumpWidget(QString i, QString t, QWidget* p):xDockWidget(i
 	setObjectName("VMEMDUMPWIDGET");
 	connect (ui.tbSaveVRam, &QToolButton::released, this, &xVMemDumpWidget::save_vram);
 	connect(this, &QDockWidget::visibilityChanged, this, &xVMemDumpWidget::draw);
-	hwList << HWG_MSX << HWG_NES << HWG_GB << HWG_PC;
+	hwList << HWG_MSX << HWG_NES << HWG_GB << HWG_PC << HWG_PC98XX;
 }
 
 void xVMemDumpWidget::draw() {

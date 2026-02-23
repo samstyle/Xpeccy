@@ -11,7 +11,8 @@ UART* uart_create(int n, cbirq cb, void* ptr) {
 		uart->irqn = n;
 		uart->xirq = cb;
 		uart->xptr = ptr;
-		uart->nsrate = 1e9/100;		// 100 bytes/sec
+		uart_set_rate(uart, 100);		// 100 bytes/sec
+		uart_set_type(uart, UART_8250);
 	}
 	return uart;
 }
@@ -26,15 +27,6 @@ void uart_set_dev(UART* uart, xurdcb cbr, xuwrcb cbw, void* p) {
 	uart->devptr = p;
 }
 
-void uart_reset(UART* uart) {
-	uart->ier = 0;
-	uart->iir = 1;
-	uart->lcr = 0;
-	uart->mcr = 0;
-	uart->lsr = 0x60;
-	uart->msr = 0;
-}
-
 void uart_ready(UART* uart) {
 	uart->ready = 1;
 	uart->lsr = 0;
@@ -47,7 +39,54 @@ void uart_ready(UART* uart) {
 
 #define UART_MIN_BYTE_NS	69376
 
+// bps = bytes/sec
+void uart_set_rate(UART* uart, int bps) {
+	uart->nsrate = 1e9/bps;
+}
+
+void uart_set_div(UART* uart, unsigned short div) {
+	uart->div = div;
+	uart->nsrate = UART_MIN_BYTE_NS * uart->div;
+}
+
+// wrapper to core
+
+void uart_reset(UART *uart) {
+	if (!uart->core) return;
+	if (!uart->core->reset) return;
+	uart->core->reset(uart);
+}
+
 void uart_sync(UART* uart, int ns) {
+	if (!uart->core) return;
+	if (!uart->core->sync) return;
+	uart->core->sync(uart, ns);
+}
+
+int uart_rd(UART* uart, int adr) {
+	if (!uart->core) return -1;
+	if (!uart->core->rd) return -1;
+	return uart->core->rd(uart, adr);
+}
+
+void uart_wr(UART* uart, int adr, int data) {
+	if (!uart->core) return;
+	if (!uart->core->wr) return;
+	uart->core->wr(uart, adr, data);
+}
+
+// ns8250 uart
+
+void u8250_reset(UART* uart) {
+	uart->ier = 0;
+	uart->iir = 1;
+	uart->lcr = 0;
+	uart->mcr = 0;
+	uart->lsr = 0x60;
+	uart->msr = 0;
+}
+
+void u8250_sync(UART* uart, int ns) {
 	if (uart->ready) {
 		uart->nscnt -= ns;
 		if (uart->nscnt < 0) {
@@ -78,7 +117,7 @@ void uart_sync(UART* uart, int ns) {
 	}
 }
 
-int uart_rd(UART* uart, int port) {
+int u8250_rd(UART* uart, int port) {
 	int res = -1;
 	switch (port & 7) {
 		case 0:
@@ -114,12 +153,7 @@ int uart_rd(UART* uart, int port) {
 	return res;
 }
 
-void uart_set_div(UART* uart, unsigned short div) {
-	uart->div = div;
-	uart->nsrate = UART_MIN_BYTE_NS * uart->div;
-}
-
-void uart_wr(UART* uart, int port, int data) {
+void u8250_wr(UART* uart, int port, int data) {
 //	printf("com write %i, %.2X\n", port & 7, data);
 	switch (port & 7) {
 		case 0:
@@ -142,5 +176,20 @@ void uart_wr(UART* uart, int port, int data) {
 		case 5: uart->lsr = data; break;
 		case 6: uart->msr = data; break;
 		case 7: uart->scr = data; break;
+	}
+}
+
+const UARTCore uart_core_tab[] = {
+	{UART_8250, u8250_reset, u8250_rd, u8250_wr, u8250_sync},
+	{-1, NULL, NULL, NULL, NULL}
+};
+
+void uart_set_type(UART* uart, int id) {
+	int i = 0;
+	while ((uart_core_tab[i].id != -1) && (uart_core_tab[i].id != id)) {
+		i++;
+	}
+	if (uart_core_tab[i].id != -1) {
+		uart->core = &uart_core_tab[i];
 	}
 }
