@@ -194,8 +194,8 @@ void ibm_outGP(Computer* comp, int adr, int val) {
 int ibm_mouse_rd(void* p) {return mouse_rd(((Computer*)p)->mouse);}
 void ibm_mouse_wr(int d, void* p) {mouse_wr(((Computer*)p)->mouse, d);}
 
-int ibm_inSP0(Computer* comp, int adr) {return uart_rd(comp->com1, adr & 7);}
-void ibm_outSP0(Computer* comp, int adr, int val) {uart_wr(comp->com1, adr & 7, val);}
+int ibm_inSP0(Computer* comp, int adr) {return uart_rd(comp->uart, adr & 7);}
+void ibm_outSP0(Computer* comp, int adr, int val) {uart_wr(comp->uart, adr & 7, val);}
 
 // cmos
 
@@ -575,7 +575,7 @@ void ibm_init(Computer* comp) {
 	dma_set_chan(comp->dma1, 1, ibm_dma1_rd_2, ibm_dma1_wr_2, NULL);
 	dma_set_chan(comp->dma2, 0, ibm_dma2_rd_1, ibm_dma2_wr_1, NULL);
 	comp->dma1->ch[2].blk = 1;		// block dma1 maintaining ch2 (fdc), it working through callbacks
-	uart_set_dev(comp->com1, ibm_mouse_rd, ibm_mouse_wr, comp);	// connect serial mouse to COM1
+	uart_set_dev(comp->uart, ibm_mouse_rd, ibm_mouse_wr, comp);	// connect serial mouse to COM1
 }
 
 void dma_ch_transfer(DMAChan*, void*);
@@ -589,7 +589,7 @@ void ibm_irq(Computer* comp, int t) {
 		case IRQ_MOUSE_DATA:
 		case IRQ_MOUSE_ACK:
 			switch (comp->mouse->pcmode) {
-				case MOUSE_SERIAL: uart_ready(comp->com1); break;
+				case MOUSE_SERIAL: uart_ready(comp->uart); break;
 				case MOUSE_PS2: ps2c_ready(comp->ps2c, (t == IRQ_MOUSE_ACK) ? 3 : 1); break;
 				default: comp->mouse->queueSize = 0; break;		// drop mouse data
 			}
@@ -631,7 +631,7 @@ void ibm_sync(Computer* comp, int ns) {
 	// slave int6: primary hdc
 	// slave int7: secondary hdc
 	// slave int1: [cga] vertical retrace
-	uart_sync(comp->com1, ns);
+	uart_sync(comp->uart, ns);
 }
 
 // key press/release (at/xt code is already in kbd->outbuf)

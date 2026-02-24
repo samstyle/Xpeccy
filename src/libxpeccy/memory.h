@@ -35,8 +35,8 @@ typedef struct {
 
 typedef struct {
 	MemPage map[256];			// 256 x 256 | 256 x 64K
-	unsigned char ramData[0x400000];	// 4M
-	unsigned char romData[0x80000];		// 512K
+	unsigned char ramData[MEM_4M];		// 4M
+	unsigned char romData[MEM_512K];	// 512K
 	int ramSize;
 	int ramMask;
 	int romSize;

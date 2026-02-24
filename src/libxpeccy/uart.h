@@ -51,6 +51,7 @@ struct UART {
 
 UART* uart_create(int, cbirq, void*);
 void uart_destroy(UART*);
+void uart_set_irq(UART*, int);
 void uart_set_dev(UART*, xurdcb, xuwrcb, void*);
 void uart_ready(UART*);
 

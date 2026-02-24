@@ -1,4 +1,4 @@
-#include "uart8250.h"
+#include "uart.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -21,12 +21,19 @@ void uart_destroy(UART* uart) {
 	free(uart);
 }
 
+// set irq 'data ready' id
+void uart_set_irq(UART* uart, int n) {
+	uart->irqn = n;
+}
+
+// set callbacks for rd/wr from/to device and device ptr
 void uart_set_dev(UART* uart, xurdcb cbr, xuwrcb cbw, void* p) {
 	uart->devrd = cbr;
 	uart->devwr = cbw;
 	uart->devptr = p;
 }
 
+// call it when device is ready to transmit data
 void uart_ready(UART* uart) {
 	uart->ready = 1;
 	uart->lsr = 0;
@@ -39,7 +46,7 @@ void uart_ready(UART* uart) {
 
 #define UART_MIN_BYTE_NS	69376
 
-// bps = bytes/sec
+// set device rd rate, bytes/sec
 void uart_set_rate(UART* uart, int bps) {
 	uart->nsrate = 1e9/bps;
 }
@@ -75,7 +82,7 @@ void uart_wr(UART* uart, int adr, int data) {
 	uart->core->wr(uart, adr, data);
 }
 
-// ns8250 uart
+// ns8250
 
 void u8250_reset(UART* uart) {
 	uart->ier = 0;
@@ -179,8 +186,77 @@ void u8250_wr(UART* uart, int port, int data) {
 	}
 }
 
+// upd8251 uart
+// msr.b0 = wr.mode (0-mode, 1-command)
+// mcr = mode byte
+// lsr = status register (errors)
+// lcr = command byte
+// datar = data from device (set in sync if device is ready)
+// drqr = data getted from device and writed to datar
+#define F_ERR_FE	0x20
+#define F_ERR_OE	0x10
+#define F_ERR_PE	0x08
+#define F_RXRDY		0x02
+
+void u8251_reset(UART* uart) {
+	uart->msr = 0;
+	uart->lsr = 0;
+	uart->lcr = 0;
+	uart->mcr = 0;
+}
+
+int u8251_rd(UART* uart, int adr) {
+	int res = -1;
+	if (adr & 1) {
+		res = uart->lsr & (F_ERR_FE | F_ERR_OE | F_ERR_PE);
+		if (uart->drqr) res |= F_RXRDY;
+	} else if (uart->drqr) {
+		res = uart->datar;
+		uart->drqr = 0;
+	}
+	return res;
+}
+
+void u8251_wr(UART* uart, int adr, int data) {
+	if (adr & 1) {
+		if (uart->msr & 1) {	// command
+			uart->lcr = data;
+			if (data & 0x40) uart->msr &= ~1;
+			// TODO: kbd.lock = !!(data & 0x20)
+			if (data & 0x10) uart->lsr &= ~(F_ERR_FE | F_ERR_OE | F_ERR_PE);
+		} else {		// mode
+			uart->mcr = data;
+			uart->msr |= 1;
+		}
+	} else {
+		// write to dev? or don't...
+		// uart->devwr(data, uart->xptr);
+	}
+}
+
+void u8251_sync(UART* uart, int ns) {
+	if (uart->ready) {
+		uart->nscnt -= ns;
+		if (uart->nscnt < 0) {
+			uart->nscnt += uart->nsrate;
+			uart->datar = uart->devrd ? uart->devrd(uart->xptr) : -1;
+			if (uart->datar < 0) {		// no data from device
+				uart->ready = 0;
+				uart->nscnt = 0;
+			} else if (uart->drqr) {	// previous data didn't readed, overflow error
+				uart->lsr |= F_ERR_OE;
+			} else {			// set new data
+				uart->drqr = 1;
+			}
+		}
+	}
+}
+
+// core stuff
+
 const UARTCore uart_core_tab[] = {
 	{UART_8250, u8250_reset, u8250_rd, u8250_wr, u8250_sync},
+	{UPD_8251, u8251_reset, u8251_rd, u8251_wr, u8251_sync},
 	{-1, NULL, NULL, NULL, NULL}
 };
 

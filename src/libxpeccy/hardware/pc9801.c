@@ -230,6 +230,26 @@ void pc98xx_dma_wr(Computer* comp, int adr, int val) {
 // b1 RTY:1:retry last symbol
 // b0 TXEN: comp->usart enabled
 
+#if 1
+
+int uart_kbd_rd(void* p) {
+	return xt_read((Keyboard*)p);
+}
+
+void uart_kbd_wr(int data, void* p) {
+	kbd_wr((Keyboard*)p, data);
+}
+
+int pc98xx_kbd_rd(Computer* comp, int adr) {
+	return uart_rd(comp->uart, adr >> 1);
+}
+
+void pc98xx_kbd_wr(Computer* comp, int adr, int data) {
+	uart_wr(comp->uart, adr >> 1, data);
+}
+
+#else
+
 #define F_ERR_FE	0x20
 #define F_ERR_OE	0x10
 #define F_ERR_PE	0x08
@@ -265,6 +285,7 @@ void pc98xx_kbd_wr(Computer* comp, int adr, int val) {
 	}
 }
 
+#endif
 // uPD7220 - video(txt)
 // text GDC
 // == 60, 62 - upd7220 rd/wr
@@ -517,6 +538,9 @@ void pc98xx_sync(Computer* comp, int ns) {
 
 void pc98xx_init(Computer* comp) {
 	ppi_set_cb(comp->ppi, comp, pc98xx_ppia_rd, pc98xx_ppia_wr, pc98xx_ppib_rd, pc98xx_ppib_wr, pc98xx_ppic_rd, pc98xx_ppich_wr, pc98xx_ppic_rd, pc98xx_ppicl_wr);
+
+	uart_set_type(comp->uart, UPD_8251);
+	uart_set_dev(comp->uart, uart_kbd_rd, uart_kbd_wr, comp->keyb);
 }
 
 sndPair pc98xx_vol(Computer* comp, sndVolume* vol) {
