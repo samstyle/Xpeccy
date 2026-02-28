@@ -64,6 +64,7 @@ class DebugWin : public QMainWindow {
 		void onPrfChange();
 		void setScrAtr(int, int);
 		void updateStyle();
+		void activateWindow();
 	private:
 		unsigned block:1;
 		int tabMode;

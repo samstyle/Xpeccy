@@ -299,6 +299,7 @@ void pc98xx_kbd_wr(Computer* comp, int adr, int val) {
 // 62:1	wr	gdc command write
 // == CRTC
 // 64:2	wr	crt interrupt reset
+// 66:3		?
 // 68:4	wr	mode flip-flop
 //		b0:flag
 //		b1,2,3:param.nr:
@@ -348,7 +349,17 @@ int pc98xx_gdc_rd(Computer* comp, int adr) {
 }
 
 void pc98xx_gdc_wr(Computer* comp, int adr, int val) {
-
+	adr = (adr >> 1) & 7;
+	switch(adr) {
+		case 0:
+		case 1: upd7220_wr(comp->vid, comp->vid->txt7220, adr, val); break;
+		case 2: break;
+		case 3: break;
+		case 4: break;
+		case 5: break;
+		case 6: break;
+		case 7: break;
+	}
 }
 
 // uPD7220 - video(gra)
@@ -378,9 +389,18 @@ int pc98xx_gra_rd(Computer* comp, int adr) {
 }
 
 void pc98xx_gra_wr(Computer* comp, int adr, int val) {
-
+	adr = (adr >> 1) & 7;
+	switch(adr) {
+		case 0:
+		case 1: upd7220_wr(comp->vid, comp->vid->grf7220, adr, val); break;
+		case 2: break;
+		case 3: break;
+		case 4: break;
+		case 5: break;
+		case 6: break;
+		case 7: break;
+	}
 }
-
 
 // uPD765 - FDC x 2
 // 80,82: 5" flop
