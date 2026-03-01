@@ -614,16 +614,6 @@ DebugWin::~DebugWin() {
 	memFinder->deleteLater();
 }
 
-void DebugWin::activateWindow() {
-#if __linux__
-	if (!getenv("WAYLAND_DISPLAY")) {		// if not wayland
-		QWidget::activateWindow();
-	}
-#else
-	QWidget::activateWindow();
-#endif
-}
-
 void DebugWin::setShowLabels(bool f) {
 	conf.dbg.labels = !!f;
 	fillDisasm();

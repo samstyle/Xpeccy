@@ -109,7 +109,6 @@ typedef struct {
 		void kPress(QKeyEvent*);
 		void kRelease(QKeyEvent*);
 		void loadShader();
-		void activateWindow();
 	private slots:
 		void updateSatellites();
 		void menuHide();

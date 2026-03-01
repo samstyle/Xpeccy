@@ -241,16 +241,6 @@ MainWin::~MainWin() {
 #endif
 }
 
-void MainWin::activateWindow() {
-#if __linux__
-	if (!getenv("WAYLAND_DISPLAY")) {
-		QWidget::activateWindow();
-	}
-#else
-	QWidget::activateWindow();
-#endif
-}
-
 // gamepad mapper
 // xJoyMapEntry::key is XKEY_*
 
