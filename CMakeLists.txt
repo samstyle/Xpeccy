@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 3.5)
 
 #compiler settings
 
-#set(CMAKE_CXX_STANDARD 11)
-#set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #set(CMAKE_CXX_EXTENSIONS OFF)
 #set(CMAKE_C_COMPILER gcc)
 #set(CMAKE_CXX_COMPILER g++)
@@ -323,6 +323,8 @@ if(${IBM})
 endif()
 
 # other
+
+include_directories(${PROJECT_SOURCE_DIR}/3rdparty/xdgpp)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 	add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS} ${UIHEADERS} ${RESOURCES} ${MOCHEADERS})
