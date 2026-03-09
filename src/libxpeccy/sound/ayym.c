@@ -57,11 +57,19 @@ void chip_set_type(aymChip* chip, int id) {
 	chip->cnt = chip->per;
 }
 
+void chip_set_xdev(aymChip* chip, ayxrd rcb, ayxwr wcb, void* ptr) {
+	chip->xptr = ptr;
+	chip->xrd = rcb;
+	chip->xwr = wcb;
+}
+
 aymChip* aymCreate(int tp) {
 	aymChip* chip = (aymChip*)malloc(sizeof(aymChip));
 	memset(chip, 0x00, sizeof(aymChip));
 	chip_set_type(chip, tp); // aymSetType(ay,tp);
 	chip->stereo = AY_MONO;
+	chip->xrd = NULL;
+	chip->xwr = NULL;
 	return chip;
 }
 

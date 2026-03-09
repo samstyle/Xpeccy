@@ -718,7 +718,7 @@ void i286_wr_ea(CPU* cpu, int val, int wrd) {
 
 void i8086_nodef(CPU* cpu) {
 	printf("undef opcode @ %X : %.2X\n", cpu->cs.base + cpu->regIP, cpu->com);
-	cpu_irq(cpu, IRQ_CPU_UNDEF);
+	cpu_irq(cpu, IRQ_PANIC);
 	THROW(I286_INT_UD);
 }
 

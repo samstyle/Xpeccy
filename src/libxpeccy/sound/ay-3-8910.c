@@ -6,6 +6,8 @@ extern void aymResetChan(aymChan* ch);
 static const int ay_val_mask[16] = {0xff,0x0f,0xff,0x0f,0xff,0x0f,0x1f,0xff,0x1f,0x1f,0x1f,0xff,0xff,0x0f,0xff,0xff};
 // extern int ayDACvol[32];
 
+// TODO: external rd/wr for regs E,F
+
 static int ayDACvol[32] = {0x0000,0x0000,0x00D0,0x00D0,0x0130,0x0130,0x01BC,0x01BC,
                     0x0291,0x0291,0x03C4,0x03C4,0x0544,0x0544,0x089F,0x089F,
                     0x0A27,0x0A27,0x1053,0x1053,0x16C8,0x16C8,0x1C96,0x1C96,
@@ -27,12 +29,20 @@ int ay_rd(aymChip* ay, int adr) {
 	if (adr & 1) {
 		switch(ay->curReg & 0x0f) {					// AY:16 registers + mirrors
 			case 14:
-				if (!(ay->reg[7] & 0x40))
-					res = ay->reg[14];
+				if (!(ay->reg[7] & 0x40)) {
+					//res = ay->reg[14];
+					res = ay->xrd ? ay->xrd(0, ay->xptr) : 0xff;
+				} else {
+					res = 0x00;
+				}
 				break;
 			case 15:
-				if (!(ay->reg[7] & 0x80))
-					res = ay->reg[15];
+				if (!(ay->reg[7] & 0x80)) {
+					// res = ay->reg[15];
+					res = ay->xrd ? ay->xrd(1, ay->xptr) : 0xff;
+				} else {
+					res = 0x00;
+				}
 				break;
 			default:
 				res = ay->reg[ay->curReg];
@@ -104,12 +114,16 @@ void ay_set_reg(aymChip* chip, int val) {
 			chip->chanE.step = (val & 4) ? 1 : -1;
 			break;
 		case 0x0e:
-			if (chip->reg[7] & 0x40)
+			if (chip->reg[7] & 0x40) {
 				chip->reg[14] = val & 0xff;
+				if (chip->xwr) chip->xwr(0, val, chip->xptr);
+			}
 			break;
 		case 0x0f:
-			if (chip->reg[7] & 0x80)
+			if (chip->reg[7] & 0x80) {
 				chip->reg[15] = val & 0xff;
+				if (chip->xwr) chip->xwr(0, val, chip->xptr);
+			}
 			break;
 	}
 }

@@ -21,6 +21,7 @@
 enum {
 	IRQ_BRK = 1,	// common: call deBUGa
 	IRQ_STOP,	// emulator exit
+	IRQ_PANIC,	// panic (stop if --panic)
 	IRQ_VID_INT,	// video
 	IRQ_VID_INTV,
 	IRQ_VID_IEND,
@@ -33,7 +34,6 @@ enum {
 	IRQ_CPU_SYNC,	// sync cpu ticks
 	IRQ_CPU_HALT,	// enter halt cycle
 	IRQ_CPU_ACK,	// = sync + set flgACK if interrupt (Z80)
-	IRQ_CPU_UNDEF,	// opcode not recognised
 	IRQ_FDC,	// ibm
 	IRQ_FDC_RD,
 	IRQ_FDC_WR,

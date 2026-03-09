@@ -277,8 +277,13 @@ void comp_irq(int t, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 	switch (t) {
 		case IRQ_BRK:
-			comp->brk = 1;
-			comp->brkt = -1;
+			comp_brk(comp, -1);
+			break;
+		case IRQ_STOP:
+			comp_brk(comp, -2);
+			break;
+		case IRQ_PANIC:
+			if (compflags & CFLG_PANIC) comp_irq(IRQ_STOP, comp);
 			break;
 		case IRQ_CPU_HALT:
 			comp->hCount = comp->frmtCount;			// fix T counter from INT to start of HALT
@@ -293,13 +298,6 @@ void comp_irq(int t, void* ptr) {
 		case IRQ_CPU_SYNC:
 			vid_sync(comp->vid, (comp->cpu->t - res4) * comp->nsPerTick);
 			res4 = comp->cpu->t;
-			break;
-		case IRQ_CPU_UNDEF:
-			if (compflags & CFLG_PANIC) comp_irq(IRQ_STOP, comp);
-			break;
-		case IRQ_STOP:
-			comp->brk = 1;
-			comp->brkt = -2;
 			break;
 	}
 	if (comp->hw->irq) comp->hw->irq(comp, t);
@@ -661,9 +659,9 @@ void cmsWr(Computer* comp, int val) {
 // breaks
 
 // activate breakpoint w/o type (exit to debuga)
-void comp_brk(Computer* comp) {
+void comp_brk(Computer* comp, int t) {
 	comp->brk = 1;
-	comp->brkt = -1;
+	comp->brkt = t;
 }
 
 static unsigned char dumBrk = 0x00;

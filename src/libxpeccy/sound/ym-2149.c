@@ -9,17 +9,27 @@ int ymDACvol[32] = {0x0000,0x0000,0x003B,0x0074,0x00A4,0x00CA,0x00FB,0x0134,
 
 // ym_reset = ay_reset
 
+// TODO: external rd/wr for regs E,F
+
 int ym_rd(aymChip* chip, int adr) {
 	unsigned char res = 0xff;
 	if (adr & 1) {
 		switch(chip->curReg) {
 			case 14:
-				if (chip->reg[7] & 0x40)
-					res = chip->reg[14];
+				if (chip->reg[7] & 0x40) {
+					//res = chip->reg[14];
+					res = chip->xrd ? chip->xrd(0, chip->xptr) : 0xff;
+				} else {
+					res = 0x00;
+				}
 				break;
 			case 15:
-				if (chip->reg[7] & 0x80)
-					res = chip->reg[15];
+				if (chip->reg[7] & 0x80) {
+					//res = chip->reg[15];
+					res = chip->xrd ? chip->xrd(1, chip->xptr) : 0xff;
+				} else {
+					res = 0x00;
+				}
 				break;
 			default:
 				res = chip->reg[chip->curReg];			// YM:store unused bits

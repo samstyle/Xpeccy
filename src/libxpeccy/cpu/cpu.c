@@ -626,12 +626,12 @@ void cpuSetRegs(CPU* cpu, xRegBunch bunch) {
 	}
 }
 
-xRegDsc* cpu_find_onmsk(CPU* cpu, int msk) {
+xRegDsc* cpu_find_regtype(CPU* cpu, int type) {
 	int i = 0;
 	int work = 1;
 	xRegDsc* rt = cpu->core->rdsctab;
 	while (work && (rt[i].id != REG_EOT)) {
-		if (rt[i].flag & msk) {
+		if ((rt[i].flag & REG_TYPE_M) == type) {
 			work = 0;
 		} else {
 			i++;
@@ -640,16 +640,16 @@ xRegDsc* cpu_find_onmsk(CPU* cpu, int msk) {
 	return work ? NULL : &rt[i];
 }
 
-int cpu_get_onmsk(CPU* cpu, int msk) {
-	xRegDsc* rd = cpu_find_onmsk(cpu, msk);
+int cpu_get_regtype(CPU* cpu, int type) {
+	xRegDsc* rd = cpu_find_regtype(cpu, type);
 	return rd ? reg_get_value(cpu, rd) : -1;
 }
 
-void cpu_set_onmsk(CPU* cpu, int msk, int val) {
-	xRegDsc* rd = cpu_find_onmsk(cpu, msk);
+void cpu_set_regtype(CPU* cpu, int type, int val) {
+	xRegDsc* rd = cpu_find_regtype(cpu, type);
 	if (rd) reg_set_value(cpu, rd, val);
 }
 
-int cpu_get_sp(CPU* cpu) {return cpu_get_onmsk(cpu, REG_SP);}
-int cpu_get_pc(CPU* cpu) {return cpu_get_onmsk(cpu, REG_PC);}
-void cpu_set_pc(CPU* cpu, int val) {cpu_set_onmsk(cpu, REG_PC, val);}
+int cpu_get_sp(CPU* cpu) {return cpu_get_regtype(cpu, REG_SP);}
+int cpu_get_pc(CPU* cpu) {return cpu_get_regtype(cpu, REG_PC);}
+void cpu_set_pc(CPU* cpu, int val) {cpu_set_regtype(cpu, REG_PC, val);}

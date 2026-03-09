@@ -28,22 +28,25 @@ typedef struct {
 } xMnem;
 
 // special register id
-#define REG_EOT	0		// end of table
+#define REG_EOT	0			// end of table
 #define REG_EMPTY	-1		// don't show in debuga, but is a register
-// register type
+// register size
 #define REG_BIT		1
-#define REG_2		2		// special type, values 0,1,2 (z80 interrupt mode)
+#define REG_2		2		// special, values 0,1,2 (z80 interrupt mode)
 #define REG_BYTE	8
 #define REG_WORD	16
 #define REG_24		24
 #define REG_32		32
 //#define REG_TMASK	0xff
-// register flags
+// register flags (bit 0-7)
 #define REG_RO		1	// protect from changes in deBUGa
 #define REG_SEG		(1<<1)	// register is segment
 #define REG_RDMP	(1<<2)	// use register as line addr for regs-dump in deBUGa (new widget)
-#define REG_PC		(1<<3)	// register is execution pointer (pc, ip)
-#define REG_SP		(1<<4)	// register is stack (sp)
+// register type (bit 8-10 of flag)
+#define REG_TYPE_M	(7<<8)	// 8 types (to find register)
+#define REG_PC		(0<<8)	// execution pointer (pc, ip)
+#define REG_SP		(1<<8)	// stack (sp)
+#define REG_CS		(4<<8)	// code segment (base)
 
 typedef struct {
 	int id;
@@ -135,8 +138,8 @@ typedef struct {
 	unsigned sys:1;			// !(ar & 0x10)
 	unsigned code:1;		// ar & 0x18 = 0x18
 	unsigned data:1;		// ar & 0x18 = 0x10
-	unsigned base:24;		// segment base addr
-	unsigned short limit;		// segment size in bytes
+	int base;		// segment base addr
+	int limit;			// segment size in bytes
 } xSegPtr;				// aka segment table descriptor
 
 enum {

@@ -55,6 +55,9 @@ typedef void(*sccbsync)(aymChip*, int);
 typedef sndPair(*sccbvol)(aymChip*);
 typedef void(*sccbcmn)(aymChip*);
 
+typedef int(*ayxrd)(int, void*);
+typedef void(*ayxwr)(int, int, void*);
+
 typedef struct {
 	int id;
 	const char* name;
@@ -90,6 +93,10 @@ struct aymChip {
 	sccbsync sync;
 	sccbvol vol;
 
+	ayxrd xrd;		// read/write callbacks for ports 14,15
+	ayxwr xwr;
+	void* xptr;
+
 	aymChan chanA;
 	aymChan chanB;
 	aymChan chanC;
@@ -116,6 +123,7 @@ typedef struct {
 void initNoise();
 
 void chip_set_type(aymChip*, int);
+void chip_set_xdev(aymChip*, ayxrd, ayxwr, void*);
 
 TSound* tsCreate(int,int,int);
 void tsDestroy(TSound*);
