@@ -73,5 +73,5 @@ xPitWidget::xPitWidget(QString i, QString t, QWidget* p):xDockWidget(i,t,p) {
 }
 
 void xPitWidget::draw() {
-	ui.tabPit->update();
+	((xPitModel*)(ui.tabPit->model()))->update();
 }

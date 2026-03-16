@@ -51,7 +51,7 @@ int x86_get_flag(CPU* cpu) {
 			| (cpu->regIOPL << 12) | (cpu->flgN << 14);
 	switch(cpu->gen) {
 		case 0:
-		case 1: f |= 0xff00; break;
+		case 1: f |= 0xf000; break;
 		case 2: f &= 0x0fff; break;
 	}
 	return f;
@@ -572,7 +572,7 @@ xAsmScan i286_asm(int adr, const char* mnm, char* buf) {
 }
 
 char* i286_flags = "-N**ODITSZ-A-P-C";
-char* i086_flags = "SZ-A-P-C";
+char* i086_flags = "----ODITSZ-A-P-C";
 
 void i286_get_regs(CPU* cpu, xRegBunch* bnch) {
 	int idx = 0;

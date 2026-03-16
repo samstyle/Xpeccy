@@ -3,6 +3,9 @@
 
 #include "upd7220.h"
 
+// WHATIF: upd7220 writes up to 16 params into fifo and reading it internally 1 byte in *some time*.
+//	'fifo full' and 'fifo empty' status bits will indicate correct state in this case (maybe)
+
 upd7220* upd7220_create() {
 	upd7220* upd = (upd7220*)malloc(sizeof(upd7220));
 	if (upd) {
@@ -178,10 +181,10 @@ struct upd7220com {
 	{0xf8, 0x78, 8, NULL},	// textw
 	{0xff, 0x68, 0, NULL},	// texte
 	{0xff, 0x49, 2, upd7220_curs},	// csrw		set cursor address
-	{0xff, 0xe0, 5, NULL},	// csrr
+	{0xff, 0xe0, 5, NULL},	// csrr			read cursor address
 	{0xff, 0x4a, 1, NULL},	// mask
-	{0xe4, 0x40, 1, upd7220_wdat},	// write
-	{0xe4, 0xa0, 0, upd7220_rdat},	// read
+	{0xe4, 0x40, 1, NULL},	// write
+	{0xe4, 0xa0, 0, NULL},	// read
 	{0xe4, 0x44, 0, NULL},	// dmaw
 	{0xe4, 0xa4, 0, NULL},	// dmar
 	{0,0,0, NULL}		// (eot)
@@ -216,9 +219,9 @@ int upd7220_rd(Video* vid, upd7220* upd, int adr) {
 		// status rd
 		if (vid->hblank) res |= 0x40;
 		if (vid->vblank) res |= 0x20;
-		if (upd->inbuf.cnt > 17) {
+		if (upd->inbuf.queue > 16) {
 			res |= 0x02;
-		} else if (upd->inbuf.cnt == 0) {
+		} else if (upd->inbuf.queue == 0) {
 			res |= 0x04;
 		}
 		if (upd->outbuf.cnt > 0) res |= 0x01;
@@ -232,12 +235,14 @@ void upd7220_wr(Video* vid, upd7220* upd, int adr, int val) {
 		upd->inbuf.data[0] = val & 0xff;
 		upd->inbuf.cnt = 0;
 		upd->inbuf.pos = 1;
+		upd->inbuf.queue = 1;
 		adr = 0;
 		while (gdc_com_tab[adr].mask && ((val ^ gdc_com_tab[adr].com) & gdc_com_tab[adr].mask)) {
 			adr++;
 		}
 		if (gdc_com_tab[adr].mask) {	// valid
 			upd->inbuf.cnt = gdc_com_tab[adr].pcnt;
+			printf("7220: com %.2X waiting %i params\n", upd->inbuf.data[0], upd->inbuf.cnt);
 			if (upd->inbuf.cnt == 0) {	// no params
 				upd7220_exec(vid, upd);
 			}
@@ -247,9 +252,11 @@ void upd7220_wr(Video* vid, upd7220* upd, int adr, int val) {
 	} else {
 		// fifo wr:param
 		if (upd->inbuf.cnt > 0) {
+			printf("par %i = %.2X\n", upd->inbuf.pos, val);
 			upd->inbuf.data[upd->inbuf.pos] = val & 0xff;
 			upd->inbuf.cnt--;
 			upd->inbuf.pos++;
+			upd->inbuf.queue++;
 			if (upd->inbuf.cnt == 0) {
 				upd7220_exec(vid, upd);
 			}
@@ -297,6 +304,8 @@ void upd7220_dot(Video* vid) {
 }
 
 void upd7220_line(Video* vid) {
+	if (vid->txt7220->inbuf.queue > 0) vid->txt7220->inbuf.queue--;
+	if (vid->grf7220->inbuf.queue > 0) vid->grf7220->inbuf.queue--;
 // form text line (vid->line)
 	int c = 7;
 	int adr = (vid->ray.ys & 0xf0) * 10;		// adr of line start
@@ -305,7 +314,7 @@ void upd7220_line(Video* vid) {
 	int i, j;
 	int chr;
 	int atr;
-	if (vid->txt7220->off) {
+	if (vid->txt7220->off || vid->nogfx) {
 		memset(vid->line, 0x00, 0x500);
 	} else {
 		for (i = 0; i < 80; i++) {
@@ -323,7 +332,7 @@ void upd7220_line(Video* vid) {
 		}
 	}
 // form graphic line (vid->linb)
-	if (vid->grf7220->off) {
+	if (vid->grf7220->off || vid->nogfx) {
 		memset(vid->linb, 0x00, 0x500);
 	} else {
 		int pln0, pln1, pln2, pln3;	// data from planes

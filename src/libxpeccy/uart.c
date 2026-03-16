@@ -99,11 +99,9 @@ void u8250_sync(UART* uart, int ns) {
 		if (uart->nscnt < 0) {
 			uart->nscnt += uart->nsrate;
 			uart->datar = uart->devrd ? uart->devrd(uart->xptr) : -1;
-//			printf("uart get byte from device: %X\n", uart->datar);
 			if (uart->datar < 0) {		// no data from device
 				uart->ready = 0;
 				uart->nscnt = 0;
-//				printf("transmit end\n");
 			} else if (uart->drqr) {	// previous data didn't readed
 				// data lost
 				uart->lsr |= 2;
@@ -111,14 +109,12 @@ void u8250_sync(UART* uart, int ns) {
 				if (uart->ier & 1) {
 					uart->xirq(uart->irqn, uart->xptr);
 				}
-//				printf("data lost\n");
 			} else {			// set new data
 				uart->drqr = 1;
 				uart->iir = 0x40;	// recieved data available
 				if (uart->ier & 1) {
 					uart->xirq(uart->irqn, uart->xptr);
 				}
-//				printf("uart sends INTR\n");
 			}
 		}
 	}
@@ -156,12 +152,10 @@ int u8250_rd(UART* uart, int port) {
 		case 7: res = uart->scr & 0xff; break;
 
 	}
-//	printf("com read %i = %.2X\n", port & 7, res);
 	return res;
 }
 
 void u8250_wr(UART* uart, int port, int data) {
-//	printf("com write %i, %.2X\n", port & 7, data);
 	switch (port & 7) {
 		case 0:
 			if (uart->lcr & 0x80) {
@@ -188,15 +182,20 @@ void u8250_wr(UART* uart, int port, int data) {
 
 // upd8251 uart
 // msr.b0 = wr.mode (0-mode, 1-command)
-// mcr = mode byte
+// mcr = mode register
 // lsr = status register (errors)
-// lcr = command byte
+// lcr = command register
 // datar = data from device (set in sync if device is ready)
 // drqr = data getted from device and writed to datar
 #define F_ERR_FE	0x20
 #define F_ERR_OE	0x10
 #define F_ERR_PE	0x08
+#define F_TXEMP		0x04
 #define F_RXRDY		0x02
+#define F_TXRDY		0x01
+
+#define F_RXEN		0x04
+#define F_TXEN		0x01
 
 void u8251_reset(UART* uart) {
 	uart->msr = 0;
@@ -210,7 +209,8 @@ int u8251_rd(UART* uart, int adr) {
 	if (adr & 1) {
 		res = uart->lsr & (F_ERR_FE | F_ERR_OE | F_ERR_PE);
 		if (uart->drqr) res |= F_RXRDY;
-	} else if (uart->drqr) {
+		if (uart->lcr & F_TXEN) res |= F_TXRDY;
+	} else if (uart->drqr && (uart->lcr & F_RXEN)) {
 		res = uart->datar;
 		uart->drqr = 0;
 	}
@@ -228,9 +228,11 @@ void u8251_wr(UART* uart, int adr, int data) {
 			uart->mcr = data;
 			uart->msr |= 1;
 		}
-	} else {
-		// write to dev? or don't...
-		// uart->devwr(data, uart->xptr);
+	} else if (uart->lcr & F_TXEN) {
+		// write to dev, dev will answer and send 'ready' irq -> uart_ready -> get data in uart_sync, set uart.drqr...
+		if (uart->devwr) {
+			uart->devwr(data, uart->devptr);
+		}
 	}
 }
 
@@ -239,13 +241,13 @@ void u8251_sync(UART* uart, int ns) {
 		uart->nscnt -= ns;
 		if (uart->nscnt < 0) {
 			uart->nscnt += uart->nsrate;
-			uart->datar = uart->devrd ? uart->devrd(uart->xptr) : -1;
-			if (uart->datar < 0) {		// no data from device
+			uart->datar = uart->devrd ? uart->devrd(uart->devptr) : -1;
+			if (uart->datar < 0) {					// no data from device
 				uart->ready = 0;
 				uart->nscnt = 0;
-			} else if (uart->drqr) {	// previous data didn't readed, overflow error
+			} else if (uart->drqr) {				// previous data didn't readed, overflow error
 				uart->lsr |= F_ERR_OE;
-			} else {			// set new data
+			} else {
 				uart->drqr = 1;
 			}
 		}

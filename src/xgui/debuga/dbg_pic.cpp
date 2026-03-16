@@ -61,9 +61,9 @@ xPicWidget::xPicWidget(QString i, QString t, QWidget* p):xDockWidget(i,t,p) {
 	ui.setupUi(wid);
 	setObjectName("PICWIDGET");
 	ui.tablePIC->setModel(new xPicModel());
-	hwList << HWG_PC;
+	hwList << HWG_PC << HWG_PC98XX;
 }
 
 void xPicWidget::draw() {
-	ui.tablePIC->update();
+	((xPicModel*)(ui.tablePIC->model()))->update();
 }

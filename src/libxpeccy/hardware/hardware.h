@@ -198,6 +198,7 @@ void p1mOut(Computer*, int, int);
 int p1mIn(Computer*, int);
 
 // scorpion
+void scrp_init(Computer*);
 void scoMapMem(Computer*);
 void scoOut(Computer*, int, int);
 int scoIn(Computer*, int);
@@ -378,6 +379,7 @@ void pc98xx_mwr(Computer*, int, int);
 int pc98xx_iord(Computer*, int);
 void pc98xx_iowr(Computer*, int, int);
 void pc98xx_irq(Computer*, int);
+int pc98xx_ack(Computer*);
 void pc98xx_sync(Computer*, int);
 sndPair pc98xx_vol(Computer*, sndVolume*);
 

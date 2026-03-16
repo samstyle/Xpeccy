@@ -32,14 +32,17 @@ enum {
 	XM_WHEELDN
 };
 
-// keyboard mode
+// keyboard type
 enum {
 	KBD_NONE = 0,
 	KBD_SPECTRUM,
 	KBD_PROFI,
 	KBD_MSX,
 	KBD_ATM2,
-	KBD_C64
+	KBD_C64,
+	KBD_SPCLST,
+	KBD_PC,
+	KBD_NEC98XX
 };
 
 // atm2 mode submodes
@@ -172,7 +175,18 @@ typedef struct {
 	int joyMask;
 } keyEntry;
 
+typedef struct Keyboard Keyboard;
+
 typedef struct {
+	int id;
+	void(*reset)(Keyboard*);
+	int(*read)(Keyboard*, int);		// address
+	void(*write)(Keyboard*, int, int);	// address, data
+	void(*press)(Keyboard*, int);		// press XKEY_*
+	void(*release)(Keyboard*, int);
+} xKbdCore;
+
+struct Keyboard {
 //	unsigned reset:1;		// RES signal to CPU
 	unsigned used:1;
 	unsigned caps:1;
@@ -187,10 +201,12 @@ typedef struct {
 	unsigned char port;		// high byte of xxFE port
 	int mode;
 	int flag;
+
+	xKbdCore* core;
 	// callbacks
 	cbirq xirq;
 	void* xptr;
-	// i8031 block
+	// i8031 block (TODO: move it into ATM2)
 	unsigned wcom:1;		// i8031 waiting for command
 	unsigned warg:1;		// i8031 waiting for argument
 	int submode;			// i8031 mode
@@ -216,7 +232,7 @@ typedef struct {
 	int per;
 	int kdel;		// pc:delay after 1st press
 	int kper;		// pc:autorepeat period
-} Keyboard;
+};
 
 typedef struct {
 	unsigned used:1;
@@ -245,6 +261,7 @@ void xt_press(Keyboard*, keyEntry);
 void xt_release(Keyboard*, keyEntry);
 int xt_read(Keyboard*);
 void kbd_wr(Keyboard*, int);
+void kbd_wr_pc98(Keyboard*, int);
 int xt_sync(Keyboard*, int);
 
 Mouse* mouseCreate(cbirq, void*);

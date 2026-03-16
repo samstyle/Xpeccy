@@ -3,6 +3,8 @@
 #include <string.h>
 #include "input.h"
 
+// zx spectrum std keyboard
+
 keyScan keyTab[] = {
 	{'1',4,1},{'2',4,2},{'3',4,4},{'4',4,8},{'5',4,16},{'6',3,16},{'7',3,8},{'8',3,4},{'9',3,2},{'0',3,1},
 	{'q',5,1},{'w',5,2},{'e',5,4},{'r',5,8},{'t',5,16},{'y',2,16},{'u',2,8},{'i',2,4},{'o',2,2},{'p',2,1},
@@ -114,10 +116,9 @@ void kbd_press_key(Keyboard* kbd, keyScan* tab, int* mtrx, unsigned char ch) {
 }
 
 void kbd_press(Keyboard* kbd, keyScan* tab, int* mtrx, unsigned char* xk) {
-	int pos = 0;
-	while (xk[pos] != 0x00) {
-		kbd_press_key(kbd, tab, mtrx, xk[pos]);
-		pos++;
+	while (*xk != 0x00) {
+		kbd_press_key(kbd, tab, mtrx, *xk);
+		xk++;
 	}
 }
 
@@ -152,10 +153,8 @@ void kbd_release_key(Keyboard* kbd, keyScan* tab, int* mtrx, unsigned char ch) {
 }
 
 void kbd_release(Keyboard* kbd, keyScan* tab, int* mtrx, unsigned char* xk) {
-	int pos = 0;
-	while (xk[pos] != 0x00) {
-		kbd_release_key(kbd, tab, mtrx, xk[pos]);
-		pos++;
+	while (*xk != 0x00) {
+		kbd_release_key(kbd, tab, mtrx, *xk);
 	}
 }
 
@@ -187,7 +186,7 @@ void kbdReleaseAll(Keyboard* kbd) {
 	}
 	kbd->keycode = 0;
 	kbd->lastkey = 0;
-	kbd->outbuf = 0;	//kbd->kbuf.pos = 0;
+//	kbd->outbuf = 0;	//kbd->kbuf.pos = 0;
 //	kbd->flag = 0;
 	if (kbd->per > 0) {
 		xt_release(kbd, kbd->kent);
@@ -323,6 +322,7 @@ void xt_ack(Keyboard* kbd, unsigned long d) {
 	kbd->xirq(IRQ_KBD_ACK, kbd->xptr);
 }
 
+// TODO: 98xx keyboard commands (9x)
 // ack FA at every byte
 void kbd_wr(Keyboard* kbd, int d) {
 	if (kbd->com < 0) {
@@ -392,6 +392,31 @@ void kbd_wr(Keyboard* kbd, int d) {
 		}
 		kbd->com = -1;
 	}
+}
+
+void kbd_wr_pc98(Keyboard* kbd, int val) {
+#if 0
+	if (kbd->com < 0) {
+		switch(val) {
+			case 0x95: kbd->com = val;  xt_ack(kbd, 0xfa); break;
+			case 0x96: xt_ack(kbd, 0x85a0); break;
+			case 0x99: xt_ack(kbd, 0xfb); break;
+			case 0x9c: kbd->com = val; xt_ack(kbd, 0xfa); break;
+			case 0x9d: kbd->com = val; xt_ack(kbd, 0xfa); break;		// leds
+			case 0x9e: xt_ack(kbd, 0xfa); break;
+			case 0x9f: xt_ack(kbd, 0xfa); break;
+			default: xt_ack(kbd, 0xfc); break;		// nack
+		}
+	} else {
+		switch (kbd->com) {
+			case 0x95: xt_ack(kbd, 0xfa); break;
+			case 0x9c: xt_ack(kbd, 0xfa); break;
+			case 0x9d: xt_ack(kbd, 0xfa); break;
+			default: xt_ack(kbd, 0xfc); break;
+		}
+		kbd->com = -1;
+	}
+#endif
 }
 
 unsigned char kbdScanZX(Keyboard* kbd, int port) {

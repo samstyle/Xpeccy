@@ -282,6 +282,8 @@ int cpu_get_sp(CPU*);
 bool cpu_set_reg(CPU*, const char*, int);
 int cpu_get_flag(CPU*);
 void cpu_set_flag(CPU*, int);
+int reg_get_value(CPU*, xRegDsc*);
+int reg_set_value(CPU*, xRegDsc*, int);
 
 int parity(int);
 

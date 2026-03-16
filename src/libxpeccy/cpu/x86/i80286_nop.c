@@ -3074,17 +3074,17 @@ opCode x86_tab6F[4] = {
 	{OF_SKIPABLE, 1, i286_op6F, 0, ":Loutsw [:D::si]"}
 };
 
-// CHECK: i8086 Cx is not fully decoded (C0 = C2 etc)
+// i8086 Cx is not fully decoded (C0=C2, C1=C3 etc)
 
 opCode x86_tabC0[4] = {
-	{0, 1, i8086_nodef, NULL, "nodef"},
+	{0, 1, i286_opC2, 0, "ret :2"},		// = c2
 	{OF_MODCOM, 1, i286_opC0, i286_tabC0, ":R :e,:1"},
 	{OF_MODCOM, 1, i286_opC0, i286_tabC0, ":R :e,:1"},
 	{OF_MODCOM, 1, i286_opC0, i286_tabC0, ":R :e,:1"}
 };
 
 opCode x86_tabC1[4] = {
-	{0, 1, i8086_nodef, NULL, "nodef"},
+	{0, 1, i286_opC3, 0, "ret"},		// = c3
 	{OF_MODCOM | OF_WORD, 1, i286_opC1, i286_tabC1, ":R :e,:1"},
 	{OF_MODCOM | OF_WORD, 1, i286_opC1, i286_tabC1, ":R :e,:1"},
 	{OF_MODCOM | OF_WORD, 1, i286_opC1, i286_tabC1, ":R :e,:1"}
@@ -3105,14 +3105,14 @@ opCode x86_tabC7[4] = {
 };
 
 opCode x86_tabC8[4] = {
-	{0, 1, i8086_nodef, NULL, "nodef"},
+	{0, 1, i286_opCA, 0, "retf :2"},		// = ca
 	{0, 1, i286_opC8, 0, "enter :2,:1"},
 	{0, 1, i286_opC8, 0, "enter :2,:1"},
 	{0, 1, i286_opC8, 0, "enter :2,:1"}
 };
 
 opCode x86_tabC9[4] = {
-	{0, 1, i8086_nodef, NULL, "nodef"},
+	{0, 1, i286_opCB, 0, "retf"},		// = cb
 	{0, 1, i286_opC9, 0, "leave"},
 	{0, 1, i286_opC9, 0, "leave"},
 	{0, 1, i286_opC9, 0, "leave"}
@@ -3221,10 +3221,10 @@ opCode i80286_tab[256] = {
 	{OF_GEN, 1, i286_op61, x86_tab61, "popa"},			// 1+
 	{OF_MODRM | OF_WORD | OF_GEN, 1, i286_op62, x86_tab62, "bound :r,:e"},	// 1+
 	{OF_MODRM | OF_WORD | OF_GEN, 1, i286_op63, x86_tab63, "arpl :e,:r"},	// 2+
-	{OF_PREFIX, 1, i8086_nodef, 0, ""},		// 3+ FS prefix
-	{OF_PREFIX, 1, i8086_nodef, 0, ""},		// 3+ GS prefix
-	{OF_PREFIX, 1, i8086_nodef, 0, ""},		// 3+ op.size override
-	{OF_PREFIX, 1, i8086_nodef, 0, ""},		// 4+ adr.size override
+	{0, 1, i8086_nodef, 0, "undef"},		// 3+ FS prefix
+	{0, 1, i8086_nodef, 0, "undef"},		// 3+ GS prefix
+	{0, 1, i8086_nodef, 0, "undef"},		// 3+ op.size override
+	{0, 1, i8086_nodef, 0, "undef"},		// 4+ adr.size override
 	{OF_GEN, 1, i286_op68, x86_tab68, "push :2"},			// 1+
 	{OF_MODRM | OF_WORD | OF_GEN, 1, i286_op69, x86_tab69, "imul :r,:e,:2"},	// 1+
 	{OF_GEN, 1, i286_op6A, x86_tab6A, "push :1"},			// 1+

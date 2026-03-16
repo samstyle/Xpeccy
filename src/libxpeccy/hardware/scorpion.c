@@ -14,6 +14,28 @@ ProfROM table :
 010c | 1 0 1 0
 */
 
+// green scorpion - AY R14 rd = x.x.rom1.b3.scr.b2.b1.b0
+// rom1=b4,7ffd
+// scr=b3,7ffd
+// b0..2=b0..2,7ffd
+// b3=b4,1ffd
+
+int scrp_ayx_rd(int adr, void* p) {
+	Computer* comp = (Computer*)p;
+	int res = 0xff;
+	if (!(adr & 1)) {
+		res = comp->p7FFD & 0x0f;		// b0,1,2,scr
+		res |= comp->p1FFD & 0x10;		// b3
+		res |= comp->rom << 5;			// rom
+	}
+	return res;
+}
+
+void scrp_init(Computer* comp) {
+	zx_init(comp);
+	chip_set_xdev(comp->ts->chipA, scrp_ayx_rd, NULL, comp);
+}
+
 static int ZSLays[4][4] = {
 	{0,1,2,3},
 	{3,3,3,2},

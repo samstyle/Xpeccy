@@ -73,6 +73,8 @@ enum {
 	VGA_GRF_L,	// grf 320 4bpp (ega)
 	VGA_GRF_H,	// grf 640 4bpp (ega)
 	VGA_GRF_256,	// grf 320 8bpp (vga)
+// pc98xx
+	VID_PC98XX
 };
 
 extern int bufSize;
@@ -114,7 +116,7 @@ typedef struct {
 } xVideoMode;
 
 struct Video {
-	unsigned nogfx:1;	// tsl : nogfx flag
+	unsigned nogfx:1;	// tsl : nogfx flag, pc98xx:disable display
 	unsigned newFrame:1;	// set @ start of VBlank
 	int intFRAME;		// aka INT
 	unsigned intLINE:1;	// for TSConf
@@ -327,7 +329,9 @@ struct Video {
 
 	unsigned char line[0x500];		// buffer for render sprites & tiles
 	unsigned char linb[0x500];		// buffer for rendered bitplane
+	// TODO: allocate font only if it loaded
 	unsigned char font[0x2000];		// ATM/C64/CGA text mode font (8K for CGA font)		NOTE: pc98xx kanji.rom size is 282KB
+	int fnt_size;				// TODO:use it for uploadable font
 
 	unsigned char sprxspr;			// c64 spr-spr collisions
 	unsigned char sprxbgr;			// c64 spr-bgr collisions
@@ -371,8 +375,14 @@ void vid_get_screen(Video*, unsigned char*, int, int, int);
 void vid_set_grey(int);
 xColor vid_get_col(Video*, int);
 void vid_set_col(Video*, int, xColor);
+void vid_set_red(Video*, int, int);
+void vid_set_green(Video*, int, int);
+void vid_set_blue(Video*, int, int);
 void vid_set_bcol(Video*, int, xColor);
 void vid_reset_col(Video*, int);
+
+void vid_fnt_wr(Video*, int, int);
+int vid_fnt_rd(Video*, int);
 
 void tslUpdatePorts(Video*);
 

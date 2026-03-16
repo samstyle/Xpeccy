@@ -324,13 +324,13 @@ xAsmScan z80_asm(int adr, const char* cbuf, char* buf) {
 
 xRegDsc z80RegTab[] = {
 	{Z80_REG_PC, "PC", REG_WORD, REG_RDMP | REG_PC, offsetof(CPU, regPC)},
-	{Z80_REG_AF, "AF", REG_WORD, 0, 0},
+	{Z80_REG_A, "A", REG_BYTE, 0, offsetof(CPU, regA)},
 	{Z80_REG_BC, "BC", REG_WORD, REG_RDMP, offsetof(CPU, regBC)},
 	{Z80_REG_DE, "DE", REG_WORD, REG_RDMP, offsetof(CPU, regDE)},
 	{Z80_REG_HL, "HL", REG_WORD, REG_RDMP, offsetof(CPU, regHL)},
 
 	{Z80_REG_SP, "SP", REG_WORD, REG_RDMP | REG_SP, offsetof(CPU, regSP)},
-	{Z80_REG_AFA, "AF'", REG_WORD, 0, 0},
+	{Z80_REG_AA, "A'", REG_BYTE, 0, offsetof(CPU, regAa)},
 	{Z80_REG_BCA, "BC'", REG_WORD, REG_RDMP, offsetof(CPU, regBCa)},
 	{Z80_REG_DEA, "DE'", REG_WORD, REG_RDMP, offsetof(CPU, regDEa)},
 	{Z80_REG_HLA, "HL'", REG_WORD, REG_RDMP, offsetof(CPU, regHLa)},
@@ -339,9 +339,9 @@ xRegDsc z80RegTab[] = {
 	{Z80_REG_IY, "IY", REG_WORD, REG_RDMP, offsetof(CPU, regIY)},
 	{Z80_REG_I, "I", REG_BYTE, 0, offsetof(CPU, regI)},
 	{Z80_REG_R, "R", REG_BYTE, 0, offsetof(CPU, regR)},
-	{REG_EMPTY, "A", REG_BYTE, 0, offsetof(CPU, regA)},
+//	{REG_EMPTY, "A", REG_BYTE, 0, offsetof(CPU, regA)},
 	{REG_EMPTY, "F", REG_32, 0, 0},
-	{REG_EMPTY, "A'", REG_BYTE, 0, offsetof(CPU, regAa)},
+//	{REG_EMPTY, "A'", REG_BYTE, 0, offsetof(CPU, regAa)},
 	{REG_EMPTY, "F'", REG_32, 0, offsetof(CPU, regFa)},
 #ifdef ISDEBUG
 	{Z80_REG_WZ, "WZ", REG_WORD, REG_RDMP, offsetof(CPU, regWZ)},
@@ -349,39 +349,43 @@ xRegDsc z80RegTab[] = {
 	{Z80_REG_IM, "IM", REG_2, 0, offsetof(CPU, regIM)},
 	{Z80_FLG_IFF1, "IFF1", REG_BIT, 0, offsetof(CPU, flgIFF1)},
 	{Z80_FLG_IFF2, "IFF2", REG_BIT, 0, offsetof(CPU, flgIFF2)},
-#ifdef ISDEBUG
-	{Z80_REG_IE, "IE", REG_WORD, 0, offsetof(CPU, inten)},
-	{Z80_REG_IR, "IF", REG_WORD, 0, offsetof(CPU, intrq)},
-#endif
 	{REG_EOT, "", 0, 0, 0}
 };
 
 static char* z80Flags = "SZ5H3PNC";
 
 void z80_get_regs(CPU* cpu, xRegBunch* bunch) {
-	int idx = 0;
+//	int idx = 0;
 	int bidx = 0;
 	PAIR(w,h,l)rx;
 	xRegister reg;
-	while(z80RegTab[idx].id != REG_EOT) {
-		reg.id = z80RegTab[idx].id;
-		reg.name = z80RegTab[idx].name;
-		reg.type = z80RegTab[idx].type;
-		reg.flag = z80RegTab[idx].flag;
-		switch(z80RegTab[idx].id) {
-			case Z80_REG_PC: reg.value = cpu->regPC; break;
-			case Z80_REG_SP: reg.value = cpu->regSP; break;
+	xRegDsc* itm = z80RegTab;
+	while(itm->id != REG_EOT) {
+		reg.id = itm->id;
+		reg.name = itm->name;
+		reg.type = itm->type;
+		reg.flag = itm->flag;
+		switch(itm->id) {
 			case Z80_REG_AF: rx.h = cpu->regA;
 					rx.l = z80_get_flag(cpu) & 0xff;
 					reg.value = rx.w;
 					break;
-			case Z80_REG_BC: reg.value = cpu->regBC; break;
-			case Z80_REG_DE: reg.value = cpu->regDE; break;
-			case Z80_REG_HL: reg.value = cpu->regHL; break;
 			case Z80_REG_AFA: rx.h = cpu->regAa;
 					rx.l = cpu->regFa;
 					reg.value = rx.w;
 					break;
+#if 1
+			default:
+				reg.value = reg_get_value(cpu, itm);
+				break;
+#else
+			case Z80_REG_PC: reg.value = cpu->regPC; break;
+			case Z80_REG_A: reg.value = cpu->regA; break;
+			case Z80_REG_SP: reg.value = cpu->regSP; break;
+			case Z80_REG_BC: reg.value = cpu->regBC; break;
+			case Z80_REG_DE: reg.value = cpu->regDE; break;
+			case Z80_REG_HL: reg.value = cpu->regHL; break;
+			case Z80_REG_AA: reg.value = cpu->regAa; break;
 			case Z80_REG_BCA: reg.value = cpu->regBCa; break;
 			case Z80_REG_DEA: reg.value = cpu->regDEa; break;
 			case Z80_REG_HLA: reg.value = cpu->regHLa; break;
@@ -395,58 +399,109 @@ void z80_get_regs(CPU* cpu, xRegBunch* bunch) {
 			case Z80_REG_WZ: reg.value = cpu->regWZ; break;
 			case Z80_REG_IE: reg.value = cpu->inten; break;
 			case Z80_REG_IR: reg.value = cpu->intrq; break;
+#endif
 		}
 		if (reg.id != REG_EMPTY) {
 			bunch->regs[bidx] = reg;
 			bidx++;
 		}
-		idx++;
+		itm++;
+//		idx++;
 	}
-	bunch->regs[idx].id = REG_EOT;
+	bunch->regs[bidx].id = REG_EOT;
 	bunch->flags = z80Flags;
 	// memcpy(bunch->flags, "SZ5H3PNC", 8);
 }
 
 void z80_set_regs(CPU* cpu, xRegBunch bunch) {
-	int idx;
-	xRegister* rd;
 	PAIR(w,h,l)rx;
+	xRegister* rd = bunch.regs;
+	xRegDsc* p;
+	int idx = 0;
+	while((idx < 32) && (rd->id != REG_EOT)) {
+		switch(rd->id) {
+			case Z80_REG_AF:
+				rx.w = rd->value;
+				cpu->regA = rx.h;
+				z80_set_flag(cpu, rx.l);
+				break;
+			case Z80_REG_AFA:
+				rx.w = rd->value;
+				cpu->regAa = rx.h;
+				cpu->regFa = rx.l;
+				break;
+			case Z80_REG_R:
+				cpu->regR = rd->value;
+				cpu->regR7 = rd->value & 0x80;
+				break;
+			case Z80_REG_IM:
+				cpu->regIM = (rd->value & 2) ? 2 : rd->value & 1;
+				break;
+			default:
+				p = cpu->core->rdsctab;
+				while (p->id != REG_EOT) {
+					if (p->id == rd->id) {
+						reg_set_value(cpu, p, rd->value);
+					}
+					p++;
+				}
+				break;
+		}
+		rd++;
+		idx++;
+	}
+/*
+	xRegister* rd;
+	int idx;
 	for (idx = 0; idx < 32; idx++) {
 		rd = &bunch.regs[idx];
 		switch(rd->id) {
-			case Z80_REG_PC: cpu->regPC = rd->value; break;
-			case Z80_REG_SP: cpu->regSP = rd->value; break;
+			case REG_EOT:
+				idx = 100;
+				break;
 			case Z80_REG_AF: rx.w = rd->value;
 					cpu->regA = rx.h;
 					z80_set_flag(cpu, rx.l);
 					break;
-			case Z80_REG_BC: cpu->regBC = rd->value; break;
-			case Z80_REG_DE: cpu->regDE = rd->value; break;
-			case Z80_REG_HL: cpu->regHL = rd->value; break;
 			case Z80_REG_AFA: rx.w = rd->value;
 					cpu->regAa = rx.h;
 					cpu->regFa = rx.l;
 					break;
+			case Z80_REG_R:
+				cpu->regR = rd->value;
+				cpu->regR7 = rd->value & 0x80;
+				break;
+			case Z80_REG_IM: cpu->regIM = (rd->value & 2) ? 2 : rd->value & 1; break;
+#if 1
+			default:
+				reg_set_value(cpu, rd, rd->value);
+				break;
+#else
+			case Z80_REG_PC: cpu->regPC = rd->value; break;
+			case Z80_REG_SP: cpu->regSP = rd->value; break;
+			case Z80_REG_A: cpu->regA = rd->value; break;
+			case Z80_REG_BC: cpu->regBC = rd->value; break;
+			case Z80_REG_DE: cpu->regDE = rd->value; break;
+			case Z80_REG_HL: cpu->regHL = rd->value; break;
+			case Z80_REG_AA: cpu->regAa = rd->value; break;
 			case Z80_REG_BCA: cpu->regBCa = rd->value; break;
 			case Z80_REG_DEA: cpu->regDEa = rd->value; break;
 			case Z80_REG_HLA: cpu->regHLa = rd->value; break;
 			case Z80_REG_IX: cpu->regIX = rd->value; break;
 			case Z80_REG_IY: cpu->regIY = rd->value; break;
 			case Z80_REG_I: cpu->regI = rd->value & 0xff; break;
-			case Z80_REG_R:
-				cpu->regR = rd->value;
-				cpu->regR7 = rd->value & 0x80;
-				break;
-			case Z80_REG_IM: cpu->regIM = (rd->value & 2) ? 2 : rd->value & 1; break;
 			case Z80_FLG_IFF1: cpu->flgIFF1 = !!rd->value; break;
 			case Z80_FLG_IFF2: cpu->flgIFF2 = !!rd->value; break;
 			case Z80_REG_WZ: cpu->regWZ = rd->value; break;
-			case REG_EOT: idx = 100; break;
+#endif
 		}
 	}
+*/
 }
 
-// test:
+// test (for external lib):
+// {id, family_id, generation, name, regtab, adr.size, data.size, @init, @reset, @exec, @txt2code, @disasm, @get_all_regs, @set_all_regs, @get_flag, @set_flag}
+// last entry must me with id=CPU_NONE
 static cpuCore z80core[] = {
 	{CPU_Z80, CPUG_X80, 0,"Z80ext", z80RegTab, 16, 8, NULL, z80_reset, z80_exec, z80_asm, z80_mnem, z80_get_regs, z80_set_regs, z80_get_flag, z80_set_flag},
 	{CPU_NONE, CPUG_NONE, 0, "none", NULL, 8, 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL}

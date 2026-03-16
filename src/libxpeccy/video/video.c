@@ -212,6 +212,8 @@ Video* vidCreate(cbxrd cb, cbirq ci, void* dptr) {
 	vid_set_layout(vid, &vlay);
 	vid->inten = 0x01;		// FRAME INT for all
 
+	vid->fnt_size = 0x2000;
+
 	vid->ula = ula_create();
 	vid->txt7220 = upd7220_create();
 	vid->grf7220 = upd7220_create();
@@ -339,6 +341,24 @@ void vid_set_border(Video* vid, double brd) {
 	else if (brd > 1.0) brd = 1.0;
 	vid->brdsize = brd;
 	vid_upd_layout(vid);
+}
+
+int vid_fnt_rd(Video* vid, int adr) {
+	int res = -1;
+	if (vid->font) {
+		if (adr < vid->fnt_size) {
+			res = vid->font[adr];
+		}
+	}
+	return res;
+}
+
+void vid_fnt_wr(Video* vid, int adr, int val) {
+	if (vid->font) {
+		if (adr < vid->fnt_size) {
+			vid->font[adr] = val & 0xff;
+		}
+	}
 }
 
 static int xscr = 0;
@@ -486,13 +506,16 @@ void vid_set_grey(int f) {
 
 // palette
 
-xColor vid_get_col(Video* vid, int i) {
+xColor uint_to_xcol(uint32_t c) {
 	xColor xcol;
-	i = vid->pal[i & 0xff];
-	xcol.r = i & 0xff;
-	xcol.g = (i >> 8) & 0xff;
-	xcol.b = (i >> 16) & 0xff;
+	xcol.r = c & 0xff;
+	xcol.g = (c >> 8) & 0xff;
+	xcol.b = (c >> 16) & 0xff;
 	return xcol;
+}
+
+xColor vid_get_col(Video* vid, int i) {
+	return uint_to_xcol(vid->pal[i & 0xff]);
 }
 
 void vid_set_col(Video* vid, int i, xColor xcol) {
@@ -501,14 +524,34 @@ void vid_set_col(Video* vid, int i, xColor xcol) {
 	vid->gpal[i & 0xff] = outcol | (outcol << 8) | (outcol << 16) | (0xff << 24);
 }
 
+void vid_set_red(Video* vid, int i, int v) {
+	xColor col = vid_get_col(vid, i);
+	col.r = v & 0xff;
+	vid_set_col(vid, i, col);
+}
+
+void vid_set_green(Video* vid, int i, int v) {
+	xColor col = vid_get_col(vid, i);
+	col.g = v & 0xff;
+	vid_set_col(vid, i, col);
+}
+
+void vid_set_blue(Video* vid, int i, int v) {
+	xColor col = vid_get_col(vid, i);
+	col.b = v & 0xff;
+	vid_set_col(vid, i, col);
+}
+
 // set base color palette (used for preset loading)
 void vid_set_bcol(Video* vid, int i, xColor xcol) {
 	vid->bpal[i & 0xff] = xcol.r | (xcol.g << 8) | (xcol.b << 16) | (0xff << 24);
 }
 
 // set current palette color from preloaded preset
+// NOTE: set gpal too
 void vid_reset_col(Video* vid, int i) {
-	vid->pal[i & 0xff] = vid->bpal[i & 0xff];
+	xColor col = uint_to_xcol(vid->bpal[i & 0xff]);
+	vid_set_col(vid, i, col);
 }
 
 // video drawing
@@ -931,6 +974,9 @@ static xVideoMode vidModeTab[] = {
 	{VGA_GRF_L, vga_glo_ini, cga_t40_dot, NULL, vga320_4bpp_line, NULL, cga_t40_frm},
 	{VGA_GRF_H, vga_ghi_ini, cga_t40_dot, NULL, vga640_4bpp_line, NULL, cga_t40_frm},
 	{VGA_GRF_256, vga_glo_ini, cga_lores_dot, NULL, vga256_line, NULL, cga_t40_frm},
+
+
+	{VID_PC98XX, NULL, upd7220_dot, NULL, upd7220_line, NULL, upd7220_frame},
 
 	{VID_UNKNOWN, NULL, vidDrawBorder, NULL, NULL, NULL, NULL}
 };
