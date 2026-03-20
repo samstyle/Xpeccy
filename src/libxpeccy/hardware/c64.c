@@ -159,7 +159,7 @@ void c64_io2_wr(int adr, int val, void* data) {
 
 int c64_chrd(int adr, void* data) {
 	Computer* comp = (Computer*)data;
-	return comp->vid->font[adr & 0x7ff];
+	return vid_fnt_rd(comp->vid, adr & 0x7ff);	// comp->vid->font[adr & 0x7ff];
 }
 
 void c64_maper(Computer* comp) {

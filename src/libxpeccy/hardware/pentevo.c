@@ -38,7 +38,10 @@ int evoMRd(Computer* comp, int adr, int m1) {
 }
 
 void evoMWr(Computer* comp, int adr, int val) {
-	if (comp->evo.evoBF & 4) comp->vid->font[adr & 0x7ff] = val & 0xff;	// PentEvo: write font byte
+	if (comp->evo.evoBF & 4) {
+		vid_fnt_wr(comp->vid, adr & 0x7ff, val & 0xff);
+		// comp->vid->font[adr & 0x7ff] = val & 0xff;	// PentEvo: write font byte
+	}
 	memWr(comp->mem,adr,val);
 }
 

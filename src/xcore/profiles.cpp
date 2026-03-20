@@ -276,14 +276,19 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 				memset((char*)prf->zx->gs->mem->romData, 0xff, MEM_32K);
 			}
 		}
-// load ATM2 font data
+// load font data
 		if (!rset->fntFile.empty()) {
 			fpath = conf.path.romDir + SLASH + rset->fntFile;
+			vid_fnt_load(prf->zx->vid, fpath.c_str());
+/*
 			file = fopen(fpath.c_str(), "rb");
 			if (file) {
 				fread(prf->zx->vid->font, MEM_8K, 1, file);
 				fclose(file);
 			}
+*/
+		} else {
+			vid_fnt_del(prf->zx->vid);
 		}
 // load ega/vga bios (64K max)
 		memset(prf->zx->vid->bios, 0xff, MEM_64K);

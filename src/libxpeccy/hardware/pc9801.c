@@ -34,8 +34,8 @@
 #define DIPSW3	reg[73]
 
 #define flgNMI	flag[0]
-#define flgKBDm flag[1]	// upd8251 mode (0:mode, 1:command)
-#define flgVSync flag[2] // VSync flip-flop: set @ vsync, reset on port 64 write. 0 means vsync interrupt allowed
+#define flgKBDm flag[1]		// upd8251 mode (0:mode, 1:command)
+#define flgVSync flag[2]	// VSync flip-flop: set @ vsync, reset on port 64 write. 0 means vsync interrupt allowed
 #define flg16col flag[3]	// video: 16 colors mode
 
 #include "../spectrum.h"
@@ -54,11 +54,13 @@ void pc98xx_ram_wr(int adr, int val, void* p) {
 
 // video
 int pc98xx_vid_rd(int adr, void* p) {
-	return -1;
+	Computer* comp = (Computer*)p;
+	return comp->vid->ram[adr & 0x1ffff];
 }
 
 void pc98xx_vid_wr(int adr, int val, void* p) {
-
+	Computer* comp = (Computer*)p;
+	comp->vid->ram[adr & 0x1ffff] = val;
 }
 
 // bios
@@ -68,6 +70,13 @@ int pc98xx_bios_rd(int adr, void* p) {
 	return comp->mem->romData[adr & comp->mem->romMask];
 }
 
+// external bios (c0000-e7fff)
+int pc98xx_ext_rd(int adr, void* p) {
+//	Computer* comp = (Computer*)p;
+//	comp_brk(comp, -1);
+	return -1;
+}
+
 // adr bus width 20 bit
 // max.adr = FFFFF (1MB)
 // page size = 4096 bytes
@@ -75,7 +84,7 @@ int pc98xx_bios_rd(int adr, void* p) {
 void pc98xx_mem_map(Computer* comp) {
 	memSetBank(comp->mem, 0x00, MEM_RAM, 0, MEM_1M, pc98xx_ram_rd, pc98xx_ram_wr, comp);	// ram (1M)
 	memSetBank(comp->mem, 0xa0, MEM_EXT, 0, MEM_128K, pc98xx_vid_rd, pc98xx_vid_wr, comp);	// video ram (128K)
-	memSetBank(comp->mem, 0xc0, MEM_EXT, 0, MEM_128K, NULL, NULL, comp);			// expand roms (128K)
+	memSetBank(comp->mem, 0xc0, MEM_EXT, 0, MEM_128K, pc98xx_ext_rd, NULL, comp);		// expand roms (128K)
 	memSetBank(comp->mem, 0xe0, MEM_EXT, 0, MEM_32K, NULL, NULL, comp);			// video ram (32K)
 	memSetBank(comp->mem, 0xe8, MEM_ROM, 0, MEM_64K, pc98xx_bios_rd, NULL, comp);		// bios (96K)
 	memSetBank(comp->mem, 0xf8, MEM_ROM, 2, MEM_32K, pc98xx_bios_rd, NULL, comp);
@@ -83,20 +92,32 @@ void pc98xx_mem_map(Computer* comp) {
 
 void pc98xx_reset(Computer* comp) {
 	cpu_reset(comp->cpu);
+	comp->DIPSW1 = 1;
+	comp->portB = 0x00;	// b3:1=highres
 	comp->portC = 0xff;
 	comp->flgKBDm = 0;
 	comp->flgVSync = 1;	// disabled
 	comp->regKBDs = 0;
 	pc98xx_mem_map(comp);
 	vid_set_mode(comp->vid, VID_PC98XX);
+
+	vid_set_resolution(comp->vid, 640, 400);
+	comp->vid->linedbl = !(comp->portB & 8);
 }
 
 // uPD8255 - misc data (rs232,soft reset,misc flags) (31,33,35,37)
-// portA - system switch (ro)
+// portA - system switch, DIPSW2 full (ro)
+//		b0: 0-640x200, 1-640x400
+//		b1: superimpose mode
+//		b2: digital display
+//		b3: switch floppies 1-2 and 3-4
+//		b4,5: rs232 transfer protocol mode
+//		b6: vf key
+//		b7: on - 16 cols of 4096 / off - 8 cols
 // portB (ro)	b0:CDAT (upd4990 data out)
 //		b1:EMCK (ext.ram parity error)
 //		b2:IMCK (int.ram parity error)
-//		b3:CRTT (1:24KHz, 0:15KHz) - display hires
+//		b3:CRTT (1:24KHz, 0:15KHz) - display hires, DIPSW1-1
 //		b4:INT3 (HDD)
 //		b5:CD - RS232
 //		b6:CS - RS232
@@ -117,8 +138,8 @@ void pc98xx_reset(Computer* comp) {
 int pc98xx_ppia_rd(void* comp) {return ((Computer*)comp)->DIPSW1;}
 int pc98xx_ppib_rd(void* ptr) {
 	Computer* comp = (Computer*)ptr;
-	int res = ((Computer*)comp)->portB & 0xfe;
-	if (((Computer*)comp)->rtc->data) res |= 1;
+	int res = comp->portB & 0xfe;
+	if (comp->rtc->data) res |= 1;
 	return res;
 }
 int pc98xx_ppic_rd(void* comp) {return ((Computer*)comp)->portC;}
@@ -312,7 +333,7 @@ void pc98xx_kbd_wr(Computer* comp, int adr, int val) {
 // 60:0	wr	gdc parameter write
 // 62:1	rd	gdc data read
 // 62:1	wr	gdc command write
-// == CRTC
+
 // 64:2	wr	crt interrupt reset
 // 66:3		?
 // 68:4 rd	[PC-H98, PC-9821, PC-9801BA2･BS2･BX2･BA3･BX3･BX4･NS/A]
@@ -373,7 +394,9 @@ void pc98xx_gdc_wr(Computer* comp, int adr, int val) {
 				case 1: break;						// graphic mode
 				case 2: break;						// column width
 				case 3: break;						// font sel
-				case 4: break;						// grp mode
+				case 4: printf("40/80 chars: %i\n", val & 1);
+					comp->vid->vga.cpl = (val & 1) ? 40 : 80;
+					break;// grp mode (chars / line)
 				case 5: break;						// kac mode
 				case 6: break;						// nvmw permit
 				case 7: comp->vid->nogfx = !(val & 1); break;		// enable display
@@ -393,12 +416,14 @@ void pc98xx_gdc_wr(Computer* comp, int adr, int val) {
 	}
 }
 
-// 70:0	wr	Character 1st line (0)
-// 72:1	wr	Character last line (15)
+// upd52611 - crt controller for text mode
+// 70:0	wr	Line counter initial value (0)
+// 72:1	wr	Character bodyface line number (15)
 // 74:2	wr	Character Lines Number (15) - char height
 // 76:3	wr	Smooth Scroll Lines Count
 // 78:4	wr	Scroll Area Above Position Lines Number
 // 7a:5	wr	Scroll Area Lines Number
+
 // 7c:6	wr	Fast Graphics Mode Register:
 //		b0..3: p0..3 disable
 //		b6:rmw mode
@@ -424,9 +449,9 @@ int pc98xx_crt_rd(Computer* comp, int adr) {
 void pc98xx_crt_wr(Computer* comp, int adr, int val) {
 	adr = (adr >> 1) & 7;
 	switch (adr) {
-		case 0: break;
-		case 1: break;
-		case 2: break;
+		case 0: comp->vid->regCharBegin = val & 0xff; break;
+		case 1: comp->vid->regCharEnd = val & 0xff; break;
+		case 2: comp->vid->regCharHeight = val & 0xff; break;
 		case 3: break;
 		case 4: break;
 		case 5: break;
@@ -553,6 +578,15 @@ void pc98xx_fnt_wr(Computer* comp, int adr, int val) {
 // 90,92,94,96: 1MB flop
 // uPD8251 - RS232
 
+// 51,53,55,57 - 320KB FDD on 8255
+int pc98xx_f55_rd(Computer* comp, int adr) {
+	return -1;
+}
+
+void pc98xx_f55_wr(Computer* comp, int adr, int val) {
+
+}
+
 // uPD8255: mouse
 // 7fe9 rd: mouse data: left.x.right.x.md3..0
 // 7fed wr: control flags: hc.sxy.shl.!int.x.x.x.x;
@@ -621,7 +655,26 @@ void pc98xx_prn_wr(Computer* comp, int adr, int val) {
 	}
 }
 
+// c0,c2,c4,c6
+
+int pc98xx_c0_rd(Computer* comp, int adr) {
+	return -1;
+}
+
+void pc98xx_c0_wr(Computer* comp, int adr, int val) {
+
+}
+
 // uPD7261 - HDD controller
+
+void pc98xx_hdd_wr(Computer* comp, int adr, int val) {
+
+}
+
+int pc98xx_hdd_rd(Computer* comp, int adr) {
+	return -1;
+}
+
 // fm sound (Yamaha 2203 ?)
 
 // nmi flipflop (A1):
@@ -663,10 +716,11 @@ xPort pc98xx_io_map[] = {
 	{0xcf1, 0x040, 2, 2, 2, pc98xx_prn_rd,	pc98xx_prn_wr},		// 40,42,44,46: printer on upd8255
 	{0xcf1, 0x041, 2, 2, 2, pc98xx_kbd_rd,	pc98xx_kbd_wr},		// 41,43: keyboard on upd8251
 	{0xcf1, 0x050, 2, 2, 2, NULL,		pc98xx_nmi_wr},		// 50,52: NMI controller: wr:A1 = nmi on/off
+	{0xcf1, 0x051, 2, 2, 2, pc98xx_f55_rd,	pc98xx_f55_wr},		// 51,53,55,57: 320KB FDD controller on 8255
 	{0xcf1, 0x060, 2, 2, 2, pc98xx_gdc_rd,	pc98xx_gdc_wr},		// 60,62:text gdc, 64,66,68,6a,6c,6e: crtc
 	{0xcf1, 0x070, 2, 2, 2, pc98xx_crt_rd,	pc98xx_crt_wr},		// 70,72,74,76,78,7a,7c,7e: crtc, grcg
 	{0xcf1, 0x071, 2, 2, 2, pc98xx_pit_rd,	pc98xx_pit_wr},		// 71,73,75,77: PIT on upd8253
-//	{0x0fd, 0x080, 2, 2, 2, NULL,		NULL},			// 80,82: hard disk inerface
+	{0x0fd, 0x080, 2, 2, 2, pc98xx_hdd_rd,	pc98xx_hdd_wr},		// 80,82: hard disk inerface
 //	{0xff9, 0x188, 2, 2, 2, NULL,		NULL},			// 188,18a,18c,18e: ym2203
 //	{0x0f9, 0x089, 2, 2, 2, NULL,		NULL},			// 89,8b,8d,8f: network interface
 //	{0x0f1, 0x090, 2, 2, 2, NULL,		NULL},			// 90,92,94,96: hd fdd on upd765
@@ -676,7 +730,8 @@ xPort pc98xx_io_map[] = {
 //	{0xff1, 0x9a0, 2, 2, 2, NULL,		NULL},			// graphic control
 	{0xcf1, 0x0a1, 2, 2, 2, pc98xx_fnt_rd,	pc98xx_fnt_wr},		// a1,a3,a5,a9:kanjirom
 //	{0x0f0, 0x0b0, 2, 2, 2, NULL,		NULL},			// b0..bf: communication controller / rs232 expansion interface; 0xbe: fdd switcher
-//	{0x0f9, 0x0c8, 2, 2, 2, NULL,		NULL},			// c8,ca,cc,ce: dd drive on upd765
+	{0x0f9, 0x0c0, 2, 2, 2, pc98xx_c0_rd,	pc98xx_c0_wr},		// c0,c2,c4,c6,c8: oda printer board on 8255 [reserved]
+//	{0x0f9, 0x0c8, 2, 2, 2, NULL,		NULL},			// c8,ca,cc,ce: dd fdd on upd765
 //	{0x0f1, 0x0c1, 2, 2, 2, NULL,		NULL},			// gp-ib on upd7210
 	{0xfff9,0x7fd9,2, 2, 2, pc98xx_mou_rd,	pc98xx_mou_wr},		// 7fd9/b/d/f: mouse controller on upd8255
 //	{0xfffb,0x3fdb,2, 2, 2, NULL,		NULL},			// 3fdb/f: upd8253 (timer for beeper)
@@ -730,6 +785,9 @@ void pc98xx_irq(Computer* comp, int id) {
 			break;
 		case IRQ_KBD_ACK:		// kbd data is ready
 			uart_ready(comp->uart);
+			break;
+		case IRQ_UART_0:
+			pic_int(comp->mpic, 1);
 			break;
 	}
 }

@@ -67,6 +67,9 @@ void upd7220_reset(Video* vid, upd7220* upd) {
 	upd7220_reset_buf(&upd->inbuf);
 	upd7220_reset_buf(&upd->outbuf);
 	upd->off = 1;
+	vid->regCharBegin = 0;
+	vid->regCharEnd = 15;
+	vid->regCharHeight = 16;
 }
 
 void upd7220_start(Video* vid, upd7220* upd) {
@@ -303,30 +306,41 @@ void upd7220_dot(Video* vid) {
 	vid_dot_half(vid, tc ? tc : gc);
 }
 
+// higres = DIPSW1-1 (1:highres, 0:normal). read - pc98xx port33.bit3
+// lowres = double dots, double lines
+// font: 00xx - ank (8x8)
 void upd7220_line(Video* vid) {
 	if (vid->txt7220->inbuf.queue > 0) vid->txt7220->inbuf.queue--;
 	if (vid->grf7220->inbuf.queue > 0) vid->grf7220->inbuf.queue--;
 // form text line (vid->line)
+	int line = vid->ray.ys / vid->regCharHeight;
+	int clin = vid->ray.ys % vid->regCharHeight;
 	int c = 7;
-	int adr = (vid->ray.ys & 0xf0) * 10;		// adr of line start
+	int adr = line * 160;		// adr of line start (160 bytes / line)
 	int pos = 0;
-	int clin = vid->ray.ys & 0x0f;			// line inside char
+//	int clin = vid->ray.ys & 0x07;			// line inside char
 	int i, j;
 	int chr;
 	int atr;
 	if (vid->txt7220->off || vid->nogfx) {
 		memset(vid->line, 0x00, 0x500);
 	} else {
+		// vid->vga.cpl = 40/80 - chars in line
 		for (i = 0; i < 80; i++) {
-			chr = (vid->ram[adr] & 0xff) | (vid->ram[adr + 1] << 8);		// char code (TODO: lowres mode, 40 ch/line)
+			chr = (vid->ram[adr] & 0xff) | (vid->ram[adr + 1] << 8);
 			atr = (vid->ram[adr | 0x2000] & 0xff) | (vid->ram[adr | 0x2001] << 8);	// char attribute
-			chr = (chr << 5) | (clin << 1);						// char data address (current line)
-			//chr = (vid->font[chr] << 8) | (vid->font[chr | 1] & 0xff);		// 16 bit of pixels, do something with 283K kanjirom
+			c = (atr >> 5) & 7;
+			chr = (chr << 3) + clin;			// for 8x8 chars
+			chr = (vid_fnt_rd(vid, chr) << 8) | (vid_fnt_rd(vid, chr | 1) & 0xff);		// 16 bit of pixels, do something with 283K kanjirom
+			if (atr & 4) chr ^= 0xffff;			// invert
+			if ((atr & 2) && vid->flash) chr ^= 0xffff;	// blink TODO:blink rate
 			// TODO: atr.invert, atr.blink, atr.stroked
-			for (j = 0; j < 16; j++) {
+			for (j = 0; j < 8; j++) {
 				// TODO: fg/bg color for text mode
 				// TODO: lowres mode
 				vid->line[pos++] = (chr & 0x8000) ? c : 0;
+				vid->line[pos++] = (chr & 0x8000) ? c : 0;
+				chr <<= 1;
 			}
 			adr += 2;								// next char
 		}

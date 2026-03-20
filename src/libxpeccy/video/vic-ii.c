@@ -109,7 +109,7 @@ void vidC64TDraw(Video* vid) {
 					adr = ((yscr >> 3) * 40) + (xscr >> 3);
 					ink = vid->mrd(adr | ((vid->reg[0x18] & 0xf0) << 6), vid->xptr);				// tile nr
 					if ((~vid->vbank & 1) && ((vid->reg[0x18] & 0x0c) == 0x04)) {
-						scrbyte = vid->font[(ink << 3) | (yscr & 7)];	// from char rom
+						scrbyte = vid_fnt_rd(vid, (ink << 3) | (yscr & 7));	// vid->font[(ink << 3) | (yscr & 7)];	// from char rom
 					} else {
 						scrbyte = vid->mrd(((vid->reg[0x18] & 0x0e) << 10) | (ink << 3) | (yscr & 7), vid->xptr);	// tile row data
 					}
@@ -157,7 +157,7 @@ void vidC64TMDraw(Video* vid) {
 				adr = ((yscr >> 3) * 40) + (xscr >> 3);						// offset to tile
 				ink = vid->mrd(adr | ((vid->reg[0x18] & 0xf0) << 6), vid->xptr);		// tile nr
 				if ((~vid->vbank & 1) && ((vid->reg[0x18] & 0x0c) == 0x04)) {
-					scrbyte = vid->font[(ink << 3) | (yscr & 7)];
+					scrbyte = vid_fnt_rd(vid, (ink << 3) | (yscr & 7));	// vid->font[(ink << 3) | (yscr & 7)];
 				} else {
 					scrbyte = vid->mrd(((vid->reg[0x18] & 0x0e) << 10) | (ink << 3) | (yscr & 7), vid->xptr);
 				}

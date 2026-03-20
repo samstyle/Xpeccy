@@ -249,6 +249,7 @@ void u8251_sync(UART* uart, int ns) {
 				uart->lsr |= F_ERR_OE;
 			} else {
 				uart->drqr = 1;
+				uart->xirq(IRQ_UART_0, uart->xptr);		// TODO: set UART irq id
 			}
 		}
 	}

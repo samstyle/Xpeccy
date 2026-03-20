@@ -212,8 +212,6 @@ Video* vidCreate(cbxrd cb, cbirq ci, void* dptr) {
 	vid_set_layout(vid, &vlay);
 	vid->inten = 0x01;		// FRAME INT for all
 
-	vid->fnt_size = 0x2000;
-
 	vid->ula = ula_create();
 	vid->txt7220 = upd7220_create();
 	vid->grf7220 = upd7220_create();
@@ -343,20 +341,41 @@ void vid_set_border(Video* vid, double brd) {
 	vid_upd_layout(vid);
 }
 
+// font
+
+void vid_fnt_load(Video* vid, const char* path) {
+	FILE* file = fopen(path, "rb");
+	if (file) {
+		fseek(file, 0, SEEK_END);
+		vid->font.size = ftell(file);
+		fseek(file, 0, SEEK_SET);
+		vid->font.data = realloc(vid->font.data, vid->font.size);
+		fread(vid->font.data, vid->font.size, 1, file);
+		fclose(file);
+	}
+}
+
+void vid_fnt_del(Video* vid) {
+	if (!vid->font.data) return;
+	free(vid->font.data);
+	vid->font.data = NULL;
+	vid->font.size = 0;
+}
+
 int vid_fnt_rd(Video* vid, int adr) {
 	int res = -1;
-	if (vid->font) {
-		if (adr < vid->fnt_size) {
-			res = vid->font[adr];
+	if (vid->font.data) {
+		if (adr < vid->font.size) {
+			res = vid->font.data[adr];
 		}
 	}
 	return res;
 }
 
 void vid_fnt_wr(Video* vid, int adr, int val) {
-	if (vid->font) {
-		if (adr < vid->fnt_size) {
-			vid->font[adr] = val & 0xff;
+	if (vid->font.data) {
+		if (adr < vid->font.size) {
+			vid->font.data[adr] = val & 0xff;
 		}
 	}
 }
@@ -786,7 +805,7 @@ void vidDrawATMtext(Video* vid) {
 				scrbyte = vid->mrd(MADR(vid->curscr, adr ^ 0x2000), vid->xptr) & 0xff;
 				col = vid->mrd(MADR(vid->curscr ^ 4, adr + 1), vid->xptr) & 0xff;
 			}
-			scrbyte = vid->font[(scrbyte << 3) | (yscr & 7)];
+			scrbyte = vid_fnt_rd(vid, (scrbyte << 3) | (yscr & 7));	// vid->font[(scrbyte << 3) | (yscr & 7)];
 			vidATMDoubleDot(vid,col);
 		}
 	}
@@ -834,7 +853,7 @@ void vidDrawEvoText(Video* vid) {
 				scrbyte = vid->mrd(MADR(vid->curscr + 3, adr + 0x1000), vid->xptr);
 				col = vid->mrd(MADR(vid->curscr + 3, adr + 0x2001), vid->xptr);
 			}
-			scrbyte = vid->font[(scrbyte << 3) | (yscr & 7)];
+			scrbyte = vid_fnt_rd(vid, (scrbyte << 3) | (yscr & 7)); // vid->font[(scrbyte << 3) | (yscr & 7)];
 			vidATMDoubleDot(vid,col);
 		}
 	}

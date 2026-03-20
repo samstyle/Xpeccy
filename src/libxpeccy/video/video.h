@@ -330,8 +330,10 @@ struct Video {
 	unsigned char line[0x500];		// buffer for render sprites & tiles
 	unsigned char linb[0x500];		// buffer for rendered bitplane
 	// TODO: allocate font only if it loaded
-	unsigned char font[0x2000];		// ATM/C64/CGA text mode font (8K for CGA font)		NOTE: pc98xx kanji.rom size is 282KB
-	int fnt_size;				// TODO:use it for uploadable font
+	struct {
+		unsigned char* data;		// ATM/C64/CGA text mode font (8K for CGA font)		NOTE: pc98xx kanji.rom size is 282KB
+		int size;			// TODO:use it for uploadable font
+	} font;
 
 	unsigned char sprxspr;			// c64 spr-spr collisions
 	unsigned char sprxbgr;			// c64 spr-bgr collisions
@@ -383,6 +385,8 @@ void vid_reset_col(Video*, int);
 
 void vid_fnt_wr(Video*, int, int);
 int vid_fnt_rd(Video*, int);
+void vid_fnt_load(Video*, const char*);
+void vid_fnt_del(Video*);
 
 void tslUpdatePorts(Video*);
 

@@ -1,5 +1,9 @@
 #pragma once
 
+#define	regCharHeight	reg[0]
+#define regCharBegin	reg[1]
+#define regCharEnd	reg[2]
+
 typedef struct {
 	unsigned char data[32];
 	int pos;	// =0 on sending command, +1 each writing in fifo
