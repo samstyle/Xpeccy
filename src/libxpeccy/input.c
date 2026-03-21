@@ -155,6 +155,7 @@ void kbd_release_key(Keyboard* kbd, keyScan* tab, int* mtrx, unsigned char ch) {
 void kbd_release(Keyboard* kbd, keyScan* tab, int* mtrx, unsigned char* xk) {
 	while (*xk != 0x00) {
 		kbd_release_key(kbd, tab, mtrx, *xk);
+		xk++;
 	}
 }
 
