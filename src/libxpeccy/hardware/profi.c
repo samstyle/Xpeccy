@@ -13,6 +13,11 @@ void prfMapMem(Computer* comp) {
 	memSetBank(comp->mem, 0xc0, MEM_RAM, (comp->pDFFD & 0x08) ? 7 : bank, MEM_16K, NULL, NULL, NULL);
 }
 
+void prf_init(Computer* comp) {
+	zx_init(comp);
+	kbd_set_type(comp->keyb, KBD_PROFI);
+}
+
 // out
 
 // INFO: out (xx7E),nn

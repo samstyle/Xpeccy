@@ -812,3 +812,13 @@ sndPair pc98xx_vol(Computer* comp, sndVolume* vol) {
 	v.right = 0;
 	return v;
 }
+
+// TODO: need to avoid xt_press/xt_release in MainWin::keyPressEvent/keyReleaseEvent
+
+void pc98xx_keyp(Computer* comp, keyEntry kent) {
+//	int code = kent.necCode;
+}
+
+void pc98xx_keyr(Computer* comp, keyEntry kent) {
+//	int code = kent.necCode;
+}

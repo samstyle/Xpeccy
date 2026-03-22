@@ -141,6 +141,7 @@ void zx_init(Computer* comp) {
 	vid_upd_timings(comp->vid, comp->nsPerTick >> 1);
 	fdc_set_hd(comp->dif->fdc, 0);
 	chip_set_xdev(comp->ts->chipA, NULL, NULL, NULL);
+	kbd_set_type(comp->keyb, KBD_SPECTRUM);
 }
 
 // zx keypress/release

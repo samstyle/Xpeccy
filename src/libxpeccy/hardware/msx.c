@@ -158,6 +158,7 @@ void msx_init(Computer* comp) {
 				msx_ppi_b_rd, NULL,\
 				NULL, msx_ppi_ch_wr, \
 				NULL, msx_ppi_cl_wr);
+	kbd_set_type(comp->keyb, KBD_MSX);
 }
 
 // Port map

@@ -3,6 +3,63 @@
 #include <string.h>
 #include "input.h"
 
+// common
+
+keyScan findKey(keyScan* tab, char key) {
+	int idx = 0;
+	while (tab[idx].key && (tab[idx].key != key)) {
+		idx++;
+	}
+	return tab[idx];
+}
+
+void kbd_press_key(Keyboard* kbd, keyScan* tab, int* mtrx, unsigned char ch) {
+	if (!ch) return;
+//	printf("kbd_press_key %c\n", ch);
+	keyScan key = findKey(tab, ch & 0x7f);
+	key.row &= 0x0f;
+	kbd->row = key.row;
+	kbd->mask = key.mask;
+	mtrx[key.row] &= ~key.mask;
+	// if (key.mask) printf("row %i : %X\n",key.row, mtrx[key.row]);
+	if (ch & 0x80)
+		mtrx[key.row] &= ~0x20;
+	// update matrix
+	for (int i = 0; i < 16; i++) {
+		if (key.mask & (1 << i))
+			kbd->matrix[key.row][i]++;
+	}
+}
+
+void kbd_press(Keyboard* kbd, keyScan* tab, int* mtrx, unsigned char* xk) {
+	while (*xk != 0x00) {
+		kbd_press_key(kbd, tab, mtrx, *xk);
+		xk++;
+	}
+}
+
+void kbd_release_key(Keyboard* kbd, keyScan* tab, int* mtrx, unsigned char ch) {
+//	if (ch) printf("kbd_release_key %c\n", ch);
+	keyScan key = findKey(tab, ch & 0x7f);
+	key.row &= 0x0f;
+	for (int i = 0; i < 16; i++) {
+		if (key.mask & (1 << i)) {
+			if (kbd->matrix[key.row][i] > 0)
+				kbd->matrix[key.row][i]--;
+			if (kbd->matrix[key.row][i] == 0) {
+				mtrx[key.row] |= key.mask;
+			}
+		}
+	}
+}
+
+void kbd_release(Keyboard* kbd, keyScan* tab, int* mtrx, unsigned char* xk) {
+	while (*xk != 0x00) {
+		kbd_release_key(kbd, tab, mtrx, *xk);
+		xk++;
+	}
+}
+
 // zx spectrum std keyboard
 
 keyScan keyTab[] = {
@@ -12,6 +69,50 @@ keyScan keyTab[] = {
 	{'C',7,1},{'z',7,2},{'x',7,4},{'c',7,8},{'v',7,16},{'b',0,16},{'n',0,8},{'m',0,4},{'S',0,2},{' ',0,1},
 	{0,0,0}
 };
+
+void kbd_zx_press(Keyboard* kbd, keyEntry* ent) {
+	kbd_press(kbd, keyTab, kbd->map, ent->zxKey);
+}
+
+void kbd_zx_release(Keyboard* kbd, keyEntry* ent) {
+	kbd_release(kbd, keyTab, kbd->map, ent->zxKey);
+}
+
+int kbdScanZX(Keyboard* kbd, int port) {
+	int res = 0x3f;
+	for (int i = 0; i < 8; i++) {
+		if (!(port & 0x8000))
+			res &= kbd->map[i];
+		port <<= 1;
+	}
+	return res;
+}
+
+// profi = zx + ext.keys
+
+void kbd_prf_press(Keyboard* kbd, keyEntry* ent) {
+	kbd_press(kbd, keyTab, kbd->extMap, ent->extKey);
+	kbd_press(kbd, keyTab, kbd->map, ent->zxKey);
+}
+
+void kbd_prf_release(Keyboard* kbd, keyEntry* ent) {
+	kbd_release(kbd, keyTab, kbd->extMap, ent->extKey);
+	kbd_release(kbd, keyTab, kbd->map, ent->zxKey);
+}
+
+int kbdScanProfi(Keyboard* kbd, int port) {
+	int res = 0x3f;
+	for (int i = 0; i < 8; i++) {
+		if (!(port & 0x8000)) {
+			res &= kbd->extMap[i];
+			res &= (kbd->map[i] | 0x20);
+		}
+		port <<= 1;
+	}
+	return res;
+}
+
+// msx 1/2
 
 /*
   Line  Bit_7 Bit_6 Bit_5 Bit_4 Bit_3 Bit_2 Bit_1 Bit_0
@@ -61,13 +162,111 @@ static keyScan msxKeyTab[] = {
 	{0,0,0}
 };
 
-keyScan findKey(keyScan* tab, char key) {
+void kbd_msx_press(Keyboard* kbd, keyEntry* ent) {
+	kbd_press(kbd, msxKeyTab, kbd->msxMap, ent->msxKey);
+}
+
+void kbd_msx_release(Keyboard* kbd, keyEntry* ent) {
+	kbd_release(kbd, msxKeyTab, kbd->msxMap, ent->msxKey);
+}
+
+int kbd_msx_read(Keyboard* kbd, int adr) {
+	return kbd->msxMap[adr & 0x0f];
+}
+
+// specialist
+
+static keyScan spc_keys[] = {
+	//f1		f2		f3		f4	f5		f6		f7	f8		f9	f10		lock		clear
+	{'!',7,0x800},{'@',7,0x400},{'#',7,0x200},{'$',7,0x100},{'%',7,0x80},{'^',7,0x40},{'&',7,0x20},{'*',7,0x10},{'(',7,0x8},{')',7,0x04},{'O',7,0x02},{'C',7,0x01},
+	{';',6,0x800},{'1',6,0x400},{'2',6,0x200},{'3',6,0x100},{'4',6,0x80},{'5',6,0x40},{'6',6,0x20},{'7',6,0x10},{'8',6,0x8},{'9',6,0x04},{'0',6,0x02},{'-',6,0x01},
+	{'j',5,0x800},{'c',5,0x400},{'u',5,0x200},{'k',5,0x100},{'e',5,0x80},{'n',5,0x40},{'g',5,0x20},{'[',5,0x10},{']',5,0x8},{'z',5,0x04},{'h',5,0x02},{':',5,0x01},
+	{'f',4,0x800},{'y',4,0x400},{'w',4,0x200},{'a',4,0x100},{'p',4,0x80},{'r',4,0x40},{'o',4,0x20},{'l',4,0x10},{'d',4,0x8},{'v',4,0x04},{'/',4,0x02},{'>',4,0x01},
+	{'q',3,0x800},{'|',3,0x400},{'s',3,0x200},{'m',3,0x100},{'i',3,0x80},{'t',3,0x40},{'x',3,0x20},{'b',3,0x10},{'A',3,0x8},{'<',3,0x04},{'?',3,0x02},{'B',3,0x01},
+	{'X',2,0x800},{'H',2,0x400},{'U',2,0x200},{'D',2,0x100},{'T',2,0x80},{'_',2,0x40},{0x20,2,0x20},{'L',2,0x10},{'V',2,0x8},{'R',2,0x04},{'S',2,0x02},{'E',2,0x01},
+	{'P',1,0x800},	/* HP button */
+	{0, 0, 0}
+};
+
+void kbd_spc_press(Keyboard* kbd, keyEntry* ent) {
+	kbd_press(kbd, spc_keys, kbd->map, ent->zxKey);
+}
+
+void kbd_spc_release(Keyboard* kbd, keyEntry* ent) {
+	kbd_release(kbd, spc_keys, kbd->map, ent->zxKey);
+}
+
+int kbd_spc_read(Keyboard* kbd, int adr) {
+	int row;
+	int res = -1;
+	for (row = 2; row < 8; row++) {
+		if ((kbd->map[row] & adr) != adr) {
+			res &= ~(1 << row);
+		}
+	}
+	if (kbd->map[1] != -1)	// HP key
+		res ^= 2;
+	return res;
+}
+
+// commodore
+// TODO: make same as ZX: keys sequence in ent->zxKey
+
+struct {
+	int code;
+	int row;
+	int mask;
+} c64matrix[] = {
+	{XKEY_BSP,0,1},{XKEY_ENTER,0,2},{XKEY_RIGHT,0,4},{XKEY_F7,0,8}, {XKEY_F1,0,16},{XKEY_F3,0,32},{XKEY_F5,0,64},{XKEY_DOWN,0,128},
+	{XKEY_3,1,1},{XKEY_W,1,2},{XKEY_A,1,4},{XKEY_4,1,8},{XKEY_Z,1,16},{XKEY_S,1,32},{XKEY_E,1,64},{XKEY_LSHIFT,1,128},
+	{XKEY_5,2,1},{XKEY_R,2,2},{XKEY_D,2,4},{XKEY_6,2,8},{XKEY_C,2,16},{XKEY_F,2,32},{XKEY_T,2,64},{XKEY_X,2,128},
+	{XKEY_7,3,1},{XKEY_Y,3,2},{XKEY_G,3,4},{XKEY_8,3,8},{XKEY_B,3,16},{XKEY_H,3,32},{XKEY_U,3,64},{XKEY_V,3,128},
+	{XKEY_9,4,1},{XKEY_I,4,2},{XKEY_J,4,4},{XKEY_0,4,8},{XKEY_M,4,16},{XKEY_K,4,32},{XKEY_O,4,64},{XKEY_N,4,128},
+	{XKEY_EQUAL,5,1},{XKEY_P,5,2},{XKEY_L,5,4},{XKEY_MINUS,5,8},{XKEY_PERIOD,5,16},{XKEY_APOS,5,32},{XKEY_TILDA,5,64},{XKEY_SLASH,5,128},
+	{XKEY_RBRACK,6,1},{XKEY_COMMA,5,128},{XKEY_DOTCOM,6,4},{XKEY_HOME,6,8},{XKEY_RSHIFT,6,16},{XKEY_BSLASH,6,32},{XKEY_UP,6,64},{XKEY_BSLASH,6,128},
+	{XKEY_1,7,1},{XKEY_LEFT,7,2},{XKEY_LCTRL,7,4},{XKEY_2,7,8},{XKEY_SPACE,7,16},{XKEY_RCTRL,7,32},{XKEY_Q,7,64},{XKEY_ESC,7,128},
+	{0,0,0}
+};
+
+void kbd_c64_press(Keyboard* kbd, keyEntry* ent) {
 	int idx = 0;
-	while (tab[idx].key && (tab[idx].key != key)) {
+	while(c64matrix[idx].code > 0) {
+		if (c64matrix[idx].code == ent->key) {
+			kbd->msxMap[c64matrix[idx].row] &= ~c64matrix[idx].mask;
+		}
 		idx++;
 	}
-	return tab[idx];
 }
+
+void kbd_c64_release(Keyboard* kbd, keyEntry* ent) {
+	int idx = 0;
+	while(c64matrix[idx].code > 0) {
+		if (c64matrix[idx].code == ent->key) {
+			kbd->msxMap[c64matrix[idx].row] |= c64matrix[idx].mask;
+		}
+		idx++;
+	}
+}
+
+int kbd_c64_read(Keyboard* kbd, int adr) {
+	int res = 0xff;
+	for (int idx = 0; idx < 8; idx++) {
+		if ((adr & 1) == 0) {
+			res &= kbd->msxMap[idx];
+		}
+		adr >>= 1;
+	}
+	return res;
+}
+
+// atm2-code
+// atm2-cpm
+// atm2-direct
+// bk (!)
+// at
+// xt
+// ps2
+// pc98
 
 // keyboard
 
@@ -91,38 +290,21 @@ void keyDestroy(Keyboard* keyb) {
 	free(keyb);
 }
 
+// TODO: make this obsolete
 void kbdSetMode(Keyboard* kbd, int mode) {
 	kbd->mode = mode;
 }
 
 // key press/release/trigger
 
-void kbd_press_key(Keyboard* kbd, keyScan* tab, int* mtrx, unsigned char ch) {
-	if (!ch) return;
-//	printf("kbd_press_key %c\n", ch);
-	keyScan key = findKey(tab, ch & 0x7f);
-	key.row &= 0x0f;
-	kbd->row = key.row;
-	kbd->mask = key.mask;
-	mtrx[key.row] &= ~key.mask;
-	// if (key.mask) printf("row %i : %X\n",key.row, mtrx[key.row]);
-	if (ch & 0x80)
-		mtrx[key.row] &= ~0x20;
-	// update matrix
-	for (int i = 0; i < 16; i++) {
-		if (key.mask & (1 << i))
-			kbd->matrix[key.row][i]++;
-	}
-}
-
-void kbd_press(Keyboard* kbd, keyScan* tab, int* mtrx, unsigned char* xk) {
-	while (*xk != 0x00) {
-		kbd_press_key(kbd, tab, mtrx, *xk);
-		xk++;
-	}
-}
-
 void kbdPress(Keyboard* kbd, keyEntry ent) {
+#if 1
+	if (kbd->core) {
+		if (kbd->core->press) {
+			kbd->core->press(kbd, &ent);
+		}
+	}
+#else
 	switch(kbd->mode) {
 		case KBD_SPECTRUM:
 			kbd_press(kbd, keyTab, kbd->map, ent.zxKey);
@@ -135,31 +317,17 @@ void kbdPress(Keyboard* kbd, keyEntry ent) {
 			kbd_press(kbd, msxKeyTab, kbd->msxMap, ent.msxKey);
 			break;
 	}
-}
-
-void kbd_release_key(Keyboard* kbd, keyScan* tab, int* mtrx, unsigned char ch) {
-//	if (ch) printf("kbd_release_key %c\n", ch);
-	keyScan key = findKey(tab, ch & 0x7f);
-	key.row &= 0x0f;
-	for (int i = 0; i < 16; i++) {
-		if (key.mask & (1 << i)) {
-			if (kbd->matrix[key.row][i] > 0)
-				kbd->matrix[key.row][i]--;
-			if (kbd->matrix[key.row][i] == 0) {
-				mtrx[key.row] |= key.mask;
-			}
-		}
-	}
-}
-
-void kbd_release(Keyboard* kbd, keyScan* tab, int* mtrx, unsigned char* xk) {
-	while (*xk != 0x00) {
-		kbd_release_key(kbd, tab, mtrx, *xk);
-		xk++;
-	}
+#endif
 }
 
 void kbdRelease(Keyboard* kbd, keyEntry ent) {
+#if 1
+	if (kbd->core) {
+		if (kbd->core->release) {
+			kbd->core->release(kbd, &ent);
+		}
+	}
+#else
 	switch(kbd->mode) {
 		case KBD_SPECTRUM:
 			kbd_release(kbd, keyTab, kbd->map, ent.zxKey);
@@ -172,6 +340,7 @@ void kbdRelease(Keyboard* kbd, keyEntry ent) {
 			kbd_release(kbd, msxKeyTab, kbd->msxMap, ent.msxKey);
 			break;
 	}
+#endif
 }
 
 void kbdReleaseAll(Keyboard* kbd) {
@@ -194,6 +363,8 @@ void kbdReleaseAll(Keyboard* kbd) {
 	}
 	kbd->per = 0;
 }
+
+// trigger is using by kbd-window only
 
 void kbd_trigger(keyScan* tab, int* mtrx, unsigned char* xk) {
 	keyScan key;
@@ -420,30 +591,17 @@ void kbd_wr_pc98(Keyboard* kbd, int val) {
 #endif
 }
 
-unsigned char kbdScanZX(Keyboard* kbd, int port) {
-	unsigned char res = 0x3f;
-	for (int i = 0; i < 8; i++) {
-		if (!(port & 0x8000))
-			res &= kbd->map[i];
-		port <<= 1;
-	}
-	return res;
-}
-
-unsigned char kbdScanProfi(Keyboard* kbd, int port) {
-	unsigned char res = 0x3f;
-	for (int i = 0; i < 8; i++) {
-		if (!(port & 0x8000)) {
-			res &= kbd->extMap[i];
-			res &= (kbd->map[i] | 0x20);
+int kbdRead(Keyboard* kbd, int port) {
+#if 1
+	int res = -1;
+	if (kbd->core) {
+		if (kbd->core->read) {
+			res = kbd->core->read(kbd, port);
 		}
-		port <<= 1;
 	}
 	return res;
-}
-
-unsigned char kbdRead(Keyboard* kbd, int port) {
-	unsigned char res = 0xff;
+#else
+	int res = -1;
 
 	switch (kbd->mode) {
 		case KBD_SPECTRUM:
@@ -457,6 +615,31 @@ unsigned char kbdRead(Keyboard* kbd, int port) {
 			break;
 	}
 	return res;
+#endif
+}
+
+// id,cbReset,cbRead,cbWrite,cbPress,cbRelease
+xKbdCore kbdTypeTab[] = {
+	{KBD_SPECTRUM, NULL, kbdScanZX, NULL, kbd_zx_press, kbd_zx_release},
+	{KBD_PROFI, NULL, kbdScanProfi, NULL, kbd_prf_press, kbd_prf_release},
+	{KBD_MSX, NULL, kbd_msx_read, NULL, kbd_msx_press, kbd_msx_release},
+	{KBD_SPCLST, NULL, kbd_spc_read, NULL, kbd_spc_press, kbd_spc_release},
+	{KBD_C64, NULL, kbd_c64_read, NULL, kbd_c64_press, kbd_c64_release},
+	{-1, NULL, NULL, NULL, NULL, NULL}
+};
+
+void kbd_set_core(Keyboard* kbd, xKbdCore* core) {
+	kbd->core = core;
+}
+
+void kbd_set_type(Keyboard* kbd, int t) {
+	xKbdCore* itm = kbdTypeTab;
+	while(itm->id >= 0) {
+		if (itm->id == t) {
+			kbd->core = itm;
+		}
+		itm++;
+	}
 }
 
 // joystick

@@ -90,7 +90,7 @@ HardWare hwTab[] = {
 		zx_init,atm2MapMem,atm2Out,atm2In,stdMRd,stdMWr,zx_irq,zx_ack,atm2Reset,atm2_sync,atm2_keyp,atm2_keyr,zx_vol
 	},{
 		HW_PROFI,HWG_ZX,"Profi","Profi",16,MEM_512K | MEM_1M,1.0,NULL,16,zx_port_tab_p,
-		zx_init,prfMapMem,prfOut,prfIn,stdMRd,stdMWr,zx_irq,zx_ack,prfReset,zx_sync,prf_keyp,prf_keyr,zx_vol
+		prf_init,prfMapMem,prfOut,prfIn,stdMRd,stdMWr,zx_irq,zx_ack,prfReset,zx_sync,prf_keyp,prf_keyr,zx_vol
 	},{
 		HW_PHOENIX,HWG_ZX,"Phoenix","ZXM Phoenix",16,MEM_2M,1.0,NULL,16,zx_port_tab_px,
 		zx_init,phxMapMem,phxOut,phxIn,stdMRd,stdMWr,zx_irq,zx_ack,phxReset,zx_sync,zx_keyp,zx_keyr,zx_vol

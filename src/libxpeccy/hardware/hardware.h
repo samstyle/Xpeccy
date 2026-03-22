@@ -240,6 +240,7 @@ void tslMWr(Computer*, int, int);
 void tslReset(Computer*);
 
 // Profi
+void prf_init(Computer*);
 void prfMapMem(Computer*);
 void prfOut(Computer*, int, int);
 int prfIn(Computer*, int);

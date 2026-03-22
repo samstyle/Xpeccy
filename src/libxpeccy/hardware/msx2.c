@@ -212,6 +212,7 @@ void msx2_init(Computer* comp) {
 	msx_init(comp);
 	comp->ppi->a.rd = NULL;
 	comp->ppi->a.wr = msx2_ppi_a_wr;
+//	kbd_set_type(comp->keyb, KBD_MSX);
 }
 
 // tab

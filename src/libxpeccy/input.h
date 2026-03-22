@@ -35,13 +35,18 @@ enum {
 // keyboard type
 enum {
 	KBD_NONE = 0,
+// matrix-based
 	KBD_SPECTRUM,
 	KBD_PROFI,
 	KBD_MSX,
 	KBD_ATM2,
 	KBD_C64,
 	KBD_SPCLST,
-	KBD_PC,
+// code-based
+	KBD_BK,
+	KBD_PC_AT,
+	KBD_PC_XT,
+	KBD_PC_PS2,
 	KBD_NEC98XX
 };
 
@@ -172,6 +177,7 @@ typedef struct {
 	int psCode;		// set 3
 	int atCode;		// set 2	0xXXYYZZ = ZZ,YY,XX in buffer
 	int xtCode;		// set 1
+	int necCode;		// nec pc98xx code
 	int joyMask;
 } keyEntry;
 
@@ -182,8 +188,8 @@ typedef struct {
 	void(*reset)(Keyboard*);
 	int(*read)(Keyboard*, int);		// address
 	void(*write)(Keyboard*, int, int);	// address, data
-	void(*press)(Keyboard*, int);		// press XKEY_*
-	void(*release)(Keyboard*, int);
+	void(*press)(Keyboard*, keyEntry*);
+	void(*release)(Keyboard*, keyEntry*);
 } xKbdCore;
 
 struct Keyboard {
@@ -249,12 +255,14 @@ typedef struct {
 
 Keyboard* keyCreate(cbirq, void*);
 void keyDestroy(Keyboard*);
+void kbd_set_type(Keyboard*, int);
+void kbd_set_core(Keyboard*, xKbdCore*);
 void kbdSetMode(Keyboard*, int);
 void kbdPress(Keyboard*, keyEntry);
 void kbdRelease(Keyboard*, keyEntry);
 void kbdTrigger(Keyboard*, keyEntry);
 void kbdReleaseAll(Keyboard*);
-unsigned char kbdRead(Keyboard*, int);
+int kbdRead(Keyboard*, int);
 void kbd_press(Keyboard* kbd, keyScan* tab, int* mtrx, unsigned char* xk);
 void kbd_release(Keyboard* kbd, keyScan* tab, int* mtrx, unsigned char* xk);
 void xt_press(Keyboard*, keyEntry);

@@ -98,15 +98,7 @@ int cia1_porta_rd(int adr, void* p) {
 // cia1 port B rd: keyboard scan
 int cia1_portb_rd(int adr, void* p) {
 	Computer* comp = (Computer*)p;
-	int row = comp->c64.keyrow;
-	int res = 0xff;
-	for (int idx = 0; idx < 8; idx++) {
-		if ((row & 1) == 0) {
-			res &= comp->keyb->msxMap[idx];
-		}
-		row >>= 1;
-	}
-	return res;
+	return kbdRead(comp->keyb, comp->c64.keyrow);
 }
 
 void cia1_porta_wr(int adr, int v, void* p) {
@@ -295,6 +287,7 @@ void c64_init(Computer* comp) {
 	cia_set_port(comp->c64.cia1, 1, cia1_portb_rd, NULL);
 	cia_set_port(comp->c64.cia2, 0, NULL, cia2_porta_wr);
 	cia_set_port(comp->c64.cia2, 1, NULL, NULL);
+	kbd_set_type(comp->keyb, KBD_C64);
 }
 
 void c64_irq(Computer* comp, int t) {
@@ -326,6 +319,7 @@ void c64_sync(Computer* comp, int ns) {
 	cia_sync(comp->c64.cia2, ns, comp->nsPerTick);
 }
 
+/*
 typedef struct {
 	int code;
 	int row;
@@ -343,23 +337,26 @@ static c64Key c64matrix[] = {
 	{XKEY_1,7,1},{XKEY_LEFT,7,2},{XKEY_LCTRL,7,4},{XKEY_2,7,8},{XKEY_SPACE,7,16},{XKEY_RCTRL,7,32},{XKEY_Q,7,64},{XKEY_ESC,7,128},
 	{0,0,0}
 };
+*/
 
 void c64_keyp(Computer* comp, keyEntry ent) {
-	int idx = 0;
-	while(c64matrix[idx].code > 0) {
-		if (c64matrix[idx].code == ent.key) {
-			comp->keyb->msxMap[c64matrix[idx].row] &= ~c64matrix[idx].mask;
-		}
-		idx++;
-	}
+	kbdPress(comp->keyb, ent);
+//	int idx = 0;
+//	while(c64matrix[idx].code > 0) {
+//		if (c64matrix[idx].code == ent.key) {
+//			comp->keyb->msxMap[c64matrix[idx].row] &= ~c64matrix[idx].mask;
+//		}
+//		idx++;
+//	}
 }
 
 void c64_keyr(Computer* comp, keyEntry ent) {
-	int idx = 0;
-	while(c64matrix[idx].code > 0) {
-		if (c64matrix[idx].code == ent.key) {
-			comp->keyb->msxMap[c64matrix[idx].row] |= c64matrix[idx].mask;
-		}
-		idx++;
-	}
+	kbdRelease(comp->keyb, ent);
+//	int idx = 0;
+//	while(c64matrix[idx].code > 0) {
+//		if (c64matrix[idx].code == ent.key) {
+//			comp->keyb->msxMap[c64matrix[idx].row] |= c64matrix[idx].mask;
+//		}
+//		idx++;
+//	}
 }

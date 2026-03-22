@@ -16,13 +16,16 @@ int spc_rd_io_a(void* p) {
 int spc_rd_io_b(void* p) {
 	Computer* comp = (Computer*)p;
 	int res = ~1;
-	int row;
+//	int row;
 	int mask;
 	// scan keyb.rows by bits A & C
 	mask = ((comp->ppi->cl.val << 8) & 0xf00) | (comp->ppi->a.val & 0x0ff);
 	if (comp->ppi->cl.dir != PPI_OUT) mask |= 0xf00;
 	if (comp->ppi->a.dir != PPI_OUT) mask |= 0xff;
 	mask = ~mask;
+
+	res &= kbdRead(comp->keyb, mask);
+#if 0
 	for (row = 2; row < 8; row++) {
 		if ((comp->keyb->map[row] & mask) != mask) {
 			res &= ~(1 << row);
@@ -30,6 +33,7 @@ int spc_rd_io_b(void* p) {
 	}
 	if (comp->keyb->map[1] != -1)	// HP key
 		res ^= 2;
+#endif
 	if ((comp->tape->volPlay & 0x80) || !comp->tape->on)	// if tape stopped, signal must be 1
 		res |= 1;
 	return res;
@@ -88,6 +92,7 @@ void spc_init(Computer* comp) {
 				spc_rd_io_b, NULL,\
 				spc_rd_io_c, spc_wr_io_ch,\
 				spc_rd_io_c, NULL);
+	kbd_set_type(comp->keyb, KBD_SPCLST);
 }
 
 void spc_mem_map(Computer* comp) {
@@ -140,6 +145,7 @@ void spc_sync(Computer* comp, int ns) {
 #endif
 }
 
+#if 0
 static keyScan spc_keys[] = {
 	//f1		f2		f3		f4	f5		f6		f7	f8		f9	f10		lock		clear
 	{'!',7,0x800},{'@',7,0x400},{'#',7,0x200},{'$',7,0x100},{'%',7,0x80},{'^',7,0x40},{'&',7,0x20},{'*',7,0x10},{'(',7,0x8},{')',7,0x04},{'O',7,0x02},{'C',7,0x01},
@@ -151,15 +157,18 @@ static keyScan spc_keys[] = {
 	{'P',1,0x800},	/* HP button */
 	{0, 0, 0}
 };
+#endif
 
 void spc_keyp(Computer* comp, keyEntry kent) {
 	// printf("press: %s, %c %c (%i)\n", kent.name, kent.zxKey.key1, kent.zxKey.key2, kent.key);
-	kbd_press(comp->keyb, spc_keys, comp->keyb->map, kent.zxKey);
+	//kbd_press(comp->keyb, spc_keys, comp->keyb->map, kent.zxKey);
 	// printf("kbd: "); for (int i = 7; i > 1; i--) {printf("%.3X ", comp->keyb->map[i] & 0xfff);} printf("\n");
+	kbdPress(comp->keyb, kent);
 }
 
 void spc_keyr(Computer* comp, keyEntry kent) {
-	kbd_release(comp->keyb, spc_keys, comp->keyb->map, kent.zxKey);
+	//kbd_release(comp->keyb, spc_keys, comp->keyb->map, kent.zxKey);
+	kbdRelease(comp->keyb, kent);
 }
 
 sndPair spc_vol(Computer* comp, sndVolume* v) {
