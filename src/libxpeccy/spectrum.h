@@ -78,7 +78,8 @@ typedef struct {
 #define pEFF7	reg[2]
 #define pDFFD	reg[3]
 #define p77hi	reg[4]
-#define prt2	reg[5]
+#define p77lo	reg[5]
+#define prt2	reg[6]
 
 typedef struct {
 	unsigned brk:1;			// breakpoint

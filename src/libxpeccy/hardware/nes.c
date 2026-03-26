@@ -381,14 +381,14 @@ static char nesC3on[] = " CH3 on ";
 static char nesC4off[] = " CH4 off ";
 static char nesC4on[] = " CH4 on ";
 
-void nes_keyp(Computer* comp, keyEntry ent) {
-	int mask = nesGetInputMask(ent.key);
+void nes_keyp(Computer* comp, keyEntry* ent) {
+	int mask = nesGetInputMask(ent->key);
 	if (mask & NES_JOYB) {
 		comp->joyb->state |= (mask ^ NES_JOYB); // comp->nes.secPadState |= mask;
 	} else {
 		comp->joy->state |= mask; // comp->nes.priPadState |= mask;
 	}
-	switch (ent.key) {
+	switch (ent->key) {
 		case XKEY_0:
 			switch(comp->nes.type) {
 				case NES_NTSC:
@@ -437,8 +437,8 @@ void nes_keyp(Computer* comp, keyEntry ent) {
 	}
 }
 
-void nes_keyr(Computer* comp, keyEntry ent) {
-	int mask = nesGetInputMask(ent.key);
+void nes_keyr(Computer* comp, keyEntry* ent) {
+	int mask = nesGetInputMask(ent->key);
 	if (mask == 0) return;
 	if (mask & NES_JOYB) {
 		comp->joyb->state &= ~(mask ^ NES_JOYB); // comp->nes.secPadState &= ~mask;

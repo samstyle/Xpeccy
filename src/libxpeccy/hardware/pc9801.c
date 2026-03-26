@@ -99,8 +99,8 @@ void pc98xx_reset(Computer* comp) {
 	comp->flgVSync = 1;	// disabled
 	comp->regKBDs = 0;
 	pc98xx_mem_map(comp);
+	kbd_set_type(comp->keyb, KBD_NEC98XX);
 	vid_set_mode(comp->vid, VID_PC98XX);
-
 	vid_set_resolution(comp->vid, 640, 400);
 	comp->vid->linedbl = !(comp->portB & 8);
 }
@@ -265,12 +265,12 @@ void pc98xx_dma_wr(Computer* comp, int adr, int val) {
 #if 1
 
 int uart_kbd_rd(void* p) {
-	int res = xt_read((Keyboard*)p);
+	int res = kbd_rd((Keyboard*)p, 0);
 	return res;
 }
 
 void uart_kbd_wr(int data, void* p) {
-	kbd_wr_pc98((Keyboard*)p, data);
+	kbd_wr((Keyboard*)p, 0, data);
 }
 
 int pc98xx_kbd_rd(Computer* comp, int adr) {
@@ -783,6 +783,7 @@ void pc98xx_irq(Computer* comp, int id) {
 				comp->flgVSync = 1;
 			}
 			break;
+		case IRQ_KBD_DATA:
 		case IRQ_KBD_ACK:		// kbd data is ready
 			uart_ready(comp->uart);
 			break;
@@ -804,6 +805,8 @@ void pc98xx_init(Computer* comp) {
 	uart_set_type(comp->uart, UPD_8251);
 	uart_set_rate(comp->uart, 100);
 	uart_set_dev(comp->uart, uart_kbd_rd, uart_kbd_wr, comp->keyb);
+
+	kbd_set_type(comp->keyb, KBD_NEC98XX);
 }
 
 sndPair pc98xx_vol(Computer* comp, sndVolume* vol) {
@@ -815,10 +818,10 @@ sndPair pc98xx_vol(Computer* comp, sndVolume* vol) {
 
 // TODO: need to avoid xt_press/xt_release in MainWin::keyPressEvent/keyReleaseEvent
 
-void pc98xx_keyp(Computer* comp, keyEntry kent) {
-//	int code = kent.necCode;
+void pc98xx_keyp(Computer* comp, keyEntry* kent) {
+	kbd_press(comp->keyb, kent);
 }
 
-void pc98xx_keyr(Computer* comp, keyEntry kent) {
-//	int code = kent.necCode;
+void pc98xx_keyr(Computer* comp, keyEntry* kent) {
+	kbd_release(comp->keyb, kent);
 }

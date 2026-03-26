@@ -778,15 +778,15 @@ static char gbMsgCh31[] = " CH3 on ";
 static char gbMsgCh40[] = " CH4 off ";
 static char gbMsgCh41[] = " CH4 on ";
 
-void gbc_keyp(Computer* comp, keyEntry ent) {
-	unsigned char mask = gbGetInputMask(ent.key);
+void gbc_keyp(Computer* comp, keyEntry* ent) {
+	unsigned char mask = gbGetInputMask(ent->key);
 	if (mask) {
 		comp->cpu->flgSTOP = 0;
 		comp->gb.buttons &= ~mask;
 		//comp->gb.inpint = 1;			// input interrupt request
 		gbc_irq(comp, IRQ_KBD);
 	} else {
-		switch (ent.key) {
+		switch (ent->key) {
 			case XKEY_1:
 				comp->vid->bgblock ^= 1;
 				comp->msg = comp->vid->bgblock ? gbMsgBG0 :gbMsgBG1;
@@ -819,8 +819,8 @@ void gbc_keyp(Computer* comp, keyEntry ent) {
 	}
 }
 
-void gbc_keyr(Computer* comp, keyEntry ent) {
-	int mask = gbGetInputMask(ent.key);
+void gbc_keyr(Computer* comp, keyEntry* ent) {
+	int mask = gbGetInputMask(ent->key);
 	if (mask == 0) return;
 	comp->gb.buttons |= mask;
 }

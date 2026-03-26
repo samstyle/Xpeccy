@@ -83,7 +83,7 @@ void prfOutDFFD(Computer* comp, int port, int val) {
 // in
 
 int prfInFE(Computer* comp, int port) {
-	unsigned char res = kbdRead(comp->keyb, port);
+	unsigned char res = kbd_rd(comp->keyb, port);
 	res |= ((comp->tape->volPlay & 0x80) ? 0x40 : 0x00);
 	return res;
 }
@@ -159,13 +159,13 @@ int prfIn(Computer* comp, int port) {
 }
 
 void prfReset(Computer* comp) {
-	kbdSetMode(comp->keyb, KBD_SPECTRUM);
+	kbd_set_type(comp->keyb, KBD_PROFI);
 }
 
-void prf_keyp(Computer* comp, keyEntry ent) {
-	kbdPress(comp->keyb, ent);
+void prf_keyp(Computer* comp, keyEntry* ent) {
+	kbd_press(comp->keyb, ent);
 }
 
-void prf_keyr(Computer* comp, keyEntry ent) {
-	kbdRelease(comp->keyb, ent);
+void prf_keyr(Computer* comp, keyEntry* ent) {
+	kbd_release(comp->keyb, ent);
 }

@@ -118,7 +118,7 @@ void ps2c_wr_ob(PS2Ctrl* ctrl, int val, int flg) {
 // read 1 byte from kbd to outbuf and generate intk if need
 void ps2c_rd_kbd(PS2Ctrl* ctrl) {
 //	if (ctrl->ram[0] & 0x10) return;	// 1st device clock disabled: TODO: bios trying to read ack while kbd clock is disabled
-	int d = xt_read(ctrl->kbd);
+	int d = kbd_rd(ctrl->kbd, 0);
 //	printf("xt_read %.2X\n",d);
 	if (d < 0) {
 		ctrl->k_rdy = 0;
@@ -151,7 +151,7 @@ void ps2c_wr(PS2Ctrl* ctrl, int adr, int val) {
 			ctrl->status |= 8;
 			switch (ctrl->dmode) {
 				case PS2C_MODE_KBD:
-					kbd_wr(ctrl->kbd, val);
+					kbd_wr(ctrl->kbd, 0, val);
 					break;
 				case PS2C_MODE_MOU:
 					mouse_wr(ctrl->mouse, val);

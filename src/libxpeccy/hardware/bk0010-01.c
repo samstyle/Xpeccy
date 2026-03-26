@@ -616,9 +616,9 @@ void bk_press_keycode(Computer* comp, int code) {
 	}
 }
 
-void bk_keyp(Computer* comp, keyEntry xkey) {
+void bk_keyp(Computer* comp, keyEntry* xkey) {
 	int code = 0;
-	switch(xkey.key) {
+	switch(xkey->key) {
 		case XKEY_PGDN:
 			switch(comp->vid->vmode) {
 				case VID_BK_BW:
@@ -651,27 +651,27 @@ void bk_keyp(Computer* comp, keyEntry xkey) {
 	}
 	if (code == 0) {
 		if (comp->keyb->caps ^ comp->keyb->shift) {
-			code = bkey_code(comp->keyb->lang ? bkey_big_rus : bkey_big_lat, xkey.key);
+			code = bkey_code(comp->keyb->lang ? bkey_big_rus : bkey_big_lat, xkey->key);
 		} else {
-			code = bkey_code(comp->keyb->lang ? bkey_small_rus : bkey_small_lat, xkey.key);
+			code = bkey_code(comp->keyb->lang ? bkey_small_rus : bkey_small_lat, xkey->key);
 		}
 	}
 	if (code == 0) {
 		if (comp->keyb->shift) {
-			code = bkey_code(bkey_shift, xkey.key);
+			code = bkey_code(bkey_shift, xkey->key);
 		} else {
-			code = bkey_code(bkey_noshift, xkey.key);
+			code = bkey_code(bkey_noshift, xkey->key);
 		}
 	}
 	if (code == 0)
-		code = bkey_code(bkeyTab, xkey.key);
+		code = bkey_code(bkeyTab, xkey->key);
 	if (code != 0) {
 		bk_press_keycode(comp, code);
 	}
 }
 
-void bk_keyr(Computer* comp, keyEntry xkey) {
-	switch (xkey.key) {
+void bk_keyr(Computer* comp, keyEntry* xkey) {
+	switch (xkey->key) {
 		case XKEY_LSHIFT:
 			comp->keyb->shift = 0;
 //			bk_press_keycode(comp, 0273);

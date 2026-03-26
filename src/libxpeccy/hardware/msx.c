@@ -61,7 +61,7 @@ void msxResetSlot(xCartridge* slot) {
 }
 
 void msxReset(Computer* comp) {
-	kbdSetMode(comp->keyb, KBD_MSX);
+	kbd_set_type(comp->keyb, KBD_MSX);
 	ppi_reset(comp->ppi);
 	// comp->msx.pA8 = 0x00;
 	comp->reg[0xfc] = 3;
@@ -203,12 +203,12 @@ void msx_sync(Computer* comp, int ns) {
 	tapSync(comp->tape, ns);
 }
 
-void msx_keyp(Computer* comp, keyEntry ent) {
-	kbdPress(comp->keyb, ent);
+void msx_keyp(Computer* comp, keyEntry* ent) {
+	kbd_press(comp->keyb, ent);
 }
 
-void msx_keyr(Computer* comp, keyEntry ent) {
-	kbdRelease(comp->keyb, ent);
+void msx_keyr(Computer* comp, keyEntry* ent) {
+	kbd_release(comp->keyb, ent);
 }
 
 sndPair msx_vol(Computer* comp, sndVolume* sv) {

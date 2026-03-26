@@ -71,7 +71,7 @@ void MainWin::keyPressEvent(QKeyEvent* ev) {
 		kent = getKeyEntry(keyid);
 		if (ev->isAutoRepeat()) {
 			//xt_release(comp->keyb, kent);
-			xt_press(comp->keyb, kent);
+			//xt_press(comp->keyb, kent);
 		} else {
 			xkey_press(keyid);
 		}
@@ -82,7 +82,7 @@ void MainWin::keyPressEvent(QKeyEvent* ev) {
 		if (ev->isAutoRepeat()) {
 			if (keyid < 0x10000) {		// not a shortcut
 				//xt_release(comp->keyb, kent);
-				xt_press(comp->keyb, kent);
+				//xt_press(comp->keyb, &kent);
 			} else {
 				xkey_press(keyid);
 			}
@@ -118,9 +118,9 @@ void MainWin::xkey_press(int xkey) {
 	QString path;
 	Computer* comp = conf.prof.cur->zx;
 	if (pckAct->isChecked()) {
-		xt_press(comp->keyb, kent);
+		// xt_press(comp->keyb, &kent);
 		if (comp->hw->keyp)
-			comp->hw->keyp(comp, kent);
+			comp->hw->keyp(comp, &kent);
 		if (kent.joyMask) {
 			if (kent.joyMask & XJ_JOYB) {
 				joyPress(comp->joyb, kent.joyMask & 0xff);
@@ -339,9 +339,9 @@ void MainWin::xkey_press(int xkey) {
 				break;
 			default:
 				// printf("%s %c %c\n", kent.name, kent.zxKey.key1, kent.zxKey.key2);
-				xt_press(comp->keyb, kent);
+				//xt_press(comp->keyb, &kent);
 				if (comp->hw->keyp)
-					comp->hw->keyp(comp, kent);
+					comp->hw->keyp(comp, &kent);
 				if (kent.joyMask & 0xff) {
 					if (kent.joyMask & XJ_JOYB) {
 						joyPress(comp->joyb, kent.joyMask);
@@ -406,9 +406,9 @@ void MainWin::keyReleaseEvent(QKeyEvent *ev) {
 void MainWin::xkey_release(int keyid) {
 	Computer* comp = conf.prof.cur->zx;
 	keyEntry kent = getKeyEntry(keyid);
-	xt_release(comp->keyb, kent);
+	// xt_release(comp->keyb, &kent);
 	if (comp->hw->keyr)
-		comp->hw->keyr(comp, kent);
+		comp->hw->keyr(comp, &kent);
 	if (kent.joyMask) {
 		if (kent.joyMask & XJ_JOYB) {
 			joyRelease(comp->joyb, kent.joyMask & 0xff);

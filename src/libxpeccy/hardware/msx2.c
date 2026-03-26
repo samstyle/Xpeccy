@@ -134,7 +134,7 @@ int msx2mapIn(Computer* comp, int port) {
 
 void msxResetSlot(xCartridge*);
 void msx2Reset(Computer* comp) {
-	kbdSetMode(comp->keyb, KBD_MSX);
+	kbd_set_type(comp->keyb, KBD_MSX);
 	vid_set_mode(comp->vid, VDP_TEXT1);
 	vdpReset(comp->vid);
 	msxResetSlot(comp->slot);

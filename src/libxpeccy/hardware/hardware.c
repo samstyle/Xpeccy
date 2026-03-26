@@ -146,7 +146,7 @@ HardWare hwTab[] = {
 	},{
 #if 1
 		HW_PC9801,HWG_PC98XX,"NEC PC-9801 (under dev)","PC9801",16,MEM_1M,1.0,&pc98xxLay,20,NULL,
-		pc98xx_init,pc98xx_mem_map,pc98xx_iowr,pc98xx_iord,pc98xx_mrd,pc98xx_mwr,pc98xx_irq,pc98xx_ack,pc98xx_reset,pc98xx_sync,NULL,NULL,pc98xx_vol
+		pc98xx_init,pc98xx_mem_map,pc98xx_iowr,pc98xx_iord,pc98xx_mrd,pc98xx_mwr,pc98xx_irq,pc98xx_ack,pc98xx_reset,pc98xx_sync,pc98xx_keyp,pc98xx_keyr,pc98xx_vol
 	},{
 #endif
 		HW_NULL,HWG_NULL,NULL,NULL,16,0,1.0,NULL,16,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL		// eot

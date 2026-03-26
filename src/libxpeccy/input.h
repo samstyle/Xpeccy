@@ -38,8 +38,10 @@ enum {
 // matrix-based
 	KBD_SPECTRUM,
 	KBD_PROFI,
+	KBD_ATM2_CODE,
+	KBD_ATM2_CPM,
+	KBD_ATM2_DIRECT,
 	KBD_MSX,
-	KBD_ATM2,
 	KBD_C64,
 	KBD_SPCLST,
 // code-based
@@ -62,7 +64,8 @@ enum {
 enum {
 	KBD_XT = 1,
 	KBD_AT,
-	KBD_PS2
+	KBD_PS2,
+	KBD_PC98
 };
 
 enum {
@@ -190,6 +193,7 @@ typedef struct {
 	void(*write)(Keyboard*, int, int);	// address, data
 	void(*press)(Keyboard*, keyEntry*);
 	void(*release)(Keyboard*, keyEntry*);
+	void(*sync)(Keyboard*, int);		// ns
 } xKbdCore;
 
 struct Keyboard {
@@ -215,7 +219,7 @@ struct Keyboard {
 	// i8031 block (TODO: move it into ATM2)
 	unsigned wcom:1;		// i8031 waiting for command
 	unsigned warg:1;		// i8031 waiting for argument
-	int submode;			// i8031 mode
+//	int submode;			// i8031 mode
 	int com;
 	int arg;
 	unsigned char keycode;		// current pressed key code
@@ -253,24 +257,26 @@ typedef struct {
 	int mask;
 } keyScan;
 
-Keyboard* keyCreate(cbirq, void*);
-void keyDestroy(Keyboard*);
+Keyboard* kbd_create(cbirq, void*);
+void kbd_destroy(Keyboard*);
 void kbd_set_type(Keyboard*, int);
 void kbd_set_core(Keyboard*, xKbdCore*);
-void kbdSetMode(Keyboard*, int);
-void kbdPress(Keyboard*, keyEntry);
-void kbdRelease(Keyboard*, keyEntry);
-void kbdTrigger(Keyboard*, keyEntry);
+// void kbdSetMode(Keyboard*, int);
+void kbd_press(Keyboard*, keyEntry*);
+void kbd_release(Keyboard*, keyEntry*);
+void kbdTrigger(Keyboard*, keyEntry*);
 void kbdReleaseAll(Keyboard*);
-int kbdRead(Keyboard*, int);
-void kbd_press(Keyboard* kbd, keyScan* tab, int* mtrx, unsigned char* xk);
-void kbd_release(Keyboard* kbd, keyScan* tab, int* mtrx, unsigned char* xk);
-void xt_press(Keyboard*, keyEntry);
-void xt_release(Keyboard*, keyEntry);
+int kbd_rd(Keyboard*, int);
+void kbd_wr(Keyboard*, int, int);
+// TODO: terminate this:
+//void key_press_seq(Keyboard* kbd, keyScan* tab, int* mtrx, unsigned char* xk);
+//void key_release_seq(Keyboard* kbd, keyScan* tab, int* mtrx, unsigned char* xk);
+//void xt_press(Keyboard*, keyEntry*);
+//void xt_release(Keyboard*, keyEntry*);
 int xt_read(Keyboard*);
-void kbd_wr(Keyboard*, int);
-void kbd_wr_pc98(Keyboard*, int);
-int xt_sync(Keyboard*, int);
+// void kbd_nec_write(Keyboard*, int, int);
+//void xt_sync(Keyboard*, int);
+// end of TODO
 
 Mouse* mouseCreate(cbirq, void*);
 void mouseDestroy(Mouse*);

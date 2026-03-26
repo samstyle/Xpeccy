@@ -24,7 +24,7 @@ int spc_rd_io_b(void* p) {
 	if (comp->ppi->a.dir != PPI_OUT) mask |= 0xff;
 	mask = ~mask;
 
-	res &= kbdRead(comp->keyb, mask);
+	res &= kbd_rd(comp->keyb, mask);
 #if 0
 	for (row = 2; row < 8; row++) {
 		if ((comp->keyb->map[row] & mask) != mask) {
@@ -159,16 +159,16 @@ static keyScan spc_keys[] = {
 };
 #endif
 
-void spc_keyp(Computer* comp, keyEntry kent) {
+void spc_keyp(Computer* comp, keyEntry* kent) {
 	// printf("press: %s, %c %c (%i)\n", kent.name, kent.zxKey.key1, kent.zxKey.key2, kent.key);
 	//kbd_press(comp->keyb, spc_keys, comp->keyb->map, kent.zxKey);
 	// printf("kbd: "); for (int i = 7; i > 1; i--) {printf("%.3X ", comp->keyb->map[i] & 0xfff);} printf("\n");
-	kbdPress(comp->keyb, kent);
+	kbd_press(comp->keyb, kent);
 }
 
-void spc_keyr(Computer* comp, keyEntry kent) {
+void spc_keyr(Computer* comp, keyEntry* kent) {
 	//kbd_release(comp->keyb, spc_keys, comp->keyb->map, kent.zxKey);
-	kbdRelease(comp->keyb, kent);
+	kbd_release(comp->keyb, kent);
 }
 
 sndPair spc_vol(Computer* comp, sndVolume* v) {

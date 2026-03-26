@@ -381,7 +381,7 @@ Computer* compCreate() {
 	vid_set_mode(comp->vid, VID_NORMAL);
 
 // input
-	comp->keyb = keyCreate(comp_irq, comp);
+	comp->keyb = kbd_create(comp_irq, comp);
 	// comp->cmos.kbuf = &comp->keyb->kbuf;
 	comp->joy = joyCreate();
 	comp->joyb = joyCreate();
@@ -438,7 +438,7 @@ void compDestroy(Computer* comp) {
 	cpuDestroy(comp->cpu);
 	memDestroy(comp->mem);
 	vidDestroy(comp->vid);
-	keyDestroy(comp->keyb);
+	kbd_destroy(comp->keyb);
 	joyDestroy(comp->joy);
 	joyDestroy(comp->joyb);
 	mouseDestroy(comp->mouse);
@@ -483,7 +483,7 @@ void compReset(Computer* comp,int res) {
 
 	vid_reset(comp->vid);
 	// kbdReleaseAll(comp->keyb);
-	kbdSetMode(comp->keyb, KBD_SPECTRUM);
+//	kbdSetMode(comp->keyb, KBD_SPECTRUM);
 	ps2c_reset(comp->ps2c);
 	difReset(comp->dif);
 	if (comp->gs->reset)
@@ -630,7 +630,7 @@ unsigned char cmsRd(Computer* comp) {
 		switch(comp->cmos.mode) {
 			case 0: res = comp->evo.bcVer[comp->cmos.adr & 0x0f]; break;
 			case 1: res = comp->evo.blVer[comp->cmos.adr & 0x0f]; break;
-			case 2: res = xt_read(comp->keyb); break; //keyReadCode(comp->keyb); break;		// read PC keyboard keycode
+			case 2: res = xt_read(comp->keyb); break; //keyReadCode(comp->keyb); break;		// read PC keyboard keycode (TODO: used here only)
 		}
 	} else {
 		res = cmos_rd(&comp->cmos, CMOS_DATA);

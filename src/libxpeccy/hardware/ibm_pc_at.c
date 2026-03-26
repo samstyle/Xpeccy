@@ -564,6 +564,11 @@ void ibm_reset(Computer* comp) {
 	vga_reset(comp->vid);
 	comp->a20gate = 1;
 	ibm_mem_map(comp);
+	switch(comp->keyb->pcmode) {
+		case KBD_AT: kbd_set_type(comp->keyb, KBD_PC_AT); break;
+		case KBD_XT: kbd_set_type(comp->keyb, KBD_PC_XT); break;
+		case KBD_PS2: kbd_set_type(comp->keyb, KBD_PC_PS2); break;
+	}
 }
 
 void ibm_init(Computer* comp) {
@@ -636,11 +641,11 @@ void ibm_sync(Computer* comp, int ns) {
 
 // key press/release (at/xt code is already in kbd->outbuf)
 // warning: calling from gui thread
-void ibm_keyp(Computer* comp, keyEntry kent) {
+void ibm_keyp(Computer* comp, keyEntry* kent) {
 	comp->ps2c->delay += 1;
 }
 
-void ibm_keyr(Computer* comp, keyEntry kent) {
+void ibm_keyr(Computer* comp, keyEntry* kent) {
 	comp->ps2c->delay += 1;
 }
 

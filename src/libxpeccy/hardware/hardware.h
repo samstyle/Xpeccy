@@ -76,7 +76,7 @@ typedef void(*cbHwIrq)(Computer*, int);
 // int ack
 typedef int(*cbHwAck)(Computer*);
 // key press/release
-typedef void(*cbHwKey)(Computer*, keyEntry);
+typedef void(*cbHwKey)(Computer*, keyEntry*);
 // get volume
 typedef sndPair(*cbHwVol)(Computer*, sndVolume*);
 
@@ -184,8 +184,8 @@ void speMapMem(Computer*);
 void speOut(Computer*, int, int);
 int speIn(Computer*, int);
 void speReset(Computer*);
-void zx_keyp(Computer*, keyEntry);
-void zx_keyr(Computer*, keyEntry);
+void zx_keyp(Computer*, keyEntry*);
+void zx_keyr(Computer*, keyEntry*);
 
 // pentagon
 void penMapMem(Computer*);
@@ -219,8 +219,8 @@ void atm2MapMem(Computer*);
 void atm2Out(Computer*, int, int);
 int atm2In(Computer*, int);
 void atm2Reset(Computer*);
-void atm2_keyp(Computer*, keyEntry);
-void atm2_keyr(Computer*, keyEntry);
+void atm2_keyp(Computer*, keyEntry*);
+void atm2_keyr(Computer*, keyEntry*);
 void atm2_sync(Computer*, int);
 
 // Evo baseconf
@@ -246,8 +246,8 @@ void prfOut(Computer*, int, int);
 int prfIn(Computer*, int);
 void prfReset(Computer*);
 int prfMRd(Computer*, int, int);
-void prf_keyp(Computer*, keyEntry);
-void prf_keyr(Computer*, keyEntry);
+void prf_keyp(Computer*, keyEntry*);
+void prf_keyr(Computer*, keyEntry*);
 
 // ZXM Phoenix
 void phxMapMem(Computer*);
@@ -275,8 +275,8 @@ void msxReset(Computer*);
 int msxMRd(Computer*, int, int);
 void msxMWr(Computer*, int, int);
 void msx_sync(Computer*, int);
-void msx_keyp(Computer*, keyEntry);
-void msx_keyr(Computer*, keyEntry);
+void msx_keyp(Computer*, keyEntry*);
+void msx_keyr(Computer*, keyEntry*);
 sndPair msx_vol(Computer*, sndVolume*);
 
 // msx2
@@ -296,8 +296,8 @@ int gbMemRd(Computer*, int, int);
 void gbMemWr(Computer*, int, int);
 void gbc_irq(Computer*, int);
 void gbcSync(Computer*, int);
-void gbc_keyp(Computer*, keyEntry);
-void gbc_keyr(Computer*, keyEntry);
+void gbc_keyp(Computer*, keyEntry*);
+void gbc_keyr(Computer*, keyEntry*);
 sndPair gbc_vol(Computer*, sndVolume*);
 
 // nes
@@ -308,8 +308,8 @@ int nesMemRd(Computer*, int, int);
 void nesMemWr(Computer*, int, int);
 void nes_irq(Computer*, int);
 void nesSync(Computer*, int);
-void nes_keyp(Computer*, keyEntry);
-void nes_keyr(Computer*, keyEntry);
+void nes_keyp(Computer*, keyEntry*);
+void nes_keyr(Computer*, keyEntry*);
 sndPair nes_vol(Computer*, sndVolume*);
 int nes_apu_ext_rd(int, void*);
 int nes_ppu_ext_rd(int, void*);
@@ -322,8 +322,8 @@ void c64_mwr(Computer*, int, int);
 int c64_mrd(Computer*, int, int);
 sndPair c64_vol(Computer*, sndVolume*);
 void c64_sync(Computer*, int);
-void c64_keyp(Computer*, keyEntry);
-void c64_keyr(Computer*, keyEntry);
+void c64_keyp(Computer*, keyEntry*);
+void c64_keyr(Computer*, keyEntry*);
 void c64_irq(Computer*, int);
 
 // bk0010
@@ -334,8 +334,8 @@ void bk_mwr(Computer*, int, int);
 int bk_mrd(Computer* comp, int, int);
 void bk_iowr(Computer*, int, int);
 void bk_sync(Computer*, int);
-void bk_keyp(Computer*, keyEntry);
-void bk_keyr(Computer*, keyEntry);
+void bk_keyp(Computer*, keyEntry*);
+void bk_keyr(Computer*, keyEntry*);
 sndPair bk_vol(Computer*, sndVolume*);
 void bk_irq(Computer*, int);
 
@@ -352,8 +352,8 @@ int spc_mrd(Computer*, int, int);
 int spc_vid_rd(int, void*);
 void spc_mwr(Computer*, int, int);
 void spc_sync(Computer*, int);
-void spc_keyp(Computer*, keyEntry);
-void spc_keyr(Computer*, keyEntry);
+void spc_keyp(Computer*, keyEntry*);
+void spc_keyr(Computer*, keyEntry*);
 sndPair spc_vol(Computer*, sndVolume*);
 
 // ibm pc/at
@@ -367,8 +367,8 @@ void ibm_irq(Computer*, int);
 int ibm_ack(Computer*);
 int ibm_iord(Computer*, int);
 void ibm_iowr(Computer*, int, int);
-void ibm_keyp(Computer*, keyEntry);
-void ibm_keyr(Computer*, keyEntry);
+void ibm_keyp(Computer*, keyEntry*);
+void ibm_keyr(Computer*, keyEntry*);
 sndPair ibm_vol(Computer*, sndVolume*);
 
 // pc98xx
@@ -382,6 +382,8 @@ void pc98xx_iowr(Computer*, int, int);
 void pc98xx_irq(Computer*, int);
 int pc98xx_ack(Computer*);
 void pc98xx_sync(Computer*, int);
+void pc98xx_keyp(Computer*, keyEntry*);
+void pc98xx_keyr(Computer*, keyEntry*);
 sndPair pc98xx_vol(Computer*, sndVolume*);
 
 #ifdef __cplusplus

@@ -98,7 +98,7 @@ int cia1_porta_rd(int adr, void* p) {
 // cia1 port B rd: keyboard scan
 int cia1_portb_rd(int adr, void* p) {
 	Computer* comp = (Computer*)p;
-	return kbdRead(comp->keyb, comp->c64.keyrow);
+	return kbd_rd(comp->keyb, comp->c64.keyrow);
 }
 
 void cia1_porta_wr(int adr, int v, void* p) {
@@ -339,8 +339,8 @@ static c64Key c64matrix[] = {
 };
 */
 
-void c64_keyp(Computer* comp, keyEntry ent) {
-	kbdPress(comp->keyb, ent);
+void c64_keyp(Computer* comp, keyEntry* ent) {
+	kbd_press(comp->keyb, ent);
 //	int idx = 0;
 //	while(c64matrix[idx].code > 0) {
 //		if (c64matrix[idx].code == ent.key) {
@@ -350,8 +350,8 @@ void c64_keyp(Computer* comp, keyEntry ent) {
 //	}
 }
 
-void c64_keyr(Computer* comp, keyEntry ent) {
-	kbdRelease(comp->keyb, ent);
+void c64_keyr(Computer* comp, keyEntry* ent) {
+	kbd_release(comp->keyb, ent);
 //	int idx = 0;
 //	while(c64matrix[idx].code > 0) {
 //		if (c64matrix[idx].code == ent.key) {

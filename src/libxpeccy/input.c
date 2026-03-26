@@ -3,7 +3,7 @@
 #include <string.h>
 #include "input.h"
 
-// common
+// common matrix
 
 keyScan findKey(keyScan* tab, char key) {
 	int idx = 0;
@@ -13,7 +13,7 @@ keyScan findKey(keyScan* tab, char key) {
 	return tab[idx];
 }
 
-void kbd_press_key(Keyboard* kbd, keyScan* tab, int* mtrx, unsigned char ch) {
+void key_press(Keyboard* kbd, keyScan* tab, int* mtrx, unsigned char ch) {
 	if (!ch) return;
 //	printf("kbd_press_key %c\n", ch);
 	keyScan key = findKey(tab, ch & 0x7f);
@@ -31,14 +31,14 @@ void kbd_press_key(Keyboard* kbd, keyScan* tab, int* mtrx, unsigned char ch) {
 	}
 }
 
-void kbd_press(Keyboard* kbd, keyScan* tab, int* mtrx, unsigned char* xk) {
+void key_press_seq(Keyboard* kbd, keyScan* tab, int* mtrx, unsigned char* xk) {
 	while (*xk != 0x00) {
-		kbd_press_key(kbd, tab, mtrx, *xk);
+		key_press(kbd, tab, mtrx, *xk);
 		xk++;
 	}
 }
 
-void kbd_release_key(Keyboard* kbd, keyScan* tab, int* mtrx, unsigned char ch) {
+void key_release(Keyboard* kbd, keyScan* tab, int* mtrx, unsigned char ch) {
 //	if (ch) printf("kbd_release_key %c\n", ch);
 	keyScan key = findKey(tab, ch & 0x7f);
 	key.row &= 0x0f;
@@ -53,9 +53,31 @@ void kbd_release_key(Keyboard* kbd, keyScan* tab, int* mtrx, unsigned char ch) {
 	}
 }
 
-void kbd_release(Keyboard* kbd, keyScan* tab, int* mtrx, unsigned char* xk) {
+void key_release_seq(Keyboard* kbd, keyScan* tab, int* mtrx, unsigned char* xk) {
 	while (*xk != 0x00) {
-		kbd_release_key(kbd, tab, mtrx, *xk);
+		key_release(kbd, tab, mtrx, *xk);
+		xk++;
+	}
+}
+
+void key_trigger(Keyboard* kbd, keyScan* tab, int* mtrx, unsigned char ch) {
+	keyScan key = findKey(tab, ch & 0x7f);
+	if (ch & 0x80) key.mask |= 0x20;
+	mtrx[key.row] ^= key.mask;
+	for (int i = 0; i < 16; i++) {
+		if (key.mask & (1 << i)) {
+			if (mtrx[key.row] & key.mask) {		// is pressed now
+				kbd->matrix[key.row][i]++;
+			} else {
+				kbd->matrix[key.row][i]--;
+			}
+		}
+	}
+}
+
+void key_trigger_seq(Keyboard* kbd, keyScan* tab, int* mtrx, unsigned char* xk) {
+	while (*xk != 0x00) {
+		key_trigger(kbd, tab, mtrx, *xk & 0x7f);
 		xk++;
 	}
 }
@@ -71,11 +93,11 @@ keyScan keyTab[] = {
 };
 
 void kbd_zx_press(Keyboard* kbd, keyEntry* ent) {
-	kbd_press(kbd, keyTab, kbd->map, ent->zxKey);
+	key_press_seq(kbd, keyTab, kbd->map, ent->zxKey);
 }
 
 void kbd_zx_release(Keyboard* kbd, keyEntry* ent) {
-	kbd_release(kbd, keyTab, kbd->map, ent->zxKey);
+	key_release_seq(kbd, keyTab, kbd->map, ent->zxKey);
 }
 
 int kbdScanZX(Keyboard* kbd, int port) {
@@ -91,13 +113,13 @@ int kbdScanZX(Keyboard* kbd, int port) {
 // profi = zx + ext.keys
 
 void kbd_prf_press(Keyboard* kbd, keyEntry* ent) {
-	kbd_press(kbd, keyTab, kbd->extMap, ent->extKey);
-	kbd_press(kbd, keyTab, kbd->map, ent->zxKey);
+	key_press_seq(kbd, keyTab, kbd->extMap, ent->extKey);
+	key_press_seq(kbd, keyTab, kbd->map, ent->zxKey);
 }
 
 void kbd_prf_release(Keyboard* kbd, keyEntry* ent) {
-	kbd_release(kbd, keyTab, kbd->extMap, ent->extKey);
-	kbd_release(kbd, keyTab, kbd->map, ent->zxKey);
+	key_release_seq(kbd, keyTab, kbd->extMap, ent->extKey);
+	key_release_seq(kbd, keyTab, kbd->map, ent->zxKey);
 }
 
 int kbdScanProfi(Keyboard* kbd, int port) {
@@ -163,11 +185,11 @@ static keyScan msxKeyTab[] = {
 };
 
 void kbd_msx_press(Keyboard* kbd, keyEntry* ent) {
-	kbd_press(kbd, msxKeyTab, kbd->msxMap, ent->msxKey);
+	key_press_seq(kbd, msxKeyTab, kbd->msxMap, ent->msxKey);
 }
 
 void kbd_msx_release(Keyboard* kbd, keyEntry* ent) {
-	kbd_release(kbd, msxKeyTab, kbd->msxMap, ent->msxKey);
+	key_release_seq(kbd, msxKeyTab, kbd->msxMap, ent->msxKey);
 }
 
 int kbd_msx_read(Keyboard* kbd, int adr) {
@@ -189,11 +211,11 @@ static keyScan spc_keys[] = {
 };
 
 void kbd_spc_press(Keyboard* kbd, keyEntry* ent) {
-	kbd_press(kbd, spc_keys, kbd->map, ent->zxKey);
+	key_press_seq(kbd, spc_keys, kbd->map, ent->zxKey);
 }
 
 void kbd_spc_release(Keyboard* kbd, keyEntry* ent) {
-	kbd_release(kbd, spc_keys, kbd->map, ent->zxKey);
+	key_release_seq(kbd, spc_keys, kbd->map, ent->zxKey);
 }
 
 int kbd_spc_read(Keyboard* kbd, int adr) {
@@ -259,222 +281,45 @@ int kbd_c64_read(Keyboard* kbd, int adr) {
 	return res;
 }
 
+// atm2-zx (same as KBD_SPECTRUM)
 // atm2-code
 // atm2-cpm
-// atm2-direct
-// bk (!)
-// at
-// xt
-// ps2
-// pc98
+// atm2-direct (TODO: read docs one more time)
 
-// keyboard
-
-void kbd_reset(Keyboard* kbd) {
-	kbd->pcmode = KBD_XT;
-	kbd->com = -1;
-	kbd->kdel = 5e8;
-	kbd->kper = 5e7;
-}
-
-Keyboard* keyCreate(cbirq cb, void* p) {
-	Keyboard* keyb = (Keyboard*)malloc(sizeof(Keyboard));
-	memset(keyb, 0x00, sizeof(Keyboard));
-	keyb->xirq = cb;
-	keyb->xptr = p;
-	kbd_reset(keyb);
-	return keyb;
-}
-
-void keyDestroy(Keyboard* keyb) {
-	free(keyb);
-}
-
-// TODO: make this obsolete
-void kbdSetMode(Keyboard* kbd, int mode) {
-	kbd->mode = mode;
-}
-
-// key press/release/trigger
-
-void kbdPress(Keyboard* kbd, keyEntry ent) {
-#if 1
-	if (kbd->core) {
-		if (kbd->core->press) {
-			kbd->core->press(kbd, &ent);
-		}
-	}
-#else
-	switch(kbd->mode) {
-		case KBD_SPECTRUM:
-			kbd_press(kbd, keyTab, kbd->map, ent.zxKey);
-			break;
-		case KBD_PROFI:					// profi = spectrum + ext
-			kbd_press(kbd, keyTab, kbd->extMap, ent.extKey);
-			kbd_press(kbd, keyTab, kbd->map, ent.zxKey);
-			break;
-		case KBD_MSX:
-			kbd_press(kbd, msxKeyTab, kbd->msxMap, ent.msxKey);
-			break;
-	}
-#endif
-}
-
-void kbdRelease(Keyboard* kbd, keyEntry ent) {
-#if 1
-	if (kbd->core) {
-		if (kbd->core->release) {
-			kbd->core->release(kbd, &ent);
-		}
-	}
-#else
-	switch(kbd->mode) {
-		case KBD_SPECTRUM:
-			kbd_release(kbd, keyTab, kbd->map, ent.zxKey);
-			break;
-		case KBD_PROFI:
-			kbd_release(kbd, keyTab, kbd->extMap, ent.extKey);
-			kbd_release(kbd, keyTab, kbd->map, ent.zxKey);
-			break;
-		case KBD_MSX:
-			kbd_release(kbd, msxKeyTab, kbd->msxMap, ent.msxKey);
-			break;
-	}
-#endif
-}
-
-void kbdReleaseAll(Keyboard* kbd) {
-	int i;
-	for (i = 0; i < 8; i++) {
-		kbd->map[i] = -1;
-		kbd->extMap[i] = -1;
-		kbd->msxMap[i] = -1;
-		kbd->msxMap[i + 8] = -1;
-	}
-	for (i = 0; i < 16 * 8; i++) {
-		kbd->matrix[(i >> 3) & 15][i & 7] = 0;
-	}
+int kbd_atm2code_rd(Keyboard* kbd, int adr) {
+	int res = kbd->keycode;
 	kbd->keycode = 0;
-	kbd->lastkey = 0;
-//	kbd->outbuf = 0;	//kbd->kbuf.pos = 0;
-//	kbd->flag = 0;
-	if (kbd->per > 0) {
-		xt_release(kbd, kbd->kent);
-	}
-	kbd->per = 0;
+	return res;
 }
 
-// trigger is using by kbd-window only
-
-void kbd_trigger(keyScan* tab, int* mtrx, unsigned char* xk) {
-	keyScan key;
-	int pos = 0;
-	while (xk[pos] != 0x00) {
-		key = findKey(tab, xk[pos] & 0x7f);
-		if (xk[pos] & 0x80)
-			key.mask |= 0x20;
-		mtrx[key.row] ^= key.mask;
-		pos++;
-	}
-}
-
-void kbdTrigger(Keyboard* kbd, keyEntry ent) {
-	switch(kbd->mode) {
-		case KBD_SPECTRUM:
-			kbd_trigger(keyTab, kbd->map, ent.zxKey);
+int kbd_atm2cpm_rd(Keyboard* kbd, int adr) {
+	int res = -1;
+	switch(adr) {
+		case 0: res = kbd->keycode;
+			kbd->keycode = 0;
 			break;
-		case KBD_PROFI:
-			kbd_trigger(keyTab, kbd->extMap, ent.extKey);
-			kbd_trigger(keyTab, kbd->map, ent.zxKey);
+		case 1: res = kbd->flag2;
 			break;
-		case KBD_MSX:
-			kbd_trigger(msxKeyTab, kbd->msxMap, ent.msxKey);
+		case 2: res = kbd->flag1;
 			break;
-	}
-	// at/xt ???
-}
-
-// at/xt keyboard buffer
-// example (at code):
-// 0xE0, 0x72 (code 0x72e0) = cursor down pressed
-// 0xE0, 0xF0, 0x72 (code 72f0e0) = cursor down released
-
-unsigned long add_msb(unsigned long code, unsigned long bt) {
-	unsigned long msk = 0xff;
-	while (code & msk) {
-		bt <<= 8;
-		msk <<= 8;
-	}
-	code |= bt;
-	return code;
-}
-
-void xt_add_code(Keyboard* kbd, unsigned long d) {
-	kbd->outbuf = add_msb(kbd->outbuf, d);
-}
-
-unsigned long xt_get_code(Keyboard* kbd, keyEntry kent, int rel) {
-	unsigned long res = 0;
-	int code;
-	int mode = kbd->pcmodeovr ? kbd->pcmodeovr : kbd->pcmode;
-	if (rel) {
-		switch(mode) {
-			case KBD_PS2:			// F0,code
-				res = 0xf000 | (kent.psCode & 0xff);
-				break;
-			case KBD_AT:			// insert F0 before each byte with bit7=0
-				code = kent.atCode;
-				while(code) {
-					if (!(code & 0x80))
-						res = add_msb(res, 0xf0);
-					res = add_msb(res, code & 0xff);
-					code >>= 8;
-				}
-				break;
-			case KBD_XT:			// set every b7
-				code = kent.xtCode;
-				while(code) {
-					res = add_msb(res, (code & 0xff) | 0x80);
-					code >>= 8;
-				}
-				break;
-		}
-	} else {		// press
-		switch(mode) {
-			case KBD_PS2: res = kent.psCode; break;
-			case KBD_AT: res = kent.atCode; break;
-			case KBD_XT: res = kent.xtCode; break;
-		}
 	}
 	return res;
 }
 
-int xt_sync(Keyboard* kbd, int ns) {
-	if (kbd->per == 0) return 0;
-	kbd->per -= ns;
-	if (kbd->per > 0) return 0;
-//	unsigned long relcode = xt_get_code(kbd, kbd->kent, 1);	// release
-	unsigned long prscode = xt_get_code(kbd, kbd->kent, 0); // press
-//	kbd->outbuf = add_msb(kbd->outbuf, relcode);
-	kbd->outbuf = add_msb(kbd->outbuf, prscode);
-	kbd->per = kbd->kper;
-	return 1;
+void kbd_atm2code_press(Keyboard* kbd, keyEntry* ent) {
+	kbd->keycode = ent->atmCode.cpmCode;
+	kbd->lastkey = kbd->keycode;
 }
 
-void xt_press(Keyboard* kbd, keyEntry kent) {
-	if (kbd->lock) return;
-	kbd->outbuf = add_msb(kbd->outbuf, xt_get_code(kbd, kent, 0));
-	kbd->kent = kent;
-	kbd->per = kbd->kdel;
-	kbd->xirq(IRQ_KBD_DATA, kbd->xptr);
-	// printf("xt press, buf = %X\n", kbd->outbuf);
+void kbd_atm2code_release(Keyboard* kbd, keyEntry* ent) {
+	kbd->keycode = 0;
 }
 
-void xt_release(Keyboard* kbd, keyEntry kent) {
-	if (kbd->lock) return;
-	kbd->outbuf = add_msb(kbd->outbuf, xt_get_code(kbd, kent, 1));	// kbd->outbuf = xt_get_code(kbd, kent, 1);
-	kbd->per = 0;		// 0 for stopping autorepeat
-	kbd->xirq(IRQ_KBD_DATA, kbd->xptr);
+// common codes
+
+void xt_ack(Keyboard* kbd, unsigned long d) {
+	kbd->outbuf = d;
+	kbd->xirq(IRQ_KBD_ACK, kbd->xptr);
 }
 
 int xt_read(Keyboard* kbd) {
@@ -489,85 +334,99 @@ int xt_read(Keyboard* kbd) {
 	return res;
 }
 
-void xt_ack(Keyboard* kbd, unsigned long d) {
-	kbd->outbuf = d;
-	kbd->xirq(IRQ_KBD_ACK, kbd->xptr);
+// bk (!)
+
+// peka common
+
+unsigned long add_msb(unsigned long code, unsigned long bt) {
+	unsigned long msk = 0xff;
+	while (code & msk) {
+		bt <<= 8;
+		msk <<= 8;
+	}
+	code |= bt;
+	return code;
 }
 
-// TODO: 98xx keyboard commands (9x)
-// ack FA at every byte
-void kbd_wr(Keyboard* kbd, int d) {
-	if (kbd->com < 0) {
-		switch (d) {
-			case 0xed: xt_ack(kbd, 0xfa); kbd->com = d; break;	// leds
-			case 0xee: xt_ack(kbd, 0xee); break;	// echo
-			case 0xf0: xt_ack(kbd, 0xfa); kbd->com = d; break;	// get/set scancode
-			case 0xf2: xt_ack(kbd, 0x83abfa); break;	// get dev type (no code = at-keyboard)
-			case 0xf3: xt_ack(kbd, 0xfa); kbd->com = d; break;	// set repeat rate/delay
-			case 0xf4:					// enable sending scancodes
-				kbd->lock = 0;
-				xt_ack(kbd, 0xfa);
-				break;
-			case 0xf5:					// disable sending scancodes
-				kbd->lock = 1;
-				xt_ack(kbd, 0xfa);
-				break;
-			case 0xf6: kbd->pcmode = KBD_AT; xt_ack(kbd, 0xfa); break;		// set default params
-			case 0xf7: xt_ack(kbd, 0xfa); break;		// f7..fd: scanset3 specific
-			case 0xf8: xt_ack(kbd, 0xfa); break;
-			case 0xf9: xt_ack(kbd, 0xfa); break;
-			case 0xfa: xt_ack(kbd, 0xfa); break;
-			case 0xfb: xt_ack(kbd, 0xfa); break;
-			case 0xfc: xt_ack(kbd, 0xfa); break;
-			case 0xfd: xt_ack(kbd, 0xfa); break;
-			case 0xfe: xt_ack(kbd, kbd->lastkey & 0xff); break;	// resend last byte
-			case 0xff: kbd_reset(kbd); xt_ack(kbd, 0xaafa); break;			// reset & run selftest: ack FA, then AA (passed)
-			default: xt_ack(kbd, 0xfe); break;			// unknown: resend (FE)
-		}
-	} else {
-		switch (kbd->com) {
-			case 0xed:
-				// set leds: b0-scrlck,b1-numlck,b2-caps
-				xt_ack(kbd, 0xfa);
-				break;
-			case 0xf0:
-				// set scancode tab: 0-get current, 1..3-scanset 1..3
-				switch(d) {
-					case 0: switch(kbd->pcmode) {
-							case KBD_XT: xt_ack(kbd, 0x43fa);
-								break;
-							case KBD_AT: xt_ack(kbd, 0x41fa);
-								break;
-							case KBD_PS2: xt_ack(kbd, 0x3ffa);
-								break;
-						}
-						break;
-					case 1: kbd->pcmode = KBD_XT;
-						xt_ack(kbd, 0xfa);
-						break;
-					case 2: kbd->pcmode = KBD_AT;
-						xt_ack(kbd, 0xfa);
-						break;
-					case 3: kbd->pcmode = KBD_PS2;
-						xt_ack(kbd, 0xfa);
-						break;
-					default:
-						xt_ack(kbd, 0xfe);
-						break;
-				}
-				break;
-			case 0xf3:
-				kbd->kdel = (((d >> 5) & 3) + 1) * 250e6;	// 1st delay - 250,500,750,1000ms
-				kbd->kper = (33 + 7 * (d & 0x1f)) * 1e6;	// repeat period: 33 to 250 ms
-				xt_ack(kbd, 0xfa);
-				break;
-		}
-		kbd->com = -1;
+void kbd_ibm_press(Keyboard* kbd, keyEntry* kent, int code) {
+	if (kbd->lock) return;
+	kbd->outbuf = add_msb(kbd->outbuf, code);
+	kbd->kent = *kent;
+	kbd->per = kbd->kdel;
+	kbd->xirq(IRQ_KBD_DATA, kbd->xptr);
+}
+
+void kbd_ibm_release(Keyboard* kbd, keyEntry* kent, int code) {
+	if (kbd->lock) return;
+	kbd->outbuf = add_msb(kbd->outbuf, code);
+	kbd->per = 0;
+	kbd->xirq(IRQ_KBD_DATA, kbd->xptr);
+}
+
+// kbd->pcmode is default mode, set in options; at/ps2 keyboards can switch between modes
+void kbd_ibm_res(Keyboard* kbd) {
+	switch(kbd->pcmode) {
+		case KBD_AT: kbd_set_type(kbd, KBD_PC_AT); break;
+		case KBD_XT: kbd_set_type(kbd, KBD_PC_XT); break;
+		case KBD_PS2: kbd_set_type(kbd, KBD_PC_PS2); break;
 	}
 }
 
-void kbd_wr_pc98(Keyboard* kbd, int val) {
-#if 0
+// at
+
+void kbd_at_press(Keyboard* kbd, keyEntry* ent) {
+	kbd_ibm_press(kbd, ent, ent->atCode);
+}
+
+void kbd_at_release(Keyboard* kbd, keyEntry* ent) {
+	int code = ent->atCode;
+	int res = 0;
+	while(code) {
+		if (!(code & 0x80))
+			res = add_msb(res, 0xf0);
+		res = add_msb(res, code & 0xff);
+		code >>= 8;
+	}
+	kbd_ibm_release(kbd, ent, res);
+}
+
+// xt
+
+void kbd_xt_press(Keyboard* kbd, keyEntry* ent) {
+	kbd_ibm_press(kbd, ent, ent->xtCode);
+}
+
+void kbd_xt_release(Keyboard* kbd, keyEntry* ent) {
+	int code = ent->xtCode;
+	int res = 0;
+	while(code) {
+		res = add_msb(res, (code & 0xff) | 0x80);
+		code >>= 8;
+	}
+	kbd_ibm_release(kbd, ent, res);
+}
+
+// ps2
+
+void kbd_ps2_press(Keyboard* kbd, keyEntry* ent) {
+	kbd_ibm_press(kbd, ent, ent->psCode);
+}
+
+void kbd_ps2_release(Keyboard* kbd, keyEntry* ent) {
+	kbd_ibm_release(kbd, ent, (ent->psCode & 0xff) | 0xff00);
+}
+
+// pc98
+
+void kbd_nec_press(Keyboard* kbd, keyEntry* ent) {
+	kbd_ibm_press(kbd, ent, ent->necCode);
+}
+
+void kbd_nec_release(Keyboard* kbd, keyEntry* ent) {
+	kbd_ibm_release(kbd, ent, ent->necCode | 0x80);
+}
+
+void kbd_nec_write(Keyboard* kbd, int adr, int val) {
 	if (kbd->com < 0) {
 		switch(val) {
 			case 0x95: kbd->com = val;  xt_ack(kbd, 0xfa); break;
@@ -588,11 +447,256 @@ void kbd_wr_pc98(Keyboard* kbd, int val) {
 		}
 		kbd->com = -1;
 	}
-#endif
 }
 
-int kbdRead(Keyboard* kbd, int port) {
+// common for at/xt/ps2/pc98
+int kbd_ibm_rd(Keyboard* kbd, int adr) {
+	return xt_read(kbd);
+}
+
+// keyboard
+
+void kbd_reset(Keyboard* kbd) {
+	kbd->com = -1;
+	kbd->kdel = 5e8;
+	kbd->kper = 5e7;
+	if (kbd->core) {
+		if (kbd->core->reset) {
+			kbd->core->reset(kbd);
+		}
+	}
+}
+
+Keyboard* kbd_create(cbirq cb, void* p) {
+	Keyboard* keyb = (Keyboard*)malloc(sizeof(Keyboard));
+	memset(keyb, 0x00, sizeof(Keyboard));
+	keyb->xirq = cb;
+	keyb->xptr = p;
+	kbd_reset(keyb);
+	return keyb;
+}
+
+void kbd_destroy(Keyboard* keyb) {
+	free(keyb);
+}
+
+// TODO: make this obsolete
+void kbdSetMode(Keyboard* kbd, int mode) {
+	kbd->mode = mode;
+}
+
+// key press/release/trigger
+
+void kbd_press(Keyboard* kbd, keyEntry* ent) {
+	if (kbd->core) {
+		if (kbd->core->press) {
+			kbd->core->press(kbd, ent);
+		}
+	}
+}
+
+void kbd_release(Keyboard* kbd, keyEntry* ent) {
+	if (kbd->core) {
+		if (kbd->core->release) {
+			kbd->core->release(kbd, ent);
+		}
+	}
+}
+
+void kbdReleaseAll(Keyboard* kbd) {
+	int i;
+	for (i = 0; i < 8; i++) {
+		kbd->map[i] = -1;
+		kbd->extMap[i] = -1;
+		kbd->msxMap[i] = -1;
+		kbd->msxMap[i + 8] = -1;
+	}
+	for (i = 0; i < 16 * 8; i++) {
+		kbd->matrix[(i >> 3) & 15][i & 7] = 0;
+	}
+	kbd->keycode = 0;
+	kbd->lastkey = 0;
+//	kbd->outbuf = 0;	//kbd->kbuf.pos = 0;
+//	kbd->flag = 0;
+	if (kbd->per > 0) {
+		kbd_release(kbd, &kbd->kent);
+//		xt_release(kbd, kbd->kent);
+	}
+	kbd->per = 0;
+}
+
+// trigger is using by kbd-window only
+
+void kbdTrigger(Keyboard* kbd, keyEntry* ent) {
+	switch(kbd->mode) {
+		case KBD_SPECTRUM:
+			key_trigger_seq(kbd, keyTab, kbd->map, ent->zxKey);
+			break;
+		case KBD_PROFI:
+			key_trigger_seq(kbd, keyTab, kbd->extMap, ent->extKey);
+			key_trigger_seq(kbd, keyTab, kbd->map, ent->zxKey);
+			break;
+		case KBD_MSX:
+			key_trigger_seq(kbd, msxKeyTab, kbd->msxMap, ent->msxKey);
+			break;
+	}
+	// at/xt ???
+}
+
+// at/xt keyboard buffer
+// example (at code):
+// 0xE0, 0x72 (code 0x72e0) = cursor down pressed
+// 0xE0, 0xF0, 0x72 (code 72f0e0) = cursor down released
+
+void xt_add_code(Keyboard* kbd, unsigned long d) {
+	kbd->outbuf = add_msb(kbd->outbuf, d);
+}
+
+unsigned long xt_get_code(Keyboard* kbd, keyEntry* kent, int rel) {
+	unsigned long res = 0;
+	int code;
+	int mode = kbd->pcmodeovr ? kbd->pcmodeovr : kbd->pcmode;
+	if (rel) {
+		switch(mode) {
+			case KBD_PS2:			// F0,code
+				res = 0xf000 | (kent->psCode & 0xff);
+				break;
+			case KBD_AT:			// insert F0 before each byte with bit7=0
+				code = kent->atCode;
+				while(code) {
+					if (!(code & 0x80))
+						res = add_msb(res, 0xf0);
+					res = add_msb(res, code & 0xff);
+					code >>= 8;
+				}
+				break;
+			case KBD_XT:			// set every b7
+				code = kent->xtCode;
+				while(code) {
+					res = add_msb(res, (code & 0xff) | 0x80);
+					code >>= 8;
+				}
+				break;
+			case KBD_PC98:			// 1byte with b7=1
+				code = kent->necCode | 0x80;
+				break;
+		}
+	} else {		// press
+		switch(mode) {
+			case KBD_PS2: res = kent->psCode; break;
+			case KBD_AT: res = kent->atCode; break;
+			case KBD_XT: res = kent->xtCode; break;
+			case KBD_PC98: res = kent->necCode; break;
+		}
+	}
+	return res;
+}
+
+void xt_sync(Keyboard* kbd, int ns) {
+	if (kbd->per == 0) return;
+	kbd->per -= ns;
+	if (kbd->per > 0) return;
 #if 1
+//	kbdRelease(kbd, &kbd->kent);
+	kbd_press(kbd, &kbd->kent);
+#else
+//	unsigned long relcode = xt_get_code(kbd, kbd->kent, 1);	// release
+	unsigned long prscode = xt_get_code(kbd, kbd->kent, 0); // press
+//	kbd->outbuf = add_msb(kbd->outbuf, relcode);
+	kbd->outbuf = add_msb(kbd->outbuf, prscode);
+#endif
+	kbd->per = kbd->kper;
+//	return 1;
+}
+
+void xt_press(Keyboard* kbd, keyEntry* kent) {
+	if (kbd->lock) return;
+	kbd->outbuf = add_msb(kbd->outbuf, xt_get_code(kbd, kent, 0));
+	kbd->kent = *kent;
+	kbd->per = kbd->kdel;
+	kbd->xirq(IRQ_KBD_DATA, kbd->xptr);
+	// printf("xt press, buf = %X\n", kbd->outbuf);
+}
+
+void xt_release(Keyboard* kbd, keyEntry* kent) {
+	if (kbd->lock) return;
+	kbd->outbuf = add_msb(kbd->outbuf, xt_get_code(kbd, kent, 1));	// kbd->outbuf = xt_get_code(kbd, kent, 1);
+	kbd->per = 0;		// 0 for stopping autorepeat
+	kbd->xirq(IRQ_KBD_DATA, kbd->xptr);
+}
+
+// ack FA at every byte
+void kbd_ibm_wr(Keyboard* kbd, int adr, int d) {
+	if (kbd->com < 0) {
+		switch (d) {
+			case 0xed: xt_ack(kbd, 0xfa); kbd->com = d; break;	// leds
+			case 0xee: xt_ack(kbd, 0xee); break;	// echo
+			case 0xf0: xt_ack(kbd, 0xfa); kbd->com = d; break;	// get/set scancode
+			case 0xf2: xt_ack(kbd, 0x83abfa); break;	// get dev type (no code = at-keyboard)
+			case 0xf3: xt_ack(kbd, 0xfa); kbd->com = d; break;	// set repeat rate/delay
+			case 0xf4:					// enable sending scancodes
+				kbd->lock = 0;
+				xt_ack(kbd, 0xfa);
+				break;
+			case 0xf5:					// disable sending scancodes
+				kbd->lock = 1;
+				xt_ack(kbd, 0xfa);
+				break;
+			case 0xf6: kbd_set_type(kbd, KBD_PC_AT); xt_ack(kbd, 0xfa); break;		// set default params
+			case 0xf7: xt_ack(kbd, 0xfa); break;		// f7..fd: scanset3 specific
+			case 0xf8: xt_ack(kbd, 0xfa); break;
+			case 0xf9: xt_ack(kbd, 0xfa); break;
+			case 0xfa: xt_ack(kbd, 0xfa); break;
+			case 0xfb: xt_ack(kbd, 0xfa); break;
+			case 0xfc: xt_ack(kbd, 0xfa); break;
+			case 0xfd: xt_ack(kbd, 0xfa); break;
+			case 0xfe: xt_ack(kbd, kbd->lastkey & 0xff); break;	// resend last byte
+			case 0xff: kbd_reset(kbd); xt_ack(kbd, 0xaafa); break;			// reset & run selftest: ack FA, then AA (passed)
+			default: xt_ack(kbd, 0xfe); break;			// unknown: resend (FE)
+		}
+	} else {
+		switch (kbd->com) {
+			case 0xed:
+				// set leds: b0-scrlck,b1-numlck,b2-caps
+				xt_ack(kbd, 0xfa);
+				break;
+			case 0xf0:
+				// set scancode tab: 0-get current, 1..3-scanset 1..3
+				switch(d) {
+					case 0: switch(kbd->core->id) {
+							case KBD_PC_XT: xt_ack(kbd, 0x43fa);
+								break;
+							case KBD_PC_AT: xt_ack(kbd, 0x41fa);
+								break;
+							case KBD_PC_PS2: xt_ack(kbd, 0x3ffa);
+								break;
+						}
+						break;
+					case 1: kbd_set_type(kbd, KBD_PC_XT);
+						xt_ack(kbd, 0xfa);
+						break;
+					case 2: kbd_set_type(kbd, KBD_PC_AT);
+						xt_ack(kbd, 0xfa);
+						break;
+					case 3: kbd_set_type(kbd, KBD_PC_PS2);
+						xt_ack(kbd, 0xfa);
+						break;
+					default:
+						xt_ack(kbd, 0xfe);
+						break;
+				}
+				break;
+			case 0xf3:
+				kbd->kdel = (((d >> 5) & 3) + 1) * 250e6;	// 1st delay - 250,500,750,1000ms
+				kbd->kper = (33 + 7 * (d & 0x1f)) * 1e6;	// repeat period: 33 to 250 ms
+				xt_ack(kbd, 0xfa);
+				break;
+		}
+		kbd->com = -1;
+	}
+}
+
+int kbd_rd(Keyboard* kbd, int port) {
 	int res = -1;
 	if (kbd->core) {
 		if (kbd->core->read) {
@@ -600,31 +704,38 @@ int kbdRead(Keyboard* kbd, int port) {
 		}
 	}
 	return res;
-#else
-	int res = -1;
-
-	switch (kbd->mode) {
-		case KBD_SPECTRUM:
-			res = kbdScanZX(kbd, port);
-			break;
-		case KBD_PROFI:
-			res = kbdScanProfi(kbd, port);
-			break;
-		case KBD_MSX:			// port = row register
-			res = kbd->msxMap[port & 0x0f];
-			break;
-	}
-	return res;
-#endif
 }
 
-// id,cbReset,cbRead,cbWrite,cbPress,cbRelease
+void kbd_wr(Keyboard* kbd, int adr, int val) {
+	if (kbd->core) {
+		if (kbd->core->write) {
+			kbd->core->write(kbd, adr, val);
+		}
+	}
+}
+
+void kbd_sync(Keyboard* kbd, int ns) {
+	if (kbd->core) {
+		if (kbd->core->sync) {
+			kbd->core->sync(kbd, ns);
+		}
+	}
+}
+
+// id,cbReset,cbRead,cbWrite,cbPress,cbRelease,cbSync
 xKbdCore kbdTypeTab[] = {
-	{KBD_SPECTRUM, NULL, kbdScanZX, NULL, kbd_zx_press, kbd_zx_release},
-	{KBD_PROFI, NULL, kbdScanProfi, NULL, kbd_prf_press, kbd_prf_release},
-	{KBD_MSX, NULL, kbd_msx_read, NULL, kbd_msx_press, kbd_msx_release},
-	{KBD_SPCLST, NULL, kbd_spc_read, NULL, kbd_spc_press, kbd_spc_release},
-	{KBD_C64, NULL, kbd_c64_read, NULL, kbd_c64_press, kbd_c64_release},
+	{KBD_SPECTRUM, NULL, kbdScanZX, NULL, kbd_zx_press, kbd_zx_release, NULL},
+	{KBD_PROFI, NULL, kbdScanProfi, NULL, kbd_prf_press, kbd_prf_release, NULL},
+	{KBD_ATM2_CODE, NULL, kbd_atm2code_rd, NULL, kbd_atm2code_press, kbd_atm2code_release, NULL},
+	{KBD_ATM2_CPM, NULL, kbd_atm2cpm_rd, NULL, kbd_atm2code_press, kbd_atm2code_release, NULL},
+	{KBD_ATM2_DIRECT, NULL, NULL, NULL, NULL, NULL, NULL},			// TODO
+	{KBD_MSX, NULL, kbd_msx_read, NULL, kbd_msx_press, kbd_msx_release, NULL},
+	{KBD_SPCLST, NULL, kbd_spc_read, NULL, kbd_spc_press, kbd_spc_release, NULL},
+	{KBD_C64, NULL, kbd_c64_read, NULL, kbd_c64_press, kbd_c64_release, NULL},
+	{KBD_PC_AT, kbd_ibm_res, kbd_ibm_rd, kbd_ibm_wr, kbd_at_press, kbd_at_release, xt_sync},
+	{KBD_PC_XT, kbd_ibm_res, kbd_ibm_rd, kbd_ibm_wr, kbd_xt_press, kbd_xt_press, xt_sync},
+	{KBD_PC_PS2, kbd_ibm_res, kbd_ibm_rd, kbd_ibm_wr, kbd_ps2_press, kbd_ps2_release, xt_sync},
+	{KBD_NEC98XX, NULL, kbd_ibm_rd, kbd_nec_write, kbd_nec_press, kbd_nec_release, xt_sync},
 	{-1, NULL, NULL, NULL, NULL, NULL}
 };
 

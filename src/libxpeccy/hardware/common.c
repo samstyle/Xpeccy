@@ -146,12 +146,12 @@ void zx_init(Computer* comp) {
 
 // zx keypress/release
 
-void zx_keyp(Computer* comp, keyEntry ent) {
-	kbdPress(comp->keyb, ent);
+void zx_keyp(Computer* comp, keyEntry* ent) {
+	kbd_press(comp->keyb, ent);
 }
 
-void zx_keyr(Computer* comp, keyEntry ent) {
-	kbdRelease(comp->keyb, ent);
+void zx_keyr(Computer* comp, keyEntry* ent) {
+	kbd_release(comp->keyb, ent);
 }
 
 // volume
@@ -229,7 +229,7 @@ int xIn1F(Computer* comp, int port) {
 
 int xInFE(Computer* comp, int port) {
 	comp->keyb->port &= (port >> 8);
-	unsigned char res = kbdRead(comp->keyb, port) | 0xa0;		// set bits 7,5
+	unsigned char res = kbd_rd(comp->keyb, port) | 0xa0;		// set bits 7,5
 	if (comp->tape->volPlay & 0x80)
 		res |= 0x40;
 	return res;

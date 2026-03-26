@@ -148,11 +148,11 @@ void keyWindow::mousePressEvent(QMouseEvent* ev) {
 	xent.zxKey[1] = 0;
 	switch(ev->button()) {
 		case Qt::LeftButton:
-			kbdPress(kb, xent);
+			kbd_press(kb, &xent);
 			update();
 			break;
 		case Qt::RightButton:
-			kbdTrigger(kb, xent);
+			kbdTrigger(kb, &xent);
 			update();
 			break;
 		case Qt::MiddleButton:
@@ -168,7 +168,7 @@ void keyWindow::mousePressEvent(QMouseEvent* ev) {
 void keyWindow::mouseReleaseEvent(QMouseEvent* ev) {
 	if (!kb) return;
 	if (ev->button() == Qt::LeftButton) {
-		kbdRelease(kb, xent);
+		kbd_release(kb, &xent);
 	}
 	update();
 }
