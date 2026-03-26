@@ -280,7 +280,11 @@ void xGamepad::open(int devid) {
 	close();
 	sjptr = SDL_JoystickOpen(devid);
 	if (sjptr) {
+#if HAVESDL2
 		id = SDL_JoystickInstanceID(sjptr);
+#else
+		id = devid;
+#endif
 	}
 }
 
@@ -479,8 +483,8 @@ void xGamepad::update() {
 			if (lasthat & SDL_HAT_RIGHT) emit buttonChanged(VIRTKEYBASE + 3 + h * 4, !!(state & SDL_HAT_RIGHT));
 			lasthat = state;
 		}
-	}
 #endif
+	}
 }
 
 QString xGamepad::name(int devid) {
@@ -489,7 +493,7 @@ QString xGamepad::name(int devid) {
 #if HAVESDL2
 	nm = QString(SDL_JoystickNameForIndex(devid));
 #else
-	nm = QString(SDL_JoystickName(sjptr));
+	nm = QString(SDL_JoystickName(devid));
 #endif
 	return nm;
 }
@@ -507,7 +511,11 @@ QStringList xGamepad::getList() {
 	int id, cnt;
 	cnt = SDL_NumJoysticks();
 	for(id = 0; id < cnt; id++) {
+#if HAVESDL2
 		lst << SDL_JoystickNameForIndex(id);
+#else
+		lst << SDL_JoystickName(id);
+#endif
 	}
 	return lst;
 }

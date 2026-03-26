@@ -1,0 +1,104 @@
+name: Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "fixes"
+
+jobs:
+  build:
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          #- os: windows-latest
+          #  compiler: default
+          #  type: Release
+          #- os: ubuntu-latest
+          #  compiler: gcc
+          #  type: Release
+          - os: macos-15-intel
+            compiler: default
+            type: Release
+          - os: macos-latest
+            compiler: default
+            type: Release
+
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Create build environment
+      run: cmake -E make_directory ${{github.workspace}}/build
+
+    - name: Setup dependencies (Ubuntu)
+      if: startsWith(matrix.os, 'ubuntu')
+      run: |
+        sudo apt-get install -y gcc-10 g++-10 clang libgl1-mesa-dev \
+        libasound2-dev libfontconfig1-dev libxmu-dev libxi-dev libgl-dev \
+        libxrandr-dev libxinerama-dev xorg-dev xorg-dev libglu1-mesa-dev \
+        libsdl1.2-compat-dev libqt5-dev
+
+    - name: Setup dependencies (macOS)
+      if: startsWith(matrix.os, 'macos')
+      run: |
+        env HOMEBREW_NO_AUTO_UPDATE=1 brew install sdl12-compat qt@5
+        echo "Qt5_DIR=$(brew --prefix qt@5)/lib/cmake/Qt5" >> "$GITHUB_ENV"
+        echo "$(brew --prefix qt@5)/bin" >> "$GITHUB_PATH"
+
+    - name: Configure CMake with default compiler
+      shell: bash
+      if: matrix.compiler == 'default'
+      working-directory: ${{github.workspace}}/build
+      run: cmake $GITHUB_WORKSPACE -DSDL1BUILD=1 -DCMAKE_BUILD_TYPE=${{ matrix.type }}
+
+    - name: Configure CMake with GCC (Ubuntu)
+      shell: bash
+      if: matrix.compiler == 'gcc' && startsWith(matrix.os, 'ubuntu')
+      working-directory: ${{github.workspace}}/build
+      run: cmake $GITHUB_WORKSPACE -DSDL1BUILD=1 -DCMAKE_BUILD_TYPE=${{ matrix.type }} -DCMAKE_C_COMPILER=gcc-10 -DCMAKE_CXX_COMPILER=g++-10
+
+    - name: Configure CMake with Clang (Ubuntu)
+      shell: bash
+      if: (matrix.compiler == 'clang') && startsWith(matrix.os, 'ubuntu')
+      working-directory: ${{github.workspace}}/build
+      run: cmake $GITHUB_WORKSPACE -DSDL1BUILD=1 -DCMAKE_BUILD_TYPE=${{ matrix.type }} -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
+
+    - name: Configure CMake with Clang (Windows)
+      shell: bash
+      if: (matrix.compiler == 'clang') && startsWith(matrix.os, 'windows')
+      working-directory: ${{github.workspace}}/build
+      run: cmake $GITHUB_WORKSPACE -DSDL1BUILD=1 -DCMAKE_BUILD_TYPE=${{ matrix.type }} -T ClangCL
+
+    - name: Build
+      working-directory: ${{github.workspace}}/build
+      shell: bash
+      run: cmake --build . --config ${{ matrix.type }}
+
+    - name: Package
+      working-directory: ${{github.workspace}}/build
+      shell: bash
+      run: cpack
+
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        compression-level: 0
+        retention-days: 3
+        name: bin-${{ matrix.os }}-${{ matrix.type }}
+        path: |
+          ${{ github.workspace }}/build/*.zip
+          ${{ github.workspace }}/build/*.dmg
+
+    - name: Release
+      uses: softprops/action-gh-release@v2
+      with:
+        draft: ${{!startsWith(github.ref, 'refs/tags/')}}
+        files: |
+          ${{ github.workspace }}/build/*.zip
+          ${{ github.workspace }}/build/*.dmg

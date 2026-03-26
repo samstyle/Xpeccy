@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.5...4.1)
 
 #compiler settings
 
@@ -89,6 +89,23 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "/BSD$/")
 
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
+	if(CMAKE_OSX_ARCHITECTURES STREQUAL "")
+		if(CMAKE_SYSTEM_PROCESSOR STREQUAL arm64)
+			set(CMAKE_OSX_ARCHITECTURES arm64)
+		else()
+			set(CMAKE_OSX_ARCHITECTURES x86_64)
+		endif()
+	endif()
+	if(CMAKE_OSX_ARCHITECTURES MATCHES x86_64)
+		set(CMAKE_OSX_DEPLOYMENT_TARGET "11.7")
+		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse2")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse2")
+	else()
+		set(CMAKE_OSX_DEPLOYMENT_TARGET "15.0")
+		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=armv8.3-a")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=armv8.3-a")
+	endif()
+
 	set(INC_PATHS local/include include)
 	set(LIB_PATHS lib lib64 local/lib local/lib64)
 
@@ -99,8 +116,9 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
 	set(MACOSX_BUNDLE_BUNDLE_NAME ${PROJECT_NAME}.app)
 	set(MACOSX_BUNDLE_ICON_FILE ${PROJECT_NAME}.icns)
-	set(MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/Info.plist)
 	set(MACOSX_BUNDLE_BUNDLE_VERSION ${XVER})
+	set(MACOSX_BUNDLE_SHORT_VERSION_STRING "0.6.${XVER}")
+	set(MACOSX_BUNDLE_GUI_IDENTIFIER "ru.samstyle.xpeccy")
 
 	set(BUNDLE_ICON_PATH ${CMAKE_SOURCE_DIR}/images/${MACOSX_BUNDLE_ICON_FILE})
 	set(BUNDLE_PATH ${CMAKE_BINARY_DIR}/${MACOSX_BUNDLE_BUNDLE_NAME})
@@ -281,15 +299,19 @@ endif()
 # SDL
 
 if(${SDL1BUILD})
+	find_package(SDL2)
 	find_package(SDL REQUIRED)
 	if(${SDL_FOUND})
 		add_definitions(-DHAVESDL1)
 		include_directories(${SDL_INCLUDE_DIR})
-		set(LIBRARIES ${LIBRARIES} ${SDL_LIBRARY})
+		set(LIBRARIES ${LIBRARIES} ${SDL_LIBRARY} ${SDL2_LIBRARY})
 		set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, libSDL1.2debian (>=1.2)")
 		set(CPACK_RPM_PACKAGE_DEPENDS "${CPACK_RPM_PACKAGE_DEPENDS}, SDL >= 1.2")
 		set(SDL_VER ${SDL_VERSION_STRING})
 		set(SDL_NAME "SDL")
+		message(STATUS "SDL_INCLUDE_DIR = " ${SDL_INCLUDE_DIR})
+		message(STATUS "SDL2_INCLUDE_DIR = " ${SDL2_INCLUDE_DIR})
+		get_filename_component(SDL_FW_PATH "${SDL_INCLUDE_DIR}/.." ABSOLUTE)
 	endif(${SDL_FOUND})
 else(${SDL1BUILD})
 	find_package(SDL2 REQUIRED)
@@ -302,6 +324,7 @@ else(${SDL1BUILD})
 		set(SDL_VER "2.x")
 		set(SDL_NAME "SDL2")
 		message(STATUS "SDL2_INCLUDE_DIR = " ${SDL2_INCLUDE_DIR})
+		get_filename_component(SDL_FW_PATH "${SDL2_INCLUDE_DIR}/.." ABSOLUTE)
 	endif(${SDL2_FOUND})
 endif(${SDL1BUILD})
 
@@ -330,15 +353,33 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "/BSD$/")
 	add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS} ${UIHEADERS} ${RESOURCES} ${MOCHEADERS})
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${SOURCES} ${HEADERS} ${UIHEADERS} ${RESOURCES} ${MOCHEADERS} ${BUNDLE_ICON_PATH})
+	set_target_properties(${PROJECT_NAME} PROPERTIES
+		MACOSX_BUNDLE ON
+		MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/MacOSXBundleInfo.plist.in
+		INSTALL_RPATH "@executable_path/../Frameworks"
+		BUILD_WITH_INSTALL_RPATH TRUE)
+
 	find_program(MACDEPLOYQTEXE macdeployqt)
 	add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-		COMMAND ${MACDEPLOYQTEXE} ARGS ${BUNDLE_PATH} -always-overwrite
-		COMMAND mkdir ARGS -p ${BUNDLE_PATH}/Contents/Frameworks
-                COMMAND cp ARGS -R -X /Library/Frameworks/${SDL_NAME}.framework ${BUNDLE_PATH}/Contents/Frameworks
-                COMMAND install_name_tool -change @rpath/${SDL_NAME}.framework/Versions/A/${SDL_NAME} @executable_path/../Frameworks/${SDL_NAME}.framework/Versions/A/${SDL_NAME} ${BUNDLE_PATH}/Contents/MacOS/xpeccy
-	)
-	set(CMAKE_INSTALL_PREFIX "/Applications")
+		COMMAND ${MACDEPLOYQTEXE} ARGS ${BUNDLE_PATH} -always-overwrite)
+
+	set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}")
 	install(TARGETS ${PROJECT_NAME} BUNDLE DESTINATION .)
+
+	set(APP "${CMAKE_INSTALL_PREFIX}/${PROJECT_NAME}.app")
+	install(CODE "
+		include(BundleUtilities)
+		fixup_bundle(\"${APP}\" \"\" \"\")
+		execute_process(
+			COMMAND xattr -cr \"${APP}\"
+			COMMAND codesign --force --deep --sign - \"${APP}\"
+			RESULT_VARIABLE sign_result
+		)
+		if(NOT sign_result EQUAL 0)
+			message(FATAL_ERROR \"Code signing failed!\")
+		endif()
+	" COMPONENT Runtime)
+
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	add_executable(${PROJECT_NAME} WIN32 ${SOURCES} ${HEADERS} ${UIHEADERS} ${RESOURCES} ${MOCHEADERS} ${CMAKE_SOURCE_DIR}/xpeccy.rc)
 endif()
@@ -346,7 +387,7 @@ endif()
 include_directories(${INCLUDIRS})
 target_link_libraries(${PROJECT_NAME} ${LIBRARIES})
 
-include(${CMAKE_ROOT}/Modules/CPack.cmake)
+include(CPack)
 
 # install
 
@@ -356,7 +397,7 @@ message(STATUS "\n")
 message(STATUS "Project will be compiled with following options:\n")
 message(STATUS "Build type : ${CMAKE_BUILD_TYPE}")
 message(STATUS "Xpeccy version : ${XVER}")
-message(STATUS "OS : ${CMAKE_SYSTEM_NAME}")
+message(STATUS "OS : ${CMAKE_SYSTEM_NAME} ${CMAKE_OSX_DEPLOYMENT_TARGET} ${CMAKE_OSX_ARCHITECTURES}")
 message(STATUS "Qt version : ${QT_VER}")
 message(STATUS "SDL version : ${SDL_VER}")
 
