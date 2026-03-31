@@ -315,6 +315,167 @@ void kbd_atm2code_release(Keyboard* kbd, keyEntry* ent) {
 	kbd->keycode = 0;
 }
 
+// bk0010/11
+
+typedef struct {
+	int xkey;
+	unsigned char code;
+} bkKeyCode;
+
+static bkKeyCode bkey_big_lat[] = {
+	{XKEY_Q,'Q'},{XKEY_W,'W'},{XKEY_E,'E'},{XKEY_R,'R'},{XKEY_T,'T'},
+	{XKEY_Y,'Y'},{XKEY_U,'U'},{XKEY_I,'I'},{XKEY_O,'O'},{XKEY_P,'P'},
+	{XKEY_A,'A'},{XKEY_S,'S'},{XKEY_D,'D'},{XKEY_F,'F'},{XKEY_G,'G'},
+	{XKEY_H,'H'},{XKEY_J,'J'},{XKEY_K,'K'},{XKEY_L,'L'},
+	{XKEY_Z,'Z'},{XKEY_X,'X'},{XKEY_C,'C'},{XKEY_V,'V'},{XKEY_B,'B'},
+	{XKEY_N,'N'},{XKEY_M,'M'},
+	{ENDKEY, 0}
+};
+
+static bkKeyCode bkey_small_lat[] = {
+	{XKEY_Q,'q'},{XKEY_W,'w'},{XKEY_E,'e'},{XKEY_R,'r'},{XKEY_T,'t'},
+	{XKEY_Y,'y'},{XKEY_U,'u'},{XKEY_I,'i'},{XKEY_O,'o'},{XKEY_P,'p'},
+	{XKEY_A,'a'},{XKEY_S,'s'},{XKEY_D,'d'},{XKEY_F,'f'},{XKEY_G,'g'},
+	{XKEY_H,'h'},{XKEY_J,'j'},{XKEY_K,'k'},{XKEY_L,'l'},
+	{XKEY_Z,'z'},{XKEY_X,'x'},{XKEY_C,'c'},{XKEY_V,'v'},{XKEY_B,'b'},
+	{XKEY_N,'n'},{XKEY_M,'m'},
+	{ENDKEY, 0}
+};
+
+static bkKeyCode bkey_big_rus[] = {
+	{XKEY_Q,0152},{XKEY_W,0143},{XKEY_E,0165},{XKEY_R,0153},{XKEY_T,0145},
+	{XKEY_Y,0156},{XKEY_U,0147},{XKEY_I,0173},{XKEY_O,0175},{XKEY_P,0172},
+	{XKEY_LBRACK,0150},{XKEY_RBRACK,0177}, /*{XKEY_LBRACE,0150},{XKEY_RBRACE,0177},*/
+	{XKEY_A,0146},{XKEY_S,0171},{XKEY_D,0167},{XKEY_F,0141},{XKEY_G,0160},
+	{XKEY_H,0162},{XKEY_J,0157},{XKEY_K,0154},{XKEY_L,0144},{XKEY_DOTCOM,0166},{XKEY_APOS,0174},
+	{XKEY_Z,0161},{XKEY_X,0176},{XKEY_C,0163},{XKEY_V,0155},{XKEY_B,0111},
+	{XKEY_N,0164},{XKEY_M,0170},{XKEY_COMMA,0142},{XKEY_PERIOD,0140},
+	{ENDKEY, 0}
+};
+
+static bkKeyCode bkey_small_rus[] = {
+	{XKEY_Q,0112},{XKEY_W,0103},{XKEY_E,0125},{XKEY_R,0113},{XKEY_T,0105},
+	{XKEY_Y,0116},{XKEY_U,0107},{XKEY_I,0133},{XKEY_O,0135},{XKEY_P,0132},
+	{XKEY_LBRACK,0110},{XKEY_RBRACK,0137}, /*{XKEY_LBRACE,0110},{XKEY_RBRACE,0137},*/
+	{XKEY_A,0106},{XKEY_S,0131},{XKEY_D,0127},{XKEY_F,0101},{XKEY_G,0120},
+	{XKEY_H,0122},{XKEY_J,0117},{XKEY_K,0114},{XKEY_L,0104},{XKEY_DOTCOM,0126},{XKEY_APOS,0134},
+	{XKEY_Z,0121},{XKEY_X,0136},{XKEY_C,0123},{XKEY_V,0115},{XKEY_B,0111},
+	{XKEY_N,0124},{XKEY_M,0130},{XKEY_COMMA,0102},{XKEY_PERIOD,0100},
+	{ENDKEY, 0}
+};
+
+static bkKeyCode bkey_shift[] = {
+	{XKEY_1, '!'},{XKEY_2, '@'},{XKEY_3, '#'},{XKEY_4, '$'},{XKEY_5, '%'},
+	{XKEY_6, '^'},{XKEY_7, '&'},{XKEY_8, '*'},{XKEY_9, '('},{XKEY_0, ')'},
+	{XKEY_MINUS,'_'},{XKEY_EQUAL,'='},
+	{ENDKEY, 0}
+};
+
+static bkKeyCode bkey_noshift[] = {
+	{XKEY_1,'1'},{XKEY_2,'2'},{XKEY_3,'3'},{XKEY_4,'4'},{XKEY_5,'5'},
+	{XKEY_6,'6'},{XKEY_7,'7'},{XKEY_8,'8'},{XKEY_9,'9'},{XKEY_0,'0'},
+	{XKEY_MINUS,'-'},{XKEY_EQUAL,'+'},
+	{ENDKEY, 0}
+};
+
+static bkKeyCode bkeyTab[] = {
+	{XKEY_LBRACK,'('},{XKEY_RBRACK,')'},
+	{XKEY_DOTCOM, ';'},{XKEY_APOS,'"'},
+	{XKEY_COMMA, ','},{XKEY_PERIOD, '.'},{XKEY_BSLASH,'/'},{XKEY_SLASH,'\\'},
+	{XKEY_SPACE,' '},{XKEY_ENTER,10},
+	{XKEY_BSP,24},
+	{XKEY_TAB,13},
+	{XKEY_DOWN,27},{XKEY_LEFT,8},{XKEY_RIGHT,25},{XKEY_UP,26},
+//	{XKEY_ESC,3},
+	{ENDKEY, 0}
+};
+
+int bkey_code(bkKeyCode* itm, int xkey) {
+	while ((itm->xkey != ENDKEY) && (itm->xkey != xkey))
+		itm++;
+	return itm->code;		// 0 if ENDKEY
+}
+
+void bk_press_keycode(Keyboard* kbd, int code) {
+	if (!kbd->kpress) {			// only 1 key can be pressed
+		kbd->keycode = code & 0x7f;
+		kbd->kpress = 1;
+		kbd->drq = 1;
+		if (kbd->inten) {		// keyboard interrupt enabled
+			kbd->xirq(IRQ_KBD_DATA, kbd->xptr);
+			// comp->cpu->intvec = (code & 0x80) ? 0274 : 060;
+//			comp->cpu->intvec = comp->keyb->ar2 ? 0274 : 060;
+//			comp->cpu->intrq |= PDP_INT_VIRQ;
+		}
+	}
+}
+
+void kbd_bk_press(Keyboard* kbd, keyEntry* xkey) {
+	int code = 0;
+	switch(xkey->key) {
+		case XKEY_LSHIFT:
+			kbd->shift = 1;
+//			code = 0274;
+			break;
+		case XKEY_CAPS:
+			kbd->caps ^= 1;
+			code = kbd->caps ? 0274 : 0273;
+			break;
+		case XKEY_LCTRL:
+			kbd->lang ^= 1;
+			code = kbd->lang ? 016 : 017;
+			break;
+		case XKEY_RCTRL:
+			kbd->ar2 = 1;
+			break;
+	}
+	if (code == 0) {
+		if (kbd->caps ^ kbd->shift) {
+			code = bkey_code(kbd->lang ? bkey_big_rus : bkey_big_lat, xkey->key);
+		} else {
+			code = bkey_code(kbd->lang ? bkey_small_rus : bkey_small_lat, xkey->key);
+		}
+	}
+	if (code == 0) {
+		if (kbd->shift) {
+			code = bkey_code(bkey_shift, xkey->key);
+		} else {
+			code = bkey_code(bkey_noshift, xkey->key);
+		}
+	}
+	if (code == 0)
+		code = bkey_code(bkeyTab, xkey->key);
+	if (code != 0) {
+		bk_press_keycode(kbd, code);
+	}
+}
+
+void kbd_bk_release(Keyboard* kbd, keyEntry* xkey) {
+	switch (xkey->key) {
+		case XKEY_LSHIFT:
+			kbd->shift = 0;
+//			bk_press_keycode(comp, 0273);
+			break;
+		case XKEY_RCTRL:
+			kbd->ar2 = 0;
+			break;
+	}
+	kbd->kpress = 0;		// key released
+	kbd->drq = 0;
+}
+
+int kbd_bk_rd(Keyboard* kbd, int adr) {
+	kbd->drq = 0;
+	return kbd->keycode;
+}
+
+void kbd_bk_reset(Keyboard* kbd) {
+	kbd->kpress = 0;
+	kbd->inten = 0;
+	kbd->drq = 0;
+	kbd->keycode = 0x00;
+}
+
 // common codes
 
 void xt_ack(Keyboard* kbd, unsigned long d) {
@@ -732,6 +893,7 @@ xKbdCore kbdTypeTab[] = {
 	{KBD_MSX, NULL, kbd_msx_read, NULL, kbd_msx_press, kbd_msx_release, NULL},
 	{KBD_SPCLST, NULL, kbd_spc_read, NULL, kbd_spc_press, kbd_spc_release, NULL},
 	{KBD_C64, NULL, kbd_c64_read, NULL, kbd_c64_press, kbd_c64_release, NULL},
+	{KBD_BK, kbd_bk_reset, kbd_bk_rd, NULL, kbd_bk_press, kbd_bk_release, NULL},
 	{KBD_PC_AT, kbd_ibm_res, kbd_ibm_rd, kbd_ibm_wr, kbd_at_press, kbd_at_release, xt_sync},
 	{KBD_PC_XT, kbd_ibm_res, kbd_ibm_rd, kbd_ibm_wr, kbd_xt_press, kbd_xt_press, xt_sync},
 	{KBD_PC_PS2, kbd_ibm_res, kbd_ibm_rd, kbd_ibm_wr, kbd_ps2_press, kbd_ps2_release, xt_sync},
