@@ -4,6 +4,8 @@
 
 #include "i8042_kbd.h"
 
+// TODO: in fact, i8042 is 2xUART
+
 #define KBD_DELAY 1e7
 
 // PS/2 controller

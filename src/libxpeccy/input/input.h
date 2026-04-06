@@ -5,11 +5,11 @@ extern "C" {
 #endif
 
 // pc keys
-#include "keycode_linux.h"
-#include "keycode_windows.h"
-#include "keycode_others.h"
+#include "../keycode_linux.h"
+#include "../keycode_windows.h"
+#include "../keycode_others.h"
 
-#include "defines.h"
+#include "../defines.h"
 
 // joystick type
 enum {

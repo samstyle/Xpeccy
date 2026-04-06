@@ -6,7 +6,7 @@
 #include <QMouseEvent>
 #include <QKeyEvent>
 
-#include "libxpeccy/input.h"
+#include "libxpeccy/input/input.h"
 
 class keyWindow : public QDialog {
 	Q_OBJECT

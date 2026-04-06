@@ -1,7 +1,7 @@
 #pragma once
 
 #include "defines.h"
-#include "input.h"
+#include "input/input.h"
 
 #define PS2_RDATA	0
 #define PS2_RCMD	4

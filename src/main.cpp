@@ -105,11 +105,13 @@ int main(int ac,char** av) {
 #endif
 	printf("Using Qt ver %s\n",qVersion());
 
+#ifdef __linux__
 // for wayland (activateWindow problem)
-	if (!strcmp(getenv("XDG_SESSION_TYPE"), "wayland")) {
-		unsetenv("XDG_SESSION_TYPE");
+	if (!strcmp(qgetenv("XDG_SESSION_TYPE"), "wayland")) {
+		qunsetenv("XDG_SESSION_TYPE");
 		qEnvironmentVariable("QT_QPA_PLATFORM", "wayland");
 	}
+#endif
 // this works since Qt5.6 (must be set before QCoreApplication is created). Set by default in Qt6
 	#if (QT_VERSION >= QT_VERSION_CHECK(5,6,0)) && (QT_VERSION < QT_VERSION_CHECK(6,0,0))
 		QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);

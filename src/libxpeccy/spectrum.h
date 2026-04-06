@@ -8,7 +8,7 @@ extern "C" {
 #include "video/video.h"
 #include "memory.h"
 
-#include "input.h"
+#include "input/input.h"
 #include "tape.h"
 #include "fdc.h"
 #include "hdd.h"

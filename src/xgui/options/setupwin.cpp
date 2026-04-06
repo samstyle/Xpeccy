@@ -21,7 +21,7 @@
 #include "xcore/vfilters.h"
 #include "libxpeccy/spectrum.h"
 #include "libxpeccy/filetypes/filetypes.h"
-#include "libxpeccy/input.h"
+#include "libxpeccy/input/input.h"
 
 void fillRFBox(QComboBox* box, QStringList lst) {
 	box->clear();
