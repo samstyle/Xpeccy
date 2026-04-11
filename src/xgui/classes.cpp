@@ -1,9 +1,11 @@
 #include "xgui.h"
 #include "../xcore/xcore.h"
 
+#include <QIcon>
 #include <QPalette>
 #include <QPainter>
 #include <QDebug>
+#include <QStyle>
 
 QString gethexword(int);
 QString gethexbyte(uchar);
@@ -242,56 +244,28 @@ void xLabel::mousePressEvent(QMouseEvent* ev) {
 // xTreeBox
 
 xTreeBox::xTreeBox(QWidget *p):QComboBox(p) {
-	tree = new QTreeView;
-	mod = new QFileSystemModel;
-	setModel(mod);
-	setView(tree);
-	mod->setNameFilters(QStringList() << "*.rom" << "*.bin");
-	mod->setReadOnly(true);
-	mod->setFilter(QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot);
-	mod->setNameFilterDisables(false);
-	tree->setEditTriggers(QTableView::NoEditTriggers);
-	tree->setSelectionBehavior(QAbstractItemView::SelectRows);
-	tree->setSelectionMode(QAbstractItemView::SingleSelection);
-	tree->header()->setVisible(false);
 }
 
-void xTreeBox::setDir(QString dir) {
-	QModelIndex idx = mod->setRootPath(dir);
-	setRootModelIndex(idx);
-}
-
-void xTreeBox::showPopup() {
-	for (int i = 1; i < mod->columnCount(); i++) {
-		tree->hideColumn(i);
+void xTreeBox::setResource(ResourceKind kind,
+                           std::initializer_list<const char*> extensions) {
+	clear();
+	setDuplicatesEnabled(true);
+	const QIcon userIcon = style()->standardIcon(QStyle::SP_DirHomeIcon);
+	const QIcon sysIcon  = style()->standardIcon(QStyle::SP_ComputerIcon);
+	for (const auto &e : conf.path.enumerateRecursive(kind, byExtension(extensions))) {
+		addItem(e.user ? userIcon : sysIcon,
+		        toQString(e.name),
+		        toQString(e.path));
 	}
-	QComboBox::showPopup();
 }
 
-void xTreeBox::hidePopup() {
-	QModelIndex idx = tree->selectionModel()->currentIndex();
-	QFileInfo inf = mod->fileInfo(idx);
-	if (inf.isDir()) return;
-	QComboBox::hidePopup();
-}
-
-void xTreeBox::setCurrentFile(QString path) {
-	path.prepend(SLSH);
-	path.prepend(mod->rootPath());
-	QModelIndex idx = mod->index(path, 0);
-	if (!idx.isValid()) return;
-	QModelIndex x = rootModelIndex();
-	setRootModelIndex(idx.parent());
-	setModelColumn(0);
-	setCurrentIndex(idx.row());
-	setRootModelIndex(x);
-	tree->setCurrentIndex(idx);
+void xTreeBox::setCurrentFile(QString name) {
+	const int idx = findText(name);
+	if (idx >= 0) setCurrentIndex(idx);
 }
 
 QString xTreeBox::currentFile() {
-	QModelIndex idx = tree->selectionModel()->currentIndex();
-	QFileInfo inf = mod->fileInfo(idx);
-	return mod->rootDirectory().relativeFilePath(inf.filePath());
+	return currentText();
 }
 
 // base table model
