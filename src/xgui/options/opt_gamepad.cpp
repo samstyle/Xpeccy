@@ -3,6 +3,7 @@
 #include "../xgui.h"
 #include "../../xcore/xcore.h"
 
+#include <QDir>
 #include <QInputDialog>
 #include <QLabel>
 #include <QLayout>
@@ -169,7 +170,7 @@ void xGamepadWidget::update(std::string mapname) {
 	int i;
 	updateList();
 	ui.sldDeadZone->setValue(gpad->deadZone());
-	QDir dir(conf.path.confDir.c_str());
+	QDir dir(toQString(conf.path.confDir));
 	ui.cbMapFile->clear();
 	lst = dir.entryList(QStringList() << "*.pad",QDir::Files,QDir::Name);
 	lst.prepend("none");

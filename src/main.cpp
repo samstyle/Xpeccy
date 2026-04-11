@@ -61,7 +61,7 @@ void xApp::d_style() {
 	if (conf.style.empty()) {
 		setStyleSheet("");
 	} else {
-		std::string path = conf.path.qssDir + SLASH + conf.style;
+		std::string path = conf.path.find(ResourceKind::Style, conf.style).string();
 		QFile file(path.c_str());
 		if (file.open(QFile::ReadOnly)) {
 			setStyleSheet(file.readAll().data());

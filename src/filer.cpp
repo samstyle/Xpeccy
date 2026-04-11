@@ -356,7 +356,7 @@ void disk_boot(Computer* comp, int drv, int id) {
 	while (boot_ft[idx] && (boot_ft[idx] != id))
 		idx++;
 	if (boot_ft[idx])
-		loadBoot(comp, conf.path.boot.c_str(), drv);
+		loadBoot(comp, conf.path.boot.string().c_str(), drv);
 }
 
 int load_file(Computer* comp, const char* name, int id, int drv) {

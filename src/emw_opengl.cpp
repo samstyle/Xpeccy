@@ -245,7 +245,7 @@ void MainWin::loadShader() {
 	bool user_shader = false;
 
 	if (!conf.vid.shader.empty()) {
-		QString path(std::string(conf.path.shdDir + SLASH + conf.vid.shader).c_str());
+		QString path = toQString(conf.path.find(ResourceKind::Shader, conf.vid.shader));
 		QFile file(path);
 		if (file.open(QFile::ReadOnly)) {
 			int mode = 0;

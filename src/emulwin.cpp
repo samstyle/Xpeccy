@@ -1,7 +1,10 @@
+#include <QDir>
+#include <QIcon>
 #include <QMatrix4x4>
 #include <QMenu>
 #include <QMessageBox>
 #include <QProgressBar>
+#include <QStyle>
 #include <QTableWidget>
 #include <QTime>
 #include <QUrl>
@@ -23,6 +26,7 @@
 
 #include "xcore/xcore.h"
 #include "xcore/sound.h"
+#include "xgui/resources_ui.h"
 #include "emulwin.h"
 #include "filer.h"
 #include "watcher.h"
@@ -1055,9 +1059,9 @@ void MainWin::fillUserMenu() {
 	act->setCheckable(true);
 	if (conf.prof.cur) {
 		if (conf.prof.cur->kmapName.empty()) act->setChecked(true);
-		QDir dir(conf.path.confDir.c_str());
+		QDir dir(toQString(conf.path.confDir));
 		QStringList lst = dir.entryList(QStringList() << "*.map",QDir::Files,QDir::Name);
-		dir.setPath(dir.path().append("/keymaps/"));
+		dir.setPath(toQString(conf.path.confDir / "keymaps"));
 		lst.append(dir.entryList(QStringList() << "*.map",QDir::Files,QDir::Name));
 		lst.sort();
 		foreach(QString str, lst) {
@@ -1075,14 +1079,9 @@ void MainWin::fillUserMenu() {
 	if (conf.vid.shader.empty()) act->setChecked(true);
 #ifdef USEOPENGL
 	if (conf.vid.shd_support) {
-		QDir dir(conf.path.shdDir.c_str());
-		QFileInfoList lst = dir.entryInfoList(QStringList() << "*.txt", QDir::Files, QDir::Name);
-		foreach(QFileInfo inf, lst) {
-			act = shdMenu->addAction(inf.fileName());
-			act->setData(inf.fileName());
-			act->setCheckable(true);
-			act->setChecked(inf.fileName() == conf.vid.shader.c_str());
-		}
+		fillCheckableMenuFromResources(shdMenu, ResourceKind::Shader,
+		                               byExtension({".txt"}),
+		                               toQString(conf.vid.shader));
 	}
 #endif
 	// fill palette menu
@@ -1091,14 +1090,9 @@ void MainWin::fillUserMenu() {
 	act->setData("");
 	act->setCheckable(true);
 	if (conf.prof.cur->palette.empty()) act->setChecked(true);
-	QDir dir(conf.path.palDir.c_str());
-	QFileInfoList lst = dir.entryInfoList(QStringList() << "*.txt", QDir::Files, QDir::Name);
-	foreach(QFileInfo inf, lst) {
-		act = palMenu->addAction(inf.fileName());
-		act->setData(inf.fileName());
-		act->setCheckable(true);
-		act->setChecked(inf.fileName() == conf.prof.cur->palette.c_str());
-	}
+	fillCheckableMenuFromResources(palMenu, ResourceKind::Palette,
+	                               byExtension({".txt"}),
+	                               toQString(conf.prof.cur->palette));
 }
 
 // SLOTS
