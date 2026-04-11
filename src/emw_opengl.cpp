@@ -1,5 +1,9 @@
 #include "emulwin.h"
 
+#include <QRegularExpression>
+#include <algorithm>
+#include <vector>
+
 #if defined(USEOPENGL) && !BLOCKGL
 
 namespace {
@@ -50,6 +54,120 @@ const char* defaultFragmentShaderBody() {
 QString composeShader(const char* body) {
 	return QString::fromLatin1(glslVersionPrefix(currentContextIsGLES()))
 	     + QString::fromLatin1(body);
+}
+
+// -----------------------------------------------------------------------------
+// Legacy GLSL 110 shim.
+//
+// Rewrites fixed-function-era shader source onto the core-compatible VBO
+// attribute and uniform layout. The transformation is entirely data-driven
+// by the tables below — to add a new legacy identifier, append a row to the
+// relevant table; to add a new preamble attribute or uniform, edit the stage
+// preamble helper. No change to loadShader or the shim pipeline is needed.
+// -----------------------------------------------------------------------------
+
+struct Rewrite {
+	QRegularExpression pattern;
+	QString replacement;
+};
+
+// Build a word-boundary-bounded regex for an identifier. Lookaround is used
+// instead of \b so tokens ending in punctuation (e.g. gl_TexCoord[0]) can
+// still be exact-matched as a future extension.
+QRegularExpression wordBoundedRegex(const char* identifier) {
+	return QRegularExpression(
+		QStringLiteral(R"((?<!\w))")
+		+ QRegularExpression::escape(QLatin1String(identifier))
+		+ QStringLiteral(R"((?!\w))"));
+}
+
+Rewrite rewrite(const char* identifier, const char* replacement) {
+	return { wordBoundedRegex(identifier), QString::fromLatin1(replacement) };
+}
+
+// Pure: apply a list of rewrites via left fold.
+QString applyRewrites(QString s, const std::vector<Rewrite>& rewrites) {
+	for (const auto& r : rewrites) s.replace(r.pattern, r.replacement);
+	return s;
+}
+
+// Signals whose presence in the source triggers the shim pipeline.
+// Absence of all of them lets a modern shader pass through untouched.
+const std::vector<QRegularExpression>& legacySignalPatterns() {
+	static const std::vector<QRegularExpression> r{
+		wordBoundedRegex("gl_Vertex"),
+		wordBoundedRegex("gl_MultiTexCoord0"),
+		wordBoundedRegex("gl_ModelViewProjectionMatrix"),
+		wordBoundedRegex("gl_FragColor"),
+		wordBoundedRegex("varying"),
+	};
+	return r;
+}
+
+bool sourceNeedsLegacyShim(const QString& src) {
+	const auto& patterns = legacySignalPatterns();
+	return std::any_of(patterns.begin(), patterns.end(),
+		[&src](const QRegularExpression& re) { return src.contains(re); });
+}
+
+// Pure: strip any existing `#version` directive so the shim can supply its own.
+QString stripVersionDirective(QString s) {
+	static const QRegularExpression re(
+		QStringLiteral(R"(^[ \t]*#[ \t]*version\b[^\n]*\n?)"),
+		QRegularExpression::MultilineOption);
+	s.replace(re, QString{});
+	return s;
+}
+
+// Rewrites applied to both vertex and fragment stages.
+const std::vector<Rewrite>& sharedRewrites() {
+	static const std::vector<Rewrite> r{
+		rewrite("texture2D", "texture"),
+	};
+	return r;
+}
+
+// Vertex-only rewrites.
+const std::vector<Rewrite>& vertexRewrites() {
+	static const std::vector<Rewrite> r{
+		rewrite("varying",                      "out"),
+		rewrite("gl_Vertex",                    "vec4(a_pos_.x, a_pos_.y, 0.0, 1.0)"),
+		rewrite("gl_MultiTexCoord0",            "vec4(a_uv_.x,  a_uv_.y,  0.0, 0.0)"),
+		rewrite("gl_ModelViewProjectionMatrix", "u_mvp_"),
+	};
+	return r;
+}
+
+// Fragment-only rewrites.
+const std::vector<Rewrite>& fragmentRewrites() {
+	static const std::vector<Rewrite> r{
+		rewrite("varying",      "in"),
+		rewrite("gl_FragColor", "frag_out_"),
+	};
+	return r;
+}
+
+QString vertexShimPreamble() {
+	return QString::fromLatin1(glslVersionPrefix(currentContextIsGLES()))
+	     + QStringLiteral(
+		     "layout(location=0) in vec2 a_pos_;\n"
+		     "layout(location=1) in vec2 a_uv_;\n"
+		     "uniform mat4 u_mvp_;\n");
+}
+
+QString fragmentShimPreamble() {
+	return QString::fromLatin1(glslVersionPrefix(currentContextIsGLES()))
+	     + QStringLiteral("out vec4 frag_out_;\n");
+}
+
+// Pipeline: strip version → shared rewrites → stage rewrites → prepend preamble.
+QString shimLegacyShader(QString src,
+                         const std::vector<Rewrite>& stageRewrites,
+                         const QString& preamble) {
+	src = stripVersionDirective(std::move(src));
+	src = applyRewrites(std::move(src), sharedRewrites());
+	src = applyRewrites(std::move(src), stageRewrites);
+	return preamble + src;
 }
 
 } // anonymous namespace
@@ -160,6 +278,9 @@ void MainWin::loadShader() {
 	if (!user_shader) {
 		vtx = composeShader(defaultVertexShaderBody());
 		frg = composeShader(defaultFragmentShaderBody());
+	} else if (sourceNeedsLegacyShim(vtx) || sourceNeedsLegacyShim(frg)) {
+		vtx = shimLegacyShader(std::move(vtx), vertexRewrites(),   vertexShimPreamble());
+		frg = shimLegacyShader(std::move(frg), fragmentRewrites(), fragmentShimPreamble());
 	}
 
 	prg.removeAllShaders();

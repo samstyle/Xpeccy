@@ -1,3 +1,4 @@
+#include <QMatrix4x4>
 #include <QMenu>
 #include <QMessageBox>
 #include <QProgressBar>
@@ -691,8 +692,15 @@ void MainWin::paintEvent(QPaintEvent*) {
 		Computer* comp = conf.prof.cur->zx;
 		const GLfloat tex_w = GLfloat(bytesPerLine / 4.0);
 		const GLfloat tex_h = GLfloat(comp->vid->vsze.y);
+		static const QMatrix4x4 legacyMvp = []{
+			QMatrix4x4 m;
+			m.ortho(0.0f, 1.0f, 1.0f, 0.0f, -1.0f, 1.0f);
+			return m;
+		}();
 		prg.bind();
 		prg.setUniformValue("u_tex", 0);
+		prg.setUniformValue("rubyTexture", 0);
+		prg.setUniformValue("u_mvp_", legacyMvp);
 		prg.setUniformValue("rubyInputSize",   tex_w, tex_h);
 		prg.setUniformValue("rubyTextureSize", tex_w, tex_h);
 		prg.setUniformValue("rubyOutputSize",  GLfloat(width() * r), GLfloat(height() * r));
