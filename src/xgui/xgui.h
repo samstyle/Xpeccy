@@ -1,8 +1,9 @@
 #pragma once
 
+#include <initializer_list>
+
 #include <QComboBox>
 #include <QDialog>
-#include <QFileSystemModel>
 #include <QItemDelegate>
 #include <QKeyEvent>
 #include <QLabel>
@@ -10,6 +11,7 @@
 #include <QTreeView>
 #include <QWheelEvent>
 
+#include "../xcore/xcore.h"
 #include "classes.h"
 
 #if QT_VERSION < QT_VERSION_CHECK(6,0,0)
@@ -85,14 +87,10 @@ class xTreeBox : public QComboBox {
 	Q_OBJECT
 	public:
 		xTreeBox(QWidget* p = NULL);
-		void setDir(QString);
+		void setResource(ResourceKind kind,
+		                 std::initializer_list<const char*> extensions);
 		void setCurrentFile(QString);
 		QString currentFile();
-	private:
-		void showPopup();
-		void hidePopup();
-		QTreeView* tree;
-		QFileSystemModel* mod;
 };
 
 enum {

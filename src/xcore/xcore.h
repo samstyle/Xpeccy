@@ -570,17 +570,6 @@ struct xConfig {
 		fs::path confDir;
 		fs::path confFile;
 
-		// TEMPORARY deprecated aliases: the final form reaches these through
-		// resources[] / find / tryFind, but the ROM picker (xTreeBox) still
-		// consumes them directly until commit 4 wires it through setResource.
-		// Populated in conf_init from writableDir(kind).string(); removed in
-		// commit 4 once xTreeBox and opt_romset.cpp have been migrated.
-		std::string romDir;
-		std::string shdDir;
-		std::string palDir;
-		std::string plgDir;
-		std::string qssDir;
-
 		// Per-kind writable + read-only search paths. Populated in conf_init.
 		std::array<ResourceDirs, static_cast<size_t>(ResourceKind::COUNT)> resources;
 
