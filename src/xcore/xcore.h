@@ -1,8 +1,16 @@
 #pragma once
 
+#include <algorithm>
+#include <array>
+#include <cctype>
+#include <initializer_list>
+#include <optional>
+#include <ostream>
 #include <string>
+#include <string_view>
 #include <vector>
 #include <map>
+#include <filesystem>
 
 #if defined(__linux) || defined(__BSD)
 #include <linux/limits.h>
@@ -10,6 +18,9 @@
 
 #include <SDL_joystick.h>
 
+#include <xdg.hpp>
+
+#include <QDebug>
 #include <QKeySequence>
 #include <QString>
 #include <QPoint>
@@ -69,6 +80,86 @@
 	#define X_BackgroundRole Qt::BackgroundColorRole
 	#define X_MidButton Qt::MidButton
 #endif
+
+namespace fs = std::filesystem;
+
+// Categorizes shippable resource files that may live both in a user-writable
+// directory and in one or more system data directories.
+enum class ResourceKind {
+	Rom,
+	Shader,
+	Palette,
+	PluginCpu,
+	Style,
+	COUNT
+};
+
+struct ResourceDirs {
+	fs::path writable;                 // User-writable dir (under dataHomeDir or confDir on Windows)
+	std::vector<fs::path> readonly;    // System dirs from $XDG_DATA_DIRS (empty on Windows)
+};
+
+struct ResolvedEntry {
+	fs::path path;    // full path on disk
+	fs::path name;    // basename
+	bool user;        // true = writable user dir, false = read-only system dir
+};
+
+// Small adapter so callers don't have to write QString::fromStdString(p.string())
+// at every Qt boundary. fs::path::string() returns UTF-8 on all supported
+// platforms, matching QString::fromStdString's input expectation.
+inline QString toQString(const fs::path &p) {
+	return QString::fromStdString(p.string());
+}
+// Overload for std::string so every Qt-string conversion in the xdg pipeline
+// funnels through one helper instead of mixing fromStdString and toQString.
+inline QString toQString(const std::string &s) {
+	return QString::fromStdString(s);
+}
+
+// QString has no std::ostream inserter by default; add one so writeKV and
+// direct `out << qstring` work uniformly. UTF-8 is used for consistency with
+// fs::path::string() and toQString, which both use UTF-8.
+inline std::ostream& operator<<(std::ostream &out, const QString &s) {
+	return out << s.toUtf8().constData();
+}
+
+// Helper for writing INI-style "key = value\n" entries to an ostream. Factors
+// out the repeating pattern in saveConfig/prfSave where dozens of keys are
+// dumped one per line. Variadic: any number of value arguments are emitted
+// left-to-right (via a C++17 fold expression) between the "key = " prefix
+// and the trailing newline. Stream flags (e.g. std::fixed/setprecision that
+// the caller already set for %f-style formatting) are preserved because we
+// write directly into the destination stream rather than an intermediate
+// buffer. Works for anything with an operator<<(ostream, T), including
+// const char*, std::string, int, char, YESNO() macro, fs::path, QString.
+template <typename... Args>
+inline void writeKV(std::ostream &out, std::string_view key, const Args&... values) {
+	out << key << " = ";
+	(out << ... << values);
+	out << '\n';
+}
+
+// Predicate factory: returns a callable that matches a path if its extension
+// is any of the given ones (leading dot included, e.g. ".txt"). Matching is
+// case-insensitive so that e.g. "foo.ROM" matches ".rom". Captures the
+// normalized extension list by value so the returned predicate owns its data.
+inline auto byExtension(std::initializer_list<const char *> exts) {
+	auto toLower = [](std::string s) {
+		std::transform(s.begin(), s.end(), s.begin(),
+		               [](unsigned char c) { return std::tolower(c); });
+		return s;
+	};
+	std::vector<std::string> owned;
+	owned.reserve(exts.size());
+	for (const char *e : exts) owned.push_back(toLower(std::string{e}));
+	return [owned = std::move(owned), toLower](const fs::path &p) {
+		if (owned.empty()) return true;
+		const auto ext = toLower(p.extension().string());
+		return std::any_of(owned.begin(), owned.end(),
+		                   [&](const std::string &e) { return ext == e; });
+	};
+}
 
 // common
 
@@ -481,10 +572,125 @@ struct xConfig {
 		std::string prfDir;
 		std::string shdDir;
 		std::string palDir;
-		std::string plgDir;	// so/dll/dynlib (experimental, works only for CPU)
-		std::string qssDir;	// visual styles
+		std::string plgDir;
+		std::string qssDir;
 		std::string font;
 		std::string boot;
+
+		// Per-kind writable + read-only search paths. Populated in conf_init.
+		std::array<ResourceDirs, static_cast<size_t>(ResourceKind::COUNT)> resources;
+
+		// Index-hiding accessor: removes the static_cast noise from call sites.
+		const ResourceDirs& dirsFor(ResourceKind kind) const {
+			return resources[static_cast<size_t>(kind)];
+		}
+
+		const fs::path& writableDir(ResourceKind kind) const {
+			return dirsFor(kind).writable;
+		}
+
+		// Search for a file by name: writable dir first, then each readonly
+		// dir in order. Returns nullopt if nothing exists. This is the pure
+		// primitive — use it when the caller wants to distinguish "not found
+		// anywhere" from "found but unusable".
+		std::optional<fs::path> tryFind(ResourceKind kind, const fs::path &name) const {
+			const auto &dirs = dirsFor(kind);
+			const fs::path user = dirs.writable / name;
+			if (fs::exists(user)) return user;
+			for (const auto &ro : dirs.readonly) {
+				if (const fs::path p = ro / name; fs::exists(p)) return p;
+			}
+			return std::nullopt;
+		}
+
+		// Convenience wrapper: falls back to the writable-dir path so callers
+		// that only care about building an error message get a sensible
+		// "expected location" string for free.
+		fs::path find(ResourceKind kind, const fs::path &name) const {
+			return tryFind(kind, name).value_or(dirsFor(kind).writable / name);
+		}
+
+		// Higher-order enumerator: walks every dir for the kind, passing each
+		// candidate path to the predicate. Entries accepted by the predicate
+		// are returned, tagged as user (writable dir) or system (readonly).
+		// No de-duplication: if the same basename exists in both writable and
+		// readonly dirs, both entries appear. Results are sorted by name so
+		// the output is deterministic.
+		template <typename Pred>
+		std::vector<ResolvedEntry> enumerate(ResourceKind kind, Pred &&predicate) const {
+			std::vector<ResolvedEntry> out;
+			std::error_code ec;
+			auto addFromDir = [&](const fs::path &dir, bool user) {
+				if (!fs::exists(dir, ec) || !fs::is_directory(dir, ec)) {
+					ec.clear();
+					return;
+				}
+				for (auto it = fs::directory_iterator(dir, ec);
+				     !ec && it != fs::directory_iterator();
+				     it.increment(ec)) {
+					if (!it->is_regular_file(ec)) continue;
+					if (!predicate(it->path())) continue;
+					out.push_back({it->path(), it->path().filename(), user});
+				}
+				ec.clear();
+			};
+			const auto &dirs = dirsFor(kind);
+			addFromDir(dirs.writable, true);
+			for (const auto &ro : dirs.readonly) addFromDir(ro, false);
+			std::sort(out.begin(), out.end(),
+			          [](const ResolvedEntry &a, const ResolvedEntry &b) {
+			              return a.name < b.name;
+			          });
+			return out;
+		}
+
+		// Convenience overload: accept every regular file.
+		std::vector<ResolvedEntry> enumerate(ResourceKind kind) const {
+			return enumerate(kind, [](const fs::path &) { return true; });
+		}
+
+		// Like enumerate, but descends into subdirectories. ResolvedEntry::name
+		// is the relative path from the search-root dir (e.g. "zx48/48k.rom"
+		// if the rom dir contains zx48/48k.rom). Symlinks are NOT followed to
+		// avoid infinite loops, and permission errors in subtrees are skipped
+		// rather than thrown. Results are sorted by relative path.
+		template <typename Pred>
+		std::vector<ResolvedEntry> enumerateRecursive(ResourceKind kind, Pred &&predicate) const {
+			std::vector<ResolvedEntry> out;
+			auto addFromDir = [&](const fs::path &dir, bool user) {
+				std::error_code ec;
+				if (!fs::exists(dir, ec) || !fs::is_directory(dir, ec)) return;
+				const auto opts = fs::directory_options::skip_permission_denied;
+				fs::recursive_directory_iterator it(dir, opts, ec);
+				if (ec) return;
+				const fs::recursive_directory_iterator end;
+				while (it != end) {
+					std::error_code fec;
+					if (it->is_regular_file(fec) && predicate(it->path())) {
+						out.push_back({it->path(),
+						               it->path().lexically_relative(dir),
+						               user});
+					}
+					std::error_code iec;
+					it.increment(iec);
+					if (iec) break;
+				}
+			};
+			const auto &dirs = dirsFor(kind);
+			addFromDir(dirs.writable, true);
+			for (const auto &ro : dirs.readonly) addFromDir(ro, false);
+			std::sort(out.begin(), out.end(),
+			          [](const ResolvedEntry &a, const ResolvedEntry &b) {
+			              return a.name < b.name;
+			          });
+			return out;
+		}
+
+		// Convenience overload: accept every regular file.
+		std::vector<ResolvedEntry> enumerateRecursive(ResourceKind kind) const {
+			return enumerateRecursive(kind, [](const fs::path &) { return true; });
+		}
+
 	} path;
 	struct {
 		unsigned labels:1;
@@ -499,6 +705,7 @@ struct xConfig {
 		QPoint pos;
 		QSize siz;
 	} dbg;
+
 };
 
 extern xConfig conf;
