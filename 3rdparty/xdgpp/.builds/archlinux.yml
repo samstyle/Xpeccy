@@ -1,0 +1,14 @@
+image: archlinux
+packages:
+  - gcc
+  - clang
+  - catch2
+sources:
+  - https://git.sr.ht/~danyspin97/xdgpp
+tasks:
+  - test-gcc: |
+      cd xdgpp
+      CXX=g++ make clean && make test -j2
+  - test-clang: |
+      cd xdgpp
+      CXX=clang++ make clean && make test -j2
