@@ -678,48 +678,41 @@ void MainWin::drawText(QPainter* pnt, int x, int y, const char* buf) {
 
 void MainWin::paintEvent(QPaintEvent*) {
 	QPainter pnt(this);
-#if defined(USEOPENGL)
-#if !BLOCKGL
-//	pnt.beginNativePainting();
-	makeCurrent();
-	if (prg.isLinked() && conf.vid.shd_support) {
-		prg.bind();
-		prg.setUniformValue("rubyInputSize",GLfloat(bytesPerLine/4.0), GLfloat(conf.prof.cur->zx->vid->vsze.y));
-		prg.setUniformValue("rubyOutputSize",GLfloat(width()), GLfloat(height()));
-		prg.setUniformValue("rubyTextureSize",GLfloat(bytesPerLine/4.0), GLfloat(conf.prof.cur->zx->vid->vsze.y));
-	}
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glEnable(GL_TEXTURE_2D);
-	glLoadIdentity();
-	// draw texture
+#if defined(USEOPENGL) && !BLOCKGL
+	pnt.beginNativePainting();
+	glClearColor(0, 0, 0, 1);
+	glClear(GL_COLOR_BUFFER_BIT);
+
 	if (!queue.isEmpty())
 		curtxid = queue.takeFirst();
-	glBindTexture(GL_TEXTURE_2D, curtxid);
-	glBegin(GL_TRIANGLE_STRIP);
-	glTexCoord2f(1.0, 0.0); glVertex2f(1.0, 0.0);	// RT
-	glTexCoord2f(0.0, 0.0); glVertex2f(0.0, 0.0);	// LT
-	glTexCoord2f(1.0, 1.0); glVertex2f(1.0, 1.0);	// RB
-	glTexCoord2f(0.0, 1.0); glVertex2f(0.0, 1.0);	// LB
-	glEnd();
-	if (prg.isLinked() && conf.vid.shd_support)
+
+	if (prg.isLinked()) {
+		const qreal r = widgetDpr(this);
+		Computer* comp = conf.prof.cur->zx;
+		const GLfloat tex_w = GLfloat(bytesPerLine / 4.0);
+		const GLfloat tex_h = GLfloat(comp->vid->vsze.y);
+		prg.bind();
+		prg.setUniformValue("u_tex", 0);
+		prg.setUniformValue("rubyInputSize",   tex_w, tex_h);
+		prg.setUniformValue("rubyTextureSize", tex_w, tex_h);
+		prg.setUniformValue("rubyOutputSize",  GLfloat(width() * r), GLfloat(height() * r));
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, curtxid);
+
+		vao.bind();
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+		vao.release();
+
 		prg.release();
-	glDisable(GL_TEXTURE_2D);
-	glMatrixMode(GL_MODELVIEW);
-	glPopMatrix();
+	}
 	glFlush();
-//	pnt.endNativePainting();
-//	QPainter pnt(this);
-	drawIcons(pnt);
-#endif
+	pnt.endNativePainting();
 #else
 	Computer* comp = conf.prof.cur->zx;
-//	QPainter pnt(this);
-	pnt.drawImage(0,0, QImage(comp->debug ? scrimg : bufimg, width(), height(), QImage::Format_RGBA8888));
-	drawIcons(pnt);
-//	pnt.end();
+	pnt.drawImage(0, 0, QImage(comp->debug ? scrimg : bufimg, width(), height(), QImage::Format_RGBA8888));
 #endif
+	drawIcons(pnt);
 	pnt.end();
 }
 

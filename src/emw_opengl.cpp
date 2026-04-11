@@ -2,21 +2,62 @@
 
 #if defined(USEOPENGL) && !BLOCKGL
 
+namespace {
+
+// Interleaved quad: position (x,y) + texcoord (u,v), triangle strip order
+// matching the legacy glBegin sequence (RT, LT, RB, LB). Positions are in
+// [0,1]² and the vertex shader maps them to NDC with Y flipped so that the
+// texture's top-left sample lands at the window's top-left.
+constexpr GLfloat kQuadVertices[] = {
+	1.0f, 0.0f,  1.0f, 0.0f,
+	0.0f, 0.0f,  0.0f, 0.0f,
+	1.0f, 1.0f,  1.0f, 1.0f,
+	0.0f, 1.0f,  0.0f, 1.0f,
+};
+
+bool currentContextIsGLES() {
+	QOpenGLContext* ctx = QOpenGLContext::currentContext();
+	return ctx && ctx->isOpenGLES();
+}
+
+constexpr const char* glslVersionPrefix(bool es) {
+	return es
+		? "#version 300 es\nprecision highp float;\n"
+		: "#version 330\n";
+}
+
+const char* defaultVertexShaderBody() {
+	return
+		"layout(location=0) in vec2 a_pos;\n"
+		"layout(location=1) in vec2 a_uv;\n"
+		"out vec2 v_uv;\n"
+		"void main() {\n"
+		"    v_uv = a_uv;\n"
+		"    gl_Position = vec4(a_pos.x * 2.0 - 1.0, 1.0 - a_pos.y * 2.0, 0.0, 1.0);\n"
+		"}\n";
+}
+
+const char* defaultFragmentShaderBody() {
+	return
+		"in vec2 v_uv;\n"
+		"out vec4 fragColor;\n"
+		"uniform sampler2D u_tex;\n"
+		"void main() {\n"
+		"    fragColor = texture(u_tex, v_uv);\n"
+		"}\n";
+}
+
+QString composeShader(const char* body) {
+	return QString::fromLatin1(glslVersionPrefix(currentContextIsGLES()))
+	     + QString::fromLatin1(body);
+}
+
+} // anonymous namespace
+
 void MainWin::initializeGL() {
 	qDebug() << __FUNCTION__;
 #if !ISLEGACYGL
 	initializeOpenGLFunctions();
-	QSurfaceFormat frmt;
-#if (QT_VERSION >= QT_VERSION_CHECK(5,5,0))
-	frmt.setSwapBehavior(QSurfaceFormat::SingleBuffer);	// since Qt5.5
-#endif
-	frmt.setSwapInterval(0);				// 0 - off. N>0 - each N vsyncs
-	frmt.setDepthBufferSize(24);
-	frmt.setStencilBufferSize(8);
-	frmt.setVersion(3,0);
-	frmt.setProfile(QSurfaceFormat::CoreProfile);
-	QSurfaceFormat::setDefaultFormat(frmt);
-	// setFormat(frmt);
 	conf.vid.shd_support = QOpenGLShader::hasOpenGLShaders(QOpenGLShader::Vertex) && QOpenGLShader::hasOpenGLShaders(QOpenGLShader::Fragment);
 	curtex = 0;
 	qDebug() << "vtx_shd";
@@ -37,29 +78,44 @@ void MainWin::initializeGL() {
 //	qDebug() << "frg_shd";
 //	frg_shd = new QGLShader(QGLShader::Fragment, cont);
 #endif
-	glGenTextures(4, texids);	// create texture
-	glEnable(GL_TEXTURE_2D);
+	glGenTextures(4, texids);
 	glEnable(GL_MULTISAMPLE);
 	for (int i = 0; i < 4; i++) {
-		// select texture
 		glBindTexture(GL_TEXTURE_2D, texids[i]);
-		// set filters for this texture
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	}
+
+#if !ISLEGACYGL
+	vao.create();
+	vao.bind();
+	vbo.create();
+	vbo.bind();
+	vbo.setUsagePattern(QOpenGLBuffer::StaticDraw);
+	vbo.allocate(kQuadVertices, sizeof(kQuadVertices));
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat),
+	                      reinterpret_cast<void *>(0));
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat),
+	                      reinterpret_cast<void *>(2 * sizeof(GLfloat)));
+	vbo.release();
+	vao.release();
+#endif
+
 	loadShader();
 	if (!conf.vid.shd_support) qDebug() << "WARNING: Shaders not supported";
 	qDebug() << "end:" << __FUNCTION__;
 }
 
 void MainWin::resizeGL(int w, int h) {
-	glViewport(0, 0, w, h);
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	glOrtho(0.0, 1.0, 1.0, 0.0, 1, 0);
-	glMatrixMode(GL_MODELVIEW);
+	const qreal r = widgetDpr(this);
+	const int vw = int(w * r + 0.5);
+	const int vh = int(h * r + 0.5);
+	glViewport(0, 0, vw, vh);
+	qDebug() << "resizeGL logical" << w << h << "dpr" << r << "viewport" << vw << vh;
 }
 
 void MainWin::paintGL() {
@@ -69,52 +125,65 @@ void MainWin::paintGL() {
 
 void MainWin::loadShader() {
 #if defined(USEOPENGL) && !BLOCKGL
-	QString path(std::string(conf.path.shdDir + SLASH + conf.vid.shader).c_str());
-	QFile file(path);
-	int mode = 0;
+	if (!conf.vid.shd_support) return;
+
 	QString vtx;
 	QString frg;
-	QString lin;
-	prg.removeAllShaders();
-	if (!conf.vid.shader.empty() && conf.vid.shd_support) {			// no shader selected
+	bool user_shader = false;
+
+	if (!conf.vid.shader.empty()) {
+		QString path(std::string(conf.path.shdDir + SLASH + conf.vid.shader).c_str());
+		QFile file(path);
 		if (file.open(QFile::ReadOnly)) {
-			while(!file.atEnd()) {
+			int mode = 0;
+			QString lin;
+			while (!file.atEnd()) {
 				lin = file.readLine().trimmed().append("\n");
 				if (lin.startsWith("vertex:")) {
 					mode = 1;
 				} else if (lin.startsWith("fragment:")) {
 					mode = 2;
 				} else {
-					switch(mode) {
+					switch (mode) {
 						case 1: vtx.append(lin); break;
 						case 2: frg.append(lin); break;
 					}
 				}
 			}
 			file.close();
-			if (!vtx.isEmpty()) {
-				if (!vtx_shd->compileSourceCode(vtx)) {
-					qDebug() << vtx_shd->log();
-				}
-			}
-			if (!frg.isEmpty()) {
-				if (!frg_shd->compileSourceCode(frg)) {
-					qDebug() << frg_shd->log();
-				}
-			}
-			if (vtx_shd->isCompiled() && frg_shd->isCompiled()) {
-				prg.addShader(vtx_shd);
-				prg.addShader(frg_shd);
-				prg.link();
-				setMessage(" Shader compiled ");
-			} else {
-				setMessage(" Shader compile error ");
-				conf.vid.shader.clear();
-				loadShader();
-			}
+			user_shader = true;
 		} else {
 			shitHappens("Can't open shader file");
 		}
+	}
+
+	if (!user_shader) {
+		vtx = composeShader(defaultVertexShaderBody());
+		frg = composeShader(defaultFragmentShaderBody());
+	}
+
+	prg.removeAllShaders();
+	const bool vtx_ok = vtx_shd->compileSourceCode(vtx);
+	if (!vtx_ok) qDebug() << "vertex shader:" << vtx_shd->log();
+	const bool frg_ok = frg_shd->compileSourceCode(frg);
+	if (!frg_ok) qDebug() << "fragment shader:" << frg_shd->log();
+
+	if (vtx_ok && frg_ok) {
+		prg.addShader(vtx_shd);
+		prg.addShader(frg_shd);
+		if (prg.link()) {
+			if (user_shader) setMessage(" Shader compiled ");
+			return;
+		}
+		qDebug() << "program link:" << prg.log();
+	}
+
+	if (user_shader) {
+		setMessage(" Shader compile error ");
+		conf.vid.shader.clear();
+		loadShader();
+	} else {
+		qDebug() << "FATAL: default shader failed to compile/link";
 	}
 #endif
 }
