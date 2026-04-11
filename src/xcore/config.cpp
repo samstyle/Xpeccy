@@ -222,16 +222,6 @@ void conf_init(char* wpath, char* confdir) {
 		fs::create_directories(conf.path.prfDir, wec);
 	}
 #endif
-	// TEMPORARY bridge: populate deprecated conf.path.{rom,shd,pal,plg,qss}Dir
-	// string aliases from the new resources[] array so xTreeBox and
-	// opt_romset.cpp keep working until commit 4 migrates them through
-	// conf.path.find/tryFind and removes these aliases.
-	conf.path.romDir = conf.path.writableDir(ResourceKind::Rom).string();
-	conf.path.shdDir = conf.path.writableDir(ResourceKind::Shader).string();
-	conf.path.palDir = conf.path.writableDir(ResourceKind::Palette).string();
-	conf.path.plgDir = conf.path.writableDir(ResourceKind::PluginCpu).string();
-	conf.path.qssDir = conf.path.writableDir(ResourceKind::Style).string();
-
 	conf.scrShot.format = "png";
 // Pentagon geometry:
 // rows: 16Vblk + (16 invis + 48 vis) top border + 192 screen + 48 bottom border = 320 rows
