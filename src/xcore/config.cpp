@@ -1,7 +1,12 @@
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <algorithm>
 #include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <iterator>
 #include <stdio.h>
+#include <string_view>
 
 #include <QtCore>
 
@@ -42,61 +47,191 @@ enum {
 std::map<std::string, int> shotFormat;
 xConfig conf;
 
+namespace {
+
+struct ResourceSpec {
+	ResourceKind kind;
+	std::string_view subdir;       // relative to dataHomeDir (Linux) or confDir (Windows)
+	std::string_view legacySubdir; // subdir under confDir to migrate from; empty = none
+	std::string_view label;        // for diagnostic messages
+};
+
+#if defined(__linux) || defined(__APPLE__) || defined(__BSD)
+constexpr ResourceSpec kResourceLayout[] = {
+	{ ResourceKind::Rom,       "roms",        "roms",     "romDir" },
+	{ ResourceKind::Shader,    "shaders",     "shaders",  "shdDir" },
+	{ ResourceKind::Palette,   "palettes",    "palettes", "palDir" },
+	{ ResourceKind::PluginCpu, "plugins/cpu", "plugins/cpu", "plgDir" },
+	{ ResourceKind::Style,     "styles",      "styles",   "qssDir" },
+};
+#elif defined(__WIN32)
+constexpr ResourceSpec kResourceLayout[] = {
+	{ ResourceKind::Rom,       "roms",        "", "romDir" },
+	{ ResourceKind::Shader,    "shaders",     "", "shdDir" },
+	{ ResourceKind::Palette,   "palettes",    "", "palDir" },
+	{ ResourceKind::PluginCpu, "plugins/cpu", "", "plgDir" },
+	{ ResourceKind::Style,     "styles",      "", "qssDir" },
+};
+#endif
+
+// Pure: build a ResourceDirs value from a spec and the already-resolved XDG
+// roots. No filesystem access, no logging — side-effect-free, trivially
+// testable in isolation.
+ResourceDirs buildResourceDirs(const ResourceSpec &spec,
+                               const fs::path &dataHomeDir,
+                               const std::vector<fs::path> &xdgDataDirBases) {
+	ResourceDirs out;
+	out.writable = dataHomeDir / spec.subdir;
+	out.readonly.reserve(xdgDataDirBases.size());
+	std::transform(xdgDataDirBases.begin(), xdgDataDirBases.end(),
+	               std::back_inserter(out.readonly),
+	               [&spec](const fs::path &base) { return base / spec.subdir; });
+	return out;
+}
+
+// Try to move an existing directory to a new location. Uses fs::rename by
+// preference and falls back to recursive copy + remove on cross-device errors.
+// No-op if `from` doesn't exist or `to` already does.
+void migrateDir(const fs::path &from, const fs::path &to, std::string_view what,
+                std::error_code &ec) {
+	if (!fs::exists(from, ec) || fs::exists(to, ec)) {
+		ec.clear();
+		return;
+	}
+	ec.clear();
+	fs::create_directories(to.parent_path(), ec);
+	ec.clear();
+	std::cout << "Moving " << from << " -> " << to << std::endl;
+	fs::rename(from, to, ec);
+	if (ec == std::errc::cross_device_link) {
+		ec.clear();
+		fs::copy(from, to, fs::copy_options::recursive, ec);
+		if (!ec) fs::remove_all(from, ec);
+	}
+	if (ec) {
+		std::cout << "legacy " << what << " migration failed: "
+		          << ec.message() << std::endl;
+		ec.clear();
+	}
+}
+
+} // namespace
+
 void conf_init(char* wpath, char* confdir) {
 	conf.scrShot.dir = std::string(getenv(ENVHOME));
 	conf.port = 30000;
 #if defined(__linux) || defined(__APPLE__) || defined(__BSD)
+	const fs::path dataDirsSuffix = "samstyle/xpeccy";
+	std::error_code ec;
+	const char *home = getenv(ENVHOME);
+
+	auto check = [&ec](std::string_view what) {
+		if (ec) {
+			std::cout << what << ": " << ec.message() << std::endl;
+			ec.clear();
+		}
+	};
+	auto makeDir = [&ec, &check](const fs::path &p, std::string_view label) {
+		fs::create_directories(p, ec);
+		check(std::string("create ").append(label).append(" failed"));
+	};
+
 	if (confdir == NULL) {
-		conf.path.confDir = std::string(getenv(ENVHOME)) + "/.config";
-		mkdir(conf.path.confDir.c_str(), 0777);
-		conf.path.confDir += "/samstyle";
-		mkdir(conf.path.confDir.c_str(), 0777);
-		conf.path.confDir += "/xpeccy";
+		try {
+			conf.path.confDir = xdg::ConfigHomeDir() / dataDirsSuffix;
+		} catch (const std::exception &e) {
+			std::cout << "xdg config home: " << e.what()
+			          << "; falling back to $HOME/.config" << std::endl;
+			conf.path.confDir =
+				(home ? fs::path(home) : fs::path("."))
+				/ ".config" / dataDirsSuffix;
+		}
+
+		// Legacy migration: if XDG_CONFIG_HOME points somewhere other than
+		// the default ~/.config, move the old ~/.config/samstyle/xpeccy into
+		// the new location. When old == new, migrateDir's existence checks
+		// short-circuit and it's a no-op.
+		if (home) {
+			migrateDir(fs::path(home) / ".config" / dataDirsSuffix,
+			           conf.path.confDir, "confDir", ec);
+		}
 	} else {
-		conf.path.confDir = std::string(confdir);
+		conf.path.confDir = confdir;
 	}
-	mkdir(conf.path.confDir.c_str(), 0777);
-	conf.path.romDir = conf.path.confDir + "/roms";
-	mkdir(conf.path.romDir.c_str() ,0777);
-	conf.path.prfDir = conf.path.confDir + "/profiles";
-	mkdir(conf.path.prfDir.c_str() ,0777);
-	conf.path.shdDir = conf.path.confDir + "/shaders";
-	mkdir(conf.path.shdDir.c_str() ,0777);
-	conf.path.palDir = conf.path.confDir + "/palettes";
-	mkdir(conf.path.palDir.c_str() ,0777);
-	conf.path.plgDir = conf.path.confDir + "/plugins";
-	mkdir(conf.path.plgDir.c_str() ,0777);
-	conf.path.qssDir = conf.path.confDir + "/styles";
-	mkdir(conf.path.qssDir.c_str() ,0777);
-	conf.path.confFile = conf.path.confDir + "/config.conf";
-	conf.path.boot = conf.path.confDir + "/boot.$B";
+	makeDir(conf.path.confDir, "confDir");
+
+	fs::path dataHomeDir;
+	try {
+		dataHomeDir = xdg::DataHomeDir() / dataDirsSuffix;
+	} catch (const std::exception &e) {
+		std::cout << "xdg data home: " << e.what()
+		          << "; falling back to confDir" << std::endl;
+		dataHomeDir = conf.path.confDir;
+	}
+	makeDir(dataHomeDir, "dataHomeDir");
+
+	// Compute the system-wide data dir bases once; buildResourceDirs uses
+	// them to derive each resource's readonly search path.
+	std::vector<fs::path> xdgDataDirs;
+	try {
+		for (auto &dir : xdg::DataDirs()) {
+			xdgDataDirs.push_back(dir / dataDirsSuffix);
+		}
+	} catch (const std::exception &e) {
+		std::cout << "xdg data dirs: " << e.what() << std::endl;
+	}
+
+	// Populate resources: pure construction via buildResourceDirs, then
+	// imperative migration + mkdir.
+	for (const auto &spec : kResourceLayout) {
+		auto &dirs = conf.path.resources[static_cast<size_t>(spec.kind)] =
+			buildResourceDirs(spec, dataHomeDir, xdgDataDirs);
+		if (!spec.legacySubdir.empty()) {
+			migrateDir(conf.path.confDir / spec.legacySubdir,
+			           dirs.writable, spec.label, ec);
+		}
+		makeDir(dirs.writable, spec.label);
+	}
+
+	conf.path.prfDir = conf.path.confDir / "profiles";
+	makeDir(conf.path.prfDir, "prfDir");
+	conf.path.confFile = conf.path.confDir / "config.conf";
+	conf.path.boot = conf.path.confDir / "boot.$B";
 #elif defined(__WIN32)
 	if (confdir == NULL) {
-		conf.path.confDir = std::string(wpath);
-		size_t pos = conf.path.confDir.find_last_of(SLSH);
-		if (pos != std::string::npos) {
-			conf.path.confDir = conf.path.confDir.substr(0, pos);
-		}
-		conf.path.confDir += "\\config";
+		conf.path.confDir = fs::path(wpath).parent_path() / "config";
 	} else {
-		conf.path.confDir = std::string(confdir);
+		conf.path.confDir = confdir;
 	}
-	conf.path.romDir = conf.path.confDir + "\\roms";
-	conf.path.prfDir = conf.path.confDir + "\\profiles";
-	conf.path.shdDir = conf.path.confDir + "\\shaders";
-	conf.path.palDir = conf.path.confDir + "\\palettes";
-	conf.path.plgDir = conf.path.confDir + "\\plugins";
-	conf.path.qssDir = conf.path.confDir + "\\styles";
-	conf.path.confFile = conf.path.confDir + "\\config.conf";
-	conf.path.boot = conf.path.confDir + "\\boot.$B";
-	mkdir(conf.path.confDir.c_str());
-	mkdir(conf.path.romDir.c_str());
-	mkdir(conf.path.prfDir.c_str());
-	mkdir(conf.path.shdDir.c_str());
-	mkdir(conf.path.palDir.c_str());
-	mkdir(conf.path.plgDir.c_str());
-	mkdir(conf.path.qssDir.c_str());
+	// No XDG search path on Windows: buildResourceDirs receives an empty
+	// xdgDataDirBases, so each entry's `readonly` list comes out empty.
+	const std::vector<fs::path> noExtraDirs;
+	for (const auto &spec : kResourceLayout) {
+		conf.path.resources[static_cast<size_t>(spec.kind)] =
+			buildResourceDirs(spec, conf.path.confDir, noExtraDirs);
+	}
+	conf.path.prfDir = conf.path.confDir / "profiles";
+	conf.path.confFile = conf.path.confDir / "config.conf";
+	conf.path.boot = conf.path.confDir / "boot.$B";
+	{
+		std::error_code wec;
+		fs::create_directories(conf.path.confDir, wec);
+		for (const auto &dirs : conf.path.resources) {
+			fs::create_directories(dirs.writable, wec);
+		}
+		fs::create_directories(conf.path.prfDir, wec);
+	}
 #endif
+	// TEMPORARY bridge: populate deprecated conf.path.{rom,shd,pal,plg,qss}Dir
+	// string aliases from the new resources[] array so xTreeBox and
+	// opt_romset.cpp keep working until commit 4 migrates them through
+	// conf.path.find/tryFind and removes these aliases.
+	conf.path.romDir = conf.path.writableDir(ResourceKind::Rom).string();
+	conf.path.shdDir = conf.path.writableDir(ResourceKind::Shader).string();
+	conf.path.palDir = conf.path.writableDir(ResourceKind::Palette).string();
+	conf.path.plgDir = conf.path.writableDir(ResourceKind::PluginCpu).string();
+	conf.path.qssDir = conf.path.writableDir(ResourceKind::Style).string();
+
 	conf.scrShot.format = "png";
 // Pentagon geometry:
 // rows: 16Vblk + (16 invis + 48 vis) top border + 192 screen + 48 bottom border = 320 rows
@@ -114,168 +249,176 @@ void conf_init(char* wpath, char* confdir) {
 }
 
 void saveConfig() {
-	FILE* cfile = fopen(conf.path.confFile.c_str(), "wb");
-	if (!cfile) {
+	std::ofstream out(conf.path.confFile, std::ios::binary);
+	if (!out) {
 		shitHappens("Can't write main config");
 		throw(0);
 	}
+	out << std::fixed << std::setprecision(6);  // match old "%f" formatting
 
-	fprintf(cfile,"[GENERAL]\n\n");
-	fprintf(cfile, "startdefault = %s\n", YESNO(conf.defProfile));
-	fprintf(cfile, "savepaths = %s\n", YESNO(conf.storePaths));
-	fprintf(cfile, "fdcturbo = %s\n", YESNO(fdcFlag & FDC_FAST));
-	fprintf(cfile, "addboot = %s\n", YESNO(conf.boot));
-	fprintf(cfile, "exit.confirm = %s\n",YESNO(conf.confexit));
-	fprintf(cfile, "port = %i\n", conf.port);
-	fprintf(cfile, "winpos = %i,%i\n",conf.xpos,conf.ypos);
-	fprintf(cfile, "flpinterleave = %i\n", flp_get_interleave());
-	fprintf(cfile, "style = %s\n", conf.style.c_str());
+	out << "[GENERAL]\n\n";
+	writeKV(out, "startdefault", YESNO(conf.defProfile));
+	writeKV(out, "savepaths",    YESNO(conf.storePaths));
+	writeKV(out, "fdcturbo",     YESNO(fdcFlag & FDC_FAST));
+	writeKV(out, "addboot",      YESNO(conf.boot));
+	writeKV(out, "exit.confirm", YESNO(conf.confexit));
+	writeKV(out, "port",          conf.port);
+	writeKV(out, "winpos",        conf.xpos, ',', conf.ypos);
+	writeKV(out, "flpinterleave", flp_get_interleave());
+	writeKV(out, "style",         conf.style);
 
-	fprintf(cfile, "\n[BOOKMARKS]\n\n");
+	out << "\n[BOOKMARKS]\n\n";
 	foreach(xBookmark bkm, conf.bookmarkList) {
-		fprintf(cfile, "%s = %s\n", bkm.name.c_str(), bkm.path.c_str());
+		writeKV(out, bkm.name, bkm.path);
 	}
 
-	fprintf(cfile, "\n[PROFILES]\n\n");
-	foreach(xProfile* prf, conf.prof.list) {			// nr.0 skipped ('default' profile)
+	out << "\n[PROFILES]\n\n";
+	foreach(xProfile* prf, conf.prof.list) {
 		if (prf->name != "default")
-			fprintf(cfile, "%s = %s\n", prf->name.c_str(), prf->file.c_str());
+			writeKV(out, prf->name, prf->file);
 	}
-	fprintf(cfile, "current = %s\n", conf.prof.cur->name.c_str());
+	writeKV(out, "current", conf.prof.cur->name);
 
-	fprintf(cfile, "\n[VIDEO]\n\n");
+	out << "\n[VIDEO]\n\n";
 	foreach(xLayout lay, conf.layList) {
 		if (lay.name != "default") {
-			fprintf(cfile, "layout = %s:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i\n",lay.name.c_str(),\
-				lay.lay.full.x, lay.lay.full.y, lay.lay.bord.x, lay.lay.bord.y,\
-				lay.lay.blank.x, lay.lay.blank.y, lay.lay.intSize, lay.lay.intpos.y, lay.lay.intpos.x,\
-				lay.lay.scr.x, lay.lay.scr.y);
+			writeKV(out, "layout",
+			        lay.name,
+			        ':', lay.lay.full.x,  ':', lay.lay.full.y,
+			        ':', lay.lay.bord.x,  ':', lay.lay.bord.y,
+			        ':', lay.lay.blank.x, ':', lay.lay.blank.y,
+			        ':', lay.lay.intSize,
+			        ':', lay.lay.intpos.y, ':', lay.lay.intpos.x,
+			        ':', lay.lay.scr.x,    ':', lay.lay.scr.y);
 		}
 	}
-	fprintf(cfile, "scrDir = %s\n", conf.scrShot.dir.c_str());
-	fprintf(cfile, "scrFormat = %s\n", conf.scrShot.format.c_str());
-	fprintf(cfile, "scrCount = %i\n", conf.scrShot.count);
-	fprintf(cfile, "scrInterval = %i\n", conf.scrShot.interval);
-	fprintf(cfile, "scrNoLeds = %s\n", YESNO(conf.scrShot.noLeds));
-	fprintf(cfile, "scrNoBord = %s\n", YESNO(conf.scrShot.noBorder));
-	fprintf(cfile, "fullscreen = %s\n", YESNO(conf.vid.fullScreen));
-	fprintf(cfile, "keepratio = %s\n", YESNO(conf.vid.keepRatio));
-	fprintf(cfile, "scale = %i\n", conf.vid.scale);
-	fprintf(cfile, "greyscale = %s\n", YESNO(greyScale));
-//	fprintf(cfile, "scanlines = %s\n", YESNO(scanlines));
-	fprintf(cfile, "bordersize = %i\n", int(conf.brdsize * 100));
-	fprintf(cfile, "noflick = %i\n", noflic);
-	fprintf(cfile, "noflick.mode = %i\n", noflicMode);
-	fprintf(cfile, "noflick.gamma = %f\n", noflicGamma);
-	fprintf(cfile, "shader = %s\n", conf.vid.shader.c_str());
+	writeKV(out, "scrDir",        conf.scrShot.dir);
+	writeKV(out, "scrFormat",     conf.scrShot.format);
+	writeKV(out, "scrCount",      conf.scrShot.count);
+	writeKV(out, "scrInterval",   conf.scrShot.interval);
+	writeKV(out, "scrNoLeds",     YESNO(conf.scrShot.noLeds));
+	writeKV(out, "scrNoBord",     YESNO(conf.scrShot.noBorder));
+	writeKV(out, "fullscreen",    YESNO(conf.vid.fullScreen));
+	writeKV(out, "keepratio",     YESNO(conf.vid.keepRatio));
+	writeKV(out, "scale",         conf.vid.scale);
+	writeKV(out, "greyscale",     YESNO(greyScale));
+	writeKV(out, "bordersize",    int(conf.brdsize * 100));
+	writeKV(out, "noflick",       noflic);
+	writeKV(out, "noflick.mode",  noflicMode);
+	writeKV(out, "noflick.gamma", noflicGamma);
+	writeKV(out, "shader",        conf.vid.shader);
 
-	fprintf(cfile, "\n[ROMSETS]\n");
+	out << "\n[ROMSETS]\n";
 	foreach(xRomset rms, conf.rsList) {
-		fprintf(cfile, "\nname = %s\n", rms.name.c_str());
+		out << "\n";
+		writeKV(out, "name", rms.name);
 		foreach(xRomFile rf, rms.roms) {
-			fprintf(cfile, "rom = %s:%i:%i:%i\n",rf.name.c_str(), rf.foffset, rf.fsize, rf.roffset);
+			writeKV(out, "rom",
+			        rf.name,
+			        ':', rf.foffset,
+			        ':', rf.fsize,
+			        ':', rf.roffset);
 		}
-		if (!rms.gsFile.empty())
-			fprintf(cfile, "gs = %s\n", rms.gsFile.c_str());
-		if (!rms.fntFile.empty())
-			fprintf(cfile, "font = %s\n", rms.fntFile.c_str());
-		if (!rms.vBiosFile.empty())
-			fprintf(cfile, "vga = %s\n", rms.vBiosFile.c_str());
+		if (!rms.gsFile.empty())    writeKV(out, "gs",   rms.gsFile);
+		if (!rms.fntFile.empty())   writeKV(out, "font", rms.fntFile);
+		if (!rms.vBiosFile.empty()) writeKV(out, "vga",  rms.vBiosFile);
 	}
 
-	fprintf(cfile, "\n[SOUND]\n\n");
-	fprintf(cfile, "enabled = %s\n", YESNO(conf.snd.enabled));
-	fprintf(cfile, "soundsys = %s\n", sndOutput->name);
-	fprintf(cfile, "rate = %i\n", conf.snd.rate);
-	fprintf(cfile, "volume.master = %i\n", conf.snd.vol.master);
-	fprintf(cfile, "volume.beep = %i\n", conf.snd.vol.beep);
-	fprintf(cfile, "volume.tape = %i\n", conf.snd.vol.tape);
-	fprintf(cfile, "volume.ay = %i\n", conf.snd.vol.ay);
-	fprintf(cfile, "volume.gs = %i\n", conf.snd.vol.gs);
-	fprintf(cfile, "volume.sdrv = %i\n", conf.snd.vol.sdrv);
-	fprintf(cfile, "volume.saa = %i\n", conf.snd.vol.saa);
+	out << "\n[SOUND]\n\n";
+	writeKV(out, "enabled",       YESNO(conf.snd.enabled));
+	writeKV(out, "soundsys",      sndOutput->name);
+	writeKV(out, "rate",          conf.snd.rate);
+	writeKV(out, "volume.master", conf.snd.vol.master);
+	writeKV(out, "volume.beep",   conf.snd.vol.beep);
+	writeKV(out, "volume.tape",   conf.snd.vol.tape);
+	writeKV(out, "volume.ay",     conf.snd.vol.ay);
+	writeKV(out, "volume.gs",     conf.snd.vol.gs);
+	writeKV(out, "volume.sdrv",   conf.snd.vol.sdrv);
+	writeKV(out, "volume.saa",    conf.snd.vol.saa);
 
-	fprintf(cfile, "\n[TAPE]\n\n");
-	fprintf(cfile, "autoplay = %s\n", YESNO(conf.tape.autostart));
-	fprintf(cfile, "fast = %s\n", YESNO(conf.tape.fast));
+	out << "\n[TAPE]\n\n";
+	writeKV(out, "autoplay", YESNO(conf.tape.autostart));
+	writeKV(out, "fast",     YESNO(conf.tape.fast));
 
-	fprintf(cfile, "\n[INPUT]\n\n");
-	fprintf(cfile, "gamepad = %s\n", conf.gpctrl->gpada->lastName().toLocal8Bit().data());
-	fprintf(cfile, "deadzone = %i\n", conf.gpctrl->gpada->deadZone());
-	fprintf(cfile, "gamepad2 = %s\n", conf.gpctrl->gpadb->lastName().toLocal8Bit().data());
-	fprintf(cfile, "deadzone2 = %i\n", conf.gpctrl->gpadb->deadZone());
+	out << "\n[INPUT]\n\n";
+	writeKV(out, "gamepad",   conf.gpctrl->gpada->lastName());
+	writeKV(out, "deadzone",  conf.gpctrl->gpada->deadZone());
+	writeKV(out, "gamepad2",  conf.gpctrl->gpadb->lastName());
+	writeKV(out, "deadzone2", conf.gpctrl->gpadb->deadZone());
 
-	fprintf(cfile, "\n[LEDS]\n\n");
-	fprintf(cfile, "mouse = %s\n", YESNO(conf.led.mouse));
-	fprintf(cfile, "joystick = %s\n", YESNO(conf.led.joy));
-	fprintf(cfile, "keyscan = %s\n", YESNO(conf.led.keys));
-	fprintf(cfile, "tape = %s\n", YESNO(conf.led.tape));
-	fprintf(cfile, "disk = %s\n", YESNO(conf.led.disk));
-	fprintf(cfile, "message = %s\n", YESNO(conf.led.message));
-	fprintf(cfile, "fps = %s\n", YESNO(conf.led.fps));
-	fprintf(cfile, "halt = %s\n", YESNO(conf.led.halt));
+	out << "\n[LEDS]\n\n";
+	writeKV(out, "mouse",    YESNO(conf.led.mouse));
+	writeKV(out, "joystick", YESNO(conf.led.joy));
+	writeKV(out, "keyscan",  YESNO(conf.led.keys));
+	writeKV(out, "tape",     YESNO(conf.led.tape));
+	writeKV(out, "disk",     YESNO(conf.led.disk));
+	writeKV(out, "message",  YESNO(conf.led.message));
+	writeKV(out, "fps",      YESNO(conf.led.fps));
+	writeKV(out, "halt",     YESNO(conf.led.halt));
 
-	fprintf(cfile, "\n[DEBUGA]\n\n");
-	fprintf(cfile, "dbsize = %i\n", conf.dbg.dbsize);
-	fprintf(cfile, "dwsize = %i\n", conf.dbg.dwsize);
-	fprintf(cfile, "dmsize = %i\n", conf.dbg.dmsize);
-	fprintf(cfile, "scr.zoom = %i\n", conf.dbg.scrzoom);
-	fprintf(cfile, "font = %s\n", conf.dbg.font.toString().toUtf8().data());
-	fprintf(cfile, "window = %i:%i:%i:%i\n",conf.dbg.pos.x(),conf.dbg.pos.y(),conf.dbg.siz.width(),conf.dbg.siz.height());
+	out << "\n[DEBUGA]\n\n";
+	writeKV(out, "dbsize",   conf.dbg.dbsize);
+	writeKV(out, "dwsize",   conf.dbg.dwsize);
+	writeKV(out, "dmsize",   conf.dbg.dmsize);
+	writeKV(out, "scr.zoom", conf.dbg.scrzoom);
+	writeKV(out, "font",     conf.dbg.font.toString());
+	writeKV(out, "window",
+	        conf.dbg.pos.x(),   ':', conf.dbg.pos.y(),
+	        ':', conf.dbg.siz.width(), ':', conf.dbg.siz.height());
 
-	fprintf(cfile, "\n[PALETTE]\n\n");
-	QStringList lst = conf.pal.keys();
-	QString nam;
-	QColor col;
-	foreach(nam, lst) {
-		col = conf.pal[nam];
+	out << "\n[PALETTE]\n\n";
+	foreach(QString nam, conf.pal.keys()) {
+		const QColor col = conf.pal[nam];
 		if (col.isValid())
-			fprintf(cfile, "%s = %s\n", nam.toLocal8Bit().data(), col.name().toLocal8Bit().data());
+			writeKV(out, nam.toUtf8().constData(), col.name());
 	}
 
-	fprintf(cfile, "\n[KEYS]\n\n");
+	out << "\n[KEYS]\n\n";
 	xShortcut* tab = shortcut_tab();
-	int i = 0;
-	while (tab[i].id > 0) {
-		fprintf(cfile, "%s = %s\n", tab[i].name, tab[i].seq.toString().toLocal8Bit().data());
-		i++;
+	for (int i = 0; tab[i].id > 0; i++) {
+		writeKV(out, tab[i].name, tab[i].seq.toString());
 	}
-	fclose(cfile);
 }
 
-void copyFile(const char* src, const char* dst) {
-	QFile fle(QString::fromLocal8Bit(src));
-	fle.open(QFile::ReadOnly);
-	QByteArray fdata = fle.readAll();
-	fle.close();
-	fle.setFileName(QString::fromLocal8Bit(dst));
-	if (fle.open(QFile::WriteOnly)) {
-		fle.write(fdata);
-		fle.close();
+void copyFile(const fs::path &src, const fs::path &dst) {
+	std::error_code ec;
+	fs::copy_file(src, dst, fs::copy_options::overwrite_existing, ec);
+	if (ec) {
+		std::cout << "copyFile: " << src << " -> " << dst
+		          << " failed: " << ec.message() << std::endl;
 	}
+}
+
+void copyResource(std::string_view src, const fs::path &dst) {
+	QFile in(QString::fromUtf8(src.data(), static_cast<int>(src.size())));
+	if (!in.open(QIODevice::ReadOnly)) {
+		std::cout << "copyResource: can't read " << src << std::endl;
+		return;
+	}
+	const QByteArray data = in.readAll();
+	in.close();
+	std::ofstream out(dst, std::ios::binary);
+	if (!out) {
+		std::cout << "copyResource: can't write " << dst << std::endl;
+		return;
+	}
+	out.write(data.constData(), data.size());
 }
 
 // emulator config
 
 void loadConfig() {
 	std::string soutnam = "NULL";
-	//printf("%s\n",conf.path.confFile);
 	std::ifstream file(conf.path.confFile);
-	char fname[FILENAME_MAX];
 	if (!file.good()) {
 		printf("Main config is missing. Default files will be copied\n");
-		copyFile(":/conf/config.conf", conf.path.confFile.c_str());
-		strcpy(fname, conf.path.confDir.c_str());
-		strcat(fname, SLASH);
-		strcat(fname, "xpeccy.conf");
-		copyFile(":/conf/xpeccy.conf", fname);
-		strcpy(fname, conf.path.romDir.c_str());
-		strcat(fname, SLASH);
-		strcat(fname, "1982.rom");
-		copyFile(":/conf/1982.rom", fname);
+		copyResource(":/conf/config.conf", conf.path.confFile);
+		copyResource(":/conf/xpeccy.conf", conf.path.confDir / "xpeccy.conf");
+		copyResource(":/conf/1982.rom",
+		             conf.path.writableDir(ResourceKind::Rom) / "1982.rom");
 		file.open(conf.path.confFile);
 		if (!file.good()) {
-			printf("%s\n",conf.path.confFile.c_str());
+			std::cout << conf.path.confFile << std::endl;
 			shitHappens("<b>Doh! Something going wrong</b>");
 			throw(0);
 		}

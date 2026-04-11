@@ -3,6 +3,8 @@
 #include <string.h>
 #include <unistd.h>
 #include <fstream>
+#include <iomanip>
+#include <iostream>
 #include <math.h>
 #include <sys/stat.h>
 
@@ -12,37 +14,45 @@
 #include "filer.h"
 #include "gamepad.h"
 
-void prf_load_cmos(xProfile* prf, std::string path) {
-	FILE* file = fopen(path.c_str(), "rb");
-	if (file) {
-		fread((char*)prf->zx->cmos.data, 256, 1, file);
-		fclose(file);
-	}
+namespace {
+
+// Open a file in binary mode and read up to `bytes` bytes into `dest`.
+// Returns true iff the file was opened. A short read (truncated file) is
+// *not* reported as failure — this matches the pre-existing fread-with-
+// ignored-return behavior the old code had for ROM loading.
+template <typename T>
+bool loadFixedBlob(const fs::path &path, T *dest, std::size_t bytes) {
+	std::ifstream f(path, std::ios::binary);
+	if (!f) return false;
+	f.read(reinterpret_cast<char*>(dest), bytes);
+	return true;
 }
 
-void prf_save_cmos(xProfile* prf, std::string path) {
-	FILE* file = fopen(path.c_str(), "wb");
-	if (file) {
-		fwrite((char*)prf->zx->cmos.data, 256, 1, file);
-		fclose(file);
-	}
+// Open a file in binary mode and write exactly `bytes` bytes from `src`.
+// Silently no-ops on open failure.
+template <typename T>
+void saveFixedBlob(const fs::path &path, const T *src, std::size_t bytes) {
+	std::ofstream f(path, std::ios::binary);
+	if (f) f.write(reinterpret_cast<const char*>(src), bytes);
 }
 
-void prf_load_nvram(xProfile* prf, std::string path) {
-	FILE* file = fopen(path.c_str(), "rb");
-	if (file) {
-		fread((char*)prf->zx->ide->smuc.nv->mem, 256, 1, file);
-		fclose(file);
-	}
+} // namespace
+
+void prf_load_cmos(xProfile* prf, const fs::path &path) {
+	loadFixedBlob(path, prf->zx->cmos.data, 256);
 }
 
-void prf_save_nvram(xProfile* prf, std::string path) {
+void prf_save_cmos(xProfile* prf, const fs::path &path) {
+	saveFixedBlob(path, prf->zx->cmos.data, 256);
+}
+
+void prf_load_nvram(xProfile* prf, const fs::path &path) {
+	loadFixedBlob(path, prf->zx->ide->smuc.nv->mem, 256);
+}
+
+void prf_save_nvram(xProfile* prf, const fs::path &path) {
 	if (prf->zx->ide->type != IDE_SMUC) return;
-	FILE* file = fopen(path.c_str(), "wb");
-	if (file) {
-		fwrite((char*)prf->zx->ide->smuc.nv->mem, 256, 1, file);
-		fclose(file);
-	}
+	saveFixedBlob(path, prf->zx->ide->smuc.nv->mem, 256);
 }
 
 xProfile* findProfile(std::string nm) {
@@ -64,15 +74,11 @@ xProfile* addProfile(std::string nm, std::string fp) {
 	nprof->layName = std::string("default");
 	nprof->zx = compCreate();
 	nprof->curlabset = nullptr;
-	std::string fname;
-	fname = conf.path.prfDir + SLASH + nprof->name;
-#if defined(__linux) || defined(__APPLE__) || defined(__BSD)
-	mkdir(fname.c_str(), 0777);
-#elif defined(__WIN32)
-	mkdir(fname.c_str());
-#endif
-	prf_load_cmos(nprof, conf.path.prfDir + SLASH + nprof->name + SLASH + nprof->name + ".cmos");
-	prf_load_nvram(nprof, conf.path.prfDir + SLASH + nprof->name + SLASH + nprof->name + ".nvram");
+	const fs::path profDir = conf.path.prfDir / nprof->name;
+	std::error_code ec;
+	fs::create_directories(profDir, ec);
+	prf_load_cmos(nprof, profDir / (nprof->name + ".cmos"));
+	prf_load_nvram(nprof, profDir / (nprof->name + ".nvram"));
 	prfSetHardware(nprof,"Dummy");
 	conf.prof.list.push_back(nprof);
 	return nprof;
@@ -89,9 +95,9 @@ int copyProfile(std::string src, std::string dst) {
 	} else {
 		dprf->file = dfile;
 	}
-	std::string sfname = conf.path.prfDir + SLASH + sprf->name + SLASH + sprf->file;
-	std::string dfname = conf.path.prfDir + SLASH + dprf->name + SLASH + dfile;
-	copyFile(sfname.c_str(), dfname.c_str());
+	const fs::path sfname = conf.path.prfDir / sprf->name / sprf->file;
+	const fs::path dfname = conf.path.prfDir / dprf->name / dfile;
+	copyFile(sfname, dfname);
 	prfLoad(dst);
 	return 1;
 }
@@ -107,8 +113,6 @@ int delProfile(std::string nm) {
 	if (prf == NULL) return DELP_ERR;		// no such profile
 	if (prf->name == "default") return DELP_ERR;	// can't touch this
 	int res = DELP_OK;
-	std::string cpath;
-	std::string cdir;
 	// set default profile if current deleted
 	if (conf.prof.cur) {
 		if (conf.prof.cur->name == nm) {
@@ -121,15 +125,15 @@ int delProfile(std::string nm) {
 	// remove all such profiles from list & free mem
 	for (int i = 0; i < conf.prof.list.size(); i++) {
 		if (conf.prof.list[i]->name == nm) {
-			cdir = conf.path.prfDir + SLASH + prf->name + SLASH;
-			cpath = cdir + prf->file;
-			remove(cpath.c_str());					// remove config file
-			cpath = cdir + prf->name + ".cmos";
-			remove(cpath.c_str());					// remove cmos dump
-			cpath = cdir + prf->name + ".nvram";
-			remove(cpath.c_str());					// remove nvram dump
-			rmdir(cdir.c_str());					// remove directory (leave it if there is files)
-			compDestroy(prf->zx);					// delete computer
+			const fs::path profDir = conf.path.prfDir / prf->name;
+			std::error_code ec;
+			for (const std::string &leaf : {prf->file,
+			                                 prf->name + ".cmos",
+			                                 prf->name + ".nvram"}) {
+				fs::remove(profDir / leaf, ec);
+			}
+			fs::remove(profDir, ec);         // remove directory (leave it if there is files)
+			compDestroy(prf->zx);            // delete computer
 			delete(prf);
 			conf.prof.list.erase(conf.prof.list.begin() + i);
 		}
@@ -227,27 +231,32 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 		prf = conf.prof.cur;
 	prf->rsName = rnm;
 	xRomset* rset = findRomset(rnm);
-	std::string fpath;
 	int romsz = MEM_256; // prf->zx->mem->romSize;	// 0?
-	int foff;
-	int fsze;
-	int roff;
-	FILE* file;
+
+	struct RomResolution {
+		bool found;
+		fs::path path;
+	};
+	auto resolveRom = [](const std::string &name) -> RomResolution {
+		const auto maybe = conf.path.tryFind(ResourceKind::Rom, name);
+		return {
+			maybe.has_value(),
+			maybe.value_or(conf.path.writableDir(ResourceKind::Rom) / name)
+		};
+	};
+
 	if (rset) {
 		memset(prf->zx->mem->romData, 0xff, MEM_512K);
 		foreach(xRomFile xrf, rset->roms) {
-			foff = xrf.foffset * 1024;
-			roff = xrf.roffset * 1024;
-			fpath = conf.path.romDir + SLASH + xrf.name;
-			file = fopen(fpath.c_str(), "rb");
+			const int foff = xrf.foffset * 1024;
+			const int roff = xrf.roffset * 1024;
+			const auto r = resolveRom(xrf.name);
+			std::ifstream file(r.path, std::ios::binary);
 			if (file) {
-				if (xrf.fsize <= 0) {			// check part size
-					fseek(file, 0, SEEK_END);
-					fsze = ftell(file);
-					rewind(file);
-				} else {
-					fsze = xrf.fsize * 1024;
-				}
+				std::error_code ec;
+				int fsze = (xrf.fsize <= 0)
+					? static_cast<int>(fs::file_size(r.path, ec))
+					: xrf.fsize * 1024;
 				if (roff + fsze > romsz) {	// check crossing rom top
 					romsz = toLimits(roff + fsze, MEM_256, MEM_512K);
 					romsz = toPower(romsz);
@@ -255,38 +264,37 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 				if (roff + fsze > romsz)	// check again (if 512K limit)
 					fsze = romsz - roff;
 				if ((foff >= 0) && (roff >= 0) && (roff < MEM_512K) && (fsze > 0)) {	// load rom if all is ok
-					fseek(file, foff, SEEK_SET);
-					fread(prf->zx->mem->romData + roff, fsze, 1, file);
+					file.seekg(foff);
+					file.read(reinterpret_cast<char*>(prf->zx->mem->romData + roff), fsze);
 				}
-				fclose(file);
+			} else if (!r.found) {
+				printf("Can't find rom '%s' in any search path\n", xrf.name.c_str());
 			} else {
-				printf("Can't load rom file '%s'\n",fpath.c_str());
+				std::cout << "Can't load rom file " << r.path << std::endl;
 			}
 		}
 		memSetSize(prf->zx->mem, -1, romsz);
 // load GS ROM
 		if (!rset->gsFile.empty()) {
-			fpath = conf.path.romDir + SLASH + rset->gsFile;
-			file = fopen(fpath.c_str(), "rb");
-			if (file) {
-				fread(prf->zx->gs->mem->romData, MEM_32K, 1, file);
-				fclose(file);
-			} else {
-				printf("Can't load gs rom '%s' (profile %s)\n", fpath.c_str(), prf->name.c_str());
+			const auto r = resolveRom(rset->gsFile);
+			if (!loadFixedBlob(r.path, prf->zx->gs->mem->romData, MEM_32K)) {
+				if (!r.found) {
+					printf("Can't find gs rom '%s' in any search path (profile %s)\n",
+					       rset->gsFile.c_str(), prf->name.c_str());
+				} else {
+					std::cout << "Can't load gs rom " << r.path
+					          << " (profile " << prf->name << ")" << std::endl;
+				}
 				memset((char*)prf->zx->gs->mem->romData, 0xff, MEM_32K);
 			}
 		}
 // load font data
 		if (!rset->fntFile.empty()) {
-			fpath = conf.path.romDir + SLASH + rset->fntFile;
-			vid_fnt_load(prf->zx->vid, fpath.c_str());
-/*
-			file = fopen(fpath.c_str(), "rb");
-			if (file) {
-				fread(prf->zx->vid->font, MEM_8K, 1, file);
-				fclose(file);
+			const auto r = resolveRom(rset->fntFile);
+			vid_fnt_load(prf->zx->vid, r.path.string().c_str());
+			if (!r.found) {
+				printf("Can't find font '%s' in any search path\n", rset->fntFile.c_str());
 			}
-*/
 		} else {
 			vid_fnt_del(prf->zx->vid);
 		}
@@ -294,18 +302,18 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 		memset(prf->zx->vid->bios, 0xff, MEM_64K);
 		prf->zx->vid->vga.cga = 1;
 		if (!rset->vBiosFile.empty()) {
-			fpath = conf.path.romDir + SLASH + rset->vBiosFile;
-			file = fopen(fpath.c_str(), "rb");
-			if (file) {
-				fread(prf->zx->vid->bios, MEM_64K, 1, file);
-				fclose(file);
+			const auto r = resolveRom(rset->vBiosFile);
+			if (loadFixedBlob(r.path, prf->zx->vid->bios, MEM_64K)) {
 				prf->zx->vid->vga.cga = 0;
+			} else if (!r.found) {
+				printf("Can't find VGA bios '%s' in any search path\n",
+				       rset->vBiosFile.c_str());
 			}
 		}
 	}
 }
 
-int prf_load_conf(xProfile* prf, std::string cfname, int flag) {
+int prf_load_conf(xProfile* prf, const fs::path &cfname, int flag) {
 	Computer* comp = prf->zx;
 	Floppy* flp;
 	int i;
@@ -324,7 +332,7 @@ int prf_load_conf(xProfile* prf, std::string cfname, int flag) {
 	int section = PS_NONE;
 	if (!file.good() && flag) {
 		printf("Profile config is missing. Default one will be created\n");
-		copyFile(":/conf/xpeccy.conf", cfname.c_str());
+		copyResource(":/conf/xpeccy.conf", cfname);
 		file.open(cfname, std::ifstream::in);
 	}
 	if (!file.good()) {
@@ -426,8 +434,17 @@ int prf_load_conf(xProfile* prf, std::string cfname, int flag) {
 						if (pspl.second.empty()) {		// no @, use built-in
 							cpu_set_type(comp->cpu, pval.c_str(), NULL, NULL);
 						} else {
-							str = conf.path.plgDir + SLASH + "cpu";
-							cpu_set_type(comp->cpu, pspl.first.c_str(), str.c_str(), pspl.second.c_str());
+							const auto maybePath = conf.path.tryFind(
+								ResourceKind::PluginCpu, pspl.second);
+							if (maybePath) {
+								const std::string dir = maybePath->parent_path().string();
+								cpu_set_type(comp->cpu, pspl.first.c_str(),
+								             dir.c_str(), pspl.second.c_str());
+							} else {
+								printf("Can't find cpu plugin '%s' in any search path\n",
+								       pspl.second.c_str());
+								cpu_set_type(comp->cpu, pspl.first.c_str(), NULL, NULL);
+							}
 						}
 					}
 					if (pnam == "cpu.frq") {
@@ -509,8 +526,8 @@ int prf_load_conf(xProfile* prf, std::string cfname, int flag) {
 	tmp2 = PLOAD_OK;
 
 	if (!prfSetHardware(prf, prf->hwName)) {
-		sprintf(buf, "Profile: %s\nHardware was set to 'dummy'", prf->name.c_str());
-		shitHappens(buf);
+		const std::string msg = "Profile: " + prf->name + "\nHardware was set to 'dummy'";
+		shitHappens(msg.c_str());
 		tmp2 = PLOAD_HW;
 		prfSetHardware(prf, "Dummy");
 	} else if (conf.storePaths) {			// loading files
@@ -550,25 +567,25 @@ int prf_load_conf(xProfile* prf, std::string cfname, int flag) {
 int prfLoad(std::string nm) {
 	xProfile* prf = findProfile(nm);
 	if (prf == NULL) return PLOAD_NF;
-	//char cfname[FILENAME_MAX];
-	std::string cfname = conf.path.prfDir + SLASH + prf->name + SLASH + prf->file;		// new location: $CONFDIR/profiles/$PROFILENAME/$FILENAME
-	std::string ofname = conf.path.confDir + SLASH + prf->file;				// old location: $CONFDIR/$FILENAME
+	const fs::path profDir = conf.path.prfDir / prf->name;
+	const fs::path cfname = profDir / prf->file;                     // new location: $CONFDIR/profiles/$PROFILENAME/$FILENAME
+	const fs::path ofname = conf.path.confDir / prf->file;           // old location: $CONFDIR/$FILENAME
+	const fs::path ocmos  = conf.path.confDir / (prf->name + ".cmos");
+	const fs::path ncmos  = profDir / (prf->name + ".cmos");
+	const fs::path onvr   = conf.path.confDir / (prf->name + ".nvram");
+	const fs::path nnvr   = profDir / (prf->name + ".nvram");
 
-	std::string ocmos = conf.path.confDir + SLASH + prf->name + ".cmos";
-	std::string ncmos = conf.path.prfDir + SLASH + prf->name + SLASH + prf->name + ".cmos";
-	std::string onvr = conf.path.confDir + SLASH + prf->name + ".nvram";
-	std::string nnvr = conf.path.prfDir + SLASH + prf->name + SLASH + prf->name + ".nvram";
-
+	std::error_code ec;
 	int res = prf_load_conf(prf, ofname, 0);
 	if (res == PLOAD_OK) {
-		copyFile(ofname.c_str(), cfname.c_str());						// copy old file to new location
-		remove(ofname.c_str());									// remove old conf file
+		copyFile(ofname, cfname);                   // copy old file to new location
+		fs::remove(ofname, ec);                     // remove old conf file
 		prf_load_cmos(prf, ocmos);
-		copyFile(ocmos.c_str(), ncmos.c_str());
-		remove(ocmos.c_str());
+		copyFile(ocmos, ncmos);
+		fs::remove(ocmos, ec);
 		prf_load_nvram(prf, onvr);
-		copyFile(onvr.c_str(), nnvr.c_str());
-		remove(onvr.c_str());
+		copyFile(onvr, nnvr);
+		fs::remove(onvr, ec);
 	} else {
 		res = prf_load_conf(prf, cfname, 1);
 		prf_load_cmos(prf, ncmos);
@@ -603,125 +620,117 @@ int prfSave(std::string nm) {
 	if (prf == NULL) return PSAVE_NF;
 	Computer* comp = prf->zx;
 
-	std::string cfname;
-	cfname = conf.path.prfDir + SLASH + prf->name;
-#if defined(__linux) || defined(__APPLE__) || defined(__BSD)
-	mkdir(cfname.c_str(), 0777);
-#elif defined(__WIN32)
-	mkdir(cfname.c_str());
-#endif
-	cfname = cfname + SLASH + prf->file;
-//	cfname = conf.path.confDir + SLASH + prf->file;		// old file location
+	const fs::path profDir = conf.path.prfDir / prf->name;
+	std::error_code ec;
+	fs::create_directories(profDir, ec);
+	const fs::path cfname = profDir / prf->file;
 
-	prf_save_cmos(prf, conf.path.prfDir + SLASH + prf->name + SLASH + prf->name + ".cmos");
-	prf_save_nvram(prf, conf.path.prfDir + SLASH + prf->name + SLASH + prf->name + ".nvram");
+	prf_save_cmos(prf, profDir / (prf->name + ".cmos"));
+	prf_save_nvram(prf, profDir / (prf->name + ".nvram"));
 
-	FILE* file = fopen(cfname.c_str(), "wb");
-	if (!file) {
+	std::ofstream out(cfname, std::ios::binary);
+	if (!out) {
 		printf("Can't write settings\n");
 		return PSAVE_OF;
 	}
+	out << std::fixed << std::setprecision(6);  // match old "%f" formatting
 
-	fprintf(file, "[GENERAL]\n\n");
-	fprintf(file, "lastdir = %s\n", prf->lastDir.c_str());
+	// Small adapter for the one C-string field that may be null; the ternary
+	// noise would otherwise pollute every line it appears in.
+	auto orEmpty = [](const char *s) -> const char * { return s ? s : ""; };
 
-	fprintf(file, "\n[MACHINE]\n\n");
-	fprintf(file, "current = %s\n", prf->hwName.c_str());
-	fprintf(file, "memory = %i\n", comp->mem->ramSize >> 10);		// bytes to KB
+	out << "[GENERAL]\n\n";
+	writeKV(out, "lastdir", prf->lastDir);
+
+	out << "\n[MACHINE]\n\n";
+	writeKV(out, "current", prf->hwName);
+	writeKV(out, "memory",  comp->mem->ramSize >> 10);   // bytes to KB
 	if (comp->cpu->lib) {
-		fprintf(file, "cpu.type = %s@%s\n", comp->cpu->core->name, comp->cpu->libname);
+		writeKV(out, "cpu.type", comp->cpu->core->name, '@', comp->cpu->libname);
 	} else {
-		fprintf(file, "cpu.type = %s\n", comp->cpu->core->name);
+		writeKV(out, "cpu.type", comp->cpu->core->name);
 	}
-	fprintf(file, "cpu.frq = %i\n", int(comp->cpuFrq * 1e6));
-	fprintf(file, "frq.mul = %f\n", comp->frqMul);
-	fprintf(file, "scrp.wait = %s\n", YESNO(comp->flgEM1));
-	fprintf(file, "contio = %s\n", YESNO(comp->flgCNTI));
-	fprintf(file, "contmem = %s\n", YESNO(comp->flgCNTM));
+	writeKV(out, "cpu.frq",   int(comp->cpuFrq * 1e6));
+	writeKV(out, "frq.mul",   comp->frqMul);
+	writeKV(out, "scrp.wait", YESNO(comp->flgEM1));
+	writeKV(out, "contio",    YESNO(comp->flgCNTI));
+	writeKV(out, "contmem",   YESNO(comp->flgCNTM));
 
-	fprintf(file, "\n[ROMSET]\n\n");
-	fprintf(file, "current = %s\n", prf->rsName.c_str());
-	fprintf(file, "reset = ");
+	out << "\n[ROMSET]\n\n";
+	writeKV(out, "current", prf->rsName);
 	switch (comp->resbank) {
-		case RES_48: fprintf(file, "basic48\n"); break;
-		case RES_128: fprintf(file, "basic128\n"); break;
-		case RES_DOS: fprintf(file, "dos\n"); break;
-		case RES_SHADOW: fprintf(file, "shadow\n"); break;
+		case RES_48:     writeKV(out, "reset", "basic48");  break;
+		case RES_128:    writeKV(out, "reset", "basic128"); break;
+		case RES_DOS:    writeKV(out, "reset", "dos");      break;
+		case RES_SHADOW: writeKV(out, "reset", "shadow");   break;
 	}
 
-	fprintf(file, "\n[VIDEO]\n\n");
-	fprintf(file, "geometry = %s\n", prf->layName.c_str());
-	fprintf(file, "4t-border = %s\n", YESNO(comp->vid->brdstep & 0x06));
-	fprintf(file, "ULAplus = %s\n", YESNO(comp->vid->ula->enabled));
-	fprintf(file, "contPattern = %i\n", comp->vid->ula->conttype);
-	fprintf(file, "earlyTiming = %s\n", YESNO(comp->vid->ula->early));
-	fprintf(file, "DDpal = %s\n", YESNO(comp->flgDDP));
-	fprintf(file, "palette = %s\n", prf->palette.c_str());
+	out << "\n[VIDEO]\n\n";
+	writeKV(out, "geometry",    prf->layName);
+	writeKV(out, "4t-border",   YESNO(comp->vid->brdstep & 0x06));
+	writeKV(out, "ULAplus",     YESNO(comp->vid->ula->enabled));
+	writeKV(out, "contPattern", comp->vid->ula->conttype);
+	writeKV(out, "earlyTiming", YESNO(comp->vid->ula->early));
+	writeKV(out, "DDpal",       YESNO(comp->flgDDP));
+	writeKV(out, "palette",     prf->palette);
 
-	fprintf(file, "\n[SOUND]\n\n");
-	fprintf(file, "chip1 = %i\n", comp->ts->chipA->type);
-	fprintf(file, "chip1.stereo = %i\n", comp->ts->chipA->stereo);
-	fprintf(file, "chip1.frq = %f\n", comp->ts->chipA->frq);
-	fprintf(file, "chip2 = %i\n", comp->ts->chipB->type);
-	fprintf(file, "chip2.stereo = %i\n", comp->ts->chipB->stereo);
-	fprintf(file, "chip2.frq = %f\n", comp->ts->chipB->frq);
-	fprintf(file, "chip3 = %i\n", comp->ts->chipC->type);
-	fprintf(file, "chip3.stereo = %i\n", comp->ts->chipC->stereo);
-	fprintf(file, "chip3.frq = %f\n", comp->ts->chipC->frq);
-	fprintf(file, "ts.type = %i\n", comp->ts->type);
+	out << "\n[SOUND]\n\n";
+	writeKV(out, "chip1",          comp->ts->chipA->type);
+	writeKV(out, "chip1.stereo",   comp->ts->chipA->stereo);
+	writeKV(out, "chip1.frq",      comp->ts->chipA->frq);
+	writeKV(out, "chip2",          comp->ts->chipB->type);
+	writeKV(out, "chip2.stereo",   comp->ts->chipB->stereo);
+	writeKV(out, "chip2.frq",      comp->ts->chipB->frq);
+	writeKV(out, "chip3",          comp->ts->chipC->type);
+	writeKV(out, "chip3.stereo",   comp->ts->chipC->stereo);
+	writeKV(out, "chip3.frq",      comp->ts->chipC->frq);
+	writeKV(out, "ts.type",        comp->ts->type);
+	writeKV(out, "gs",             YESNO(comp->gs->enable));
+	writeKV(out, "gs.reset",       YESNO(comp->gs->stereo));
+	writeKV(out, "gs.stereo",      comp->gs->stereo);
+	writeKV(out, "soundrive_type", comp->sdrv->type);
+	writeKV(out, "saa",            YESNO(comp->saa->enabled));
 
-	fprintf(file, "gs = %s\n", YESNO(comp->gs->enable));
-	fprintf(file, "gs.reset = %s\n", YESNO(comp->gs->stereo));
-	fprintf(file, "gs.stereo = %i\n", comp->gs->stereo);
-
-	fprintf(file, "soundrive_type = %i\n", comp->sdrv->type);
-
-	fprintf(file, "saa = %s\n", YESNO(comp->saa->enabled));
-	// fprintf(file, "saa.stereo = %s\n", YESNO(!comp->saa->mono));
-
-	fprintf(file, "\n[INPUT]\n\n");
-	fprintf(file, "mouse = %s\n", YESNO(comp->mouse->enable));
-	fprintf(file, "mouse.wheel = %s\n", YESNO(comp->mouse->hasWheel));
-	fprintf(file, "mouse.swapButtons = %s\n", YESNO(comp->mouse->swapButtons));
-	fprintf(file, "mouse.sensitivity = %f\n", comp->mouse->sensitivity);
-	fprintf(file, "mouse.pctype = %i\n", comp->mouse->pcmode);
-	fprintf(file, "joy.extbuttons = %s\n", YESNO(comp->joy->extbuttons));
-	fprintf(file, "gamepad.map = %s\n", prf->jmapNameA.c_str());
-	fprintf(file, "gamepad2.map = %s\n", prf->jmapNameB.c_str());
-	fprintf(file, "kbd.scantab = %i\n", comp->keyb->pcmode);
+	out << "\n[INPUT]\n\n";
+	writeKV(out, "mouse",             YESNO(comp->mouse->enable));
+	writeKV(out, "mouse.wheel",       YESNO(comp->mouse->hasWheel));
+	writeKV(out, "mouse.swapButtons", YESNO(comp->mouse->swapButtons));
+	writeKV(out, "mouse.sensitivity", comp->mouse->sensitivity);
+	writeKV(out, "mouse.pctype",      comp->mouse->pcmode);
+	writeKV(out, "joy.extbuttons",    YESNO(comp->joy->extbuttons));
+	writeKV(out, "gamepad.map",       prf->jmapNameA);
+	writeKV(out, "gamepad2.map",      prf->jmapNameB);
+	writeKV(out, "kbd.scantab",       comp->keyb->pcmode);
 	if ((prf->kmapName != "") && (prf->kmapName != "default"))
-		fprintf(file, "keymap = %s\n", prf->kmapName.c_str());
+		writeKV(out, "keymap", prf->kmapName);
 
-	fprintf(file, "\n[TAPE]\n\n");
-	fprintf(file, "path = %s\n", comp->tape->path ? comp->tape->path : "");
-	fprintf(file, "speed = %i\n", comp->tape->speed);
+	out << "\n[TAPE]\n\n";
+	writeKV(out, "path",  orEmpty(comp->tape->path));
+	writeKV(out, "speed", comp->tape->speed);
 
-	fprintf(file, "\n[DISK]\n\n");
-	fprintf(file, "type = %i\n", comp->dif->type);
-	fprintf(file, "A = %s\n", getDiskString(comp->dif->fdc->flop[0]).c_str());
-	fprintf(file, "B = %s\n", getDiskString(comp->dif->fdc->flop[1]).c_str());
-	fprintf(file, "C = %s\n", getDiskString(comp->dif->fdc->flop[2]).c_str());
-	fprintf(file, "D = %s\n", getDiskString(comp->dif->fdc->flop[3]).c_str());
+	out << "\n[DISK]\n\n";
+	writeKV(out, "type", comp->dif->type);
+	writeKV(out, "A",    getDiskString(comp->dif->fdc->flop[0]));
+	writeKV(out, "B",    getDiskString(comp->dif->fdc->flop[1]));
+	writeKV(out, "C",    getDiskString(comp->dif->fdc->flop[2]));
+	writeKV(out, "D",    getDiskString(comp->dif->fdc->flop[3]));
 
-	fprintf(file, "\n[IDE]\n\n");
-	fprintf(file, "iface = %i\n", comp->ide->type);
-	fprintf(file, "master.type = %i\n", comp->ide->master->type);
-	fprintf(file, "master.image = %s\n", comp->ide->master->image ? comp->ide->master->image : "");
-	fprintf(file, "master.lba = %s\n", YESNO(comp->ide->master->hasLBA));
-	fprintf(file, "slave.type = %i\n", comp->ide->slave->type);
-	fprintf(file, "slave.image = %s\n", comp->ide->slave->image ? comp->ide->slave->image : "");
-	fprintf(file, "slave.lba = %s\n", YESNO(comp->ide->slave->hasLBA));
+	out << "\n[IDE]\n\n";
+	writeKV(out, "iface",        comp->ide->type);
+	writeKV(out, "master.type",  comp->ide->master->type);
+	writeKV(out, "master.image", orEmpty(comp->ide->master->image));
+	writeKV(out, "master.lba",   YESNO(comp->ide->master->hasLBA));
+	writeKV(out, "slave.type",   comp->ide->slave->type);
+	writeKV(out, "slave.image",  orEmpty(comp->ide->slave->image));
+	writeKV(out, "slave.lba",    YESNO(comp->ide->slave->hasLBA));
 
-	fprintf(file, "\n[SDC]\n\n");
-	fprintf(file, "sdcimage = %s\n", comp->sdc->image ? comp->sdc->image : "");
-	fprintf(file, "sdclock = %s\n", YESNO(comp->sdc->lock));
-//	fprintf(file, "capacity = %i\n", comp->sdc->capacity);
+	out << "\n[SDC]\n\n";
+	writeKV(out, "sdcimage", orEmpty(comp->sdc->image));
+	writeKV(out, "sdclock",  YESNO(comp->sdc->lock));
 
-	fprintf(file, "\n[SLOT]\n");
-	fprintf(file, "type = %i\n",comp->slot->mapType);
-	fprintf(file, "path = %s\n", comp->slot->path ? comp->slot->path : "");
-
-	fclose(file);
+	out << "\n[SLOT]\n";
+	writeKV(out, "type", comp->slot->mapType);
+	writeKV(out, "path", orEmpty(comp->slot->path));
 
 	return PSAVE_OK;
 }

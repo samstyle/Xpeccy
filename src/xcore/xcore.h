@@ -171,7 +171,8 @@ void setFlagBit(bool, int*, int);
 bool str2bool(std::string);
 std::vector<std::string> splitstr(std::string,const char*);
 std::pair<std::string,std::string> splitline(std::string, char = '=');
-void copyFile(const char*, const char*);
+void copyFile(const fs::path &src, const fs::path &dst);
+void copyResource(std::string_view src, const fs::path &dst);
 
 int toPower(int);
 int toLimits(int, int, int);
@@ -566,16 +567,19 @@ struct xConfig {
 		unsigned halt:1;
 	} led;
 	struct {
-		std::string confDir;
-		std::string confFile;
+		fs::path confDir;
+		fs::path confFile;
+
+		// TEMPORARY deprecated aliases: the final form reaches these through
+		// resources[] / find / tryFind, but the ROM picker (xTreeBox) still
+		// consumes them directly until commit 4 wires it through setResource.
+		// Populated in conf_init from writableDir(kind).string(); removed in
+		// commit 4 once xTreeBox and opt_romset.cpp have been migrated.
 		std::string romDir;
-		std::string prfDir;
 		std::string shdDir;
 		std::string palDir;
 		std::string plgDir;
 		std::string qssDir;
-		std::string font;
-		std::string boot;
 
 		// Per-kind writable + read-only search paths. Populated in conf_init.
 		std::array<ResourceDirs, static_cast<size_t>(ResourceKind::COUNT)> resources;
@@ -691,6 +695,9 @@ struct xConfig {
 			return enumerateRecursive(kind, [](const fs::path &) { return true; });
 		}
 
+		fs::path prfDir;
+		fs::path font;
+		fs::path boot;
 	} path;
 	struct {
 		unsigned labels:1;
