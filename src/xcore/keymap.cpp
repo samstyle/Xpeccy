@@ -202,38 +202,29 @@ void initKeyMap() {
 void loadKeys() {
 	xProfile* prf = conf.prof.cur;
 	if (!prf) return;
-	std::string sfnam = conf.path.confDir + SLASH + prf->kmapName;
 	initKeyMap();
 	if ((prf->kmapName == "") || (prf->kmapName == "default")) return;
-	std::ifstream file(sfnam);
+	std::ifstream file(conf.path.confDir / prf->kmapName);
 	if (!file.good()) {
-		sfnam = conf.path.confDir + SLASH + "keymaps" + SLASH + prf->kmapName;
-		file.open(sfnam);
+		file.open(conf.path.confDir / "keymaps" / prf->kmapName);
 		if (!file.good()) {
 			printf("Can't open keyboard layout. Default one will be used\n");
 			return;
 		}
 	}
-	char buf[1024];
-//	std::pair<std::string,std::string> spl;
 	std::string line;
-	std::vector<std::string> vec;
-	char keys[8];
-	int rlen;
-	unsigned int i;
-	while (!file.eof()) {
-		file.getline(buf,1023);
-		line = std::string(buf);
-		vec = splitstr(line,"\t");
-		memset(keys, 0, 8);
-		rlen = 0;
+	while (std::getline(file, line)) {
+		const auto vec = splitstr(line, "\t");
 		if (vec.size() > 0) {
-			for(i = 1; (rlen < KEYSEQ_MAXLEN) && (i < vec.size()); i++) {
+			std::string keys;
+			size_t rlen = 0;
+			for (size_t i = 1; i < vec.size() && rlen < KEYSEQ_MAXLEN; i++) {
 				rlen += vec[i].size();
-				if (rlen < KEYSEQ_MAXLEN)
-					strcat(keys, vec[i].c_str());
+				if (rlen < KEYSEQ_MAXLEN) {
+					keys += vec[i];
+				}
 			}
-			setKey(vec[0].c_str(), keys);
+			setKey(vec[0].c_str(), keys.c_str());
 		}
 	}
 }

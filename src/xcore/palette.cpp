@@ -7,7 +7,7 @@
 QList<QColor> loadColors(std::string fname) {
 	QList<QColor> list;
 	QColor col;
-	std::string path = conf.path.palDir + SLASH + fname;
+	std::string path = conf.path.find(ResourceKind::Palette, fname).string();
 	QFile file(path.c_str());
 	int i = 0;
 	QString line;
@@ -38,7 +38,7 @@ QList<QColor> loadColors(std::string fname) {
 
 int saveColors(std::string fname, QList<QColor> pal) {
 	if (pal.size() < 16) return ERR_SIZE;
-	std::string path = conf.path.palDir + SLASH + fname;
+	std::string path = (conf.path.writableDir(ResourceKind::Palette) / fname).string();
 	QFile file(path.c_str());
 	int err = ERR_OK;
 	QColor col;
