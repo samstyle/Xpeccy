@@ -28,13 +28,7 @@
 #define STICKY_KEY 1
 
 inline qreal widgetDpr(const QWidget* w) {
-#if QT_VERSION >= QT_VERSION_CHECK(5,6,0)
 	return w->devicePixelRatioF();
-#elif QT_VERSION >= QT_VERSION_CHECK(5,0,0)
-	return w->devicePixelRatio();
-#else
-	return 1.0;
-#endif
 }
 
 enum {
@@ -56,23 +50,12 @@ typedef struct {
 	QString imgName;
 } xLed;
 
-// QOpenGLWidget since Qt5.4
-
-#define BLOCKGL 0
-#define USELEGACYGL 0
-#define ISLEGACYGL ((QT_VERSION < QT_VERSION_CHECK(5,4,0)) || (USELEGACYGL && (QT_VERSION < QT_VERSION_CHECK(6,0,0))))
-
 #ifdef USEOPENGL
 	#include <QtOpenGL>
-
-	#if ISLEGACYGL
-		class MainWin : public QGLWidget {
-	#else
-		#include <QOpenGLWidget>
-		#include <QOpenGLBuffer>
-		#include <QOpenGLVertexArrayObject>
-		class MainWin : public QOpenGLWidget, protected QOpenGLFunctions {
-	#endif
+	#include <QOpenGLWidget>
+	#include <QOpenGLBuffer>
+	#include <QOpenGLVertexArrayObject>
+	class MainWin : public QOpenGLWidget, protected QOpenGLFunctions {
 #else
 	class MainWin : public QWidget {
 #endif
@@ -225,7 +208,7 @@ typedef struct {
 		void focusInEvent(QFocusEvent*);
 		void timerEvent(QTimerEvent*);
 		void moveEvent(QMoveEvent*);
-#if defined(USEOPENGL) && !BLOCKGL
+#ifdef USEOPENGL
 		unsigned curtex:2;
 		GLuint texids[4];
 		GLuint curtxid;
@@ -234,17 +217,10 @@ typedef struct {
 		void resizeGL(int,int);
 		void paintGL();
 		void cleanupGL();
-#if ISLEGACYGL
-		QGLContext* cont;
-		QGLShaderProgram prg;
-		QGLShader* vtx_shd;
-		QGLShader* frg_shd;
-#else
 		QOpenGLShaderProgram prg;
 		QOpenGLShader* vtx_shd;
 		QOpenGLShader* frg_shd;
 		QOpenGLVertexArrayObject vao;
 		QOpenGLBuffer vbo;
-#endif
 #endif
 };
