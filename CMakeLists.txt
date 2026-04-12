@@ -13,6 +13,10 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(PROJECT_NAME "xpeccy")
 project(${PROJECT_NAME})
 
+option(USEOPENGL    "Enable OpenGL-accelerated rendering" ON)
+option(USEQTNETWORK "Enable Qt network support" OFF)
+set(QTVERSION "" CACHE STRING "Force Qt version (5 or 6). Empty = auto-detect.")
+
 file(STRINGS "Release" XVER)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake)
@@ -184,16 +188,16 @@ set(MOCFILES
 
 if(DEFINED QT6BUILD)
 	if(QT6BUILD)
-		set(QTVERSION 6)
+		set(QTVERSION 6 CACHE STRING "" FORCE)
 	else()
-		set(QTVERSION 5)
+		set(QTVERSION 5 CACHE STRING "" FORCE)
 	endif()
 endif()
 
-if(DEFINED QTVERSION)
-	find_package(QT NAMES Qt${QTVERSION} REQUIRED)
-else()
+if(QTVERSION STREQUAL "")
 	find_package(QT NAMES Qt6 Qt5 REQUIRED)
+else()
+	find_package(QT NAMES Qt${QTVERSION} REQUIRED)
 endif()
 
 set(_QTV ${QT_VERSION_MAJOR})
@@ -287,12 +291,6 @@ if(ZLIB_FOUND)
 	set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, zlib1g (>=1.2)")
 	set(CPACK_RPM_PACKAGE_DEPENDS "${CPACK_RPM_PACKAGE_DEPENDS}, zlib >= 1.2")
 endif(ZLIB_FOUND)
-
-# flags
-
-if(${IBM})
-	add_definitions(-DUSEIBM=1)
-endif()
 
 # vendored dependencies
 
