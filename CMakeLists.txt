@@ -280,14 +280,16 @@ if(${IBM})
 	add_definitions(-DUSEIBM=1)
 endif()
 
-# other
+# vendored dependencies
 
-if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-	add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS} ${UIHEADERS} ${RESOURCES} ${MOCHEADERS})
-elseif(${CMAKE_SYSTEM_NAME} MATCHES "BSD")
-	add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS} ${UIHEADERS} ${RESOURCES} ${MOCHEADERS})
-elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-	add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${SOURCES} ${HEADERS} ${UIHEADERS} ${RESOURCES} ${MOCHEADERS} ${BUNDLE_ICON_PATH})
+include_directories(${PROJECT_SOURCE_DIR}/3rdparty/xdgpp)
+
+# executable
+
+set(ALL_SRCS ${SOURCES} ${HEADERS} ${UIHEADERS} ${RESOURCES} ${MOCHEADERS})
+
+if(APPLE)
+	add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${ALL_SRCS} ${BUNDLE_ICON_PATH})
 	find_program(MACDEPLOYQTEXE macdeployqt)
 	add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 		COMMAND ${MACDEPLOYQTEXE} ARGS ${BUNDLE_PATH} -always-overwrite
@@ -297,8 +299,10 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	)
 	set(CMAKE_INSTALL_PREFIX "/Applications")
 	install(TARGETS ${PROJECT_NAME} BUNDLE DESTINATION .)
-elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-	add_executable(${PROJECT_NAME} WIN32 ${SOURCES} ${HEADERS} ${UIHEADERS} ${RESOURCES} ${MOCHEADERS} ${CMAKE_SOURCE_DIR}/xpeccy.rc)
+elseif(WIN32)
+	add_executable(${PROJECT_NAME} WIN32 ${ALL_SRCS} ${CMAKE_SOURCE_DIR}/xpeccy.rc)
+else()
+	add_executable(${PROJECT_NAME} ${ALL_SRCS})
 endif()
 
 include_directories(${INCLUDIRS})
