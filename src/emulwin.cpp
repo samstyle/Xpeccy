@@ -200,9 +200,7 @@ MainWin::MainWin() {
 	cmsid = startTimer(1000);	// 1 sec
 
 	connect(&frm_tmr, SIGNAL(timeout()), this, SLOT(frame_timer()));
-#if QT_VERSION >= QT_VERSION_CHECK(5,0,0)
 	frm_tmr.setTimerType(Qt::PreciseTimer);
-#endif
 	frm_tmr.start(20);
 
 	connect(userMenu,SIGNAL(aboutToShow()),SLOT(menuShow()));
@@ -214,27 +212,11 @@ MainWin::MainWin() {
 	connect(&srv, SIGNAL(newConnection()),this, SLOT(connected()));
 #endif
 
-// a legacygl code must be here, else the main process doesn't finish properly (???)
-#if USELEGACYGL
-	QGLFormat frmt;
-	frmt.setDoubleBuffer(false);
-	cont = new QGLContext(frmt);
-	setContext(cont);
-	setAutoBufferSwap(true);
-	makeCurrent();
-	curtex = 0;
-	shd_support = QGLShader::hasOpenGLShaders(QGLShader::Vertex) && QGLShader::hasOpenGLShaders(QGLShader::Fragment);
-	qDebug() << "vtx_shd";
-	vtx_shd = new QGLShader(QGLShader::Vertex, cont);
-	qDebug() << "frg_shd";
-	frg_shd = new QGLShader(QGLShader::Fragment, cont);
-#endif
-
 	qDebug() << "end:constructor";
 }
 
 MainWin::~MainWin() {
-#if defined(USEOPENGL) && !BLOCKGL
+#ifdef USEOPENGL
 	cleanupGL();
 	delete(vtx_shd);
 	delete(frg_shd);
@@ -634,7 +616,7 @@ void MainWin::frame_timer() {
 		frm_tmr.setInterval(frm_ns / 1000000);		// 1e6 ns = 1 ms. next frame shot
 		frm_ns = frm_ns % 1000000;			// remains
 	}
-#if defined(USEOPENGL) && !BLOCKGL
+#ifdef USEOPENGL
 	if (conf.emu.fast || conf.emu.pause) {
 		glBindTexture(GL_TEXTURE_2D, texids[curtex]);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, bytesPerLine / 4, comp->vid->vsze.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, comp->flgDBG ? scrimg : bufimg);
@@ -651,7 +633,7 @@ void MainWin::frame_timer() {
 
 void MainWin::d_frame() {
 	if (conf.emu.fast) return;
-#if defined(USEOPENGL) && !BLOCKGL
+#ifdef USEOPENGL
 	Computer* comp = conf.prof.cur->zx;
 	queue.append(texids[curtex]);
 	if (queue.size() > 3)
@@ -678,7 +660,7 @@ void MainWin::drawText(QPainter* pnt, int x, int y, const char* buf) {
 
 void MainWin::paintEvent(QPaintEvent*) {
 	QPainter pnt(this);
-#if defined(USEOPENGL) && !BLOCKGL
+#ifdef USEOPENGL
 	pnt.beginNativePainting();
 	glClearColor(0, 0, 0, 1);
 	glClear(GL_COLOR_BUFFER_BIT);
@@ -1091,7 +1073,7 @@ void MainWin::fillUserMenu() {
 	act->setData("");
 	act->setCheckable(true);
 	if (conf.vid.shader.empty()) act->setChecked(true);
-#if defined(USEOPENGL) && !BLOCKGL
+#ifdef USEOPENGL
 	if (conf.vid.shd_support) {
 		QDir dir(conf.path.shdDir.c_str());
 		QFileInfoList lst = dir.entryInfoList(QStringList() << "*.txt", QDir::Files, QDir::Name);
@@ -1140,7 +1122,7 @@ void MainWin::optApply() {
 
 	}
 #endif
-#if defined(USEOPENGL) && !BLOCKGL
+#ifdef USEOPENGL
 	loadShader();
 #endif
 	emit s_tape_upd(comp->tape);
