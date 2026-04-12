@@ -3,7 +3,8 @@
 #include "defines.h"
 
 enum {
-	UART_8250 = 1,
+	UART_DEFAULT = 0,
+	UART_8250,
 	UPD_8251,
 };
 
@@ -49,7 +50,7 @@ struct UART {
 	int div;	// div * clock / 16: freq.of bits transmitting
 };
 
-UART* uart_create(int, cbirq, void*);
+UART* uart_create(int, int, cbirq, void*);
 void uart_destroy(UART*);
 void uart_set_irq(UART*, int);
 void uart_set_dev(UART*, xurdcb, xuwrcb, void*);

@@ -580,6 +580,8 @@ void ibm_init(Computer* comp) {
 	dma_set_chan(comp->dma1, 1, ibm_dma1_rd_2, ibm_dma1_wr_2, NULL);
 	dma_set_chan(comp->dma2, 0, ibm_dma2_rd_1, ibm_dma2_wr_1, NULL);
 	comp->dma1->ch[2].blk = 1;		// block dma1 maintaining ch2 (fdc), it working through callbacks
+	uart_set_type(comp->uart, UART_8250);
+	uart_set_irq(comp->uart, IRQ_COM1);
 	uart_set_dev(comp->uart, ibm_mouse_rd, ibm_mouse_wr, comp);	// connect serial mouse to COM1
 }
 

@@ -10,24 +10,58 @@
 
 // PS/2 controller
 
+// flag: b0: 0 for keyboard, 1 for mouse
+void ps2c_wr_ob(PS2Ctrl* ctrl, int val, int flg) {
+	ctrl->outbuf = val;
+	ctrl->status &= ~0x21;
+	ctrl->status |= 0x01;
+	if (flg & 1) ctrl->status |= 0x20;
+}
+
+void ps2c_dev_irq(int t, void* p) {
+	PS2Ctrl* ctrl = (PS2Ctrl*)p;
+	switch(t) {
+		case IRQ_KBD:			// sends when uarta data is ready
+			ps2c_wr_ob(ctrl, ctrl->uarta->datar, 0);
+			ctrl->xirq(IRQ_KBD, ctrl->xptr);
+			break;
+		case IRQ_MOUSE:			// sends when uartb data is ready
+			ps2c_wr_ob(ctrl, ctrl->uartb->datar, 1);
+			if (ctrl->ram[0] & 2) {		// 2nd device interrupt enabled
+				ctrl->xirq(IRQ_MOUSE, ctrl->xptr);
+			}
+			break;
+		default:
+			ctrl->xirq(t, ctrl->xptr);
+			break;
+	}
+}
+
 PS2Ctrl* ps2c_create(Keyboard* kp, Mouse* mp, cbirq cb, void* p) {
 	PS2Ctrl* ctrl = (PS2Ctrl*)malloc(sizeof(PS2Ctrl));
 	if (ctrl) {
 		memset(ctrl, 0, sizeof(PS2Ctrl));
+		ctrl->uarta = uart_create(UART_DEFAULT, IRQ_KBD, ps2c_dev_irq, ctrl);
+		ctrl->uartb = uart_create(UART_DEFAULT, IRQ_MOUSE, ps2c_dev_irq, ctrl);
 		ctrl->kbd = kp;
 		ctrl->mouse = mp;
 		ctrl->xirq = cb;
 		ctrl->xptr = p;
-//		ctrl->cmd = -1;
 		ctrl->status = 0;
-//		ctrl->delay = 0;
 		ps2c_reset(ctrl);
 	}
 	return ctrl;
 }
 
 void ps2c_destroy(PS2Ctrl* ctrl) {
+	uart_destroy(ctrl->uarta);
+	uart_destroy(ctrl->uartb);
 	free(ctrl);
+}
+
+void ps2c_set_dev(PS2Ctrl* ctrl, int idx, xurdcb crd, xuwrcb cwr, void* p) {
+	UART* uart = idx ? ctrl->uartb : ctrl->uarta;
+	uart_set_dev(uart, crd, cwr, p);
 }
 
 void ps2c_reset(PS2Ctrl* ctrl) {
@@ -106,14 +140,6 @@ int ps2c_rd(PS2Ctrl* ctrl, int adr) {
 			break;
 	}
 	return res;
-}
-
-// flag: b0: 0 for keyboard, 1 for mouse
-void ps2c_wr_ob(PS2Ctrl* ctrl, int val, int flg) {
-	ctrl->outbuf = val;
-	ctrl->status &= ~0x21;
-	ctrl->status |= 0x01;
-	if (flg & 1) ctrl->status |= 0x20;
 }
 
 // NOTE: if its ack recieve anyway. if its key data see at ram[0]&0x10 ???
@@ -321,6 +347,10 @@ void ps2c_sync(PS2Ctrl* ctrl, int ns) {
 #if !USE_HOST_KEYBOARD
 	xt_sync(ctrl->kbd, ns);
 #endif
+#if 0
+	uart_sync(ctrl->uarta, ns);	// it sends IRQ_KBD/IRQ_MOUSE when data ready
+	uart_sync(ctrl->uartb, ns);
+#else
 	ctrl->delay -= ns;
 	while (ctrl->delay < 0) {
 		ctrl->delay += 1e9/2000;		// TODO: 2KB/s ?
@@ -330,4 +360,5 @@ void ps2c_sync(PS2Ctrl* ctrl, int ns) {
 			ps2c_rd_mouse(ctrl);
 		}
 	}
+#endif
 }

@@ -2,6 +2,7 @@
 
 #include "defines.h"
 #include "input/input.h"
+#include "uart.h"
 
 #define PS2_RDATA	0
 #define PS2_RCMD	4
@@ -22,6 +23,9 @@ typedef struct {
 	Keyboard* kbd;
 	Mouse* mouse;
 
+	UART* uarta;
+	UART* uartb;
+
 	cbirq xirq;
 	void* xptr;
 
@@ -38,6 +42,7 @@ typedef struct {
 
 PS2Ctrl* ps2c_create(Keyboard*, Mouse*, cbirq, void*);
 void ps2c_destroy(PS2Ctrl*);
+void ps2c_set_dev(PS2Ctrl*, int, xurdcb, xuwrcb, void*);
 void ps2c_sync(PS2Ctrl*, int);
 void ps2c_reset(PS2Ctrl*);
 void ps2c_clear(PS2Ctrl*);

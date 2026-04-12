@@ -84,7 +84,7 @@ int pc98xx_ext_rd(int adr, void* p) {
 void pc98xx_mem_map(Computer* comp) {
 	memSetBank(comp->mem, 0x00, MEM_RAM, 0, MEM_1M, pc98xx_ram_rd, pc98xx_ram_wr, comp);	// ram (1M)
 	memSetBank(comp->mem, 0xa0, MEM_EXT, 0, MEM_128K, pc98xx_vid_rd, pc98xx_vid_wr, comp);	// video ram (128K)
-	memSetBank(comp->mem, 0xc0, MEM_EXT, 0, MEM_128K, pc98xx_ext_rd, NULL, comp);		// expand roms (128K)
+	memSetBank(comp->mem, 0xc0, MEM_EXT, 0, MEM_128K, pc98xx_ext_rd, NULL, comp);		// expand roms (128K) <- sound.rom?
 	memSetBank(comp->mem, 0xe0, MEM_EXT, 0, MEM_32K, NULL, NULL, comp);			// video ram (32K)
 	memSetBank(comp->mem, 0xe8, MEM_ROM, 0, MEM_64K, pc98xx_bios_rd, NULL, comp);		// bios (96K)
 	memSetBank(comp->mem, 0xf8, MEM_ROM, 2, MEM_32K, pc98xx_bios_rd, NULL, comp);

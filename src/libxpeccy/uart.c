@@ -4,7 +4,7 @@
 #include <string.h>
 #include <stdio.h>
 
-UART* uart_create(int n, cbirq cb, void* ptr) {
+UART* uart_create(int t, int n, cbirq cb, void* ptr) {
 	UART* uart = (UART*)malloc(sizeof(UART));
 	if (uart) {
 		memset(uart, 0, sizeof(UART));
@@ -12,7 +12,7 @@ UART* uart_create(int n, cbirq cb, void* ptr) {
 		uart->xirq = cb;
 		uart->xptr = ptr;
 		uart_set_rate(uart, 100);		// 100 bytes/sec
-		uart_set_type(uart, UART_8250);
+		uart_set_type(uart, t);
 	}
 	return uart;
 }
@@ -249,7 +249,26 @@ void u8251_sync(UART* uart, int ns) {
 				uart->lsr |= F_ERR_OE;
 			} else {
 				uart->drqr = 1;
-				uart->xirq(IRQ_UART_0, uart->xptr);		// TODO: set UART irq id
+				uart->xirq(uart->irqn, uart->xptr);		// TODO: set UART irq id
+			}
+		}
+	}
+}
+
+// default (simple sync)
+
+void uart_def_sync(UART* uart, int ns) {
+	if (uart->ready) {
+		uart->nscnt -= ns;
+		while (uart->nscnt < 0) {
+			uart->nscnt += uart->nsrate;
+			uart->datar = uart->devrd ? uart->devrd(uart->devptr) : -1;
+			if (uart->datar < 0) {
+				uart->ready = 0;
+				uart->nscnt = 0;
+			} else {
+				uart->drqr = 1;
+				uart->xirq(uart->irqn, uart->xptr);
 			}
 		}
 	}
@@ -258,6 +277,7 @@ void u8251_sync(UART* uart, int ns) {
 // core stuff
 
 const UARTCore uart_core_tab[] = {
+	{UART_DEFAULT, NULL, NULL, NULL, uart_def_sync},
 	{UART_8250, u8250_reset, u8250_rd, u8250_wr, u8250_sync},
 	{UPD_8251, u8251_reset, u8251_rd, u8251_wr, u8251_sync},
 	{-1, NULL, NULL, NULL, NULL}
