@@ -1,12 +1,12 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.22...3.28)
 
 #compiler settings
 
-#set(CMAKE_CXX_STANDARD 11)
-#set(CMAKE_CXX_STANDARD_REQUIRED ON)
-#set(CMAKE_CXX_EXTENSIONS OFF)
-#set(CMAKE_C_COMPILER gcc)
-#set(CMAKE_CXX_COMPILER g++)
+set(CMAKE_C_STANDARD 17)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # common
 
@@ -18,7 +18,7 @@ file(STRINGS "Release" XVER)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake)
 include(${CMAKE_ROOT}/Modules/FindPackageHandleStandardArgs.cmake)
 
-# endianess
+# endianness
 
 include (TestBigEndian)
 test_big_endian(BIG_ENDIAN)
@@ -30,12 +30,12 @@ endif()
 
 # compilation flags
 
-set(CMAKE_C_FLAGS "-std=gnu99 -Wall -O2 ${CMAKE_C_FLAGS}")
-set(CMAKE_C_FLAGS_RELEASE "-DNDEBUG ${CMAKE_C_FLAGS_RELEASE}")
+set(CMAKE_C_FLAGS "-Wall ${CMAKE_C_FLAGS}")
+set(CMAKE_C_FLAGS_RELEASE "-O2 -DNDEBUG ${CMAKE_C_FLAGS_RELEASE}")
 set(CMAKE_C_FLAGS_DEBUG "-g -DISDEBUG ${CMAKE_C_FLAGS_DEBUG}")
 
-set(CMAKE_CXX_FLAGS "-std=c++11 -Wall -O2 ${CMAKE_CXX_FLAGS}")
-set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG ${CMAKE_CXX_FLAGS_RELEASE}")
+set(CMAKE_CXX_FLAGS "-Wall ${CMAKE_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG ${CMAKE_CXX_FLAGS_RELEASE}")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -DISDEBUG ${CMAKE_CXX_FLAGS_DEBUG}")
 
 # OS-depended section
@@ -80,7 +80,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 	install(FILES images/xpeccy.png DESTINATION share/icons)
 	install(FILES Xpeccy.desktop DESTINATION share/applications)
 
-elseif(${CMAKE_SYSTEM_NAME} MATCHES "/BSD$/")
+elseif(${CMAKE_SYSTEM_NAME} MATCHES "BSD")
 
 	set(INC_PATHS pkg/include include)
 	set(LIB_PATHS lib lib64 pkg/lib local/lib64)
@@ -191,32 +191,7 @@ elseif(NOT DEFINED QTVERSION)
 	set(QTVERSION 5)
 endif()
 
-if(${QTVERSION} EQUAL 4)
-	find_package(Qt4 COMPONENTS QtCore QtGui REQUIRED)
-	include(${QT_USE_FILE})
-	qt4_add_resources(RESOURCES ${QRCFILES})
-	qt4_wrap_ui(UIHEADERS ${UIFILES})
-	qt4_wrap_cpp(MOCHEADERS ${MOCFILES})
-	set(CPACK_RPM_PACKAGE_REQUIRES "libqt4 >= 4.6, libqt4-x11 >= 4.6")
-	set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqtcore4 (>=4.6), libqtgui4 (>=4.6)")
-
-	if(${USEQTNETWORK})
-		find_package(Qt4 COMPONENTS QtNetwork REQUIRED)
-		set(CPACK_RPM_PACKAGE_REQUIRES "${CPACK_RPM_PACKAGE_REQUIRES}, libqt4-network >= 4.6")
-		set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, libqt4-network (>=4.6)")
-		add_definitions("-DUSENETWORK")
-	endif()
-	if(${USEOPENGL})
-		find_package(Qt4 COMPONENTS QtOpenGL REQUIRED)
-		set(CPACK_RPM_PACKAGE_REQUIRES "${CPACK_RPM_PACKAGE_REQUIRES}, libqt4-opengl >= 4.6")
-		set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, libqt4-opengl (>=4.6)")
-		add_definitions("-DUSEOPENGL")
-	endif()
-
-	set(LIBRARIES ${LIBRARIES} ${QT_LIBRARIES})
-	set(QT_VER ${QT_VERSION_MAJOR}.${QT_VERSION_MINOR}.${QT_VERSION_PATCH})
-
-elseif(${QTVERSION} EQUAL 5)
+if(${QTVERSION} EQUAL 5)
 
 	find_package(Qt5 COMPONENTS Core Gui Widgets REQUIRED)
 	set(LIBRARIES ${LIBRARIES} Qt5::Widgets)
@@ -246,10 +221,6 @@ elseif(${QTVERSION} EQUAL 5)
 
 elseif(${QTVERSION} EQUAL 6)
 #	message(FATAL_ERROR "Qt6 usage is not implemented yet")
-# Qt6 requires c++17
-	set(CMAKE_CXX_STANDARD 17)
-	set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
 	find_package(Qt6 COMPONENTS Core Gui Widgets Core5Compat REQUIRED)
 	set(LIBRARIES ${LIBRARIES} Qt6::Widgets Qt6::Core Qt6::Gui Qt6::Core5Compat)
 	qt6_add_resources(RESOURCES ${QRCFILES})
@@ -280,30 +251,17 @@ endif()
 
 # SDL
 
-if(${SDL1BUILD})
-	find_package(SDL REQUIRED)
-	if(${SDL_FOUND})
-		add_definitions(-DHAVESDL1)
-		include_directories(${SDL_INCLUDE_DIR})
-		set(LIBRARIES ${LIBRARIES} ${SDL_LIBRARY})
-		set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, libSDL1.2debian (>=1.2)")
-		set(CPACK_RPM_PACKAGE_DEPENDS "${CPACK_RPM_PACKAGE_DEPENDS}, SDL >= 1.2")
-		set(SDL_VER ${SDL_VERSION_STRING})
-		set(SDL_NAME "SDL")
-	endif(${SDL_FOUND})
-else(${SDL1BUILD})
-	find_package(SDL2 REQUIRED)
-	if (${SDL2_FOUND})
-		add_definitions(-DHAVESDL2)
-		include_directories(${SDL2_INCLUDE_DIR})
-		set(LIBRARIES ${LIBRARIES} ${SDL2_LIBRARY})
-		set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, libsdl2-2.0-0 (>=2.0) | libSDL2 (>=2.0)")
-		set(CPACK_RPM_PACKAGE_DEPENDS "${CPACK_RPM_PACKAGE_DEPENDS}, SDL2 >= 2.0")
-		set(SDL_VER "2.x")
-		set(SDL_NAME "SDL2")
-		message(STATUS "SDL2_INCLUDE_DIR = " ${SDL2_INCLUDE_DIR})
-	endif(${SDL2_FOUND})
-endif(${SDL1BUILD})
+find_package(SDL2 REQUIRED)
+if (${SDL2_FOUND})
+	add_definitions(-DHAVESDL2)
+	include_directories(${SDL2_INCLUDE_DIR})
+	set(LIBRARIES ${LIBRARIES} ${SDL2_LIBRARY})
+	set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, libsdl2-2.0-0 (>=2.0) | libSDL2 (>=2.0)")
+	set(CPACK_RPM_PACKAGE_DEPENDS "${CPACK_RPM_PACKAGE_DEPENDS}, SDL2 >= 2.0")
+	set(SDL_VER "2.x")
+	set(SDL_NAME "SDL2")
+	message(STATUS "SDL2_INCLUDE_DIR = " ${SDL2_INCLUDE_DIR})
+endif(${SDL2_FOUND})
 
 # zlib (for rzx)
 
@@ -326,7 +284,7 @@ endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 	add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS} ${UIHEADERS} ${RESOURCES} ${MOCHEADERS})
-elseif(${CMAKE_SYSTEM_NAME} MATCHES "/BSD$/")
+elseif(${CMAKE_SYSTEM_NAME} MATCHES "BSD")
 	add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS} ${UIHEADERS} ${RESOURCES} ${MOCHEADERS})
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${SOURCES} ${HEADERS} ${UIHEADERS} ${RESOURCES} ${MOCHEADERS} ${BUNDLE_ICON_PATH})
