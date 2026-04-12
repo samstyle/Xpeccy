@@ -27,6 +27,16 @@
 // for windows
 #define STICKY_KEY 1
 
+inline qreal widgetDpr(const QWidget* w) {
+#if QT_VERSION >= QT_VERSION_CHECK(5,6,0)
+	return w->devicePixelRatioF();
+#elif QT_VERSION >= QT_VERSION_CHECK(5,0,0)
+	return w->devicePixelRatio();
+#else
+	return 1.0;
+#endif
+}
+
 enum {
 	led_kbd = 0,
 	led_joy,
@@ -59,6 +69,8 @@ typedef struct {
 		class MainWin : public QGLWidget {
 	#else
 		#include <QOpenGLWidget>
+		#include <QOpenGLBuffer>
+		#include <QOpenGLVertexArrayObject>
 		class MainWin : public QOpenGLWidget, protected QOpenGLFunctions {
 	#endif
 #else
@@ -230,6 +242,8 @@ typedef struct {
 		QOpenGLShaderProgram prg;
 		QOpenGLShader* vtx_shd;
 		QOpenGLShader* frg_shd;
+		QOpenGLVertexArrayObject vao;
+		QOpenGLBuffer vbo;
 #endif
 #endif
 };
