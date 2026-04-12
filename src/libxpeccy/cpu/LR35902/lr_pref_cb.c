@@ -57,7 +57,7 @@ void lrcb2D(CPU* cpu) {SRAX(cpu->regL);}
 void lrcb2E(CPU* cpu) {cpu->tmpb = lr_mrd(cpu, cpu->regHL); cpu->t++; SRAX(cpu->tmpb); lr_mwr(cpu, cpu->regHL, cpu->tmpb);}
 void lrcb2F(CPU* cpu) {SRAX(cpu->regA);}
 // 30..37	swap
-inline unsigned char lr_swaph(CPU* cpu, unsigned char v) {
+static inline unsigned char lr_swaph(CPU* cpu, unsigned char v) {
 	v = ((v & 0x0f) << 4) | ((v & 0xf0) >> 4);
 	cpu->flgC = 0;
 	cpu->flgN = 0;
