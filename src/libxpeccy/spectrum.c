@@ -74,7 +74,7 @@ int memrd(int adr, int m1, void* ptr) {
 	unsigned char* fptr = comp_get_memcell_flag_ptr(comp, adr);
 	if (fptr) {
 		unsigned char flag = *fptr;
-		if (comp->maping) {
+		if (comp->flgMAP) {
 			if ((comp->cpu->regPC-1+comp->cpu->cs.base) == adr) {
 				flag &= 0x0f;
 				flag |= DBG_VIEW_EXEC;
@@ -87,7 +87,7 @@ int memrd(int adr, int m1, void* ptr) {
 	}
 	bpChecker ch = comp_check_bp(comp, adr, MEM_BRK_RD);
 	if (ch.t >= 0) {
-		comp->brk = 1;
+		comp->flgBRK = 1;
 		comp->brkt = ch.t;
 		comp->brka = ch.a;
 	}
@@ -99,7 +99,7 @@ void memwr(int adr, int val, void* ptr) {
 	unsigned char* fptr = comp_get_memcell_flag_ptr(comp, adr);
 	if (fptr) {
 		unsigned char flag = *fptr;
-		if (comp->maping) {
+		if (comp->flgMAP) {
 			if (!(flag & 0xf0)) {
 				flag |= DBG_VIEW_BYTE;
 				*fptr = flag;
@@ -107,7 +107,7 @@ void memwr(int adr, int val, void* ptr) {
 		}
 		bpChecker ch = comp_check_bp(comp, adr, MEM_BRK_WR);
 		if (ch.t >= 0) {
-			comp->brk = 1;
+			comp->flgBRK = 1;
 			comp->brkt = ch.t;
 			comp->brka = ch.a;
 		}
@@ -201,7 +201,7 @@ int iord(int port, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 // TODO: zx only
 	if (comp->hw->grp == HWG_ZX) {
-		if (comp->contIO && 0) {
+		if (comp->flgCNTI && 0) {
 			zx_cont_t1(comp, port);
 			zx_cont_tn(comp, port);
 		} else {
@@ -228,7 +228,7 @@ int iord(int port, void* ptr) {
 	comp->bdiz = (comp->dos && (comp->dif->type == DIF_BDI)) ? 1 : 0;
 // brk
 	if (comp->brkIOMap[port] & MEM_BRK_RD) {
-		comp->brk = 1;
+		comp->flgBRK = 1;
 		comp->brkt = BRK_IOPORT;
 		comp->brka = port;
 	}
@@ -243,7 +243,7 @@ void iowr(int port, int val, void* ptr) {
 		// sync video to current T
 		vid_sync(comp->vid, (comp->cpu->t - res4) * comp->nsPerTick);
 		res4 = comp->cpu->t;
-		if (comp->contIO) {
+		if (comp->flgCNTI) {
 			zx_cont_t1(comp, port);
 			comp->hw->out(comp, port, val);
 			zx_cont_tn(comp, port);
@@ -262,7 +262,7 @@ void iowr(int port, int val, void* ptr) {
 	}
 // brk
 	if (comp->brkIOMap[port] & MEM_BRK_WR) {
-		comp->brk = 1;
+		comp->flgBRK = 1;
 		comp->brkt = BRK_IOPORT;
 		comp->brka = port;
 	}
@@ -372,8 +372,8 @@ Computer* compCreate() {
 	Computer* comp = (Computer*)malloc(sizeof(Computer));
 	memset(comp, 0x00, sizeof(Computer));
 	comp->resbank = RES_48;
-	comp->firstRun = 1;
-	comp->debug = 0;
+	comp->flgFRN = 1;
+	comp->flgDBG = 0;
 
 	comp->cpu = cpuCreate(CPU_Z80,memrd,memwr,iord,iowr,intrq,comp_irq,comp);
 	comp->mem = memCreate();
@@ -416,8 +416,8 @@ Computer* compCreate() {
 // pc9801;
 	comp->rtc = upd4990_create(comp_irq, comp);
 // baseconf
-	memcpy(comp->evo.blVer,blnm,16);
-	memcpy(comp->evo.bcVer,bcnm,16);
+//	memcpy(comp->evo.blVer,blnm,16);
+//	memcpy(comp->evo.bcVer,bcnm,16);
 //tsconf
 	comp->tsconf.pwr_up = 1;
 // rzx
@@ -520,7 +520,7 @@ void compSetBaseFrq(Computer* comp, double frq) {
 
 void compSetTurbo(Computer* comp, double mult) {
 	comp->frqMul = mult;
-	comp->speed = (mult > 1) ? 1 : 0;
+//	comp->speed = (mult > 1) ? 1 : 0;
 	comp_update_timings(comp);
 }
 
@@ -559,10 +559,10 @@ int compSetHardware(Computer* comp, const char* name) {
 int compExec(Computer* comp) {
 	comp->vid->time = 0;
 // breakpoints
-	if (!comp->debug) {
+	if (!comp->flgDBG) {
 		bpChecker ch = comp_check_bp(comp, comp->cpu->regPC + comp->cpu->cs.base, MEM_BRK_FETCH | MEM_BRK_TFETCH);
 		if (ch.t >= 0) {
-			comp->brk = 1;
+			comp->flgBRK = 1;
 			comp->brkt = ch.t;
 			comp->brka = ch.a;
 			if (*ch.ptr & MEM_BRK_TFETCH) {
@@ -571,8 +571,8 @@ int compExec(Computer* comp) {
 			}
 			return 0;
 		}
-		if (comp->cpu->intrq && comp->brkirq) {
-			comp->brk = 1;
+		if (comp->cpu->intrq && comp->flgIBRK) {
+			comp->flgBRK = 1;
 			comp->brkt = BRK_IRQ;
 			return 0;
 		}
@@ -582,7 +582,7 @@ int compExec(Computer* comp) {
 // exec cpu opcode OR handle interrupt. get T states back
 	res2 = cpu_exec(comp->cpu);
 // scorpion WAIT: add 1T to odd-T command
-	if (comp->evenM1 && (res2 & 1))
+	if (comp->flgEM1 && (res2 & 1))
 		res2++;
 #ifdef HAVEZLIB
 	if (comp->rzx.play) {
@@ -616,7 +616,7 @@ int compExec(Computer* comp) {
 // new frame
 	if (comp->vid->newFrame) {
 		comp->vid->newFrame = 0;
-		comp->frmStrobe = 1;
+		comp->flgFRM = 1;
 	}
 // return ns eated @ this step
 	return nsTime;
@@ -628,8 +628,8 @@ unsigned char cmsRd(Computer* comp) {
 	unsigned char res = 0xff;
 	if (comp->cmos.adr >= 0x70) {
 		switch(comp->cmos.mode) {
-			case 0: res = comp->evo.bcVer[comp->cmos.adr & 0x0f]; break;
-			case 1: res = comp->evo.blVer[comp->cmos.adr & 0x0f]; break;
+			case 0: res = bcnm[comp->cmos.adr & 0x0f]; break;
+			case 1: res = blnm[comp->cmos.adr & 0x0f]; break;
 			case 2: res = xt_read(comp->keyb); break; //keyReadCode(comp->keyb); break;		// read PC keyboard keycode (TODO: used here only)
 		}
 	} else {
@@ -660,7 +660,7 @@ void cmsWr(Computer* comp, int val) {
 
 // activate breakpoint w/o type (exit to debuga)
 void comp_brk(Computer* comp, int t) {
-	comp->brk = 1;
+	comp->flgBRK = 1;
 	comp->brkt = t;
 }
 

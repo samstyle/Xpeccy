@@ -1,5 +1,7 @@
 #include "../spectrum.h"
 
+#define	p7E	reg[16]
+
 // Profi ROM: EXT,DOS,128,48
 void prfMapMem(Computer* comp) {
 	if (comp->pDFFD & 0x10) {
@@ -34,8 +36,8 @@ void prfOut7E(Computer* comp, int port, int val) {
 		col.b = prfColTab[(port & 0x0300) >> 7];
 		col.r = prfColTab[(port & 0x1c00) >> 10];
 		col.g = prfColTab[(port & 0xe000) >> 13];
-		vid_set_col(comp->vid, comp->profi.p7E & 15, col);
-		comp->profi.p7E = ~val & 15;
+		vid_set_col(comp->vid, comp->p7E & 15, col);
+		comp->p7E = ~val & 15;
 	}
 }
 

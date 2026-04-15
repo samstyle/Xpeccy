@@ -57,12 +57,12 @@ xPortDsc zx_port_tab_p[] = {
 xPortDsc zx_port_tab_ts[] = {
 	{0x7ffd, REG_BYTE, offsetof(Computer, p7FFD)},
 	{0xeff7, REG_BYTE, offsetof(Computer, pEFF7)},
-	{0x01af, REG_BYTE, offsetof(Computer, tsconf.p01af)},
-	{0x02af, REG_BYTE, offsetof(Computer, tsconf.p02af)},
-	{0x03af, REG_BYTE, offsetof(Computer, tsconf.p03af)},
-	{0x04af, REG_BYTE, offsetof(Computer, tsconf.p04af)},
-	{0x05af, REG_BYTE, offsetof(Computer, tsconf.p05af)},
-	{0x21af, REG_BYTE, offsetof(Computer, tsconf.p21af)},
+	{0x01af, REG_BYTE, offsetof(Computer, p01AF)},
+	{0x02af, REG_BYTE, offsetof(Computer, p02AF)},
+	{0x03af, REG_BYTE, offsetof(Computer, p03AF)},
+	{0x04af, REG_BYTE, offsetof(Computer, p04AF)},
+	{0x05af, REG_BYTE, offsetof(Computer, p05AF)},
+	{0x21af, REG_BYTE, offsetof(Computer, p21AF)},
 	{-1, 0, 0}
 };
 

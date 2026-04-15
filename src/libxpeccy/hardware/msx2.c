@@ -1,5 +1,8 @@
 #include "hardware.h"
 
+#define pFFFF	reg[17]
+#define pF5	reg[18]
+
 // primary slot
 
 static int msx2mtabA[4][4] = {
@@ -76,7 +79,7 @@ int msx2mrd(Computer* comp, int adr, int m1) {
 	} else
 #endif
 	if ((adr == 0xffff) && (comp->msx.pslot[3] == 3)) {	// sslot
-		res = comp->msx.mFFFF ^ 0xff;
+		res = comp->pFFFF ^ 0xff;
 	} else {
 		res = stdMRd(comp, adr, m1);
 	}
@@ -98,7 +101,7 @@ void msx2mwr(Computer* comp, int adr, int val) {
 	} else
 #endif
 	if ((adr == 0xffff) && (comp->msx.pslot[3] == 3)) {	// sslot
-		comp->msx.mFFFF = val & 0xff;
+		comp->pFFFF = val & 0xff;
 		comp->msx.sslot[0] = val & 3;
 		comp->msx.sslot[1] = (val >> 2) & 3;
 		comp->msx.sslot[2] = (val >> 4) & 3;
@@ -152,7 +155,7 @@ void msx2Reset(Computer* comp) {
 // devices
 
 void msx2_F5out(Computer* comp, int port, int val) {
-	comp->msx.pF5 = val & 0xff;
+	comp->pF5 = val & 0xff;
 }
 
 // rtc

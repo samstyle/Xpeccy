@@ -1,6 +1,8 @@
 #include "hardware.h"
 #include "../cpu/Z80/z80.h"
 
+#define	regKEYL	reg[16]
+
 // MSX...
 // master clock		MSX2:21.48MHz | MSX1:10.74
 // v99xx clock		master/4 = 5.37MHz : 2 dots/period	MSX2. MSX1: master/2
@@ -105,13 +107,13 @@ void msx_ppi_a_wr(int val, void* p) {
 // read ppi chan B (keyboard scan)
 int msx_ppi_b_rd(void* p) {
 	Computer* comp = (Computer*)p;
-	return comp->keyb->msxMap[comp->msx.keyLine];
+	return comp->keyb->msxMap[comp->regKEYL];
 }
 
 // write ppi chan C (select keyboard row, tape control, tape out, beeper)
 void msx_ppi_cl_wr(int val, void* p) {
 	Computer* comp = (Computer*)p;
-	comp->msx.keyLine = val & 0x0f;
+	comp->regKEYL = val & 0x0f;
 }
 
 

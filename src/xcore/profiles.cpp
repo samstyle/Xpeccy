@@ -383,7 +383,7 @@ int prf_load_conf(xProfile* prf, std::string cfname, int flag) {
 					if (pnam == "ULAplus") comp->vid->ula->enabled = arg.b;
 					if (pnam == "contPattern") comp->vid->ula->conttype = arg.i;
 					if (pnam == "earlyTiming") comp->vid->ula->early = arg.b;
-					if (pnam == "DDpal") comp->ddpal = arg.b;
+					if (pnam == "DDpal") comp->flgDDP = arg.b;
 					if (pnam == "palette") prf->palette = pval;
 					break;
 				case PS_SOUND:
@@ -451,9 +451,9 @@ int prf_load_conf(xProfile* prf, std::string cfname, int flag) {
 						tmp2 = toLimits(tmp2, MEM_256, MEM_4M);
 						tmask = tmp2;
 					}
-					if (pnam == "contmem") comp->contMem = arg.b;
-					if (pnam == "contio") comp->contIO = arg.b;
-					if (pnam == "scrp.wait") comp->evenM1 = arg.b;
+					if (pnam == "contmem") comp->flgCNTM = arg.b;
+					if (pnam == "contio") comp->flgCNTI = arg.b;
+					if (pnam == "scrp.wait") comp->flgEM1 = arg.b;
 					if (pnam == "lastdir") prf->lastDir = pval;
 					break;
 				case PS_IDE:
@@ -635,9 +635,9 @@ int prfSave(std::string nm) {
 	}
 	fprintf(file, "cpu.frq = %i\n", int(comp->cpuFrq * 1e6));
 	fprintf(file, "frq.mul = %f\n", comp->frqMul);
-	fprintf(file, "scrp.wait = %s\n", YESNO(comp->evenM1));
-	fprintf(file, "contio = %s\n", YESNO(comp->contIO));
-	fprintf(file, "contmem = %s\n", YESNO(comp->contMem));
+	fprintf(file, "scrp.wait = %s\n", YESNO(comp->flgEM1));
+	fprintf(file, "contio = %s\n", YESNO(comp->flgCNTI));
+	fprintf(file, "contmem = %s\n", YESNO(comp->flgCNTM));
 
 	fprintf(file, "\n[ROMSET]\n\n");
 	fprintf(file, "current = %s\n", prf->rsName.c_str());
@@ -655,7 +655,7 @@ int prfSave(std::string nm) {
 	fprintf(file, "ULAplus = %s\n", YESNO(comp->vid->ula->enabled));
 	fprintf(file, "contPattern = %i\n", comp->vid->ula->conttype);
 	fprintf(file, "earlyTiming = %s\n", YESNO(comp->vid->ula->early));
-	fprintf(file, "DDpal = %s\n", YESNO(comp->ddpal));
+	fprintf(file, "DDpal = %s\n", YESNO(comp->flgDDP));
 	fprintf(file, "palette = %s\n", prf->palette.c_str());
 
 	fprintf(file, "\n[SOUND]\n\n");

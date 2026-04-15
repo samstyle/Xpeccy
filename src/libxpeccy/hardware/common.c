@@ -38,7 +38,7 @@ void zx_sync(Computer* comp, int ns) {
 	tapSync(comp->tape, ns);
 	bcSync(comp->beep, ns);
 	// nmi
-	if ((comp->cpu->regPC > 0x3fff) && comp->nmiRequest) {
+	if ((comp->cpu->regPC > 0x3fff) && comp->flgNMIRQ) {
 		comp->cpu->intrq |= Z80_NMI;	// request nmi
 		comp->dos = 1;			// set dos page
 		comp->rom = 1;
@@ -112,7 +112,7 @@ void zx_irq(Computer* comp, int t) {
 //			vid_sync(comp->vid, (comp->cpu->t - res4) * comp->nsPerTick);
 //			res4 = comp->cpu->t;
 			// TODO: collect wait from devices
-			if (comp->contMem) {
+			if (comp->flgCNTM) {
 				xAdr xa = mem_get_xadr(comp->mem, comp->cpu->adr);
 				if (xa.type == MEM_RAM) {
 					comp->cpu->flgWAIT = !!vid_wait(comp->vid, xa.abs);

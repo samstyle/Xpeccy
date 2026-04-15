@@ -46,7 +46,7 @@ static SDL_AudioDeviceID sdldevid;
 // return 1 when buffer is full
 // NOTE: need sync|flush devices if debug
 int sndSync(Computer* comp) {
-	if (!conf.emu.pause || comp->debug) {
+	if (!conf.emu.pause || comp->flgDBG) {
 		if (comp->hw->grp == HWG_ZX)
 			gsFlush(comp->gs);
 //		saaFlush(comp->saa);

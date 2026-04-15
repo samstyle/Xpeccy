@@ -544,7 +544,7 @@ void SetupWin::start() {
 */
 	ui.sbFreq->setValue(comp->cpuFrq);
 	ui.sbMult->setValue(comp->frqMul);
-	ui.scrpwait->setChecked(comp->evenM1);
+	ui.scrpwait->setChecked(comp->flgEM1);
 // video
 	ui.cbFullscreen->setChecked(conf.vid.fullScreen);
 	ui.cbKeepRatio->setChecked(conf.vid.keepRatio);
@@ -555,8 +555,8 @@ void SetupWin::start() {
 	ui.grayscale->setChecked(greyScale);
 //	ui.cbScanlines->setChecked(scanlines);
 	ui.border4T->setChecked(comp->vid->brdstep & 0x06);
-	ui.contMem->setChecked(comp->contMem);
-	ui.contIO->setChecked(comp->contIO);
+	ui.contMem->setChecked(comp->flgCNTM);
+	ui.contIO->setChecked(comp->flgCNTI);
 	setRFIndex(ui.cbContPattern, comp->vid->ula->conttype);
 	ui.cbEarlyTiming->setChecked(comp->vid->ula->early);
 	ui.bszsld->setValue(static_cast<int>(conf.brdsize * 100));
@@ -572,7 +572,7 @@ void SetupWin::start() {
 	}
 	ui.geombox->setCurrentIndex(ui.geombox->findText(QString::fromLocal8Bit(conf.prof.cur->layName.c_str())));
 	ui.ulaPlus->setChecked(comp->vid->ula->enabled);
-	ui.cbDDp->setChecked(comp->ddpal);
+	ui.cbDDp->setChecked(comp->flgDDP);
 	fill_shader_list(ui.cbShader);
 	//fill_palette_list(ui.cbPalPreset);
 	fillComboBox(ui.cbPalPreset, conf.path.palDir.c_str(), QStringList() << "*.txt" << "*.pal", "default", conf.prof.cur->palette.c_str());
@@ -769,7 +769,7 @@ void SetupWin::apply() {
 */
 	compSetBaseFrq(comp, ui.sbFreq->value());
 	compSetTurbo(comp, ui.sbMult->value());
-	comp->evenM1 = ui.scrpwait->isChecked() ? 1 : 0;
+	comp->flgEM1 = ui.scrpwait->isChecked();
 	if (comp->hw != oldmac) compReset(comp,RES_DEFAULT);
 	if (comp->hw->id == HW_ZX48) comp->mem->ramMask = MEM_128K - 1;		// TODO: find a better way
 // video
@@ -789,12 +789,12 @@ void SetupWin::apply() {
 	conf.scrShot.noBorder = ui.ssNoBord->isChecked() ? 1 : 0;
 	conf.brdsize = ui.bszsld->value()/100.0;
 	comp->vid->brdstep = ui.border4T->isChecked() ? 7 : 1;
-	comp->contMem = ui.contMem->isChecked() ? 1 : 0;
-	comp->contIO = ui.contIO->isChecked() ? 1 : 0;
+	comp->flgCNTM = ui.contMem->isChecked();
+	comp->flgCNTI = ui.contIO->isChecked() ? 1 : 0;
 	comp->vid->ula->conttype = getRFIData(ui.cbContPattern);
 	comp->vid->ula->early = ui.cbEarlyTiming->isChecked();
 	comp->vid->ula->enabled = ui.ulaPlus->isChecked() ? 1 : 0;
-	comp->ddpal = ui.cbDDp->isChecked() ? 1 : 0;
+	comp->flgDDP = ui.cbDDp->isChecked() ? 1 : 0;
 	prfSetLayout(NULL, getRFText(ui.geombox));
 	if (getRFIData(ui.cbShader) == 0) {
 		conf.vid.shader.clear();

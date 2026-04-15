@@ -2,6 +2,8 @@
 
 #include <time.h>
 
+#define flgZ_I	flag[0]
+
 // TODO : fill memMap & set prt1 for reset to separate ROM pages
 void atm2Reset(Computer* comp) {
 	comp->dos = 1;
@@ -10,7 +12,7 @@ void atm2Reset(Computer* comp) {
 //	comp->keyb->submode = kbdZX;
 	comp->keyb->wcom = 0;
 	comp->keyb->warg = 0;
-	comp->z_i = 1;
+	comp->flgZ_I = 1;
 	comp_kbd_release(comp);
 }
 
@@ -61,7 +63,7 @@ void atm2Out77(Computer* comp, int port, int val) {		// dos
 		default: vid_set_mode(comp->vid,VID_UNKNOWN); break;
 	}
 	compSetTurbo(comp,(val & 0x08) ? 2 : 1);
-	comp->z_i = (val & 0x20) ? 1 : 0;
+	comp->flgZ_I = (val & 0x20) ? 1 : 0;
 //	comp->keyb->mode = (val & 0x40) ? KBD_SPECTRUM : KBD_ATM2;
 	comp->p77lo = val & 0xff;
 	comp->p77hi = (port & 0xff00) >> 8;
@@ -91,7 +93,7 @@ void atm2OutFF(Computer* comp, int port, int val) {		// dos. bdiOut already done
 	int adr = comp->vid->brdcol & 0x0f;
 	xColor xcol;
 	port ^= 0xff00;
-	if (!comp->ddpal) port = (port & 0xff) | ((val << 8) & 0xff00);
+	if (!comp->flgDDP) port = (port & 0xff) | ((val << 8) & 0xff00);
 	xcol.b = atm2clev[((val & 0x01) << 3) | ((val & 0x20) >> 3) | ((port & 0x0100) >> 7) | ((port & 0x2000) >> 13)];
 	xcol.r = atm2clev[((val & 0x02) << 2) | ((val & 0x40) >> 4) | ((port & 0x0200) >> 8) | ((port & 0x4000) >> 14)];
 	xcol.g = atm2clev[((val & 0x10) >> 1) | ((val & 0x80) >> 5) | ((port & 0x1000) >> 11)| ((port & 0x8000) >> 15)];
@@ -255,7 +257,7 @@ int atm2In(Computer* comp, int port) {
 }
 
 void atm2_sync(Computer* comp, int ns) {
-	if (!comp->z_i)
+	if (!comp->flgZ_I)
 		comp->vid->intFRAME = 0;
 	zx_sync(comp, ns);
 }

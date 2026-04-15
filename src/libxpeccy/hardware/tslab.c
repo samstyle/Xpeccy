@@ -3,6 +3,11 @@
 #include <stdio.h>
 #include <string.h>
 
+#define flgMEN	flag[0]		// 15AF[4] = FM_EN
+#define flgVDOS	flag[1]
+
+#define regMADR	reg[16]		// 15AF[0..3] = MapAddr
+
 void tslReset(Computer* comp) {
 	comp->vid->tsconf.scrPal = 0xf0;
 	memset(comp->vid->tsconf.cram,0x00,0x200);
@@ -14,7 +19,7 @@ void tslReset(Computer* comp) {
 	comp->vid->nextbrd = 0xf7;
 
 	comp->vid->tsconf.p00af = 0;
-	comp->tsconf.p01af = 0x05;
+	comp->p01AF = 0x05;
 	comp->vid->tsconf.xOffset = 0;
 	comp->vid->tsconf.yOffset = 0;
 	comp->vid->tsconf.p07af = 0x0f;
@@ -29,14 +34,14 @@ void tslReset(Computer* comp) {
 	comp->vid->intp.x = 0;
 	comp->vid->intp.y = 0;
 	comp->vid->inten = 1;
-	comp->tsconf.vdos = 0;
+	comp->flgVDOS = 0;
 	tslUpdatePorts(comp->vid);
 	tslMapMem(comp);
 }
 
 void tslMapMem(Computer* comp) {
 // bank0 maping taken from Unreal(TSConf)
-	if (comp->tsconf.vdos) {
+	if (comp->flgVDOS) {
 		memSetBank(comp->mem,0x00,MEM_RAM,0xff, MEM_16K,NULL,NULL,NULL);		// vdos on : ramFF in bank0
 	} else if (comp->tsconf.p21af & 8) {
 		if (comp->tsconf.p21af & 4)
@@ -80,7 +85,7 @@ void tslUpdatePal(Computer* comp) {
 
 int tslMRd(Computer* comp, int adr, int m1) {
 	if (m1 && (comp->dif->type == DIF_BDI)) {
-		if (comp->dos && (adr > 0x4000) && (!comp->tsconf.vdos)) {
+		if (comp->dos && (adr > 0x4000) && (!comp->flgVDOS)) {
 			comp->dos = 0;
 			if (comp->rom) comp->hw->mapMem(comp);	// don't switch ROM0 to ROM2
 		}
@@ -93,7 +98,7 @@ int tslMRd(Computer* comp, int adr, int m1) {
 }
 
 void tslMWr(Computer* comp, int adr, int val) {
-	if ((comp->tsconf.flag & 0x10) && ((adr & 0xf000) == comp->tsconf.tsMapAdr)) {
+	if ((comp->flgMEN & 0x10) && (((adr & 0xf000) >> 12) == comp->regMADR)) {
 		if ((adr & 0xe00) == 0x000) {				// palete
 			comp->vid->tsconf.cram[adr & 0x1ff] = val & 0xff;
 			tslUpdatePal(comp);
@@ -109,7 +114,7 @@ void tslMWr(Computer* comp, int adr, int val) {
 int tsInFF(Computer* comp, int port) {			// dos
 	int res = -1;
 	if (comp->dif->fdc->flp->virt) {
-		comp->tsconf.vdos = 1;
+		comp->flgVDOS = 1;
 		tslMapMem(comp);
 	} else {
 		difIn(comp->dif, port, &res, 1);
@@ -119,8 +124,8 @@ int tsInFF(Computer* comp, int port) {			// dos
 
 int tsInBDI(Computer* comp, int port) {			// dos
 	int res = -1;
-	if (comp->tsconf.vdos) {
-		comp->tsconf.vdos = 0;
+	if (comp->flgVDOS) {
+		comp->flgVDOS = 0;
 		tslMapMem(comp);
 	} else {
 		res = tsInFF(comp, port);
@@ -160,12 +165,12 @@ int tsInFFnd(Computer* comp, int port) {
 // out
 
 void tsOutBDI(Computer* comp, int port, int val) {		// dos
-	if (comp->tsconf.vdos) {
-		comp->tsconf.vdos = 0;
+	if (comp->flgVDOS) {
+		comp->flgVDOS = 0;
 		tslMapMem(comp);
 	} else {
 		if (comp->dif->fdc->flp->virt) {
-			comp->tsconf.vdos = 1;
+			comp->flgVDOS = 1;
 			tslMapMem(comp);
 		} else {
 			difOut(comp->dif, port, val, 1);
@@ -176,9 +181,9 @@ void tsOutBDI(Computer* comp, int port, int val) {		// dos
 void tsOutFF(Computer* comp, int port, int val) {		// dos
 	comp->dif->fdc->flp = comp->dif->fdc->flop[val & 3];
 	if (comp->dif->fdc->flp->virt) {
-		comp->tsconf.vdos = 1;
+		comp->flgVDOS = 1;
 		tslMapMem(comp);
-	} else if (comp->tsconf.vdos) {
+	} else if (comp->flgVDOS) {
 		// comp->dif->fdc->fptr = comp->dif->fdc->flop[val & 3];	// out VGSys[1:0]
 	} else {
 		difOut(comp->dif, port, val, 1);
@@ -278,8 +283,8 @@ int tsIn12AF(Computer* comp, int port) {return comp->mem->map[0x80].num >> 6;}
 int tsIn13AF(Computer* comp, int port) {return comp->mem->map[0xc0].num >> 6;}
 
 void tsOut15AF(Computer* comp, int port, int val) {
-	comp->tsconf.flag = val & 0x10;		// FM_EN
-	comp->tsconf.tsMapAdr = ((val & 0x0f) << 12) & 0xffff;
+	comp->flgMEN = val & 0x10;		// FM_EN
+	comp->regMADR = val & 0x0f;
 }
 
 void tsOut16AF(Computer* comp, int port, int val) {comp->vid->tsconf.TMPage = val & 0xff;}

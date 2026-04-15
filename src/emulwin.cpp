@@ -638,7 +638,7 @@ void MainWin::frame_timer() {
 #if defined(USEOPENGL) && !BLOCKGL
 	if (conf.emu.fast || conf.emu.pause) {
 		glBindTexture(GL_TEXTURE_2D, texids[curtex]);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, bytesPerLine / 4, comp->vid->vsze.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, comp->debug ? scrimg : bufimg);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, bytesPerLine / 4, comp->vid->vsze.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, comp->flgDBG ? scrimg : bufimg);
 		queue.clear();
 		queue.append(texids[curtex]);
 	}
@@ -658,7 +658,7 @@ void MainWin::d_frame() {
 	if (queue.size() > 3)
 		queue.takeFirst();
 	glBindTexture(GL_TEXTURE_2D, texids[curtex]);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, bytesPerLine / 4, comp->vid->vsze.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, comp->debug ? scrimg : bufimg);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, bytesPerLine / 4, comp->vid->vsze.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, comp->flgDBG ? scrimg : bufimg);
 	curtex++;
 #endif
 }
@@ -1151,13 +1151,13 @@ void MainWin::optApply() {
 void MainWin::doDebug() {
 	conf.emu.fast = 0;
 	pause(true, PR_DEBUG);
-	conf.prof.cur->zx->debug = 1;
+	conf.prof.cur->zx->flgDBG = 1;
 	emit s_debug();
 }
 
 void MainWin::dbgReturn() {
 	pause(false, PR_DEBUG);
-	conf.prof.cur->zx->debug = 0;
+	conf.prof.cur->zx->flgDBG = 0;
 }
 
 void MainWin::bookmarkSelected(QAction* act) {
@@ -1168,10 +1168,10 @@ void MainWin::bookmarkSelected(QAction* act) {
 
 void MainWin::onPrfChange() {
 	Computer* comp = conf.prof.cur->zx;
-	if (comp->firstRun) {
+	if (comp->flgFRN) {
 		// loadPalette(conf.prof.cur);		// already loaded for each profile
 		compReset(comp, RES_DEFAULT);
-		comp->firstRun = 0;
+		comp->flgFRN = 0;
 	}
 	emit s_keywin_upd(comp->keyb);
 	vid_upd_scale();

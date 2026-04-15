@@ -2,9 +2,15 @@
 
 #include <stdio.h>
 
+#define regBF	reg[16]
+#define reg2F	reg[17]
+#define reg4F	reg[18]
+#define reg6F	reg[19]
+#define reg8F	reg[20]
+
 void evoReset(Computer* comp) {
 	comp->dos = 1;
-	comp->evo.evoBF = 0;
+	comp->regBF = 0;
 	comp->prt2 = 0x03;
 	comp->sdc->on = 1;
 }
@@ -38,7 +44,7 @@ int evoMRd(Computer* comp, int adr, int m1) {
 }
 
 void evoMWr(Computer* comp, int adr, int val) {
-	if (comp->evo.evoBF & 4) {
+	if (comp->regBF & 4) {
 		vid_fnt_wr(comp->vid, adr & 0x7ff, val & 0xff);
 		// comp->vid->font[adr & 0x7ff] = val & 0xff;	// PentEvo: write font byte
 	}
@@ -132,7 +138,7 @@ int evoInBE(Computer* comp, int port) {
 }
 
 int evoInBF(Computer* comp, int port) {
-	return comp->evo.evoBF;
+	return comp->regBF;
 }
 
 int evoInBDI(Computer* comp, int port) {
@@ -142,19 +148,19 @@ int evoInBDI(Computer* comp, int port) {
 }
 
 int evoIn2F(Computer* comp, int port) {
-	return comp->evo.evo2F;
+	return comp->reg2F;
 }
 
 int evoIn4F(Computer* comp, int port) {
-	return comp->evo.evo4F;
+	return comp->reg4F;
 }
 
 int evoIn6F(Computer* comp, int port) {
-	return comp->evo.evo6F;
+	return comp->reg6F;
 }
 
 int evoIn8F(Computer* comp, int port) {
-	return comp->evo.evo8F;
+	return comp->reg8F;
 }
 
 int evoInBEF7(Computer* comp, int port) {	// dos
@@ -183,23 +189,23 @@ int evoInFF(Computer* comp, int port) {
 // out
 
 void evoOutBF(Computer* comp, int port, int val) {
-	comp->evo.evoBF = val & 0xff;
+	comp->regBF = val & 0xff;
 }
 
 void evoOut2F(Computer* comp, int port, int val) {
-	comp->evo.evo2F = val & 0xff;
+	comp->reg2F = val & 0xff;
 }
 
 void evoOut4F(Computer* comp, int port, int val) {
-	comp->evo.evo4F = val & 0xff;
+	comp->reg4F = val & 0xff;
 }
 
 void evoOut6F(Computer* comp, int port, int val) {
-	comp->evo.evo6F = val & 0xff;
+	comp->reg6F = val & 0xff;
 }
 
 void evoOut8F(Computer* comp, int port, int val) {
-	comp->evo.evo8F = val & 0xff;
+	comp->reg8F = val & 0xff;
 }
 
 void evoOut57(Computer* comp, int port, int val) {	// !dos
@@ -243,7 +249,7 @@ void evoOutFF(Computer* comp, int port, int val) {		// dos
 		val ^= 0xff;					// inverse colors
 		int adr = comp->vid->brdcol & 0x0f;
 		port ^= 0xff00;
-		if (!comp->ddpal) port = (port & 0xff) | ((val << 8) & 0xff00);
+		if (!comp->flgDDP) port = (port & 0xff) | ((val << 8) & 0xff00);
 		xcol.b = atm3clev[((val & 0x01) << 3) | ((val & 0x20) >> 3) | ((port & 0x0100) >> 7) | ((port & 0x2000) >> 13)];
 		xcol.r = atm3clev[((val & 0x02) << 2) | ((val & 0x40) >> 4) | ((port & 0x0200) >> 8) | ((port & 0x4000) >> 14)];
 		xcol.g = atm3clev[((val & 0x10) >> 1) | ((val & 0x80) >> 5) | ((port & 0x1000) >> 11)| ((port & 0x8000) >> 15)];
@@ -329,7 +335,7 @@ static xPort evoPortMap[] = {
 };
 
 void evoOut(Computer* comp, int port, int val) {
-	if (comp->evo.evoBF & 0x01) comp->bdiz = 1;	// force open ports
+	if (comp->regBF & 0x01) comp->bdiz = 1;	// force open ports
 	if (!(comp->prt2 & 0x80)) comp->bdiz = 1;
 	zx_dev_wr(comp, port, val);
 	hwOut(evoPortMap, comp, port, val, 1);
@@ -337,7 +343,7 @@ void evoOut(Computer* comp, int port, int val) {
 
 int evoIn(Computer* comp, int port) {
 	int res = -1;
-	if (comp->evo.evoBF & 1) comp->bdiz = 1;	// open ports
+	if (comp->regBF & 1) comp->bdiz = 1;	// open ports
 	if (!(comp->prt2 & 0x80)) comp->bdiz = 1;
 	if (zx_dev_rd(comp, port, &res)) return res;
 	res = hwIn(evoPortMap, comp, port);

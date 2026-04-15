@@ -80,19 +80,37 @@ typedef struct {
 #define p77hi	reg[4]
 #define p77lo	reg[5]
 #define prt2	reg[6]
+#define p01AF	reg[7]		// move to tsconf.c (what to do with ports tab?)
+#define p02AF	reg[8]
+#define p03AF	reg[9]
+#define p04AF	reg[10]
+#define p05AF	reg[11]
+#define p21AF	reg[12]
+
+#define flgBRK	sysflag[0]		// breakpoint catched
+#define flgDBG	sysflag[1]		// debug execution
+#define flgMAP	sysflag[2]		// map memory on runtime
+#define flgFRM	sysflag[3]		// new frame ready
+#define flgNMIRQ sysflag[4]		// NMI requested
+#define flgFRN	sysflag[5]		// need to reset when switch to profile
+#define flgDDP	sysflag[6]		// used ATM2+ only, but have options entry
+#define flgEM1	sysflag[7]		// (same for ZS Scorpion)
+#define flgCNTM	sysflag[8]		// contended mem (zx)
+#define flgCNTI	sysflag[9]		// contended i/o (zx)
+#define flgIBRK	sysflag[10]		// break on interrupt
 
 typedef struct {
-	unsigned brk:1;			// breakpoint
-	unsigned debug:1;		// dont' do breakpoints
-	unsigned maping:1;		// map memory during execution
-	unsigned frmStrobe:1;		// new frame started
-	unsigned intStrobe:1;		// int front
-	unsigned nmiRequest:1;		// Magic button pressed
+//	unsigned brk:1;			// breakpoint
+//	unsigned debug:1;		// dont' do breakpoints
+//	unsigned maping:1;		// map memory during execution
+//	unsigned frmStrobe:1;		// new frame started
+//	unsigned intStrobe:1;		// int front
+//	unsigned nmiRequest:1;		// Magic button pressed
 //	unsigned halt:1;		// strobe of CPU HALT instruction
-	unsigned firstRun:1;
-	unsigned ddpal:1;		// ATM2+: use ddp palette
-	unsigned z_i:1;			// ATM2+: unblock VSYNC INT
-	unsigned speed:1;		// turbo cpu frq
+//	unsigned firstRun:1;
+//	unsigned ddpal:1;		// ATM2+: use ddp palette
+//	unsigned z_i:1;			// ATM2+: unblock VSYNC INT
+//	unsigned speed:1;		// turbo cpu frq
 
 	unsigned rom:1;			// b4,7ffd
 	unsigned dos:1;			// BDI dos
@@ -100,12 +118,12 @@ typedef struct {
 	unsigned ext:1;
 	unsigned bdiz:1;		// BDI ports accessible
 
-	unsigned evenM1:1;		// scorpion wait mode
-	unsigned contMem:1;		// contended mem
-	unsigned contIO:1;		// contended IO
+//	unsigned evenM1:1;		// scorpion wait mode
+//	unsigned contMem:1;		// contended mem
+//	unsigned contIO:1;		// contended IO
 
-	unsigned vidint:1;
-	unsigned brkirq:1;		// break on irq
+//	unsigned vidint:1;		// ! not used
+//	unsigned brkirq:1;		// break on irq
 
 	double fps;
 	double cpuFrq;
@@ -120,6 +138,7 @@ typedef struct {
 
 	struct HardWare *hw;
 	CPU* cpu;
+// TODO: align memory/brkMaps, respect ram/rom size
 	Memory* mem;
 	Video* vid;
 
@@ -170,7 +189,8 @@ typedef struct {
 	int fCount;		// T in last frame
 	int nsPerTick;
 
-	bool flag[64];
+	bool flag[128];
+	bool sysflag[32];
 	unsigned char reg[512];		// internal registers
 	unsigned short wdata;
 	memEntry memMap[16];			// memory map for ATM2, PentEvo
@@ -180,41 +200,41 @@ typedef struct {
 	unsigned char brkIOMap[MEM_64K];	// io brk
 
 	PPI* ppi;
+//	struct {
+//		unsigned char evoBF;		// PentEvo rw ports
+//		unsigned char evo2F;
+//		unsigned char evo4F;
+//		unsigned char evo6F;
+//		unsigned char evo8F;
+//		unsigned char blVer[16];	// bootloader info
+//		unsigned char bcVer[16];	// baseconf info
+//	} evo;
 	struct {
-		unsigned char evoBF;		// PentEvo rw ports
-		unsigned char evo2F;
-		unsigned char evo4F;
-		unsigned char evo6F;
-		unsigned char evo8F;
-		unsigned char blVer[16];	// bootloader info
-		unsigned char bcVer[16];	// baseconf info
-	} evo;
-	struct {
-		DMAaddr src;
+		DMAaddr src;		// -> xreg32 ???
 		DMAaddr dst;
 		unsigned char len;
 		unsigned char num;
 	} dma;
 	struct {
-		int flag;
-		unsigned short tsMapAdr;	// adr for altera mapping
+//		int flag;
+//		unsigned short tsMapAdr;	// adr for altera mapping
 		unsigned char Page0;
-		unsigned char p01af;
-		unsigned char p02af;
-		unsigned char p03af;
-		unsigned char p04af;
-		unsigned char p05af;
+//		unsigned char p01af;
+//		unsigned char p02af;
+//		unsigned char p03af;
+//		unsigned char p04af;
+//		unsigned char p05af;
 		unsigned char p21af;
 		unsigned char pwr_up;		// 1 on 1st run, 0 after reading 00AF
-		unsigned char vdos;
+//		unsigned char vdos;
 	} tsconf;
+//	struct {
+//		unsigned char p7E;		// color num (if trig7E=0)
+//	} profi;
 	struct {
-		unsigned char p7E;		// color num (if trig7E=0)
-	} profi;
-	struct {
-		unsigned char keyLine;		// selected keyboard line
-		unsigned char mFFFF;		// mem FFFF : mapper secondary slot
-		unsigned char pF5;
+//		unsigned char keyLine;		// selected keyboard line
+//		unsigned char mFFFF;		// mem FFFF : mapper secondary slot
+//		unsigned char pF5;
 		unsigned char pslot[4];
 		unsigned char sslot[4];
 	} msx;

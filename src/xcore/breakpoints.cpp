@@ -248,7 +248,7 @@ void brkInstall(xBrkPoint* brk, int del) {
 				cnt = brk->eadr - brk->adr + 1;
 				break;
 			case BRK_IRQ:
-				comp->brkirq = !brk->off;
+				comp->flgIBRK = !brk->off;
 				ptr = NULL;
 				break;
 		}
@@ -282,7 +282,7 @@ void brkInstallAll() {
 	if (comp->slot->brkMap)
 		clearMap(comp->slot->brkMap, comp->slot->memMask + 1);
 	prf->brk.map.clear();
-	comp->brkirq = 0;
+	comp->flgIBRK = 0;
 #if 1
 	brkInstallList(&prf->brk.list);
 	brkInstallList(&prf->brk.list_sys);

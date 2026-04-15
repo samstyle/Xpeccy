@@ -3,6 +3,8 @@
 #include "hardware.h"
 #include "../cpu/LR35902/lr35902.h"
 
+#define flgSPD	flag[0]
+
 // IO ports
 
 // video modes:
@@ -62,7 +64,7 @@ int gbIORd(Computer* comp, int port) {
 // GBC
 		case 0x4d:
 			res = res & 1;
-			if (comp->speed)
+			if (comp->flgSPD)
 				res |= 0x80;
 			break;
 		case 0x4f:
@@ -696,8 +698,8 @@ void gbcSync(Computer* comp, int ns) {
 		// comp->cpu->flgSTOP = 0;
 		comp->cpu->regPC++;
 		comp->gb.speedrq = 0;
-		comp->speed ^= 1;
-		compSetTurbo(comp, comp->speed ? 2.0 : 1.0);
+		comp->flgSPD ^= 1;
+		compSetTurbo(comp, comp->flgSPD ? 2.0 : 1.0);
 	}
 	// interrupts
 //	if (comp->vid->intrq) {

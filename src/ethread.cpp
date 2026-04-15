@@ -125,16 +125,16 @@ void xThread::emuCycle(Computer* comp) {
 	sndNs = 0;
 	wavNs = 0;
 	conf.snd.fill = 1;
-	while (!comp->brk && conf.snd.fill && !finish && !conf.emu.pause) {
+	while (!comp->flgBRK && conf.snd.fill && !finish && !conf.emu.pause) {
 		// exec 1 opcode (or handle INT, NMI)
 		if (conf.emu.pause) {
 			sndNs += 1000;
 		} else {
 			if (brkskip) {
-				brkskip = comp->debug;
-				comp->debug = 1;		// block breakpoints checking
+				brkskip = comp->flgDBG;
+				comp->flgDBG = 1;		// block breakpoints checking
 				tm = compExec(comp);
-				comp->debug = brkskip;
+				comp->flgDBG = brkskip;
 				brkskip = 0;
 			} else {
 				tm = compExec(comp);			// TODO: it exits when fetch-brk is occured, pc doesn't changed
@@ -168,8 +168,8 @@ void xThread::emuCycle(Computer* comp) {
 			sndSync(comp);
 			sndNs -= nsPerSample;
 		}
-		if (comp->frmStrobe) {
-			comp->frmStrobe = 0;
+		if (comp->flgFRM) {
+			comp->flgFRM = 0;
 			conf.vid.fcount++;
 // process noflic/scanlines (if !fast ???)
 // buffers is already switches, bufimg - just painted (greyscale, if flag is set), scrimg - new
@@ -182,7 +182,7 @@ void xThread::emuCycle(Computer* comp) {
 #if LOG_OUTPUT
 // ...
 #endif
-		if (comp->brk) {
+		if (comp->flgBRK) {
 			// printf("brkt = %i, brka = %X\n", comp->brkt, comp->brka);
 			if (comp->brkt == -1) {			// irq or tmp
 				conf.emu.pause |= PR_DEBUG;
@@ -198,7 +198,7 @@ void xThread::emuCycle(Computer* comp) {
 					switch (ptr->action) {
 						case BRK_ACT_COUNT:
 							ptr->count++;
-							comp->brk = 0;
+							comp->flgBRK = 0;
 							if (ptr->fetch) brkskip = 1;
 							break;
 						case BRK_ACT_SCR:
@@ -212,7 +212,7 @@ void xThread::emuCycle(Computer* comp) {
 							file.open(QFile::WriteOnly);
 							file.write((char*)(comp->mem->ramData + (5 << 14)), 0x1b00);
 							file.close();
-							comp->brk = 0;
+							comp->flgBRK = 0;
 							if (ptr->fetch) brkskip = 1;
 							break;
 						default:					// BRK_ACT_DBG
@@ -221,13 +221,13 @@ void xThread::emuCycle(Computer* comp) {
 							break;
 					}
 				} else {				// breakpoint didn't found, but bit is set (?)
-					comp->brk = 0;
+					comp->flgBRK = 0;
 				}
 			}
 		}
 	}
-	comp->brk = 0;
-	comp->nmiRequest = 0;
+	comp->flgBRK = 0;
+	comp->flgNMIRQ = 0;
 }
 
 void xThread::run() {

@@ -64,7 +64,7 @@ void MainWin::keyPressEvent(QKeyEvent* ev) {
 	keyEntry kent;
 	Computer* comp = conf.prof.cur->zx;
 //	qDebug() << ev->key();
-	if (comp->debug) {
+	if (comp->flgDBG) {
 		ev->ignore();
 	} else if (pckAct->isChecked()) {
 		keyid = ev_to_keyid(ev, true);
@@ -310,7 +310,7 @@ void MainWin::xkey_press(int xkey) {
 				if (comp->rzx.play) break;
 #endif
 				if (comp->cpu->type != CPU_Z80) break;
-				comp->nmiRequest = 1;
+				comp->flgNMIRQ = 1;
 				break;
 			case XCUT_TAPWIN:
 				emit s_tape_show();
@@ -363,7 +363,7 @@ void MainWin::keyReleaseEvent(QKeyEvent *ev) {
 //	} else {
 //		qDebug() << "keyReleaseEvent" << ev->text() << ev->nativeScanCode();
 		int keyid;
-		if (comp->debug) {
+		if (comp->flgDBG) {
 			ev->ignore();
 		} else {
 			keyid = -1;
