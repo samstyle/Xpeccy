@@ -825,3 +825,8 @@ void pc98xx_keyp(Computer* comp, keyEntry* kent) {
 void pc98xx_keyr(Computer* comp, keyEntry* kent) {
 	kbd_release(comp->keyb, kent);
 }
+
+static vLayout pc98xxLay = {{720,412},{0,0},{80,12},{640,400},{0,0},1};		// check
+
+HardWare p98_hw_core = {HW_PC9801,HWG_PC98XX,"PC-9801","NEC PC9801 (in progress)",16,MEM_1M,1.0,&pc98xxLay,20,NULL,
+			pc98xx_init,pc98xx_mem_map,pc98xx_iowr,pc98xx_iord,pc98xx_mrd,pc98xx_mwr,pc98xx_irq,pc98xx_ack,pc98xx_reset,pc98xx_sync,pc98xx_keyp,pc98xx_keyr,pc98xx_vol};

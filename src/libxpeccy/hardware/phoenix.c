@@ -83,3 +83,14 @@ int phxIn(Computer* comp, int port) {
 	if (zx_dev_rd(comp, port, &res)) return res;
 	return hwIn(phxPortMap, comp, port);
 }
+
+// phoenix
+xPortDsc zx_port_tab_px[] = {
+	{0x7ffd, REG_BYTE, offsetof(Computer, p7FFD)},
+	{0xeff7, REG_BYTE, offsetof(Computer, pEFF7)},
+	{0x1ffd, REG_BYTE, offsetof(Computer, p1FFD)},
+	{-1, 0, 0}
+};
+
+HardWare phx_hw_core = {HW_PHOENIX,HWG_ZX,"Phoenix","ZXM Phoenix",16,MEM_2M,1.0,NULL,16,zx_port_tab_px,
+			zx_init,phxMapMem,phxOut,phxIn,stdMRd,stdMWr,zx_irq,zx_ack,phxReset,zx_sync,zx_keyp,zx_keyr,zx_vol};

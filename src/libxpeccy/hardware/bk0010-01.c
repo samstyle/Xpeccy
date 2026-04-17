@@ -556,3 +556,10 @@ void bk_keyp(Computer* comp, keyEntry* xkey) {
 void bk_keyr(Computer* comp, keyEntry* xkey) {
 	kbd_release(comp->keyb, xkey);
 }
+
+static vLayout bkLay = {{256+96,256+24},{0,0},{96,24},{256,256},{0,0},0};
+
+HardWare b10_hw_core = {HW_BK0010,HWG_BK,"BK0010","BK0010",8,MEM_32K,(double)29/23,&bkLay,16,NULL,
+			bk_init,bk_mem_map,NULL,NULL,bk_mrd,bk_mwr,bk_irq,NULL,bk_reset,bk_sync,bk_keyp,bk_keyr,bk_vol};
+HardWare b11_hw_core = {HW_BK0011M,HWG_BK,"BK0011M","BK0011M",8,MEM_128K,(double)29/23,&bkLay,16,NULL,
+			bk_init,bk11_mem_map,NULL,NULL,bk_mrd,bk_mwr,bk_irq,NULL,bk11_reset,bk_sync,bk_keyp,bk_keyr,bk_vol};

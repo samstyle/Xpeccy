@@ -80,12 +80,6 @@ typedef struct {
 #define p77hi	reg[4]
 #define p77lo	reg[5]
 #define prt2	reg[6]
-#define p01AF	reg[7]		// move to tsconf.c (what to do with ports tab?)
-#define p02AF	reg[8]
-#define p03AF	reg[9]
-#define p04AF	reg[10]
-#define p05AF	reg[11]
-#define p21AF	reg[12]
 
 #define flgBRK	sysflag[0]		// breakpoint catched
 #define flgDBG	sysflag[1]		// debug execution
@@ -231,16 +225,16 @@ typedef struct {
 //	struct {
 //		unsigned char p7E;		// color num (if trig7E=0)
 //	} profi;
-	struct {
+//	struct {
 //		unsigned char keyLine;		// selected keyboard line
 //		unsigned char mFFFF;		// mem FFFF : mapper secondary slot
 //		unsigned char pF5;
-		unsigned char pslot[4];
-		unsigned char sslot[4];
-	} msx;
+//		unsigned char pslot[4];
+//		unsigned char sslot[4];
+//	} msx;
 	struct {
 //		unsigned vblank:1;		// vid->vblank for catching 0->1
-		unsigned irq;
+//		unsigned irq;
 		int type;			// DENDY | NTSC | PAL
 		// TODO: priPadState/secPadState is same as joy->state/joyb->state ?
 //		int priPadState;		// b0..7 = A,B,sel,start,up,down,left,right,0,0,0,0,....
@@ -249,8 +243,8 @@ typedef struct {
 		int secJoy;			//		write b0=1 to 4016 restore status
 	} nes;
 	struct {
-		unsigned boot:1;	// boot rom on
-		unsigned speedrq:1;	// cpu speed change request @ next STOP
+//		unsigned boot:1;	// boot rom on
+//		unsigned speedrq:1;	// cpu speed change request @ next STOP
 		int buttons;
 		struct {
 			struct {
@@ -258,8 +252,8 @@ typedef struct {
 				long cnt;
 			} div;		// divider (16KHz, inc FF04)
 			struct {
-				unsigned on:1;
-				unsigned intrq:1;
+//				unsigned on:1;
+//				unsigned intrq:1;
 				long per;
 				long cnt;
 			} t;		// manual timer
@@ -271,21 +265,21 @@ typedef struct {
 		unsigned char iomap[128];
 	} gb;
 	struct {
-		unsigned char reg00;
-		unsigned char reg01;
-		unsigned char memMode;
-		unsigned char keyrow;
-		unsigned char vicBank;	// b0,1 = b14,15 of VIC address
-		unsigned char rs232a;	// rs232 output line
-		unsigned char rs232b;
-		CIA* cia1;
+//		unsigned char reg00;
+//		unsigned char reg01;
+//		unsigned char memMode;
+//		unsigned char keyrow;
+//		unsigned char vicBank;	// b0,1 = b14,15 of VIC address
+//		unsigned char rs232a;	// rs232 output line
+//		unsigned char rs232b;
+		CIA* cia1;		// mos6526 (TODO: read datasheet)
 		CIA* cia2;
 	} c64;
 	CMOS cmos;
 // ibm
-	unsigned a20gate:1;
-	unsigned char post;
-	unsigned char idx;
+//	unsigned a20gate:1;
+//	unsigned char post;
+//	unsigned char idx;
 	PIT* pit;		// timer
 	PIC* mpic;		// master pic
 	PIC* spic;		// slave pic

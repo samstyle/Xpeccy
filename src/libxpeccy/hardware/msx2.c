@@ -2,6 +2,10 @@
 
 #define pFFFF	reg[17]
 #define pF5	reg[18]
+#define pSlot(i) reg[19+i]
+#define sSlot(i) reg[23+i]
+
+static vLayout v9938Lay = {{342,313},{16,13},{57,80},{256,192},{0,0},64};
 
 // primary slot
 
@@ -43,12 +47,12 @@ void msx2mapper(Computer* comp) {
 	int bt;
 	int bn;
 	for (int i = 0; i < 4; i++) {
-		slot = comp->msx.pslot[i];
+		slot = comp->pSlot(i);
 		if (slot < 3) {
 			bt = msx2mtabA[slot][i];
 			bn = msx2mtabB[slot][i];
 		} else {
-			slot = comp->msx.sslot[i];
+			slot = comp->sSlot(i);
 			bt = msx2mtabC[slot][i];
 			bn = msx2mtabD[slot][i];
 		}
@@ -78,7 +82,7 @@ int msx2mrd(Computer* comp, int adr, int m1) {
 		}
 	} else
 #endif
-	if ((adr == 0xffff) && (comp->msx.pslot[3] == 3)) {	// sslot
+	if ((adr == 0xffff) && (comp->pSlot(3) == 3)) {	// sslot
 		res = comp->pFFFF ^ 0xff;
 	} else {
 		res = stdMRd(comp, adr, m1);
@@ -100,12 +104,12 @@ void msx2mwr(Computer* comp, int adr, int val) {
 		}
 	} else
 #endif
-	if ((adr == 0xffff) && (comp->msx.pslot[3] == 3)) {	// sslot
+	if ((adr == 0xffff) && (comp->pSlot(3) == 3)) {	// sslot
 		comp->pFFFF = val & 0xff;
-		comp->msx.sslot[0] = val & 3;
-		comp->msx.sslot[1] = (val >> 2) & 3;
-		comp->msx.sslot[2] = (val >> 4) & 3;
-		comp->msx.sslot[3] = (val >> 6) & 3;
+		comp->sSlot(0) = val & 3;
+		comp->sSlot(1) = (val >> 2) & 3;
+		comp->sSlot(2) = (val >> 4) & 3;
+		comp->sSlot(3) = (val >> 6) & 3;
 		msx2mapper(comp);
 	} else {
 		stdMWr(comp, adr, val);
@@ -117,10 +121,10 @@ void msx2mwr(Computer* comp, int adr, int val) {
 void msx2_ppi_a_wr(int val, void* p) {
 	Computer* comp = (Computer*)p;
 	comp->ppi->a.val = val;
-	comp->msx.pslot[0] = val & 3;
-	comp->msx.pslot[1] = (val >> 2) & 3;
-	comp->msx.pslot[2] = (val >> 4) & 3;
-	comp->msx.pslot[3] = (val >> 6) & 3;
+	comp->pSlot(0) = val & 3;
+	comp->pSlot(1) = (val >> 2) & 3;
+	comp->pSlot(2) = (val >> 4) & 3;
+	comp->pSlot(3) = (val >> 6) & 3;
 	msx2mapper(comp);
 }
 
@@ -268,3 +272,6 @@ int msx2In(Computer* comp, int port) {
 //	printf("msx2 in %.4X\n",port);
 	return hwIn(msx2ioTab, comp, port);
 }
+
+HardWare mx2_hw_core = {HW_MSX2,HWG_MSX,"MSX2","MSX-2 (alfa)",16,MEM_128K,1.0,&v9938Lay,16,NULL,
+			msx2_init,msx2mapper,msx2Out,msx2In,msx2mrd,msx2mwr,NULL,NULL,msx2Reset,msx_sync,msx_keyp,msx_keyr,msx_vol};

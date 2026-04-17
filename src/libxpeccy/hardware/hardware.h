@@ -111,6 +111,7 @@ struct HardWare {
 	cbHwKey keyr;		// key release
 	cbHwVol vol;		// read volume
 };
+typedef struct HardWare HardWare;
 
 typedef struct {
 	int mask;		// if (port & mask == value & mask) port is catched
@@ -127,12 +128,16 @@ typedef struct {
 	int value;
 } xPortValue;
 
+typedef struct {
+	int id;
+	HardWare* core;
+} tabHwItem;
+
 int hwIn(xPort* ptab, Computer* comp, int port);
 void hwOut(xPort* ptab, Computer* comp, int port, int val, int mult);
 xPortValue* hwGetPorts(Computer*);
 
-typedef struct HardWare HardWare;
-extern HardWare hwTab[];
+// extern HardWare hwTab[];
 
 HardWare* findHardware(const char*);
 int stdMRd(Computer*, int, int);

@@ -6,7 +6,11 @@
 
 clock_t tClock;
 
+#define regPOST	reg[17]
+#define regCRN	reg[18]		// chipset register number
 #define	reg61	reg[0x61]
+
+#define flgA20G	flag[0]
 
 // ibm pc/at
 // 00000..9FFFF : ram
@@ -59,13 +63,13 @@ void ibm_mem_map(Computer* comp) {
 }
 
 int ibm_mrd(Computer* comp, int adr, int m1) {
-	if (!comp->a20gate || !(comp->ps2c->outport & 2))
+	if (!comp->flgA20G || !(comp->ps2c->outport & 2))
 		adr &= ~(1 << 20);
 	return (adr < comp->mem->ramSize) ? memRd(comp->mem, adr) : 0xff;
 }
 
 void ibm_mwr(Computer* comp, int adr, int val) {
-	if (!comp->a20gate || !(comp->ps2c->outport & 2))
+	if (!comp->flgA20G || !(comp->ps2c->outport & 2))
 		adr &= ~(1 << 20);
 	if (adr < comp->mem->ramSize)
 		memWr(comp->mem, adr, val);
@@ -215,20 +219,20 @@ int ibm_in71(Computer* comp, int adr) {
 
 void ibm_outCHP(Computer* comp, int adr, int val) {
 	if (adr & 1) {
-		comp->prt2 = comp->reg[comp->idx | 0x100];
-		comp->reg[comp->idx | 0x100] = val & 0xff;
-		if ((comp->idx == 0x87) && !(comp->prt2 & 1) && (val & 1)) {	// 0x87 b0 0->1 = reset
+		comp->prt2 = comp->reg[comp->regCRN | 0x100];
+		comp->reg[comp->regCRN | 0x100] = val & 0xff;
+		if ((comp->regCRN == 0x87) && !(comp->prt2 & 1) && (val & 1)) {	// 0x87 b0 0->1 = reset
 			compReset(comp, RES_DEFAULT);
 		}
 	} else {
-		comp->idx = val & 0xff;	// index
+		comp->regCRN = val & 0xff;	// index
 	}
 }
 
 int ibm_inCHP(Computer* comp, int adr) {
 	int res = -1;
 	if (adr & 1) {
-		res = comp->reg[comp->idx | 0x100] & 0xff;
+		res = comp->reg[comp->regCRN | 0x100] & 0xff;
 	}
 	return res;
 }
@@ -236,9 +240,9 @@ int ibm_inCHP(Computer* comp, int adr) {
 // post code
 
 void ibm_out80(Computer* comp, int adr, int val) {
-	if (comp->post != (val & 0xff)) {
-		printf("%4X:%.4X\tPOST %.2X\n",comp->cpu->cs.idx,comp->cpu->regIP,val & 0xff);
-		comp->post = val & 0xff;
+	if (comp->regPOST != (val & 0xff)) {
+		printf("%4X:%.4X\tPOST %.2X\n", comp->cpu->cs.idx, comp->cpu->regIP, val & 0xff);
+		comp->regPOST = val & 0xff;
 	}
 }
 
@@ -298,8 +302,8 @@ void ibm_outPOS(Computer* comp, int adr, int val) {
 	switch(adr & 7) {
 		case 2:				// port 92
 			// b1: a20 gate (0:on, 1:off)
-			comp->a20gate = (val & 2) ? 1 : 0;
-			printf("port 92: a20gate = %i\n",comp->a20gate);
+			comp->flgA20G = !!(val & 2);
+			// printf("port 92: a20gate = %i\n", comp->flgA20G);
 			break;
 	}
 }
@@ -562,7 +566,7 @@ void ibm_reset(Computer* comp) {
 	pic_reset(comp->spic);
 	ps2c_reset(comp->ps2c);
 	vga_reset(comp->vid);
-	comp->a20gate = 1;
+	comp->flgA20G = 1;
 	ibm_mem_map(comp);
 	switch(comp->keyb->pcmode) {
 		case KBD_AT: kbd_set_type(comp->keyb, KBD_PC_AT); break;
@@ -657,3 +661,8 @@ sndPair ibm_vol(Computer* comp, sndVolume* vol) {
 	res.right = res.left;
 	return res;
 }
+
+static vLayout ibmLay = {{720,492},{0,0},{80,12},{640,480},{0,0},1};
+
+HardWare ibm_hw_core = {HW_IBM_PC,HWG_PC,"IBM PC","IBM PC",16,MEM_1M | MEM_2M | MEM_4M,1.0,&ibmLay,24,NULL,
+			ibm_init,ibm_mem_map,ibm_iowr,ibm_iord,ibm_mrd,ibm_mwr,ibm_irq,ibm_ack,ibm_reset,ibm_sync,ibm_keyp,ibm_keyr,ibm_vol};

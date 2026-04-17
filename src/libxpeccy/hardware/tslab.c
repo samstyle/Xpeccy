@@ -6,6 +6,13 @@
 #define flgMEN	flag[0]		// 15AF[4] = FM_EN
 #define flgVDOS	flag[1]
 
+#define p01AF	reg[7]		// move to tsconf.c (what to do with ports tab?)
+#define p02AF	reg[8]
+#define p03AF	reg[9]
+#define p04AF	reg[10]
+#define p05AF	reg[11]
+#define p21AF	reg[12]
+
 #define regMADR	reg[16]		// 15AF[0..3] = MapAddr
 
 void tslReset(Computer* comp) {
@@ -556,3 +563,19 @@ int tslIn(Computer* comp, int port) {
 	res = hwIn(tsPortMap, comp, port);
 	return  res;
 }
+
+// tsconf
+xPortDsc zx_port_tab_ts[] = {
+	{0x7ffd, REG_BYTE, offsetof(Computer, p7FFD)},
+	{0xeff7, REG_BYTE, offsetof(Computer, pEFF7)},
+	{0x01af, REG_BYTE, offsetof(Computer, p01AF)},
+	{0x02af, REG_BYTE, offsetof(Computer, p02AF)},
+	{0x03af, REG_BYTE, offsetof(Computer, p03AF)},
+	{0x04af, REG_BYTE, offsetof(Computer, p04AF)},
+	{0x05af, REG_BYTE, offsetof(Computer, p05AF)},
+	{0x21af, REG_BYTE, offsetof(Computer, p21AF)},
+	{-1, 0, 0}
+};
+
+HardWare tsl_hw_core = {HW_TSLAB,HWG_ZX,"TSLab","Evo TSConf",16,MEM_4M,1.0,NULL,16,zx_port_tab_ts,
+			zx_init,tslMapMem,tslOut,tslIn,tslMRd,tslMWr,zx_irq,zx_ack,tslReset,zx_sync,zx_keyp,zx_keyr,zx_vol};

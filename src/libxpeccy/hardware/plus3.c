@@ -53,3 +53,12 @@ int pl3In(Computer* comp, int port) {
 	res = hwIn(p3PortMap, comp, port);
 	return res;
 }
+
+xPortDsc pl3_port_tab[] = {
+	{0x7ffd, REG_BYTE, offsetof(Computer, p7FFD)},
+	{0x1ffd, REG_BYTE, offsetof(Computer, p1FFD)},
+	{-1, 0, 0}
+};
+
+HardWare pl3_hw_core = {HW_PLUS3,HWG_ZX,"Spectrum +3","Spectrum +3",16,MEM_128K,1.0,NULL,16,pl3_port_tab,
+			zx_init,pl2MapMem,pl3Out,pl3In,stdMRd,stdMWr,zx_irq,zx_ack,plusRes,zx_sync,zx_keyp,zx_keyr,zx_vol};

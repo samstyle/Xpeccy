@@ -88,3 +88,12 @@ int pl2In(Computer* comp, int port) {
 	res = hwIn(p2PortMap, comp, port);
 	return  res;
 }
+
+xPortDsc pl2_port_tab[] = {
+	{0x7ffd, REG_BYTE, offsetof(Computer, p7FFD)},
+	{0x1ffd, REG_BYTE, offsetof(Computer, p1FFD)},
+	{-1, 0, 0}
+};
+
+HardWare pl2_hw_core = {HW_PLUS2,HWG_ZX,"Spectrum +2","Spectrum +2",16,MEM_128K,1.0,NULL,16,pl2_port_tab,
+			zx_init,pl2MapMem,pl2Out,pl2In,stdMRd,stdMWr,zx_irq,zx_ack,plusRes,zx_sync,zx_keyp,zx_keyr,zx_vol};

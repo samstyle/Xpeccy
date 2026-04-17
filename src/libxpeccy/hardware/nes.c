@@ -3,6 +3,8 @@
 
 #include <stdio.h>
 
+#define flgSIRQ	flag[0]
+
 static vLayout nesNTSCLay = {{341,262},{0,0},{85,22},{256,240},{0,0},64};
 static vLayout nesPALLay = {{341,312},{0,0},{85,72},{256,240},{0,0},64};
 
@@ -239,9 +241,10 @@ void nesSync(Computer* comp, int ns) {
 //	comp->nesapu->firq = 0;
 //	comp->nesapu->dirq = 0;
 //	comp->slot->irq = 0;
-	if (comp->slot->irq && !comp->nes.irq)
+	// TODO: slot.irq 0->1 as signal
+	if (comp->slot->irq && !comp->flgSIRQ)
 		comp->cpu->intrq |= MOS6502_INT_IRQ;
-	comp->nes.irq = comp->slot->irq;
+	comp->flgSIRQ = comp->slot->irq;
 	comp->slot->irq = 0;
 }
 
@@ -450,3 +453,6 @@ void nes_keyr(Computer* comp, keyEntry* ent) {
 sndPair nes_vol(Computer* comp, sndVolume* sv) {
 	return apuVolume(comp->nesapu);
 }
+
+HardWare nes_hw_core = {HW_NES,HWG_NES,"NES","NES",16,MEM_64K,(double)8/7,&nesPALLay,16,NULL,
+			nes_init,nesMaper,NULL,NULL,nesMemRd,nesMemWr,nes_irq,NULL,nesReset,nesSync,nes_keyp,nes_keyr,nes_vol};

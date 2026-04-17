@@ -187,6 +187,17 @@ void opt_fill_cpu(QComboBox* box) {
 	}
 }
 
+extern tabHwItem tabHwPtr[];
+QList<HardWare*> getHardwareList() {
+	QList<HardWare*> res;
+	tabHwItem* itm = tabHwPtr;
+	while(itm->id != HW_NULL) {
+		res.append(itm->core);
+		itm++;
+	}
+	return res;
+}
+
 SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	setModal(true);
 	ui.setupUi(this);
@@ -215,14 +226,13 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	int i;
 // machine
 	// fill hardware (motherboard) list
-	i = 0;
-	while (hwTab[i].name) {
-		if (hwTab[i].id != HW_NULL) {
-			ui.machbox->addItem(hwTab[i].optName,QString::fromLocal8Bit(hwTab[i].name));
+	QList<HardWare*> lst = getHardwareList();
+	foreach(HardWare* hw, lst) {
+		if (hw != NULL) {
+			ui.machbox->addItem(hw->optName, QString::fromLocal8Bit(hw->name));
 		} else {
-			ui.machbox->insertSeparator(i);
+			ui.machbox->insertSeparator(9999);
 		}
-		i++;
 	}
 
 	ui.resbox->addItem("BASIC 48",RES_48);
@@ -1256,37 +1266,29 @@ void SetupWin::buildkeylist() {
 	fillRFBox(ui.keyMapBox,lst);
 }
 
-QList<HardWare> getHardwareList() {
-	QList<HardWare> res;
-	int idx = 0;
-	while (hwTab[idx].name) {
-		res.push_back(hwTab[idx]);
-		idx++;
-	}
-	return res;
-}
-
 struct xMemName {
 	int mask;
 	const char* name;
 };
 
 static xMemName memNameTab[] = {
-	{MEM_16K, "16K"},
-	{MEM_32K, "32K"},
-	{MEM_64K, "64K"},
-	{MEM_128K, "128K"},
-	{MEM_256K, "256K"},
-	{MEM_512K, "512K"},
-	{MEM_1M, "1024K"},
-	{MEM_2M, "2048K"},
-	{MEM_4M, "4096K"},
+	{MEM_16K, "16 KB"},
+	{MEM_32K, "32 KB"},
+	{MEM_64K, "64 KB"},
+	{MEM_128K, "128 KB"},
+	{MEM_256K, "256 KB"},
+	{MEM_512K, "512 KB"},
+	{MEM_1M, "1024 KB"},
+	{MEM_2M, "2 MB"},
+	{MEM_4M, "4 MB"},
+	{MEM_8M, "8 MB"},
+	{MEM_16M, "16 MB"},
 	{-1, ""}
 };
 
 void SetupWin::setmszbox(int idx) {
-	QList<HardWare> list = getHardwareList();
-	int t = list[idx].mask;
+	QList<HardWare*> list = getHardwareList();
+	int t = list[idx]->mask;
 	QString oldText = ui.mszbox->currentText();
 	ui.mszbox->clear();
 	idx = 0;

@@ -349,3 +349,12 @@ int evoIn(Computer* comp, int port) {
 	res = hwIn(evoPortMap, comp, port);
 	return res;
 }
+
+xPortDsc evo_port_tab[] = {
+	{0x7ffd, REG_BYTE, offsetof(Computer, p7FFD)},
+	{0xeff7, REG_BYTE, offsetof(Computer, pEFF7)},
+	{-1, 0, 0}
+};
+
+HardWare evo_hw_core = {HW_PENTEVO,HWG_ZX,"PentEvo","Evo Baseconf",16,MEM_4M,1.0,NULL,16,evo_port_tab,
+			zx_init,evoMapMem,evoOut,evoIn,evoMRd,evoMWr,zx_irq,zx_ack,evoReset,zx_sync,zx_keyp,zx_keyr,zx_vol};

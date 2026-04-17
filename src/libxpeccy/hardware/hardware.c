@@ -6,65 +6,78 @@
 
 int hwflags = 0;
 
-//static vLayout gbcLay = {{228,154},{0,0},{68,10},{160,144},{0,0},64};
-static vLayout gbcLay = {{456,154},{0,0},{296,10},{160,144},{0,0},64};		// 456x154 @ 4.2MHz dot
-static vLayout bkLay = {{256+96,256+24},{0,0},{96,24},{256,256},{0,0},0};
-static vLayout spclstLay = {{384+16,256+8},{0,0},{16,8},{384,256},{0,0},0};
-static vLayout nesPALLay = {{342,312},{0,0},{85,72},{256,240},{0,0},64};	// 342x312
-static vLayout v9938Lay = {{342,313},{16,13},{57,80},{256,192},{0,0},64};
-static vLayout cmdrLay = {{512,312},{24,30},{144,44},{320,200},{0,0},64};
-static vLayout ibmLay = {{720,492},{0,0},{80,12},{640,480},{0,0},1};
-static vLayout pc98xxLay = {{720,412},{0,0},{80,12},{640,400},{0,0},1};		// check
+#if 1
 
-// pent
-xPortDsc zx_port_tab_a[] = {
-	{0x7ffd, REG_BYTE, offsetof(Computer, p7FFD)},
-	{-1, 0, 0}
+extern HardWare dum_hw_core;
+extern HardWare z48_hw_core;
+extern HardWare alf_hw_core;
+extern HardWare pnt_hw_core;
+extern HardWare p1m_hw_core;
+extern HardWare sco_hw_core;
+extern HardWare atm_hw_core;
+extern HardWare prf_hw_core;
+extern HardWare phx_hw_core;
+extern HardWare evo_hw_core;
+extern HardWare tsl_hw_core;
+extern HardWare pl2_hw_core;
+extern HardWare pl3_hw_core;
+extern HardWare mx1_hw_core;
+extern HardWare mx2_hw_core;
+extern HardWare gbc_hw_core;
+extern HardWare nes_hw_core;
+extern HardWare c64_hw_core;
+extern HardWare b10_hw_core;
+extern HardWare b11_hw_core;
+extern HardWare spc_hw_core;
+extern HardWare ibm_hw_core;
+extern HardWare p98_hw_core;
+
+tabHwItem tabHwPtr[] = {
+	{HW_DUMMY, &dum_hw_core},
+	{HW_ZX48, &z48_hw_core},
+	{HW_ALF, &alf_hw_core},
+	{HW_PENT, &pnt_hw_core},
+	{HW_P1024, &p1m_hw_core},
+	{HW_SCORP, &sco_hw_core},
+	{HW_ATM2, &atm_hw_core},
+	{HW_PROFI, &prf_hw_core},
+	{HW_PHOENIX, &phx_hw_core},
+	{HW_PENTEVO, &evo_hw_core},
+	{HW_TSLAB, &tsl_hw_core},
+	{HW_DUMMY, NULL},
+	{HW_PLUS2, &pl2_hw_core},
+	{HW_PLUS3, &pl3_hw_core},
+	{HW_DUMMY, NULL},
+	{HW_MSX, &mx1_hw_core},
+	{HW_MSX2, &mx2_hw_core},
+	{HW_DUMMY, NULL},
+	{HW_GBC, &gbc_hw_core},
+	{HW_DUMMY, NULL},
+	{HW_NES, &nes_hw_core},
+	{HW_C64, &c64_hw_core},
+	{HW_BK0010, &b10_hw_core},
+	{HW_BK0011M, &b11_hw_core},
+	{HW_SPCLST, &spc_hw_core},
+	{HW_IBM_PC, &ibm_hw_core},
+	{HW_PC9801, &p98_hw_core},
+	{HW_NULL, NULL},
 };
 
-// pent1024
-xPortDsc zx_port_tab_b[] = {
-	{0x7ffd, REG_BYTE, offsetof(Computer, p7FFD)},
-	{0xeff7, REG_BYTE, offsetof(Computer, pEFF7)},
-	{-1, 0, 0}
-};
+HardWare* findHardware(const char* name) {
+	tabHwItem* itm = tabHwPtr;
+	HardWare* hw = NULL;
+	while((itm->id != HW_NULL) && !hw) {
+		if (itm->core) {
+			if (!strcmp(itm->core->name, name)) {
+				hw = itm->core;
+			}
+		}
+		itm++;
+	}
+	return hw;
+}
 
-// scorp
-xPortDsc zx_port_tab_s[] = {
-	{0x7ffd, REG_BYTE, offsetof(Computer, p7FFD)},
-	{0x1ffd, REG_BYTE, offsetof(Computer, p1FFD)},
-	{-1, 0, 0}
-};
-
-// phoenix
-
-xPortDsc zx_port_tab_px[] = {
-	{0x7ffd, REG_BYTE, offsetof(Computer, p7FFD)},
-	{0xeff7, REG_BYTE, offsetof(Computer, pEFF7)},
-	{0x1ffd, REG_BYTE, offsetof(Computer, p1FFD)},
-	{-1, 0, 0}
-};
-
-// profi
-xPortDsc zx_port_tab_p[] = {
-	{0x7ffd, REG_BYTE, offsetof(Computer, p7FFD)},
-	{0xdffd, REG_BYTE, offsetof(Computer, pDFFD)},
-	{-1, 0, 0}
-};
-
-// tsconf
-
-xPortDsc zx_port_tab_ts[] = {
-	{0x7ffd, REG_BYTE, offsetof(Computer, p7FFD)},
-	{0xeff7, REG_BYTE, offsetof(Computer, pEFF7)},
-	{0x01af, REG_BYTE, offsetof(Computer, p01AF)},
-	{0x02af, REG_BYTE, offsetof(Computer, p02AF)},
-	{0x03af, REG_BYTE, offsetof(Computer, p03AF)},
-	{0x04af, REG_BYTE, offsetof(Computer, p04AF)},
-	{0x05af, REG_BYTE, offsetof(Computer, p05AF)},
-	{0x21af, REG_BYTE, offsetof(Computer, p21AF)},
-	{-1, 0, 0}
-};
+#else
 
 HardWare hwTab[] = {
 	{
@@ -165,7 +178,7 @@ HardWare* findHardware(const char* name) {
 	}
 	return hw;
 }
-
+#endif
 // mem
 
 static MemPage* pg;

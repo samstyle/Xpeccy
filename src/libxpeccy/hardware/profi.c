@@ -171,3 +171,13 @@ void prf_keyp(Computer* comp, keyEntry* ent) {
 void prf_keyr(Computer* comp, keyEntry* ent) {
 	kbd_release(comp->keyb, ent);
 }
+
+// profi
+xPortDsc zx_port_tab_p[] = {
+	{0x7ffd, REG_BYTE, offsetof(Computer, p7FFD)},
+	{0xdffd, REG_BYTE, offsetof(Computer, pDFFD)},
+	{-1, 0, 0}
+};
+
+HardWare prf_hw_core = {HW_PROFI,HWG_ZX,"Profi","Profi",16,MEM_512K | MEM_1M,1.0,NULL,16,zx_port_tab_p,
+			prf_init,prfMapMem,prfOut,prfIn,stdMRd,stdMWr,zx_irq,zx_ack,prfReset,zx_sync,prf_keyp,prf_keyr,zx_vol};

@@ -161,3 +161,6 @@ void zx_keyrl(Computer* comp, int key) {
 		}
 	}
 }
+
+HardWare z48_hw_core = {HW_ZX48,HWG_ZX,"ZX48K","ZX 48K",16,MEM_64K | MEM_16K,1.0,NULL,16,NULL,
+			zx_init,speMapMem,speOut,speIn,stdMRd,stdMWr,zx_irq,zx_ack,zx48_reset,zx_sync,zx_keyp,zx_keyr,zx_vol};

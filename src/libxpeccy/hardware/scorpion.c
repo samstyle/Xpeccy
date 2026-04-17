@@ -136,3 +136,13 @@ int scoIn(Computer* comp, int port) {
 	res = hwIn(scrpPortMap, comp, port);
 	return res;
 }
+
+// scorp
+xPortDsc sco_port_tab[] = {
+	{0x7ffd, REG_BYTE, offsetof(Computer, p7FFD)},
+	{0x1ffd, REG_BYTE, offsetof(Computer, p1FFD)},
+	{-1, 0, 0}
+};
+
+HardWare sco_hw_core = {HW_SCORP,HWG_ZX,"Scorpion","ZS Scorpion",16,MEM_256K | MEM_1M,1.0,NULL,16,sco_port_tab,
+				scrp_init,scoMapMem,scoOut,scoIn,scoMRd,stdMWr,zx_irq,zx_ack,speReset,zx_sync,zx_keyp,zx_keyr,zx_vol};

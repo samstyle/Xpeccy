@@ -5,6 +5,10 @@
 #include "../spectrum.h"
 #include "../cpu/MOS6502/6502.h"
 
+#define	regR00	reg[16]
+#define regR01	reg[17]
+#define regKROW	reg[18]
+
 // Commodore
 // dotClock	8.18MHz (ntsc) / 7.88MHz (pal)
 // colorCLK	14.31818MHz (ntsc) / 17.734472MHz (pal)
@@ -98,11 +102,11 @@ int cia1_porta_rd(int adr, void* p) {
 // cia1 port B rd: keyboard scan
 int cia1_portb_rd(int adr, void* p) {
 	Computer* comp = (Computer*)p;
-	return kbd_rd(comp->keyb, comp->c64.keyrow);
+	return kbd_rd(comp->keyb, comp->regKROW);
 }
 
 void cia1_porta_wr(int adr, int v, void* p) {
-	((Computer*)p)->c64.keyrow = v & 0xff;
+	((Computer*)p)->regKROW = v & 0xff;
 }
 
 int c64_cia1_rd(int adr, void* p) {
@@ -160,7 +164,7 @@ void c64_maper(Computer* comp) {
 	// 0x8000: RAM or cartrige rom (TODO)
 	memSetBank(comp->mem, 0x80, MEM_RAM, 4, MEM_8K, NULL, NULL, NULL);
 	// 0xa000: RAM or BASIC (8K): reg01 & 1
-	if ((comp->c64.reg01 & (F_LORAM | F_HIRAM)) == (F_LORAM | F_HIRAM)) {			// 11:basic, others:ram
+	if ((comp->regR01 & (F_LORAM | F_HIRAM)) == (F_LORAM | F_HIRAM)) {			// 11:basic, others:ram
 		memSetBank(comp->mem, 0xa0, MEM_ROM, 0, MEM_8K, c64_rom_rd, c64_rom_wr, comp);	// BASIC (A000..BFFF)
 	} else {
 		memSetBank(comp->mem, 0xa0, MEM_RAM, 5, MEM_8K, NULL, NULL, NULL);
@@ -168,9 +172,9 @@ void c64_maper(Computer* comp) {
 	// 0xc000: RAM (4K)
 	memSetBank(comp->mem, 0xc0, MEM_RAM, 12, MEM_4K, NULL, NULL, NULL);
 	// 0xd000: RAM, CHARROM or IO
-	if ((comp->c64.reg01 & (F_LORAM | F_HIRAM)) == 0) {	// x00:RAM
+	if ((comp->regR01 & (F_LORAM | F_HIRAM)) == 0) {	// x00:RAM
 		memSetBank(comp->mem, 0xd0, MEM_RAM, 13, MEM_4K, NULL, NULL, NULL);
-	} else if (comp->c64.reg01 & F_CHAREN) {		// 1xx:IO
+	} else if (comp->regR01 & F_CHAREN) {		// 1xx:IO
 		memSetBank(comp->mem, 0xd0, MEM_IO, 0, MEM_1K, c64_vic_rd, c64_vic_wr, comp);		// vicII
 		memSetBank(comp->mem, 0xd4, MEM_IO, 0, MEM_1K, c64_sid_rd, c64_sid_wr, comp);		// sid
 		memSetBank(comp->mem, 0xd8, MEM_IO, 0, MEM_1K, c64_pal_rd, c64_pal_wr, comp);		// palette
@@ -182,7 +186,7 @@ void c64_maper(Computer* comp) {
 		memSetBank(comp->mem, 0xd0, MEM_EXT, 3, MEM_4K, c64_chrd, NULL, comp);
 	}
 	// 0xe000: RAM or KERNAL
-	if (comp->c64.reg01 & F_HIRAM) {			// x1x:KERNAL
+	if (comp->regR01 & F_HIRAM) {			// x1x:KERNAL
 		memSetBank(comp->mem, 0xe0, MEM_ROM, 1, MEM_8K, c64_rom_rd, c64_rom_wr, comp);
 	} else {						// x0x:RAM
 		memSetBank(comp->mem, 0xe0, MEM_RAM, 7, MEM_8K, NULL, NULL, NULL);
@@ -200,8 +204,8 @@ static xColor c64_palette[16] = {
 };
 
 void c64_reset(Computer* comp) {
-	comp->c64.reg00 = 0x2f;
-	comp->c64.reg01 = 0x37;
+	comp->regR00 = 0x2f;
+	comp->regR01 = 0x37;
 	int i;
 	xColor xcol;
 	for (i = 0; i < 16; i++) {
@@ -219,10 +223,10 @@ int c64_mrd(Computer* comp, int adr, int m1) {
 	int res = -1;
 	switch (adr) {
 		case 0x0000:
-			res = comp->c64.reg00;
+			res = comp->regR00;
 			break;
 		case 0x0001:
-			res = comp->c64.reg01 & 0xef;
+			res = comp->regR01 & 0xef;
 			if (!comp->tape->on) res |= 0x10;	// 1:no buttons pressed, 0:button pressed
 			break;
 		default:
@@ -241,12 +245,12 @@ int c64_mrd(Computer* comp, int adr, int m1) {
 void c64_mwr(Computer* comp, int adr, int val) {
 	switch (adr) {
 		case 0x0000:
-			comp->c64.reg00 = val & 0xff;
+			comp->regR00 = val & 0xff;
 			break;
 		case 0x0001:
-			comp->c64.reg01 &= ~comp->c64.reg00;			// reset output bits in R0
-			val &= comp->c64.reg00;					// reset ro bits in value
-			comp->c64.reg01 |= val;					// set new output bits in R0
+			comp->regR01 &= ~comp->regR00;			// reset output bits in R0
+			val &= comp->regR00;					// reset ro bits in value
+			comp->regR01 |= val;					// set new output bits in R0
 			c64_maper(comp);
 			comp->tape->levRec = (val & 8) ? 0xb0 : 0x50;		// datasette output
 			if (val & 0x20) {
@@ -319,44 +323,15 @@ void c64_sync(Computer* comp, int ns) {
 	cia_sync(comp->c64.cia2, ns, comp->nsPerTick);
 }
 
-/*
-typedef struct {
-	int code;
-	int row;
-	int mask;
-} c64Key;
-
-static c64Key c64matrix[] = {
-	{XKEY_BSP,0,1},{XKEY_ENTER,0,2},{XKEY_RIGHT,0,4},{XKEY_F7,0,8}, {XKEY_F1,0,16},{XKEY_F3,0,32},{XKEY_F5,0,64},{XKEY_DOWN,0,128},
-	{XKEY_3,1,1},{XKEY_W,1,2},{XKEY_A,1,4},{XKEY_4,1,8},{XKEY_Z,1,16},{XKEY_S,1,32},{XKEY_E,1,64},{XKEY_LSHIFT,1,128},
-	{XKEY_5,2,1},{XKEY_R,2,2},{XKEY_D,2,4},{XKEY_6,2,8},{XKEY_C,2,16},{XKEY_F,2,32},{XKEY_T,2,64},{XKEY_X,2,128},
-	{XKEY_7,3,1},{XKEY_Y,3,2},{XKEY_G,3,4},{XKEY_8,3,8},{XKEY_B,3,16},{XKEY_H,3,32},{XKEY_U,3,64},{XKEY_V,3,128},
-	{XKEY_9,4,1},{XKEY_I,4,2},{XKEY_J,4,4},{XKEY_0,4,8},{XKEY_M,4,16},{XKEY_K,4,32},{XKEY_O,4,64},{XKEY_N,4,128},
-	{XKEY_EQUAL,5,1},{XKEY_P,5,2},{XKEY_L,5,4},{XKEY_MINUS,5,8},{XKEY_PERIOD,5,16},{XKEY_APOS,5,32},{XKEY_TILDA,5,64},{XKEY_SLASH,5,128},
-	{XKEY_RBRACK,6,1},{XKEY_COMMA,5,128},{XKEY_DOTCOM,6,4},{XKEY_HOME,6,8},{XKEY_RSHIFT,6,16},{XKEY_BSLASH,6,32},{XKEY_UP,6,64},{XKEY_BSLASH,6,128},
-	{XKEY_1,7,1},{XKEY_LEFT,7,2},{XKEY_LCTRL,7,4},{XKEY_2,7,8},{XKEY_SPACE,7,16},{XKEY_RCTRL,7,32},{XKEY_Q,7,64},{XKEY_ESC,7,128},
-	{0,0,0}
-};
-*/
-
 void c64_keyp(Computer* comp, keyEntry* ent) {
 	kbd_press(comp->keyb, ent);
-//	int idx = 0;
-//	while(c64matrix[idx].code > 0) {
-//		if (c64matrix[idx].code == ent.key) {
-//			comp->keyb->msxMap[c64matrix[idx].row] &= ~c64matrix[idx].mask;
-//		}
-//		idx++;
-//	}
 }
 
 void c64_keyr(Computer* comp, keyEntry* ent) {
 	kbd_release(comp->keyb, ent);
-//	int idx = 0;
-//	while(c64matrix[idx].code > 0) {
-//		if (c64matrix[idx].code == ent.key) {
-//			comp->keyb->msxMap[c64matrix[idx].row] |= c64matrix[idx].mask;
-//		}
-//		idx++;
-//	}
 }
+
+static vLayout cmdrLay = {{512,312},{24,30},{144,44},{320,200},{0,0},64};
+
+HardWare c64_hw_core = {HW_C64,HWG_COMMODORE,"Commodore64","Commodore64",16,MEM_128K,1.0,&cmdrLay,16,NULL,
+			c64_init,c64_maper,NULL,NULL,c64_mrd,c64_mwr,c64_irq,NULL,c64_reset,c64_sync,c64_keyp,c64_keyr,c64_vol};

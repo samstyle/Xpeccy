@@ -83,3 +83,13 @@ int p1mIn(Computer* comp, int port) {
 	res = hwIn(p1mPortMap, comp, port);
 	return res;
 }
+
+// pent1024
+xPortDsc p1m_port_tab[] = {
+	{0x7ffd, REG_BYTE, offsetof(Computer, p7FFD)},
+	{0xeff7, REG_BYTE, offsetof(Computer, pEFF7)},
+	{-1, 0, 0}
+};
+
+HardWare p1m_hw_core = {HW_P1024,HWG_ZX,"Pentagon1024SL","Pentagon 1024 SL",16,MEM_1M,1.0,NULL,16,p1m_port_tab,
+			zx_init,p1mMapMem,p1mOut,p1mIn,stdMRd,stdMWr,zx_irq,zx_ack,speReset,zx_sync,zx_keyp,zx_keyr,zx_vol};

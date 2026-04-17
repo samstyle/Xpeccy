@@ -4,6 +4,10 @@
 #include "../cpu/LR35902/lr35902.h"
 
 #define flgSPD	flag[0]
+#define flgBOOT	flag[1]
+#define flgSRQ	flag[2]		// speed request
+#define fTMRON	flag[3]
+#define fTMRIRQ	flag[4]
 
 // IO ports
 
@@ -391,7 +395,7 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 				case 2: comp->gb.timer.t.per = comp->nsPerTick << 6; break;
 				case 3: comp->gb.timer.t.per = comp->nsPerTick << 8; break;
 			}
-			comp->gb.timer.t.on = (val & 4) ? 1 : 0;
+			comp->fTMRON = (val & 4) ? 1 : 0;
 			break;
 // SERIAL
 		case 0x01:
@@ -405,7 +409,7 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 // GBC
 //	cpu speed
 		case 0x4d:
-			comp->gb.speedrq = (val & 1);
+			comp->flgSRQ = (val & 1);
 			break;
 //	memory mapping
 		case 0x4f:				// VRAM bank (8000..9fff)
@@ -483,7 +487,7 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 			break;
 // MISC
 		case 0x50:
-			comp->gb.boot = 0;
+			comp->flgBOOT = 0;
 			break;
 
 		default:
@@ -509,7 +513,7 @@ int gbSlotRd(int adr, void* data) {
 	Computer* comp = (Computer*)data;
 	xCartridge* slot = comp->slot;
 	unsigned char res = 0xff;
-	if (comp->gb.boot && (adr < comp->mem->romSize) && ((adr & 0xff00) != 0x0100)) {
+	if (comp->flgBOOT && (adr < comp->mem->romSize) && ((adr & 0xff00) != 0x0100)) {
 		res = comp->mem->romData[adr & 0x3fff];
 	} else if (slot->data) {
 		res = sltRead(slot, SLT_PRG, adr);
@@ -681,23 +685,23 @@ void gbcSync(Computer* comp, int ns) {
 			comp->gb.iomap[0x04]++;
 		}
 	}
-	if (comp->gb.timer.t.on && (comp->gb.timer.t.per > 0)) {
+	if (comp->fTMRON && (comp->gb.timer.t.per > 0)) {
 		comp->gb.timer.t.cnt -= ns;
 		if (comp->gb.timer.t.cnt < 0) {
 			comp->gb.timer.t.cnt += comp->gb.timer.t.per;
 			if (comp->gb.iomap[0x05] == 0xff) {		// overflow
 				comp->gb.iomap[0x05] = comp->gb.iomap[0x06];
-				comp->gb.timer.t.intrq = 1;
+				comp->fTMRIRQ = 1;
 			} else {
 				comp->gb.iomap[0x05]++;
 			}
 		}
 	}
 	// cpu speed change
-	if (comp->cpu->flgSTOP && comp->gb.speedrq) {
+	if (comp->cpu->flgSTOP && comp->flgSRQ) {
 		// comp->cpu->flgSTOP = 0;
 		comp->cpu->regPC++;
-		comp->gb.speedrq = 0;
+		comp->flgSRQ = 0;
 		comp->flgSPD ^= 1;
 		compSetTurbo(comp, comp->flgSPD ? 2.0 : 1.0);
 	}
@@ -706,8 +710,8 @@ void gbcSync(Computer* comp, int ns) {
 //		comp->vid->intrq = 0;
 //		req |= 2;
 //	} else
-	if (comp->gb.timer.t.intrq) {
-		comp->gb.timer.t.intrq = 0;
+	if (comp->fTMRIRQ) {
+		comp->fTMRIRQ = 0;
 		req |= 4;
 	} else if (0) {				// TODO: serial INT (?)
 		req |= 8;
@@ -835,7 +839,7 @@ sndPair gbc_vol(Computer* comp, sndVolume* sv) {
 // reset
 
 void gbReset(Computer* comp) {
-	comp->gb.boot = 1;
+	comp->flgBOOT = 1;
 	comp->vid->gbmode = 0;
 	vid_set_mode(comp->vid, VID_GBC);
 	gbcvReset(comp->vid);
@@ -851,7 +855,7 @@ void gbReset(Computer* comp) {
 	comp->gbsnd->ch4.on = 0;
 
 	comp->gb.timer.t.per = 0;
-	comp->gb.timer.t.on = 0;
+	comp->fTMRON = 0;
 
 	comp->gb.vbank = 0;	// vram page
 	comp->gb.wbank = 1;	// wram page (D000..DFFF)
@@ -863,3 +867,9 @@ void gbReset(Computer* comp) {
 	slot->ramMask = 0x1ffff;
 	slot->ramod = 0;
 }
+
+//static vLayout gbcLay = {{228,154},{0,0},{68,10},{160,144},{0,0},64};		// 228x154 @ 2.1MHz dot (?)
+static vLayout gbcLay = {{456,154},{0,0},{296,10},{160,144},{0,0},64};		// 456x154 @ 4.2MHz dot
+
+HardWare gbc_hw_core = {HW_GBC,HWG_GB,"GameBoy","Game Boy",16,MEM_64K,1.0,&gbcLay,16,NULL,
+			gbc_init,gbMaper,NULL,NULL,gbMemRd,gbMemWr,gbc_irq,NULL,gbReset,gbcSync,gbc_keyp,gbc_keyr,gbc_vol};

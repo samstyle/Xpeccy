@@ -3,6 +3,8 @@
 
 #define	regKEYL	reg[16]
 
+static vLayout v9938Lay = {{342,313},{16,13},{57,80},{256,192},{0,0},64};
+
 // MSX...
 // master clock		MSX2:21.48MHz | MSX1:10.74
 // v99xx clock		master/4 = 5.37MHz : 2 dots/period	MSX2. MSX1: master/2
@@ -225,3 +227,6 @@ sndPair msx_vol(Computer* comp, sndVolume* sv) {
 	vol.right += tv.right * sv->ay / 100;
 	return vol;
 }
+
+HardWare mx1_hw_core = {HW_MSX,HWG_MSX,"MSX","MSX-1",16,MEM_128K,1.0,&v9938Lay,16,NULL,
+			msx_init,msxMapMem,msxOut,msxIn,stdMRd,stdMWr,NULL,NULL,msxReset,msx_sync,msx_keyp,msx_keyr,msx_vol};

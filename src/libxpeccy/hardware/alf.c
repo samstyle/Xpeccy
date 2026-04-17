@@ -111,3 +111,6 @@ sndPair alf_vol(Computer* comp, sndVolume* sv) {
 	p.right += v.right * sv->ay / 100;
 	return p;
 }
+
+HardWare alf_hw_core = {HW_ALF,HWG_ALF,"ALF","ALF TV Game",16,MEM_64K | MEM_128K,1.0,NULL,16,NULL,
+			NULL,alf_mapmem,alf_iwr,alf_ird,alf_mrd,alf_mwr,zx_irq,zx_ack,alf_reset,alf_sync,NULL,NULL,alf_vol};

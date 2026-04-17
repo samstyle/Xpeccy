@@ -50,3 +50,12 @@ int penIn(Computer* comp, int port) {
 	res = hwIn(penPortMap, comp, port);
 	return res;
 }
+
+// pent
+xPortDsc zx_port_tab_a[] = {
+	{0x7ffd, REG_BYTE, offsetof(Computer, p7FFD)},
+	{-1, 0, 0}
+};
+
+HardWare pnt_hw_core = {HW_PENT,HWG_ZX,"Pentagon","Pentagon",16,MEM_128K | MEM_512K,1.0,NULL,16,zx_port_tab_a,
+			zx_init,penMapMem,penOut,penIn,stdMRd,stdMWr,zx_irq,zx_ack,speReset,zx_sync,zx_keyp,zx_keyr,zx_vol};

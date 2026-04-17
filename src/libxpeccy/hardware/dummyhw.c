@@ -26,3 +26,6 @@ sndPair hw_dum_vol(Computer* comp, sndVolume* xv) {
 	vol.right = 0;
 	return vol;
 }
+
+HardWare dum_hw_core = {HW_DUMMY,HWG_NULL,"Dummy","Dummy",16,MEM_256,1.0,NULL,16,NULL,
+			NULL, hw_dum_map, hw_dum_iwr, hw_dum_ird, hw_dum_mrd, hw_dum_mwr, NULL, NULL, NULL, NULL, NULL, NULL, hw_dum_vol};

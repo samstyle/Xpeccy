@@ -132,42 +132,13 @@ void spc_mwr(Computer* comp, int adr, int val) {
 void spc_sync(Computer* comp, int ns) {
 	tapSync(comp->tape, ns);
 	bcSync(comp->beep, ns);
-#if 0
-	if (pregz) {
-		printf("PC: %.4X AF: %.4X BC: %.4X DE: %.4X HL: %.4X SP: %.4X\n", comp->cpu->pc, comp->cpu->af, comp->cpu->bc, comp->cpu->de, comp->cpu->hl, comp->cpu->sp);
-	}
-	if (comp->cpu->pc == 0xce5) {
-		pregz = 1;
-		printf("-----\n");
-	} else if (comp->cpu->pc == 0xd34) {
-		pregz = 0;
-	}
-#endif
 }
 
-#if 0
-static keyScan spc_keys[] = {
-	//f1		f2		f3		f4	f5		f6		f7	f8		f9	f10		lock		clear
-	{'!',7,0x800},{'@',7,0x400},{'#',7,0x200},{'$',7,0x100},{'%',7,0x80},{'^',7,0x40},{'&',7,0x20},{'*',7,0x10},{'(',7,0x8},{')',7,0x04},{'O',7,0x02},{'C',7,0x01},
-	{';',6,0x800},{'1',6,0x400},{'2',6,0x200},{'3',6,0x100},{'4',6,0x80},{'5',6,0x40},{'6',6,0x20},{'7',6,0x10},{'8',6,0x8},{'9',6,0x04},{'0',6,0x02},{'-',6,0x01},
-	{'j',5,0x800},{'c',5,0x400},{'u',5,0x200},{'k',5,0x100},{'e',5,0x80},{'n',5,0x40},{'g',5,0x20},{'[',5,0x10},{']',5,0x8},{'z',5,0x04},{'h',5,0x02},{':',5,0x01},
-	{'f',4,0x800},{'y',4,0x400},{'w',4,0x200},{'a',4,0x100},{'p',4,0x80},{'r',4,0x40},{'o',4,0x20},{'l',4,0x10},{'d',4,0x8},{'v',4,0x04},{'/',4,0x02},{'>',4,0x01},
-	{'q',3,0x800},{'|',3,0x400},{'s',3,0x200},{'m',3,0x100},{'i',3,0x80},{'t',3,0x40},{'x',3,0x20},{'b',3,0x10},{'A',3,0x8},{'<',3,0x04},{'?',3,0x02},{'B',3,0x01},
-	{'X',2,0x800},{'H',2,0x400},{'U',2,0x200},{'D',2,0x100},{'T',2,0x80},{'_',2,0x40},{0x20,2,0x20},{'L',2,0x10},{'V',2,0x8},{'R',2,0x04},{'S',2,0x02},{'E',2,0x01},
-	{'P',1,0x800},	/* HP button */
-	{0, 0, 0}
-};
-#endif
-
 void spc_keyp(Computer* comp, keyEntry* kent) {
-	// printf("press: %s, %c %c (%i)\n", kent.name, kent.zxKey.key1, kent.zxKey.key2, kent.key);
-	//kbd_press(comp->keyb, spc_keys, comp->keyb->map, kent.zxKey);
-	// printf("kbd: "); for (int i = 7; i > 1; i--) {printf("%.3X ", comp->keyb->map[i] & 0xfff);} printf("\n");
 	kbd_press(comp->keyb, kent);
 }
 
 void spc_keyr(Computer* comp, keyEntry* kent) {
-	//kbd_release(comp->keyb, spc_keys, comp->keyb->map, kent.zxKey);
 	kbd_release(comp->keyb, kent);
 }
 
@@ -178,3 +149,8 @@ sndPair spc_vol(Computer* comp, sndVolume* v) {
 	vol.right = vol.left;
 	return vol;
 }
+
+static vLayout spclstLay = {{384+16,256+8},{0,0},{16,8},{384,256},{0,0},0};
+
+HardWare spc_hw_core = {HW_SPCLST,HWG_SPCLST,"Specialist","Specialist",16,MEM_64K,1.0,&spclstLay,16,NULL,
+			spc_init,spc_mem_map,NULL,NULL,spc_mrd,spc_mwr,NULL,NULL,spc_reset,spc_sync,spc_keyp,spc_keyr,spc_vol};
