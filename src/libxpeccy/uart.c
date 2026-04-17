@@ -274,10 +274,19 @@ void uart_def_sync(UART* uart, int ns) {
 	}
 }
 
+int uart_def_rd(UART* uart, int a) {
+	return uart->devrd ? uart->devrd(uart->devptr) : -1;
+}
+
+void uart_def_wr(UART* uart, int a, int d) {
+	if (uart->devwr)
+		uart->devwr(d, uart->devptr);
+}
+
 // core stuff
 
 const UARTCore uart_core_tab[] = {
-	{UART_DEFAULT, NULL, NULL, NULL, uart_def_sync},
+	{UART_DEFAULT, NULL, uart_def_rd, uart_def_wr, uart_def_sync},
 	{UART_8250, u8250_reset, u8250_rd, u8250_wr, u8250_sync},
 	{UPD_8251, u8251_reset, u8251_rd, u8251_wr, u8251_sync},
 	{-1, NULL, NULL, NULL, NULL}

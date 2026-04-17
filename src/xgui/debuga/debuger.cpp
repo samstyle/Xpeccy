@@ -1844,12 +1844,12 @@ QString get_hex_queue_n(unsigned long d, int l) {
 
 void xPS2Widget::draw() {
 	PS2Ctrl* ctrl = conf.prof.cur->zx->ps2c;
-	Keyboard* k = ctrl->kbd;
-	Mouse* m = ctrl->mouse;
+//	Keyboard* k = ctrl->kbd;
+//	Mouse* m = ctrl->mouse;
 	ui.lab_ps2ctrl->setText(getbinbyte(ctrl->ram[0x00]));
 	ui.lab_ps2status->setText(getbinbyte(ctrl->status));
 	ui.lab_ps2outbuf->setText(gethexbyte(ctrl->outbuf));
 	ui.lab_ps2inbuf->setText(gethexbyte(ctrl->inbuf));
-	ui.lab_ps2kdata->setText(k->outbuf ? get_hex_queue_z(k->outbuf) : "-");
-	ui.lab_ps2mdata->setText(m->queueSize ? get_hex_queue_n(m->outbuf, m->queueSize) : "-");
+//	ui.lab_ps2kdata->setText(k->outbuf ? get_hex_queue_z(k->outbuf) : "-");
+//	ui.lab_ps2mdata->setText(m->queueSize ? get_hex_queue_n(m->outbuf, m->queueSize) : "-");
 }

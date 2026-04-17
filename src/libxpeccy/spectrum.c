@@ -387,7 +387,8 @@ Computer* compCreate() {
 	comp->joyb = joyCreate();
 	comp->mouse = mouseCreate(comp_irq, comp);
 	comp->ppi = ppi_create();
-	comp->ps2c = ps2c_create(comp->keyb, comp->mouse, comp_irq, comp);
+	// comp->ps2c = ps2c_create(comp->keyb, comp->mouse, comp_irq, comp);
+	comp->ps2c = ps2c_create(comp_irq, comp);
 // storage
 	comp->tape = tape_create(comp_irq, comp);
 	comp->dif = difCreate(DIF_NONE, comp_irq, comp);

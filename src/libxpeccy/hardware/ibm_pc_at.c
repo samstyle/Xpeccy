@@ -142,6 +142,14 @@ Read operations:
     0    System timer 2 gate to speaker result
 */
 
+int ibm_kbd_rd(void* p) {
+	return kbd_rd((Keyboard*)p, 0);
+}
+
+void ibm_kbd_wr(int d, void* p) {
+	kbd_wr((Keyboard*)p, 0, d);
+}
+
 int ibm_inKbd(Computer* comp, int adr) {
 	int res = -1;
 	switch (adr & 0x0f) {
@@ -587,6 +595,8 @@ void ibm_init(Computer* comp) {
 	uart_set_type(comp->uart, UART_8250);
 	uart_set_irq(comp->uart, IRQ_COM1);
 	uart_set_dev(comp->uart, ibm_mouse_rd, ibm_mouse_wr, comp);	// connect serial mouse to COM1
+	ps2c_set_dev(comp->ps2c, 0, ibm_kbd_rd, ibm_kbd_wr, comp->keyb);
+//	ps2c_set_dev(comp->ps2c, 1, ibm_mou_rd, ibm_mou_wr, comp->mouse);
 }
 
 void dma_ch_transfer(DMAChan*, void*);
@@ -619,7 +629,6 @@ void ibm_irq(Computer* comp, int t) {
 			}
 			break;		// reg61.bit2: enable pit.ch2.out->speaker
 		case IRQ_RESET: cpu_reset(comp->cpu); break;
-//		case IRQ_BRK: comp->brk = 1; comp->brkt = -1; break;		// debug: any device breakpoint
 	}
 }
 
@@ -646,13 +655,14 @@ void ibm_sync(Computer* comp, int ns) {
 }
 
 // key press/release (at/xt code is already in kbd->outbuf)
-// warning: calling from gui thread
 void ibm_keyp(Computer* comp, keyEntry* kent) {
-	comp->ps2c->delay += 1;
+	kbd_press(comp->keyb, kent);
+//	comp->ps2c->delay += 1;
 }
 
 void ibm_keyr(Computer* comp, keyEntry* kent) {
-	comp->ps2c->delay += 1;
+	kbd_release(comp->keyb, kent);
+//	comp->ps2c->delay += 1;
 }
 
 sndPair ibm_vol(Computer* comp, sndVolume* vol) {

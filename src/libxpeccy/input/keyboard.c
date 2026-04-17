@@ -896,7 +896,7 @@ xKbdCore kbdTypeTab[] = {
 	{KBD_C64, NULL, kbd_c64_read, NULL, kbd_c64_press, kbd_c64_release, NULL},
 	{KBD_BK, kbd_bk_reset, kbd_bk_rd, NULL, kbd_bk_press, kbd_bk_release, NULL},
 	{KBD_PC_AT, kbd_ibm_res, kbd_ibm_rd, kbd_ibm_wr, kbd_at_press, kbd_at_release, xt_sync},
-	{KBD_PC_XT, kbd_ibm_res, kbd_ibm_rd, kbd_ibm_wr, kbd_xt_press, kbd_xt_press, xt_sync},
+	{KBD_PC_XT, kbd_ibm_res, kbd_ibm_rd, kbd_ibm_wr, kbd_xt_press, kbd_xt_release, xt_sync},
 	{KBD_PC_PS2, kbd_ibm_res, kbd_ibm_rd, kbd_ibm_wr, kbd_ps2_press, kbd_ps2_release, xt_sync},
 	{KBD_NEC98XX, NULL, kbd_ibm_rd, kbd_nec_write, kbd_nec_press, kbd_nec_release, xt_sync},
 	{-1, NULL, NULL, NULL, NULL, NULL}

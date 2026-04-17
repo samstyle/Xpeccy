@@ -18,6 +18,22 @@ void ps2c_wr_ob(PS2Ctrl* ctrl, int val, int flg) {
 	if (flg & 1) ctrl->status |= 0x20;
 }
 
+#if 0
+PS2Ctrl* ps2c_create(Keyboard* kp, Mouse* mp, cbirq cb, void* p) {
+	PS2Ctrl* ctrl = (PS2Ctrl*)malloc(sizeof(PS2Ctrl));
+	if (ctrl) {
+		memset(ctrl, 0, sizeof(PS2Ctrl));
+		ctrl->kbd = kp;
+		ctrl->mouse = mp;
+		ctrl->xirq = cb;
+		ctrl->xptr = p;
+		ctrl->status = 0;
+		ps2c_reset(ctrl);
+	}
+	return ctrl;
+}
+#else
+
 void ps2c_dev_irq(int t, void* p) {
 	PS2Ctrl* ctrl = (PS2Ctrl*)p;
 	switch(t) {
@@ -37,14 +53,12 @@ void ps2c_dev_irq(int t, void* p) {
 	}
 }
 
-PS2Ctrl* ps2c_create(Keyboard* kp, Mouse* mp, cbirq cb, void* p) {
+PS2Ctrl* ps2c_create(cbirq cb, void* p) {
 	PS2Ctrl* ctrl = (PS2Ctrl*)malloc(sizeof(PS2Ctrl));
 	if (ctrl) {
 		memset(ctrl, 0, sizeof(PS2Ctrl));
 		ctrl->uarta = uart_create(UART_DEFAULT, IRQ_KBD, ps2c_dev_irq, ctrl);
 		ctrl->uartb = uart_create(UART_DEFAULT, IRQ_MOUSE, ps2c_dev_irq, ctrl);
-		ctrl->kbd = kp;
-		ctrl->mouse = mp;
 		ctrl->xirq = cb;
 		ctrl->xptr = p;
 		ctrl->status = 0;
@@ -52,6 +66,7 @@ PS2Ctrl* ps2c_create(Keyboard* kp, Mouse* mp, cbirq cb, void* p) {
 	}
 	return ctrl;
 }
+#endif
 
 void ps2c_destroy(PS2Ctrl* ctrl) {
 	uart_destroy(ctrl->uarta);
@@ -80,9 +95,15 @@ void ps2c_clear(PS2Ctrl* ctrl) {
 
 void ps2c_ready(PS2Ctrl* ctrl, int dev) {
 	if (dev & 1) {		// mouse
-		if ((dev & 2) || !(ctrl->ram[0] & 0x20)) ctrl->m_rdy = 1;
+		if ((dev & 2) || !(ctrl->ram[0] & 0x20)) {
+//			ctrl->m_rdy = 1;
+			ctrl->uartb->ready = 1;
+		}
 	} else {		// keyboard
-		if ((dev & 2) || !(ctrl->ram[0] & 0x10)) ctrl->k_rdy = 1;
+		if ((dev & 2) || !(ctrl->ram[0] & 0x10)) {
+//			ctrl->k_rdy = 1;
+			ctrl->uarta->ready = 1;
+		}
 	}
 }
 
@@ -142,6 +163,7 @@ int ps2c_rd(PS2Ctrl* ctrl, int adr) {
 	return res;
 }
 
+#if 0
 // NOTE: if its ack recieve anyway. if its key data see at ram[0]&0x10 ???
 // read 1 byte from kbd to outbuf and generate intk if need
 void ps2c_rd_kbd(PS2Ctrl* ctrl) {
@@ -168,6 +190,7 @@ void ps2c_rd_mouse(PS2Ctrl* ctrl) {
 		}
 	}
 }
+#endif
 
 void ps2c_wr(PS2Ctrl* ctrl, int adr, int val) {
 	ctrl->inbuf = val;
@@ -179,10 +202,12 @@ void ps2c_wr(PS2Ctrl* ctrl, int adr, int val) {
 			ctrl->status |= 8;
 			switch (ctrl->dmode) {
 				case PS2C_MODE_KBD:
-					kbd_wr(ctrl->kbd, 0, val);
+					uart_wr(ctrl->uarta, 0, val);
+					// kbd_wr(ctrl->kbd, 0, val);
 					break;
 				case PS2C_MODE_MOU:
-					mouse_wr(ctrl->mouse, val);
+					uart_wr(ctrl->uartb, 0, val);
+					// mouse_wr(ctrl->mouse, val);
 					ctrl->dmode = PS2C_MODE_KBD;
 					break;
 				case PS2C_MODE_COM:
@@ -209,11 +234,13 @@ void ps2c_wr(PS2Ctrl* ctrl, int adr, int val) {
 									ctrl->status &= ~4;
 									ctrl->status |= (val & 4);
 									// TODO: b6:1 convert scancodes; b5:1 to xt/0:to at
+									/*
 									if (val & 0x40) {
 										ctrl->kbd->pcmodeovr = KBD_XT;
 									} else {
 										ctrl->kbd->pcmodeovr = 0;
 									}
+									*/
 									// val &= ~0x40;
 									printf("ps/2 control byte = %.2X\n",val);
 								}
@@ -347,8 +374,8 @@ void ps2c_sync(PS2Ctrl* ctrl, int ns) {
 #if !USE_HOST_KEYBOARD
 	xt_sync(ctrl->kbd, ns);
 #endif
-#if 0
-	uart_sync(ctrl->uarta, ns);	// it sends IRQ_KBD/IRQ_MOUSE when data ready
+#if 1
+	uart_sync(ctrl->uarta, ns);	// it sends IRQ_KBD/IRQ_MOUSE when data ready, ps2c_dev_irq catch it. uart must be transfer-ready (set when kbd sends 'data ready')
 	uart_sync(ctrl->uartb, ns);
 #else
 	ctrl->delay -= ns;

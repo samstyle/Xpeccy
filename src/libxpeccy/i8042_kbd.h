@@ -16,12 +16,12 @@ enum {
 };
 
 typedef struct {
-	unsigned m_rdy:1;		// mouse have data to read
-	unsigned k_rdy:1;		// keyboard have data to read (future feature)
+//	unsigned m_rdy:1;		// mouse have data to read
+//	unsigned k_rdy:1;		// keyboard have data to read (future feature)
 	int dmode;
 
-	Keyboard* kbd;
-	Mouse* mouse;
+//	Keyboard* kbd;
+//	Mouse* mouse;
 
 	UART* uarta;
 	UART* uartb;
@@ -40,7 +40,8 @@ typedef struct {
 	int outport;		// controller output port
 } PS2Ctrl;
 
-PS2Ctrl* ps2c_create(Keyboard*, Mouse*, cbirq, void*);
+//PS2Ctrl* ps2c_create(Keyboard*, Mouse*, cbirq, void*);
+PS2Ctrl* ps2c_create(cbirq, void*);
 void ps2c_destroy(PS2Ctrl*);
 void ps2c_set_dev(PS2Ctrl*, int, xurdcb, xuwrcb, void*);
 void ps2c_sync(PS2Ctrl*, int);
