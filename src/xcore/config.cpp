@@ -181,7 +181,20 @@ void migrateDir(const fs::path &from, const fs::path &to, std::string_view what,
 } // namespace
 
 void conf_init(char* wpath, char* confdir) {
+	// Default screenshot output to the user's Pictures directory per the
+	// xdg-user-dirs spec. PicturesDir() falls back to $HOME/Pictures, which
+	// itself falls back gracefully if HOME isn't set. Users can override the
+	// choice in config.conf (see `scrDir` there) — that wins on subsequent
+	// launches.
+#if defined(__linux) || defined(__APPLE__) || defined(__BSD)
+	try {
+		conf.scrShot.dir = xdg::PicturesDir().string();
+	} catch (const std::exception &) {
+		conf.scrShot.dir = std::string(getenv(ENVHOME));
+	}
+#else
 	conf.scrShot.dir = std::string(getenv(ENVHOME));
+#endif
 	conf.port = 30000;
 #if defined(__linux) || defined(__APPLE__) || defined(__BSD)
 	const fs::path dataDirsSuffix = "samstyle/xpeccy";
