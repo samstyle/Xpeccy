@@ -70,6 +70,7 @@ constexpr ResourceSpec kResourceLayout[] = {
 	{ ResourceKind::PluginCpu, "plugins/cpu", "plugins/cpu", ResourceBase::Data,   "plgDir" },
 	{ ResourceKind::Style,     "styles",      "styles",      ResourceBase::Data,   "qssDir" },
 	{ ResourceKind::Keymap,    "keymaps",     "",            ResourceBase::Config, "keymapDir" },
+	{ ResourceKind::Gamepad,   "gamepads",    "",            ResourceBase::Config, "padDir" },
 };
 #elif defined(__WIN32)
 constexpr ResourceSpec kResourceLayout[] = {
@@ -79,6 +80,7 @@ constexpr ResourceSpec kResourceLayout[] = {
 	{ ResourceKind::PluginCpu, "plugins/cpu", "", ResourceBase::Data,   "plgDir" },
 	{ ResourceKind::Style,     "styles",      "", ResourceBase::Data,   "qssDir" },
 	{ ResourceKind::Keymap,    "keymaps",     "", ResourceBase::Config, "keymapDir" },
+	{ ResourceKind::Gamepad,   "gamepads",    "", ResourceBase::Config, "padDir" },
 };
 #endif
 
@@ -263,12 +265,16 @@ void conf_init(char* wpath, char* confdir) {
 		makeDir(dirs.writable, spec.label);
 	}
 
-	// Pull any flat-rooted *.map keymap files out of confDir into the Keymap
-	// resource dir. Historically these lived at confDir/<name>.map; the Keymap
-	// kind now roots them at confDir/keymaps/. Idempotent after the first run.
+	// Pull any flat-rooted *.map / *.pad files out of confDir into their
+	// per-kind subdirs. Historically these lived at confDir/<name>.{map,pad};
+	// the Keymap and Gamepad kinds now root them under confDir/{keymaps,gamepads}/.
+	// Idempotent after the first run.
 	migrateFilesByExtension(conf.path.confDir,
 	                        conf.path.writableDir(ResourceKind::Keymap),
 	                        ".map", "keymapDir", ec);
+	migrateFilesByExtension(conf.path.confDir,
+	                        conf.path.writableDir(ResourceKind::Gamepad),
+	                        ".pad", "padDir", ec);
 
 	conf.path.prfDir = conf.path.confDir / "profiles";
 	makeDir(conf.path.prfDir, "prfDir");
@@ -294,6 +300,9 @@ void conf_init(char* wpath, char* confdir) {
 		migrateFilesByExtension(conf.path.confDir,
 		                        conf.path.writableDir(ResourceKind::Keymap),
 		                        ".map", "keymapDir", mec);
+		migrateFilesByExtension(conf.path.confDir,
+		                        conf.path.writableDir(ResourceKind::Gamepad),
+		                        ".pad", "padDir", mec);
 	}
 	conf.path.prfDir = conf.path.confDir / "profiles";
 	conf.path.confFile = conf.path.confDir / "config.conf";
