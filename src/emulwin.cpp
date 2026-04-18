@@ -235,10 +235,9 @@ MainWin::MainWin() {
 
 MainWin::~MainWin() {
 #if defined(USEOPENGL) && !BLOCKGL
+	cleanupGL();
 	delete(vtx_shd);
 	delete(frg_shd);
-//	for(int i = 0; i < 4; i++)
-//		deleteTexture(texids[i]);
 #endif
 }
 

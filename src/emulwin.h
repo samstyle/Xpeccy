@@ -233,6 +233,7 @@ typedef struct {
 		void initializeGL();
 		void resizeGL(int,int);
 		void paintGL();
+		void cleanupGL();
 #if ISLEGACYGL
 		QGLContext* cont;
 		QGLShaderProgram prg;
