@@ -228,6 +228,18 @@ void MainWin::initializeGL() {
 	qDebug() << "end:" << __FUNCTION__;
 }
 
+void MainWin::cleanupGL() {
+#if !ISLEGACYGL
+	if (!vao.isCreated() && !vbo.isCreated()) return;
+	makeCurrent();
+	if (vao.isCreated()) vao.destroy();
+	if (vbo.isCreated()) vbo.destroy();
+	prg.removeAllShaders();
+	glDeleteTextures(4, texids);
+	doneCurrent();
+#endif
+}
+
 void MainWin::resizeGL(int w, int h) {
 	const qreal r = widgetDpr(this);
 	const int vw = int(w * r + 0.5);
