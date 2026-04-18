@@ -75,6 +75,7 @@ constexpr ResourceSpec kResourceLayout[] = {
 	{ ResourceKind::Style,     "styles",      "styles",      ResourceBase::Data,   "qssDir" },
 	{ ResourceKind::Keymap,    "keymaps",     "",            ResourceBase::Config, "keymapDir" },
 	{ ResourceKind::Gamepad,   "gamepads",    "",            ResourceBase::Config, "padDir" },
+	{ ResourceKind::Boot,      "boot",        "",            ResourceBase::Data,   "bootDir" },
 };
 
 // Pure: build a ResourceDirs value from a spec and the already-resolved XDG
@@ -271,11 +272,17 @@ void conf_init(char* wpath, char* confdir) {
 	migrateFilesByExtension(conf.path.confDir,
 	                        conf.path.writableDir(ResourceKind::Gamepad),
 	                        ".pad", "padDir", ec);
+	// Pull any legacy confDir/boot.$B into the Boot resource dir.
+	if (std::error_code bec; fs::exists(conf.path.confDir / "boot.$B", bec) &&
+	    !fs::exists(conf.path.writableDir(ResourceKind::Boot) / "boot.$B", bec)) {
+		moveAcrossDevices(conf.path.confDir / "boot.$B",
+		                  conf.path.writableDir(ResourceKind::Boot) / "boot.$B",
+		                  MoveKind::SingleFile, "bootDir", ec);
+	}
 
 	conf.path.prfDir = conf.path.confDir / "profiles";
 	makeDir(conf.path.prfDir, "prfDir");
 	conf.path.confFile = conf.path.confDir / "config.conf";
-	conf.path.boot = conf.path.confDir / "boot.$B";
 
 	// Cache home for derived non-essential artifacts (UI dock state etc.).
 	conf.path.cacheDir = xdgPathOrFallback(xdg::CacheHomeDir,
@@ -321,7 +328,6 @@ void conf_init(char* wpath, char* confdir) {
 	}
 	conf.path.prfDir = conf.path.confDir / "profiles";
 	conf.path.confFile = conf.path.confDir / "config.conf";
-	conf.path.boot = conf.path.confDir / "boot.$B";
 	// No XDG cache/state homes on Windows; stash everything under confDir subdirs.
 	conf.path.cacheDir    = conf.path.confDir / "cache";
 	conf.path.stateDir    = conf.path.confDir / "state";
