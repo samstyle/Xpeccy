@@ -494,8 +494,13 @@ void loadConfig() {
 		printf("Main config is missing. Default files will be copied\n");
 		copyResource(":/conf/config.conf", conf.path.confFile);
 		copyResource(":/conf/xpeccy.conf", conf.path.confDir / "xpeccy.conf");
-		copyResource(":/conf/1982.rom",
-		             conf.path.writableDir(ResourceKind::Rom) / "1982.rom");
+		// Only seed the default ROM if no system-wide copy already resolves —
+		// otherwise we'd permanently shadow a distro-shipped 1982.rom with a
+		// private copy that never gets updated.
+		if (!conf.path.tryFind(ResourceKind::Rom, "1982.rom")) {
+			copyResource(":/conf/1982.rom",
+			             conf.path.writableDir(ResourceKind::Rom) / "1982.rom");
+		}
 		file.open(conf.path.confFile);
 		if (!file.good()) {
 			std::cout << conf.path.confFile << std::endl;
