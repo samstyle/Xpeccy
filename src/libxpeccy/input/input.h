@@ -252,6 +252,7 @@ typedef struct {
 	unsigned extbuttons:1;
 	int type;
 	int state;
+	int shiftreg;
 } Joystick;
 
 typedef struct {

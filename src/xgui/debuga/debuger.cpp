@@ -927,9 +927,9 @@ void DebugWin::fillNotCPU() {
 			dw->draw();
 	}
 
-	setSignal(ui_misc.labDOS, comp->dos);
-	setSignal(ui_misc.labROM, comp->rom);
-	setSignal(ui_misc.labCPM, comp->cpm);
+	setSignal(ui_misc.labDOS, comp->flgDOS);
+	setSignal(ui_misc.labROM, comp->flgROM);
+	setSignal(ui_misc.labCPM, comp->flgCPM);
 	setSignal(ui_misc.labINT, comp->cpu->intrq & comp->cpu->inten);
 
 	ui_misc.labRX->setNum(comp->vid->ray.x);

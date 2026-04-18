@@ -60,12 +60,12 @@ int spc_rd_io(int adr, void* p) {
 // b4,C = 0 -> reset NP & never set again until comp reset (!)
 // NP = 1: ROM/IO in every 16K
 // NP = 0: RAM in 0x0000..0xbfff
-// comp->rom = NP
+// comp->flgROM = NP
 
 void spc_wr_io_ch(int val, void* p) {
 	Computer* comp = (Computer*)p;
-	if (comp->rom && !(val & 0x10)) {		// b4: 0 will reset NP till next RESET
-		comp->rom = 0;
+	if (comp->flgROM && !(val & 0x10)) {		// b4: 0 will reset NP till next RESET
+		comp->flgROM = 0;
 		spc_mem_map(comp);
 	}
 	comp->beep->lev = (val & 0x20) ? 1 : 0;		// b5:beeper
@@ -74,7 +74,7 @@ void spc_wr_io_ch(int val, void* p) {
 
 void spc_wr_io(int adr, int val, void* p) {
 	Computer* comp = (Computer*)p;
-	comp->rom = 0;
+	comp->flgROM = 0;
 	ppi_wr(comp->ppi, adr & 3, val);
 	spc_mem_map(comp);
 }
@@ -96,7 +96,7 @@ void spc_init(Computer* comp) {
 }
 
 void spc_mem_map(Computer* comp) {
-	if (comp->rom) {
+	if (comp->flgROM) {
 		memSetBank(comp->mem, 0x00, MEM_ROM, 0, MEM_16K, NULL, NULL, NULL);		// 0x0000...0x37ff ROM
 		memSetBank(comp->mem, 0x38, MEM_IO, 0, MEM_2K, spc_rd_io, spc_wr_io, comp);	// 0x3800...0x3fff IO
 		memSetBank(comp->mem, 0x40, MEM_ROM, 0, MEM_16K, NULL, NULL, NULL);		// 0x4000...0x77ff ROM
@@ -116,7 +116,7 @@ void spc_reset(Computer* comp) {
 	vid_set_mode(comp->vid, VID_SPCLST);
 	cpu_reset(comp->cpu);
 	// kbdReleaseAll(comp->keyb);
-	comp->rom = 1;
+	comp->flgROM = 1;
 }
 
 int spc_mrd(Computer* comp, int adr, int m1) {

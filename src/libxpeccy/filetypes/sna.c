@@ -43,7 +43,7 @@ int loadSNA_f(Computer* comp, FILE* file, size_t fileSize) {
 	comp->cpu->regR = hd.r;
 	comp->cpu->regR7 = hd.r & 0x80;
 	comp->cpu->regIM = hd.imod & 3;
-	comp->cpu->flgIFF1 = (hd.flag19 & 4) ? 1 : 0;
+	comp->cpu->flgIFF1 = !!(hd.flag19 & 4);
 	comp->cpu->flgIFF2 = 1;
 	comp->cpu->inten = Z80_NMI | (comp->cpu->flgIFF1 ? Z80_INT : 0);
 	comp->vid->brdcol = hd.border & 7;
@@ -64,8 +64,8 @@ int loadSNA_f(Computer* comp, FILE* file, size_t fileSize) {
 	if (fileSize < 49180) {
 		comp->p7FFD = 0x10;
 		comp->pEFF7 = 0x00;
-		comp->rom = 1;		// set basic 48
-		comp->dos = 0;
+		comp->flgROM = 1;		// set basic 48
+		comp->flgDOS = 0;
 		comp->tsconf.p21af &= ~0x08;		// rom @ 0000
 		comp->tsconf.Page0 &= 0xfc;		// set page0 if 21af.b2=1
 		comp->tsconf.Page0 |= 3;		// rom48k
@@ -78,14 +78,14 @@ int loadSNA_f(Computer* comp, FILE* file, size_t fileSize) {
 	} else {
 		comp->cpu->regPC = fgetw(file);
 		tmp = fgetc(file);		// byte out to 7ffd. b0..2 current page
-		comp->bdiz = 0;
+		comp->flgBDI = 0;
 		tmp2 = fgetc(file);
 		comp->p7FFD &= ~0x20;
-		comp->rom = (tmp & 0x10) ? 1 : 0;
-		comp->dos = (tmp2 & 1) ? 1 : 0;
+		comp->flgROM = (tmp & 0x10) ? 1 : 0;
+		comp->flgDOS = (tmp2 & 1) ? 1 : 0;
 		comp->tsconf.p21af &= ~0x08;		// rom @ 0000
 		comp->tsconf.Page0 &= 0xfc;		// set page0 if 21af.b2=1
-		comp->tsconf.Page0 |= ((comp->rom) ? 1 : 0) | (comp->dos ? 0 : 2);
+		comp->tsconf.Page0 |= ((comp->flgROM) ? 1 : 0) | (comp->flgDOS ? 0 : 2);
 		comp->hw->out(comp, 0x7ffd, tmp);
 
 		for (tmp2 = 0; tmp2 < 8; tmp2++) {
@@ -155,7 +155,7 @@ int saveSNA(Computer* comp, const char* name, int drv) {
 		fputc(comp->cpu->regPCl, file);				// pc
 		fputc(comp->cpu->regPCh, file);
 		fputc(comp->p7FFD, file);				// 7ffd
-		fputc(comp->dos ? 0xff : 0x00, file);			// trdos
+		fputc(comp->flgDOS ? 0xff : 0x00, file);			// trdos
 		for (i = 0; i < 8; i++) {				// all others pages
 			if ((i == 2) || (i == 5)) i++;
 			if (i != bnk) {

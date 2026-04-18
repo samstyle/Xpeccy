@@ -199,12 +199,12 @@ void zx_cont_mem(Computer* comp) {
 int stdMRd(Computer* comp, int adr, int m1) {
 	pg = mem_get_page(comp->mem, adr);	// = &comp->mem->map[(adr >> 8) & 0xff];
 	if (m1 && (comp->dif->type == DIF_BDI)) {
-		if (comp->dos && (pg->type == MEM_RAM)) {
-			comp->dos = 0;
+		if (comp->flgDOS && (pg->type == MEM_RAM)) {
+			comp->flgDOS = 0;
 			comp->hw->mapMem(comp);
 		}
-		if (!comp->dos && ((adr & 0x3f00) == 0x3d00) && comp->rom && (pg->type == MEM_ROM)) {
-			comp->dos = 1;
+		if (!comp->flgDOS && ((adr & 0x3f00) == 0x3d00) && comp->flgROM && (pg->type == MEM_ROM)) {
+			comp->flgDOS = 1;
 			comp->hw->mapMem(comp);
 		}
 	}
@@ -228,9 +228,9 @@ int hwIn(xPort* ptab, Computer* comp, int port) {
 		itm = &ptab[idx];
 		if (((port & itm->mask) == (itm->value & itm->mask)) &&\
 				(itm->in != NULL) &&\
-				((itm->dos & 2) || (itm->dos == comp->bdiz)) &&\
-				((itm->rom & 2) || (itm->rom == comp->rom)) &&\
-				((itm->cpm & 2) || (itm->cpm == comp->cpm))) {
+				((itm->dos & 2) || (itm->dos == comp->flgBDI)) &&\
+				((itm->rom & 2) || (itm->rom == comp->flgROM)) &&\
+				((itm->cpm & 2) || (itm->cpm == comp->flgCPM))) {
 			res = itm->in(comp, port);
 			catch = !!itm->mask;
 		}
@@ -250,9 +250,9 @@ void hwOut(xPort* ptab, Computer* comp, int port, int val, int mult) {
 		itm = &ptab[idx];
 		if (((port & itm->mask) == (itm->value & itm->mask)) &&\
 				(itm->out != NULL) &&\
-				((itm->dos & 2) || (itm->dos == comp->bdiz)) &&\
-				((itm->rom & 2) || (itm->rom == comp->rom)) &&\
-				((itm->cpm & 2) || (itm->cpm == comp->cpm))) {
+				((itm->dos & 2) || (itm->dos == comp->flgBDI)) &&\
+				((itm->rom & 2) || (itm->rom == comp->flgROM)) &&\
+				((itm->cpm & 2) || (itm->cpm == comp->flgCPM))) {
 			itm->out(comp, port, val);
 			catch |= !mult;
 		}

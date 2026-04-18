@@ -26,7 +26,7 @@ int scrp_ayx_rd(int adr, void* p) {
 	if (!(adr & 1)) {
 		res = comp->p7FFD & 0x0f;		// b0,1,2,scr
 		res |= comp->p1FFD & 0x10;		// b3
-		res |= comp->rom << 5;			// rom
+		res |= comp->flgROM << 5;			// rom
 	}
 	return res;
 }
@@ -48,7 +48,7 @@ void scoMapMem(Computer* comp) {
 	if (comp->p1FFD & 0x01) {
 		memSetBank(comp->mem,0x00,MEM_RAM,0, MEM_16K, NULL, NULL, NULL);
 	} else {
-		rp = (comp->p1FFD & 0x02) ? 2 : ((comp->dos ? 2 : 0) | (comp->rom ? 1 : 0));
+		rp = (comp->p1FFD & 0x02) ? 2 : ((comp->flgDOS ? 2 : 0) | (comp->flgROM ? 1 : 0));
 		rp |= ((comp->prt2 & 3) << 2);
 		memSetBank(comp->mem,0x00,MEM_ROM,rp, MEM_16K, NULL, NULL, NULL);
 	}
@@ -98,14 +98,14 @@ void scrpOutDD(Computer* comp, int port, int val) {
 void scrpOut7FFD(Computer* comp, int port, int val) {
 	if (comp->p7FFD & 0x20) return;
 	comp->p7FFD = val;
-	comp->rom = (val & 0x10) ? 1 : 0;
+	comp->flgROM = (val & 0x10) ? 1 : 0;
 	comp->vid->curscr = (val & 0x08) ? 7 : 5;
 	scoMapMem(comp);
 }
 
 void scrpOut1FFD(Computer* comp, int port, int val) {
 	comp->p1FFD = val;
-	comp->ext = (val & 2) ? 1 : 0;
+	comp->flgEXT = (val & 2) ? 1 : 0;
 	scoMapMem(comp);
 }
 
@@ -124,14 +124,14 @@ static xPort scrpPortMap[] = {
 };
 
 void scoOut(Computer* comp, int port, int val) {
-	difOut(comp->dif, port, val, comp->bdiz);
+	difOut(comp->dif, port, val, comp->flgBDI);
 	zx_dev_wr(comp, port, val);
 	hwOut(scrpPortMap, comp, port, val, 1);
 }
 
 int scoIn(Computer* comp, int port) {
 	int res = -1;
-	if (difIn(comp->dif, port, &res, comp->bdiz)) return res;
+	if (difIn(comp->dif, port, &res, comp->flgBDI)) return res;
 	if (zx_dev_rd(comp, port, &res)) return res;
 	res = hwIn(scrpPortMap, comp, port);
 	return res;

@@ -143,7 +143,7 @@ void xThread::emuCycle(Computer* comp) {
 			wavNs += tm;
 			// tape trap	TODO: rework it as a system breakpoint
 			int pc = cpu_get_pc(comp->cpu);
-			if ((comp->hw->grp == HWG_ZX) && (comp->mem->map[0].type == MEM_ROM) && comp->rom && !comp->dos && !comp->ext) {
+			if ((comp->hw->grp == HWG_ZX) && (comp->mem->map[0].type == MEM_ROM) && comp->flgROM && !comp->flgDOS && !comp->flgEXT) {
 				if ((pc == 0x56c) || (pc == 0x5e7)) {	// load: ix:addr, de:len (0x580 ?) 56c/559
 					tap_catch_load(comp);
 				} else if (pc == 0x4d0) {				// save: ix:addr, de:len, a:block type(b7), hl:pilot len (1f80/0c98)?

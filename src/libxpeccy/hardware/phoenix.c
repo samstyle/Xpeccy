@@ -12,9 +12,9 @@ void phxMapMem(Computer* comp) {
 	} else if (comp->p1FFD & 2) {
 		memSetBank(comp->mem, 0x00, MEM_ROM, 0, MEM_16K, NULL, NULL, NULL);
 	} else if (comp->p1FFD & 8) {
-		memSetBank(comp->mem, 0x00, MEM_ROM, comp->dos ? 3 : (comp->rom ? 1 : 0), MEM_16K, NULL, NULL, NULL);
+		memSetBank(comp->mem, 0x00, MEM_ROM, comp->flgDOS ? 3 : (comp->flgROM ? 1 : 0), MEM_16K, NULL, NULL, NULL);
 	} else {
-		memSetBank(comp->mem, 0x00, MEM_ROM, comp->dos ? 1 : (comp->rom ? 3 : 2), MEM_16K, NULL, NULL, NULL);
+		memSetBank(comp->mem, 0x00, MEM_ROM, comp->flgDOS ? 1 : (comp->flgROM ? 3 : 2), MEM_16K, NULL, NULL, NULL);
 	}
 }
 
@@ -35,7 +35,7 @@ void phxOut1FFD(Computer* comp, int port, int val) {
 void phxOut7FFD(Computer* comp, int port, int val) {
 	if (comp->p7FFD & 0x20) return;
 	comp->p7FFD = val & 0xff;
-	comp->rom = (val & 0x10) ? 1 : 0;
+	comp->flgROM = (val & 0x10) ? 1 : 0;
 	comp->vid->curscr = (val & 0x08) ? 7 : 5;
 	phxMapMem(comp);
 }
@@ -70,16 +70,16 @@ static xPort phxPortMap[] = {
 };
 
 void phxOut(Computer* comp, int port, int val) {
-	if (comp->pEFF7 & 0x80) comp->bdiz = 1;
-	if (difOut(comp->dif, port, val, comp->bdiz)) return;
+	if (comp->pEFF7 & 0x80) comp->flgBDI = 1;
+	if (difOut(comp->dif, port, val, comp->flgBDI)) return;
 	zx_dev_wr(comp, port, val);
 	hwOut(phxPortMap, comp, port, val, 1);
 }
 
 int phxIn(Computer* comp, int port) {
-	if (comp->pEFF7 & 0x80) comp->bdiz = 1;
+	if (comp->pEFF7 & 0x80) comp->flgBDI = 1;
 	int res = -1;
-	if (difIn(comp->dif, port, &res, comp->bdiz)) return res;
+	if (difIn(comp->dif, port, &res, comp->flgBDI)) return res;
 	if (zx_dev_rd(comp, port, &res)) return res;
 	return hwIn(phxPortMap, comp, port);
 }

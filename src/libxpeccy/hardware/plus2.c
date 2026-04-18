@@ -19,7 +19,7 @@ void pl2MapMem(Computer* comp) {
 		memSetBank(comp->mem,0xc0,MEM_RAM,plus2Lays[rp][3], MEM_16K, NULL, NULL, NULL);
 	} else {
 		// normal mem mode
-		memSetBank(comp->mem,0x00,MEM_ROM,(comp->rom ? 1 : 0) | ((comp->p1FFD & 0x04) >> 1), MEM_16K, NULL, NULL, NULL);
+		memSetBank(comp->mem,0x00,MEM_ROM,(comp->flgROM ? 1 : 0) | ((comp->p1FFD & 0x04) >> 1), MEM_16K, NULL, NULL, NULL);
 		memSetBank(comp->mem,0x40,MEM_RAM,5, MEM_16K, NULL, NULL, NULL);
 		memSetBank(comp->mem,0x80,MEM_RAM,2, MEM_16K, NULL, NULL, NULL);
 		memSetBank(comp->mem,0xc0,MEM_RAM,comp->p7FFD & 7, MEM_16K, NULL, NULL, NULL);
@@ -29,9 +29,9 @@ void pl2MapMem(Computer* comp) {
 void plusRes(Computer* comp) {
 	comp->p1FFD = 0;
 	comp->p7FFD = 0;
-	comp->rom = 0;
-	comp->dos = 0;
-	comp->ext = 0;
+	comp->flgROM = 0;
+	comp->flgDOS = 0;
+	comp->flgEXT = 0;
 }
 
 // in
@@ -61,7 +61,7 @@ void p2_dos_wr(Computer* comp, int port, int val) {
 
 void p2Out7FFD(Computer* comp, int port, int val) {
 	if (comp->p7FFD & 0x20) return;
-	comp->rom = (val & 0x10) ? 1 : 0;
+	comp->flgROM = (val & 0x10) ? 1 : 0;
 	comp->p7FFD = val & 0xff;
 	comp->vid->curscr = (val & 0x08) ? 7 : 5;
 	pl2MapMem(comp);

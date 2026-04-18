@@ -4,7 +4,7 @@
 
 void zx48_reset(Computer* comp) {
 	comp->mem->ramMask = MEM_128K - 1;	// to acces pages 2,5
-	comp->rom = 1;				// to switch to trdos
+	comp->flgROM = 1;				// to switch to trdos
 	comp->vid->curscr = 5;
 	//speReset(comp);
 	zx_set_pal(comp);
@@ -38,7 +38,7 @@ void speMapMem(Computer* comp) {
 	if (comp->slot->data) {
 		memSetBank(comp->mem,0x00,MEM_SLOT, 0, MEM_16K, zx_slt_rd, zx_slt_wr, comp);
 	} else {
-		memSetBank(comp->mem,0x00,MEM_ROM,(comp->dos) ? 1 : 0, MEM_16K,NULL,NULL,NULL);
+		memSetBank(comp->mem,0x00,MEM_ROM,(comp->flgDOS) ? 1 : 0, MEM_16K,NULL,NULL,NULL);
 	}
 	memSetBank(comp->mem,0x40,MEM_RAM,5,MEM_16K,NULL,NULL,NULL);		// 101 / x01
 	if (comp->mem->ramSize > MEM_16K) {
@@ -73,14 +73,14 @@ static xPort spePortMap[] = {
 };
 
 void speOut(Computer* comp, int port, int val) {
-	difOut(comp->dif, port, val, comp->bdiz);
+	difOut(comp->dif, port, val, comp->flgBDI);
 	zx_dev_wr(comp, port, val);
 	hwOut(spePortMap, comp, port, val, 1);
 }
 
 int speIn(Computer* comp, int port) {
 	int res;
-	if (difIn(comp->dif, port, &res, comp->bdiz)) return res;
+	if (difIn(comp->dif, port, &res, comp->flgBDI)) return res;
 	if (zx_dev_rd(comp, port, &res)) return res;
 	return hwIn(spePortMap, comp, port);
 }

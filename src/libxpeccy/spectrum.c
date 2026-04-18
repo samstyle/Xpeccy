@@ -225,7 +225,7 @@ int iord(int port, void* ptr) {
 		}
 	}
 #endif
-	comp->bdiz = (comp->dos && (comp->dif->type == DIF_BDI)) ? 1 : 0;
+	comp->flgBDI = (comp->flgDOS && (comp->dif->type == DIF_BDI)) ? 1 : 0;
 // brk
 	if (comp->brkIOMap[port] & MEM_BRK_RD) {
 		comp->flgBRK = 1;
@@ -238,7 +238,7 @@ int iord(int port, void* ptr) {
 
 void iowr(int port, int val, void* ptr) {
 	Computer* comp = (Computer*)ptr;
-	comp->bdiz = (comp->dos && (comp->dif->type == DIF_BDI)) ? 1 : 0;
+	comp->flgBDI = (comp->flgDOS && (comp->dif->type == DIF_BDI)) ? 1 : 0;
 	if (comp->hw->grp == HWG_ZX) {
 		// sync video to current T
 		vid_sync(comp->vid, (comp->cpu->t - res4) * comp->nsPerTick);
@@ -474,10 +474,10 @@ void compReset(Computer* comp,int res) {
 	if (res == RES_DEFAULT)
 		res = comp->resbank;
 	comp->p7FFD = ((res == RES_DOS) || (res == RES_48)) ? 0x10 : 0x00;
-	comp->dos = ((res == RES_DOS) || (res == RES_SHADOW)) ? 1 : 0;
-	comp->rom = (comp->p7FFD & 0x10) ? 1 : 0;
-	comp->cpm = 0;
-	comp->ext = 0;
+	comp->flgDOS = ((res == RES_DOS) || (res == RES_SHADOW)) ? 1 : 0;
+	comp->flgROM = (comp->p7FFD & 0x10) ? 1 : 0;
+	comp->flgCPM = 0;
+	comp->flgEXT = 0;
 	comp->prt2 = 0;
 	comp->p1FFD = 0;
 	comp->pEFF7 = 0;

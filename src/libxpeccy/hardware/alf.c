@@ -15,8 +15,8 @@ int alf_sltrd(int adr, void* ptr) {
 }
 
 void alf_mapmem(Computer* comp) {
-	if (comp->rom) {		// switch to rom1 after snapshot loading
-		comp->rom = 0;
+	if (comp->flgROM) {		// switch to rom1 after snapshot loading
+		comp->flgROM = 0;
 		comp->regRomN = 1;
 	}
 	if (comp->regRomN & 0x80) {
@@ -35,7 +35,7 @@ void alf_reset(Computer* comp) {
 	vid_set_mode(comp->vid, VID_NORMAL);
 	comp->regRomN = 0x00;
 	comp->p7FFD = 0x00;
-	comp->rom = 0;
+	comp->flgROM = 0;
 	alf_mapmem(comp);
 }
 

@@ -120,7 +120,7 @@ int loadNes(Computer* comp, const char* name, int drv) {
 			slot->irq = 0;
 			sltSetPath(slot, name);
 
-			comp->nes.type = mode;
+			comp->regNEST = mode;
 			if (comp->hw->init) comp->hw->init(comp);
 
 			switch(mode) {

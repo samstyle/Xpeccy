@@ -9,7 +9,7 @@
 #define reg8F	reg[20]
 
 void evoReset(Computer* comp) {
-	comp->dos = 1;
+	comp->flgDOS = 1;
 	comp->regBF = 0;
 	comp->prt2 = 0x03;
 	comp->sdc->on = 1;
@@ -31,12 +31,12 @@ void evoSetVideoMode(Computer* comp) {
 
 int evoMRd(Computer* comp, int adr, int m1) {
 	if (m1 && (comp->dif->type == DIF_BDI)) {
-		if (comp->dos && (mem_get_page(comp->mem, adr)->type == MEM_RAM) && (comp->prt2 & 0x40)) {
-			comp->dos = 0;
-			if (comp->rom) comp->hw->mapMem(comp);
+		if (comp->flgDOS && (mem_get_page(comp->mem, adr)->type == MEM_RAM) && (comp->prt2 & 0x40)) {
+			comp->flgDOS = 0;
+			if (comp->flgROM) comp->hw->mapMem(comp);
 		}
-		if (!comp->dos && ((adr & 0xff00) == 0x3d00) && (comp->rom)) {
-			comp->dos = 1;
+		if (!comp->flgDOS && ((adr & 0xff00) == 0x3d00) && (comp->flgROM)) {
+			comp->flgDOS = 1;
 			comp->hw->mapMem(comp);
 		}
 	}
@@ -61,7 +61,7 @@ void evoSetBank(Computer* comp, int bank, memEntry me) {
 				page = (page & 0xc0) | (comp->p7FFD & 7) | ((comp->p7FFD & 0xe0) >> 2);	// mix with b0..2,5..7 (7FFD) - P1024 mode
 			}
 		} else {
-			page = (page & 0x3e) | (comp->dos ? 1 : 0);				// mix with dosen
+			page = (page & 0x3e) | (comp->flgDOS ? 1 : 0);				// mix with dosen
 		}
 	}
 	memSetBank(comp->mem, bank, (me.flag & 0x40) ? MEM_RAM : MEM_ROM, page, MEM_16K, NULL, NULL, NULL);
@@ -69,13 +69,13 @@ void evoSetBank(Computer* comp, int bank, memEntry me) {
 
 void evoMapMem(Computer* comp) {
 	if (comp->prt2 & 0x20) {		// A8.xx77
-		int adr = (comp->rom) ? 4 : 0;
+		int adr = (comp->flgROM) ? 4 : 0;
 		evoSetBank(comp,0x00,comp->memMap[adr]);
 		evoSetBank(comp,0x40,comp->memMap[adr+1]);
 		evoSetBank(comp,0x80,comp->memMap[adr+2]);
 		evoSetBank(comp,0xc0,comp->memMap[adr+3]);
 	} else {
-		comp->dos = 1;
+		comp->flgDOS = 1;
 		memSetBank(comp->mem,0x00,MEM_ROM,0xff, MEM_16K, NULL, NULL, NULL);
 		memSetBank(comp->mem,0x40,MEM_ROM,0xff, MEM_16K, NULL, NULL, NULL);
 		memSetBank(comp->mem,0x80,MEM_ROM,0xff, MEM_16K, NULL, NULL, NULL);
@@ -127,7 +127,7 @@ int evoInBE(Computer* comp, int port) {
 				break;
 			case 0x0a00: res = comp->p7FFD; break;
 			case 0x0b00: res = comp->pEFF7; break;
-			case 0x0c00: res = comp->prt2 | (comp->dos ? 0x10 : 0x00); break;
+			case 0x0c00: res = comp->prt2 | (comp->flgDOS ? 0x10 : 0x00); break;
 			default:
 //				printf("PentEvo\tin %.4X.%i\n",port,bdiz);
 //				assert(0);
@@ -225,7 +225,7 @@ void evoOut77d(Computer* comp, int port, int val) {
 }
 
 void evoOutF7(Computer* comp, int port, int val) {
-	int adr = ((comp->rom) ? 4 : 0) | ((port & 0xc000) >> 14);
+	int adr = ((comp->flgROM) ? 4 : 0) | ((port & 0xc000) >> 14);
 	if (port & 0x0800) {
 		comp->memMap[adr].flag = val & 0xc0;
 		comp->memMap[adr].page = (val & 0xff) | 0xc0;
@@ -259,7 +259,7 @@ void evoOutFF(Computer* comp, int port, int val) {		// dos
 
 void evoOut7FFD(Computer* comp, int port, int val) {
 	if ((comp->pEFF7 & 4) && (comp->p7FFD & 0x20)) return;
-	comp->rom = (val & 0x10) ? 1 : 0;
+	comp->flgROM = (val & 0x10) ? 1 : 0;
 	comp->p7FFD = val & 0xff;
 	comp->vid->curscr = (val & 0x08) ? 7 : 5;
 	evoMapMem(comp);
@@ -335,16 +335,16 @@ static xPort evoPortMap[] = {
 };
 
 void evoOut(Computer* comp, int port, int val) {
-	if (comp->regBF & 0x01) comp->bdiz = 1;	// force open ports
-	if (!(comp->prt2 & 0x80)) comp->bdiz = 1;
+	if (comp->regBF & 0x01) comp->flgBDI = 1;	// force open ports
+	if (!(comp->prt2 & 0x80)) comp->flgBDI = 1;
 	zx_dev_wr(comp, port, val);
 	hwOut(evoPortMap, comp, port, val, 1);
 }
 
 int evoIn(Computer* comp, int port) {
 	int res = -1;
-	if (comp->regBF & 1) comp->bdiz = 1;	// open ports
-	if (!(comp->prt2 & 0x80)) comp->bdiz = 1;
+	if (comp->regBF & 1) comp->flgBDI = 1;	// open ports
+	if (!(comp->prt2 & 0x80)) comp->flgBDI = 1;
 	if (zx_dev_rd(comp, port, &res)) return res;
 	res = hwIn(evoPortMap, comp, port);
 	return res;

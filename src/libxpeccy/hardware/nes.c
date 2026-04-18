@@ -124,12 +124,12 @@ int nes_io_rd(int adr, void* ptr) {
 				comp->nesapu->firq = 0;
 				break;
 			case 0x16:		// joystick 1
-				res = comp->nes.priJoy & 1;
-				comp->nes.priJoy >>= 1;
+				res = comp->joy->shiftreg & 1;
+				comp->joy->shiftreg >>= 1;
 				break;
 			case 0x17:		// joystick 2
-				res = comp->nes.secJoy & 1;
-				comp->nes.secJoy >>= 1;
+				res = comp->joyb->shiftreg & 1;
+				comp->joyb->shiftreg >>= 1;
 				break;
 		}
 	}
@@ -166,8 +166,8 @@ void nes_io_wr(int adr, int val, void* ptr) {
 				break;
 			case 0x16:
 				if (val & 1) {		// b0: 0-1-0 = reload gamepads state
-					comp->nes.priJoy = comp->joy->state; // comp->nes.priPadState;
-					comp->nes.secJoy = comp->joyb->state; // comp->nes.secPadState;
+					comp->joy->shiftreg = comp->joy->state;
+					comp->joyb->shiftreg = comp->joyb->state;
 				}
 				break;
 			case 0x17:
@@ -273,7 +273,7 @@ void nesMemWr(Computer* comp, int adr, int val) {
 void nes_init(Computer* comp) {
 	int perNoTurbo;
 	comp->vid->ntsc = 0;
-	switch(comp->nes.type) {
+	switch(comp->regNEST) {
 		case NES_PAL:
 			comp->fps = 50;
 			comp->cpuFrq = 1.66;
@@ -393,17 +393,17 @@ void nes_keyp(Computer* comp, keyEntry* ent) {
 	}
 	switch (ent->key) {
 		case XKEY_0:
-			switch(comp->nes.type) {
+			switch(comp->regNEST) {
 				case NES_NTSC:
-					comp->nes.type = NES_PAL;
+					comp->regNEST = NES_PAL;
 					comp->msg = nesPAL;
 					break;
 				case NES_PAL:
-					comp->nes.type = NES_DENDY;
+					comp->regNEST = NES_DENDY;
 					comp->msg = nesDendy;
 					break;
 				default:
-					comp->nes.type = NES_NTSC;
+					comp->regNEST = NES_NTSC;
 					comp->msg = nesNTSC;
 					break;
 			}

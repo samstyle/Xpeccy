@@ -8,7 +8,7 @@ void prfMapMem(Computer* comp) {
 	if (comp->pDFFD & 0x10) {
 		memSetBank(comp->mem, 0x00, MEM_RAM, 0, MEM_16K, NULL, NULL, NULL);
 	} else {
-		memSetBank(comp->mem, 0x00, MEM_ROM, (comp->dos ? 0 : 2) | (comp->rom ? 1 : 0), MEM_16K, NULL, NULL, NULL);
+		memSetBank(comp->mem, 0x00, MEM_ROM, (comp->flgDOS ? 0 : 2) | (comp->flgROM ? 1 : 0), MEM_16K, NULL, NULL, NULL);
 	}
 	int bank = ((comp->pDFFD & 7) << 3) | (comp->p7FFD & 7);
 	memSetBank(comp->mem, 0x40, MEM_RAM, (comp->pDFFD & 0x08) ? bank : 5, MEM_16K, NULL, NULL, NULL);
@@ -69,7 +69,7 @@ void prfOutBDIFF(Computer* comp, int port, int val) {
 void prfOut7FFD(Computer* comp, int port, int val) {
 	if ((~comp->pDFFD & 0x10) && (comp->p7FFD & 0x20)) return;	// 7FFD is blocked
 	comp->p7FFD = val & 0xff;
-	comp->rom = (val & 0x10) ? 1 : 0;
+	comp->flgROM = (val & 0x10) ? 1 : 0;
 	comp->vid->curscr = (val & 0x08) ? 7 : 5;
 	prfMapMem(comp);
 //	printf("OUT 7FFD,%.2X\n",val);
@@ -77,7 +77,7 @@ void prfOut7FFD(Computer* comp, int port, int val) {
 
 void prfOutDFFD(Computer* comp, int port, int val) {
 	comp->pDFFD = val;
-	comp->cpm = (val & 0x20) ? 1 : 0;
+	comp->flgCPM = (val & 0x20) ? 1 : 0;
 	vid_set_mode(comp->vid, (val & 0x80) ? VID_PRF_MC : VID_NORMAL);
 	prfMapMem(comp);
 //	printf("OUT DFFD,%.2X\n",val);

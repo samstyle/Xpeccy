@@ -86,9 +86,9 @@ int loadSPG(Computer* comp, const char* name, int drv) {
 	comp->cpu->inten = Z80_NMI | (comp->cpu->flgIFF1 ? Z80_INT : 0);
 	comp->cpu->regIM = 1;				// im 1
 	comp->cpu->regI = 0x3f;				// i = 3F
-	comp->dos = 0;					// basic 48 in bank0
-	comp->rom = 1;
-	comp->cpm = 0;
+	comp->flgDOS = 0;					// basic 48 in bank0
+	comp->flgROM = 1;
+	comp->flgCPM = 0;
 	comp->p7FFD = 0x10;
 	comp->pEFF7 = 0x00;
 	comp->prt2 = 0x00;

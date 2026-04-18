@@ -7,14 +7,14 @@ int compflags = 0;
 // debug
 
 int brkIn(Computer* comp, int port) {
-	printf("IN %.4X (dos:rom:cpm = %i:%i:%i)\n",port,comp->dos,comp->rom,comp->cpm);
+	printf("IN %.4X (dos:rom:cpm = %i:%i:%i)\n",port,comp->flgDOS,comp->flgROM,comp->flgCPM);
 	assert(0);
 	//comp->brk = 1;
 	return -1;
 }
 
 void brkOut(Computer* comp, int port, int val) {
-	printf("OUT %.4X,%.2X (dos:rom:cpm = %i:%i:%i)\n",port,val,comp->dos,comp->rom,comp->cpm);
+	printf("OUT %.4X,%.2X (dos:rom:cpm = %i:%i:%i)\n",port,val,comp->flgDOS,comp->flgROM,comp->flgCPM);
 	assert(0);
 	//comp->brk = 1;
 }
@@ -40,8 +40,8 @@ void zx_sync(Computer* comp, int ns) {
 	// nmi
 	if ((comp->cpu->regPC > 0x3fff) && comp->flgNMIRQ) {
 		comp->cpu->intrq |= Z80_NMI;	// request nmi
-		comp->dos = 1;			// set dos page
-		comp->rom = 1;
+		comp->flgDOS = 1;			// set dos page
+		comp->flgROM = 1;
 		comp->hw->mapMem(comp);
 	}
 }
@@ -209,16 +209,16 @@ void zx_set_pal(Computer* comp) {
 
 int zx_dev_wr(Computer* comp, int adr, int val) {
 	if (gsWrite(comp->gs, adr, val)) return 1;
-	if (!comp->bdiz && saaWrite(comp->saa, adr, val)) return 1;
-	if (!comp->bdiz && sdrvWrite(comp->sdrv, adr, val)) return 1;
-	if (ideOut(comp->ide, adr, val, comp->bdiz)) return 1;
+	if (!comp->flgBDI && saaWrite(comp->saa, adr, val)) return 1;
+	if (!comp->flgBDI && sdrvWrite(comp->sdrv, adr, val)) return 1;
+	if (ideOut(comp->ide, adr, val, comp->flgBDI)) return 1;
 	if (ula_wr(comp->vid->ula, adr, val)) return 1;
 	return 0;
 }
 
 int zx_dev_rd(Computer* comp, int adr, int* ptr) {
 	if (gsRead(comp->gs, adr, ptr)) return 1;
-	if (ideIn(comp->ide, adr, ptr, comp->bdiz)) return 1;
+	if (ideIn(comp->ide, adr, ptr, comp->flgBDI)) return 1;
 	if (ula_rd(comp->vid->ula, adr, ptr)) return 1;
 	return 0;
 }

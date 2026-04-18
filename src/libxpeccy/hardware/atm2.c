@@ -9,7 +9,7 @@
 
 // TODO : fill memMap & set prt1 for reset to separate ROM pages
 void atm2Reset(Computer* comp) {
-	comp->dos = 1;
+	comp->flgDOS = 1;
 	comp->p77hi = 0;
 	kbd_set_type(comp->keyb, KBD_SPECTRUM);
 //	comp->keyb->submode = kbdZX;
@@ -25,7 +25,7 @@ void atmSetBank(Computer* comp, int bank, memEntry me) {
 		if (me.flag & 0x40) {
 			page = (page & 0x38) | (comp->p7FFD & 7);	// mix with 7FFD bank;
 		} else {
-			page = (page & 0x3e) | (comp->dos ? 1 : 0);	// mix with dosen
+			page = (page & 0x3e) | (comp->flgDOS ? 1 : 0);	// mix with dosen
 		}
 	}
 	memSetBank(comp->mem, bank, (me.flag & 0x40) ? MEM_RAM : MEM_ROM, page, MEM_16K, NULL, NULL, NULL);
@@ -33,13 +33,13 @@ void atmSetBank(Computer* comp, int bank, memEntry me) {
 
 void atm2MapMem(Computer* comp) {
 	if (comp->p77hi & 1) {			// pen = 0: last rom page in every bank && dosen on
-		int adr = (comp->rom) ? 4 : 0;
+		int adr = (comp->flgROM) ? 4 : 0;
 		atmSetBank(comp,0x00,comp->memMap[adr]);
 		atmSetBank(comp,0x40,comp->memMap[adr+1]);
 		atmSetBank(comp,0x80,comp->memMap[adr+2]);
 		atmSetBank(comp,0xc0,comp->memMap[adr+3]);
 	} else {
-		comp->dos = 1;
+		comp->flgDOS = 1;
 		memSetBank(comp->mem,0x00,MEM_ROM,0xff,MEM_16K, NULL, NULL, NULL);
 		memSetBank(comp->mem,0x40,MEM_ROM,0xff,MEM_16K, NULL, NULL, NULL);
 		memSetBank(comp->mem,0x80,MEM_ROM,0xff,MEM_16K, NULL, NULL, NULL);
@@ -74,7 +74,7 @@ void atm2Out77(Computer* comp, int port, int val) {		// dos
 }
 
 void atm2OutF7(Computer* comp, int port, int val) {			// dos
-	int adr = (comp->rom ? 4 : 0) | ((port & 0xc000) >> 14);	// rom2.a15.a14
+	int adr = (comp->flgROM ? 4 : 0) | ((port & 0xc000) >> 14);	// rom2.a15.a14
 	comp->memMap[adr].flag = val & 0xc0;				// copy b6,7 to flag
 	comp->memMap[adr].page = (val & 0x3f) | 0xc0;			// set b6,7 for PentEvo capability
 	atm2MapMem(comp);
@@ -82,7 +82,7 @@ void atm2OutF7(Computer* comp, int port, int val) {			// dos
 
 void atm2Out7FFD(Computer* comp, int port, int val) {
 	if (comp->p7FFD & 0x20) return;
-	comp->rom = (val & 0x10) ? 1 : 0;
+	comp->flgROM = (val & 0x10) ? 1 : 0;
 	comp->p7FFD = val & 0xff;
 	comp->vid->curscr = (val & 0x08) ? 7 : 5;
 	atm2MapMem(comp);
@@ -244,17 +244,17 @@ static xPort atm2PortMap[] = {
 };
 
 void atm2Out(Computer* comp, int port, int val) {
-	if (~comp->p77hi & 2) comp->bdiz = 1;
+	if (~comp->p77hi & 2) comp->flgBDI = 1;
 	zx_dev_wr(comp, port, val);
-	difOut(comp->dif, port, val, comp->bdiz);
+	difOut(comp->dif, port, val, comp->flgBDI);
 	hwOut(atm2PortMap, comp, port, val, 1);
 }
 
 int atm2In(Computer* comp, int port) {
 	int res = -1;
-	if (~comp->p77hi & 2) comp->bdiz = 1;
+	if (~comp->p77hi & 2) comp->flgBDI = 1;
 	if (zx_dev_rd(comp, port, &res)) return res;
-	if (difIn(comp->dif, port, &res, comp->bdiz)) return res;
+	if (difIn(comp->dif, port, &res, comp->flgBDI)) return res;
 	res = hwIn(atm2PortMap, comp, port);
 	return res;
 }

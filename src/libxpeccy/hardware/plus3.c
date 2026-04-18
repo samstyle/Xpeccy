@@ -22,7 +22,7 @@ void p3Out1FFD(Computer* comp, int port, int val) {
 
 void p3Out7FFD(Computer* comp, int port, int val) {
 	if (comp->p7FFD & 0x20) return;
-	comp->rom = (val & 0x10) ? 1 : 0;
+	comp->flgROM = (val & 0x10) ? 1 : 0;
 	comp->p7FFD = val & 0xff;
 	comp->vid->curscr = (val & 0x08) ? 7 : 5;
 	pl2MapMem(comp);

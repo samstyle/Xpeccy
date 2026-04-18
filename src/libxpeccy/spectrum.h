@@ -77,6 +77,7 @@ typedef struct {
 #define p1FFD	reg[1]
 #define pEFF7	reg[2]
 #define prt2	reg[3]
+#define regNEST	reg[4]		// nes type
 
 #define flgBRK	sysflag[0]		// breakpoint catched
 #define flgDBG	sysflag[1]		// debug execution
@@ -89,6 +90,11 @@ typedef struct {
 #define flgCNTM	sysflag[8]		// contended mem (zx)
 #define flgCNTI	sysflag[9]		// contended i/o (zx)
 #define flgIBRK	sysflag[10]		// break on interrupt
+#define flgROM	sysflag[11]
+#define flgDOS	sysflag[12]
+#define flgCPM	sysflag[13]
+#define flgEXT	sysflag[14]
+#define flgBDI	sysflag[15]
 
 typedef struct {
 //	unsigned brk:1;			// breakpoint
@@ -103,11 +109,11 @@ typedef struct {
 //	unsigned z_i:1;			// ATM2+: unblock VSYNC INT
 //	unsigned speed:1;		// turbo cpu frq
 
-	unsigned rom:1;			// b4,7ffd
-	unsigned dos:1;			// BDI dos
-	unsigned cpm:1;
-	unsigned ext:1;
-	unsigned bdiz:1;		// BDI ports accessible
+//	unsigned rom:1;			// b4,7ffd
+//	unsigned dos:1;			// BDI dos
+//	unsigned cpm:1;
+//	unsigned ext:1;
+//	unsigned bdiz:1;		// BDI ports accessible
 
 //	unsigned evenM1:1;		// scorpion wait mode
 //	unsigned contMem:1;		// contended mem
@@ -183,6 +189,7 @@ typedef struct {
 	bool flag[128];
 	bool sysflag[32];
 	unsigned char reg[512];		// internal registers
+	xreg32 xreg[32];		// 32/16/8 bits registers
 	unsigned short wdata;
 	memEntry memMap[16];			// memory map for ATM2, PentEvo
 	unsigned char brkRamMap[MEM_4M];	// ram brk/type : b0..3:brk flags, b4..7:type
@@ -229,20 +236,20 @@ typedef struct {
 //		unsigned char pslot[4];
 //		unsigned char sslot[4];
 //	} msx;
-	struct {
+//	struct {
 //		unsigned vblank:1;		// vid->vblank for catching 0->1
 //		unsigned irq;
-		int type;			// DENDY | NTSC | PAL
+//		int type;			// DENDY | NTSC | PAL
 		// TODO: priPadState/secPadState is same as joy->state/joyb->state ?
 //		int priPadState;		// b0..7 = A,B,sel,start,up,down,left,right,0,0,0,0,....
 //		int secPadState;
-		int priJoy;			// shift registers (reading 4016/17 returns bit 0 & shift right)
-		int secJoy;			//		write b0=1 to 4016 restore status
-	} nes;
+//		int priJoy;			// shift registers (reading 4016/17 returns bit 0 & shift right)
+//		int secJoy;			//		write b0=1 to 4016 restore status
+//	} nes;
 	struct {
 //		unsigned boot:1;	// boot rom on
 //		unsigned speedrq:1;	// cpu speed change request @ next STOP
-		int buttons;
+//		int buttons;		// joy->state
 		struct {
 			struct {
 				long per;
@@ -256,8 +263,8 @@ typedef struct {
 			} t;		// manual timer
 		} timer;
 
-		int vbank;		// video bank (0,1)
-		int wbank;		// ram bank (d000..dfff)
+//		int vbank;		// video bank (0,1)
+//		int wbank;		// ram bank (d000..dfff)
 		unsigned char iram[256];	// internal ram (FF80..FFFE)
 		unsigned char iomap[128];
 	} gb;

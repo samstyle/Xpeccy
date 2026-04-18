@@ -9,6 +9,9 @@
 #define fTMRON	flag[3]
 #define fTMRIRQ	flag[4]
 
+#define regVBNK	reg[16]
+#define regWBNK reg[17]
+
 // IO ports
 
 // video modes:
@@ -22,8 +25,8 @@ int gbIORd(Computer* comp, int port) {
 // JOYSTICK
 		case 0x00:
 			switch(comp->gb.iomap[0] & 0x30) {
-				case 0x10: res = (comp->gb.buttons & 0xf0) >> 4; break;
-				case 0x20: res = comp->gb.buttons & 0x0f; break;
+				case 0x10: res = (comp->joy->state & 0xf0) >> 4; break;
+				case 0x20: res = comp->joy->state & 0x0f; break;
 			}
 			break;
 // SERIAL
@@ -72,11 +75,11 @@ int gbIORd(Computer* comp, int port) {
 				res |= 0x80;
 			break;
 		case 0x4f:
-			res = comp->gb.vbank & 1;
+			res = comp->regVBNK & 1;
 			break;
 		// TODO: 0x55: remaining DMA length (blocks by 16 bytes)-1; b7=dma inactive
 		case 0x70:
-			res = comp->gb.wbank & 7;
+			res = comp->regWBNK & 7;
 			break;
 		default:
 #ifdef ISDEBUG
@@ -413,13 +416,13 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 			break;
 //	memory mapping
 		case 0x4f:				// VRAM bank (8000..9fff)
-			comp->gb.vbank = val & 1;
+			comp->regVBNK = val & 1;
 			break;
 		case 0x70:				// WRAM bank (D000..DFFF)
 			val &= 7;
 			if (val == 0)
 				val = 1;
-			comp->gb.wbank = val;
+			comp->regWBNK = val;
 			break;
 //	palette
 		case 0x68:				// gbc bg palete index (b0..5) & autoincrement (b7)
@@ -537,7 +540,7 @@ int gbvRd(int adr, void* data) {
 	if (adr & 0x2000) {		// cartrige ram
 		res = sltRead(slot, SLT_PRG, adr);
 	} else {			// video ram
-		radr = (comp->gb.vbank << 13) | (adr & 0x1fff);
+		radr = (comp->regVBNK << 13) | (adr & 0x1fff);
 		res = comp->vid->ram[radr];
 	}
 	return res;
@@ -553,7 +556,7 @@ void gbvWr(int adr, int val, void* data) {
 		//	slot->core->wr(slot, adr, val);
 		//}
 	} else {			// video ram
-		radr = (comp->gb.vbank << 13) | (adr & 0x1fff);
+		radr = (comp->regVBNK << 13) | (adr & 0x1fff);
 		comp->vid->ram[radr & 0x3fff] = val;
 	}
 }
@@ -583,7 +586,7 @@ void gbsrWr(int adr, int val, void* data) {
 int gbRamAdr(Computer* comp, int adr) {
 	adr &= 0x1fff;
 	if (adr & 0x1000) {
-		adr = (comp->gb.wbank << 12) | (adr & 0xfff);
+		adr = (comp->regWBNK << 12) | (adr & 0xfff);
 	}
 	return adr;
 }
@@ -788,7 +791,7 @@ void gbc_keyp(Computer* comp, keyEntry* ent) {
 	unsigned char mask = gbGetInputMask(ent->key);
 	if (mask) {
 		comp->cpu->flgSTOP = 0;
-		comp->gb.buttons &= ~mask;
+		comp->joy->state &= ~mask;
 		//comp->gb.inpint = 1;			// input interrupt request
 		gbc_irq(comp, IRQ_KBD);
 	} else {
@@ -828,7 +831,7 @@ void gbc_keyp(Computer* comp, keyEntry* ent) {
 void gbc_keyr(Computer* comp, keyEntry* ent) {
 	int mask = gbGetInputMask(ent->key);
 	if (mask == 0) return;
-	comp->gb.buttons |= mask;
+	comp->joy->state |= mask;
 }
 
 sndPair gbc_vol(Computer* comp, sndVolume* sv) {
@@ -847,7 +850,7 @@ void gbReset(Computer* comp) {
 	compSetTurbo(comp, 1);
 	comp->cpu->inten = 0;
 	comp->vid->inten = 0;
-	comp->gb.buttons = 0xff;
+	comp->joy->state = 0xff;
 
 	comp->gbsnd->ch1.on = 0;
 	comp->gbsnd->ch2.on = 0;
@@ -857,8 +860,8 @@ void gbReset(Computer* comp) {
 	comp->gb.timer.t.per = 0;
 	comp->fTMRON = 0;
 
-	comp->gb.vbank = 0;	// vram page
-	comp->gb.wbank = 1;	// wram page (D000..DFFF)
+	comp->regVBNK = 0;	// vram page
+	comp->regWBNK = 1;	// wram page (D000..DFFF)
 
 	xCartridge* slot = comp->slot;
 	slot->memMap[0] = 1;	// rom bank

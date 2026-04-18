@@ -11,15 +11,15 @@
 #define p03AF	reg[9]
 #define p04AF	reg[10]
 #define p05AF	reg[11]
-#define p21AF	reg[12]
+//#define p21AF	reg[12]
 
 #define regMADR	reg[16]		// 15AF[0..3] = MapAddr
 
 void tslReset(Computer* comp) {
 	comp->vid->tsconf.scrPal = 0xf0;
 	memset(comp->vid->tsconf.cram,0x00,0x200);
-	comp->rom = 0;
-	comp->dos = 0;
+	comp->flgROM = 0;
+	comp->flgDOS = 0;
 	comp->cmos.mode = 2;
 	comp->tsconf.p21af = 0x04;
 	comp->tsconf.Page0 = 0;
@@ -54,12 +54,12 @@ void tslMapMem(Computer* comp) {
 		if (comp->tsconf.p21af & 4)
 			memSetBank(comp->mem,0x00,MEM_RAM,comp->tsconf.Page0, MEM_16K,NULL,NULL,NULL);
 		else
-			memSetBank(comp->mem,0x00,MEM_RAM, (comp->tsconf.Page0 & 0xfc) | ((comp->rom) ? 1 : 0) | (comp->dos ? 0 : 2), MEM_16K,NULL,NULL,NULL);
+			memSetBank(comp->mem,0x00,MEM_RAM, (comp->tsconf.Page0 & 0xfc) | ((comp->flgROM) ? 1 : 0) | (comp->flgDOS ? 0 : 2), MEM_16K,NULL,NULL,NULL);
 	} else {
 		if (comp->tsconf.p21af & 4)
 			memSetBank(comp->mem,0x00,MEM_ROM,comp->tsconf.Page0, MEM_16K,NULL,NULL,NULL);
 		else
-			memSetBank(comp->mem,0x00,MEM_ROM, (comp->tsconf.Page0 & 0xfc) | ((comp->rom) ? 1 : 0) | (comp->dos ? 0 : 2), MEM_16K,NULL,NULL,NULL);
+			memSetBank(comp->mem,0x00,MEM_ROM, (comp->tsconf.Page0 & 0xfc) | ((comp->flgROM) ? 1 : 0) | (comp->flgDOS ? 0 : 2), MEM_16K,NULL,NULL,NULL);
 	}
 }
 
@@ -92,12 +92,12 @@ void tslUpdatePal(Computer* comp) {
 
 int tslMRd(Computer* comp, int adr, int m1) {
 	if (m1 && (comp->dif->type == DIF_BDI)) {
-		if (comp->dos && (adr > 0x4000) && (!comp->flgVDOS)) {
-			comp->dos = 0;
-			if (comp->rom) comp->hw->mapMem(comp);	// don't switch ROM0 to ROM2
+		if (comp->flgDOS && (adr > 0x4000) && (!comp->flgVDOS)) {
+			comp->flgDOS = 0;
+			if (comp->flgROM) comp->hw->mapMem(comp);	// don't switch ROM0 to ROM2
 		}
-		if (!comp->dos && ((adr & 0xff00) == 0x3d00) && (comp->rom) && ((comp->tsconf.p21af & 0x04) == 0x00)) {
-			comp->dos = 1;
+		if (!comp->flgDOS && ((adr & 0xff00) == 0x3d00) && (comp->flgROM) && ((comp->tsconf.p21af & 0x04) == 0x00)) {
+			comp->flgDOS = 1;
 			comp->hw->mapMem(comp);
 		}
 	}
@@ -223,7 +223,7 @@ void tsOut77(Computer* comp, int port, int val) {
 void tsOut7FFD(Computer* comp, int port, int val) {
 	if (comp->p7FFD & 0x20) return;
 	comp->p7FFD = val & 0xff;
-	comp->rom = (val & 0x10) ? 1 : 0;
+	comp->flgROM = (val & 0x10) ? 1 : 0;
 	int num = (val & 7) | ((val & 0xc0) >> 3);	// page (512K)
 	if (comp->tsconf.p21af & 0x80) {				// 1x : !a13
 		if (~port & 0x2000) num &= 7;
@@ -573,7 +573,7 @@ xPortDsc zx_port_tab_ts[] = {
 	{0x03af, REG_BYTE, offsetof(Computer, p03AF)},
 	{0x04af, REG_BYTE, offsetof(Computer, p04AF)},
 	{0x05af, REG_BYTE, offsetof(Computer, p05AF)},
-	{0x21af, REG_BYTE, offsetof(Computer, p21AF)},
+	{0x21af, REG_BYTE, offsetof(Computer, tsconf.p21af)},
 	{-1, 0, 0}
 };
 
