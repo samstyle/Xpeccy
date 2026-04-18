@@ -1,6 +1,7 @@
 #include "../spectrum.h"
 
 #define	p7E	reg[16]
+#define pDFFD	reg[17]
 
 // Profi ROM: EXT,DOS,128,48
 void prfMapMem(Computer* comp) {

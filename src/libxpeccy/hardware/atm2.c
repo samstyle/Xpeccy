@@ -4,6 +4,9 @@
 
 #define flgZ_I	flag[0]
 
+#define p77hi	reg[16]
+#define p77lo	reg[17]
+
 // TODO : fill memMap & set prt1 for reset to separate ROM pages
 void atm2Reset(Computer* comp) {
 	comp->dos = 1;

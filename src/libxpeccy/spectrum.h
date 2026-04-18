@@ -76,10 +76,7 @@ typedef struct {
 #define p7FFD	reg[0]
 #define p1FFD	reg[1]
 #define pEFF7	reg[2]
-#define pDFFD	reg[3]
-#define p77hi	reg[4]
-#define p77lo	reg[5]
-#define prt2	reg[6]
+#define prt2	reg[3]
 
 #define flgBRK	sysflag[0]		// breakpoint catched
 #define flgDBG	sysflag[1]		// debug execution

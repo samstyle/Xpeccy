@@ -26,6 +26,7 @@ void uart_set_irq(UART* uart, int n) {
 	uart->irqn = n;
 }
 
+// TODO: irq from device to let uart know dev.data is ready OR check it always (don't use uart->ready)
 // set callbacks for rd/wr from/to device and device ptr
 void uart_set_dev(UART* uart, xurdcb cbr, xuwrcb cbw, void* p) {
 	uart->devrd = cbr;
@@ -42,18 +43,21 @@ void uart_ready(UART* uart) {
 
 // clk: 1.8432MHz		542ns
 // counter: each 16 ticks	8672ns
-// 8bits			69376ns @ maximum speed, *uart->div
+// 8bits			69376ns @ maximum speed, *uart->div (~14400 bytes/sec)
 
-#define UART_MIN_BYTE_NS	69376
+// #define UART_MIN_BYTE_NS	69376
 
 // set device rd rate, bytes/sec
 void uart_set_rate(UART* uart, int bps) {
+	if (bps < 1) return;
 	uart->nsrate = 1e9/bps;
 }
 
 void uart_set_div(UART* uart, unsigned short div) {
+	if (div < 1) return;
 	uart->div = div;
-	uart->nsrate = UART_MIN_BYTE_NS * uart->div;
+	uart_set_rate(uart, 14400 / div);
+//	uart->nsrate = UART_MIN_BYTE_NS * uart->div;
 }
 
 // wrapper to core
@@ -255,7 +259,7 @@ void u8251_sync(UART* uart, int ns) {
 	}
 }
 
-// default (simple sync)
+// default (simple sync, rd/wr direct to device)
 
 void uart_def_sync(UART* uart, int ns) {
 	if (uart->ready) {

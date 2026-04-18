@@ -884,22 +884,22 @@ void kbd_sync(Keyboard* kbd, int ns) {
 	}
 }
 
-// id,cbReset,cbRead,cbWrite,cbPress,cbRelease,cbSync
+// id,flag,cbReset,cbRead,cbWrite,cbPress,cbRelease,cbSync
 xKbdCore kbdTypeTab[] = {
-	{KBD_SPECTRUM, NULL, kbdScanZX, NULL, kbd_zx_press, kbd_zx_release, NULL},
-	{KBD_PROFI, NULL, kbdScanProfi, NULL, kbd_prf_press, kbd_prf_release, NULL},
-	{KBD_ATM2_CODE, NULL, kbd_atm2code_rd, NULL, kbd_atm2code_press, kbd_atm2code_release, NULL},
-	{KBD_ATM2_CPM, NULL, kbd_atm2cpm_rd, NULL, kbd_atm2code_press, kbd_atm2code_release, NULL},
-	{KBD_ATM2_DIRECT, NULL, NULL, NULL, NULL, NULL, NULL},			// TODO
-	{KBD_MSX, NULL, kbd_msx_read, NULL, kbd_msx_press, kbd_msx_release, NULL},
-	{KBD_SPCLST, NULL, kbd_spc_read, NULL, kbd_spc_press, kbd_spc_release, NULL},
-	{KBD_C64, NULL, kbd_c64_read, NULL, kbd_c64_press, kbd_c64_release, NULL},
-	{KBD_BK, kbd_bk_reset, kbd_bk_rd, NULL, kbd_bk_press, kbd_bk_release, NULL},
-	{KBD_PC_AT, kbd_ibm_res, kbd_ibm_rd, kbd_ibm_wr, kbd_at_press, kbd_at_release, xt_sync},
-	{KBD_PC_XT, kbd_ibm_res, kbd_ibm_rd, kbd_ibm_wr, kbd_xt_press, kbd_xt_release, xt_sync},
-	{KBD_PC_PS2, kbd_ibm_res, kbd_ibm_rd, kbd_ibm_wr, kbd_ps2_press, kbd_ps2_release, xt_sync},
-	{KBD_NEC98XX, NULL, kbd_ibm_rd, kbd_nec_write, kbd_nec_press, kbd_nec_release, xt_sync},
-	{-1, NULL, NULL, NULL, NULL, NULL}
+	{KBD_SPECTRUM, 0, NULL, kbdScanZX, NULL, kbd_zx_press, kbd_zx_release, NULL},
+	{KBD_PROFI, 0, NULL, kbdScanProfi, NULL, kbd_prf_press, kbd_prf_release, NULL},
+	{KBD_ATM2_CODE, 0, NULL, kbd_atm2code_rd, NULL, kbd_atm2code_press, kbd_atm2code_release, NULL},
+	{KBD_ATM2_CPM, 0, NULL, kbd_atm2cpm_rd, NULL, kbd_atm2code_press, kbd_atm2code_release, NULL},
+	{KBD_ATM2_DIRECT, 0, NULL, NULL, NULL, NULL, NULL, NULL},			// TODO
+	{KBD_MSX, 0, NULL, kbd_msx_read, NULL, kbd_msx_press, kbd_msx_release, NULL},
+	{KBD_SPCLST, 0, NULL, kbd_spc_read, NULL, kbd_spc_press, kbd_spc_release, NULL},
+	{KBD_C64, 0, NULL, kbd_c64_read, NULL, kbd_c64_press, kbd_c64_release, NULL},
+	{KBD_BK, 0, kbd_bk_reset, kbd_bk_rd, NULL, kbd_bk_press, kbd_bk_release, NULL},
+	{KBD_PC_AT, KF_AUTORPT, kbd_ibm_res, kbd_ibm_rd, kbd_ibm_wr, kbd_at_press, kbd_at_release, xt_sync},
+	{KBD_PC_XT, KF_AUTORPT, kbd_ibm_res, kbd_ibm_rd, kbd_ibm_wr, kbd_xt_press, kbd_xt_release, xt_sync},
+	{KBD_PC_PS2, KF_AUTORPT, kbd_ibm_res, kbd_ibm_rd, kbd_ibm_wr, kbd_ps2_press, kbd_ps2_release, xt_sync},
+	{KBD_NEC98XX, KF_AUTORPT, NULL, kbd_ibm_rd, kbd_nec_write, kbd_nec_press, kbd_nec_release, xt_sync},
+	{-1, 0, NULL, NULL, NULL, NULL, NULL}
 };
 
 void kbd_set_core(Keyboard* kbd, xKbdCore* core) {

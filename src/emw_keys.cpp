@@ -70,6 +70,11 @@ void MainWin::keyPressEvent(QKeyEvent* ev) {
 		keyid = ev_to_keyid(ev, true);
 		kent = getKeyEntry(keyid);
 		if (ev->isAutoRepeat()) {
+			if (comp->keyb->core) {
+				if (comp->keyb->core->flag & KF_AUTORPT) {
+					comp->keyb->core->press(comp->keyb, &kent);
+				}
+			}
 			//xt_release(comp->keyb, kent);
 			//xt_press(comp->keyb, kent);
 		} else {
@@ -81,6 +86,11 @@ void MainWin::keyPressEvent(QKeyEvent* ev) {
 		kent = getKeyEntry(keyid);
 		if (ev->isAutoRepeat()) {
 			if (keyid < 0x10000) {		// not a shortcut
+				if (comp->keyb->core) {
+					if (comp->keyb->core->flag & KF_AUTORPT) {
+						comp->keyb->core->press(comp->keyb, &kent);
+					}
+				}
 				//xt_release(comp->keyb, kent);
 				//xt_press(comp->keyb, &kent);
 			} else {
