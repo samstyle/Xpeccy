@@ -60,7 +60,6 @@ class SetupWin : public QDialog {
 		void buildmenulist();
 		void buildkeylist();
 		void buildproflist();
-		void buildpadlist();
 
 	signals:
 		void closed();
