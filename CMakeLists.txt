@@ -1,24 +1,28 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.22...3.28)
 
 #compiler settings
 
-#set(CMAKE_CXX_STANDARD 11)
-#set(CMAKE_CXX_STANDARD_REQUIRED ON)
-#set(CMAKE_CXX_EXTENSIONS OFF)
-#set(CMAKE_C_COMPILER gcc)
-#set(CMAKE_CXX_COMPILER g++)
+set(CMAKE_C_STANDARD 17)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # common
 
 set(PROJECT_NAME "xpeccy")
 project(${PROJECT_NAME})
 
+option(USEOPENGL    "Enable OpenGL-accelerated rendering" ON)
+option(USEQTNETWORK "Enable Qt network support" OFF)
+set(QTVERSION "" CACHE STRING "Force Qt version (5 or 6). Empty = auto-detect.")
+
 file(STRINGS "Release" XVER)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake)
 include(${CMAKE_ROOT}/Modules/FindPackageHandleStandardArgs.cmake)
 
-# endianess
+# endianness
 
 include (TestBigEndian)
 test_big_endian(BIG_ENDIAN)
@@ -30,12 +34,12 @@ endif()
 
 # compilation flags
 
-set(CMAKE_C_FLAGS "-std=gnu99 -Wall -O2 ${CMAKE_C_FLAGS}")
-set(CMAKE_C_FLAGS_RELEASE "-DNDEBUG ${CMAKE_C_FLAGS_RELEASE}")
+set(CMAKE_C_FLAGS "-Wall ${CMAKE_C_FLAGS}")
+set(CMAKE_C_FLAGS_RELEASE "-O2 -DNDEBUG ${CMAKE_C_FLAGS_RELEASE}")
 set(CMAKE_C_FLAGS_DEBUG "-g -DISDEBUG ${CMAKE_C_FLAGS_DEBUG}")
 
-set(CMAKE_CXX_FLAGS "-std=c++11 -Wall -O2 ${CMAKE_CXX_FLAGS}")
-set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG ${CMAKE_CXX_FLAGS_RELEASE}")
+set(CMAKE_CXX_FLAGS "-Wall ${CMAKE_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG ${CMAKE_CXX_FLAGS_RELEASE}")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -DISDEBUG ${CMAKE_CXX_FLAGS_DEBUG}")
 
 # OS-depended section
@@ -80,7 +84,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 	install(FILES images/xpeccy.png DESTINATION share/icons)
 	install(FILES Xpeccy.desktop DESTINATION share/applications)
 
-elseif(${CMAKE_SYSTEM_NAME} MATCHES "/BSD$/")
+elseif(${CMAKE_SYSTEM_NAME} MATCHES "BSD")
 
 	set(INC_PATHS pkg/include include)
 	set(LIB_PATHS lib lib64 pkg/lib local/lib64)
@@ -179,131 +183,103 @@ set(MOCFILES
 	./src/xgui/labelist.h
 )
 
-# Qt5 / Qt6
+# Qt version detection — prefer Qt6, fall back to Qt5.
+# Override with -DQTVERSION=5 or -DQTVERSION=6 (or legacy -DQT6BUILD=1/0).
 
-if (DEFINED QT6BUILD)
-	if (${QT6BUILD})
-		set(QTVERSION 6)
-	else(${QT6BUILD})
-		set(QTVERSION 5)
-	endif(${QT6BUILD})
-elseif(NOT DEFINED QTVERSION)
-	set(QTVERSION 5)
+if(DEFINED QT6BUILD)
+	if(QT6BUILD)
+		set(QTVERSION 6 CACHE STRING "" FORCE)
+	else()
+		set(QTVERSION 5 CACHE STRING "" FORCE)
+	endif()
 endif()
 
-if(${QTVERSION} EQUAL 4)
-	find_package(Qt4 COMPONENTS QtCore QtGui REQUIRED)
-	include(${QT_USE_FILE})
-	qt4_add_resources(RESOURCES ${QRCFILES})
-	qt4_wrap_ui(UIHEADERS ${UIFILES})
-	qt4_wrap_cpp(MOCHEADERS ${MOCFILES})
-	set(CPACK_RPM_PACKAGE_REQUIRES "libqt4 >= 4.6, libqt4-x11 >= 4.6")
-	set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqtcore4 (>=4.6), libqtgui4 (>=4.6)")
-
-	if(${USEQTNETWORK})
-		find_package(Qt4 COMPONENTS QtNetwork REQUIRED)
-		set(CPACK_RPM_PACKAGE_REQUIRES "${CPACK_RPM_PACKAGE_REQUIRES}, libqt4-network >= 4.6")
-		set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, libqt4-network (>=4.6)")
-		add_definitions("-DUSENETWORK")
-	endif()
-	if(${USEOPENGL})
-		find_package(Qt4 COMPONENTS QtOpenGL REQUIRED)
-		set(CPACK_RPM_PACKAGE_REQUIRES "${CPACK_RPM_PACKAGE_REQUIRES}, libqt4-opengl >= 4.6")
-		set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, libqt4-opengl (>=4.6)")
-		add_definitions("-DUSEOPENGL")
-	endif()
-
-	set(LIBRARIES ${LIBRARIES} ${QT_LIBRARIES})
-	set(QT_VER ${QT_VERSION_MAJOR}.${QT_VERSION_MINOR}.${QT_VERSION_PATCH})
-
-elseif(${QTVERSION} EQUAL 5)
-
-	find_package(Qt5 COMPONENTS Core Gui Widgets REQUIRED)
-	set(LIBRARIES ${LIBRARIES} Qt5::Widgets)
-	qt5_add_resources(RESOURCES ${QRCFILES})
-	qt5_wrap_ui(UIHEADERS ${UIFILES})
-	qt5_wrap_cpp(MOCHEADERS ${MOCFILES})
-	set(CPACK_RPM_PACKAGE_REQUIRES "libQt5Gui5 >= 5.3, libQt5Widgets5 >= 5.3")
-	set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt5gui5 (>=5.3), libqt5widgets5 (>=5.3)")
-
-	if(${USEQTNETWORK})
-		find_package(Qt5 COMPONENTS Network REQUIRED)
-		set(LIBRARIES ${LIBRARIES} Qt5::Network)
-		set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, libqt5network5 (>=5.3)")
-		set(CPACK_RPM_PACKAGE_REQUIRES "${CPACK_RPM_PACKAGE_REQUIRES}, libQt5Network5 >= 5.3")
-		add_definitions("-DUSENETWORK")
-	endif()
-	if (${USEOPENGL})
-		find_package(OpenGL REQUIRED)
-		find_package(Qt5 COMPONENTS OpenGL REQUIRED)
-		set(LIBRARIES ${LIBRARIES} Qt5::OpenGL ${OPENGL_LIBRARIES})
-		set(CPACK_RPM_PACKAGE_REQUIRES "${CPACK_RPM_PACKAGE_REQUIRES}, libQt5OpenGL5 >= 5.3")
-		set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, libqt5opengl5 (>=5.3)")
-		add_definitions("-DUSEOPENGL")
-	endif()
-
-	set(QT_VER ${Qt5Widgets_VERSION})
-
-elseif(${QTVERSION} EQUAL 6)
-#	message(FATAL_ERROR "Qt6 usage is not implemented yet")
-# Qt6 requires c++17
-	set(CMAKE_CXX_STANDARD 17)
-	set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-	find_package(Qt6 COMPONENTS Core Gui Widgets Core5Compat REQUIRED)
-	set(LIBRARIES ${LIBRARIES} Qt6::Widgets Qt6::Core Qt6::Gui Qt6::Core5Compat)
-	qt6_add_resources(RESOURCES ${QRCFILES})
-	qt6_wrap_ui(UIHEADERS ${UIFILES})
-	qt6_wrap_cpp(MOCHEADERS ${MOCFILES})
-	set(CPACK_RPM_PACKAGE_REQUIRES "libQt6Gui6 >= 6.1, libQt6Widgets6 >= 6.1, libQt6Core5Compat6 >= 6.1")
-	set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt6gui6 (>=6.1), libqt6widgets6 (>=6.1), libqt6core5compat6 >= 6.1")
-	if(${USEQTNETWORK})
-		find_package(Qt6 COMPONENTS Network REQUIRED)
-		set(LIBRARIES ${LIBRARIES} Qt6::Network)
-		set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, libqt6network6 (>=6.1)")
-		set(CPACK_RPM_PACKAGE_REQUIRES "${CPACK_RPM_PACKAGE_REQUIRES}, libQt6Network6 >= 6.1")
-		add_definitions("-DUSENETWORK")
-	endif()
-	if (${USEOPENGL})
-		find_package(OpenGL REQUIRED)
-		find_package(Qt6 COMPONENTS OpenGLWidgets REQUIRED)
-		set(LIBRARIES ${LIBRARIES} Qt6::OpenGLWidgets ${OPENGL_LIBRARIES})
-		set(CPACK_RPM_PACKAGE_REQUIRES "${CPACK_RPM_PACKAGE_REQUIRES}, libQt6OpenGL6 >= 6.1")
-		set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, libqt6opengl6 (>=6.1)")
-		add_definitions("-DUSEOPENGL")
-	endif()
-
-	set(QT_VER ${Qt6Widgets_VERSION})
+if(QTVERSION STREQUAL "")
+	find_package(QT NAMES Qt6 Qt5 REQUIRED)
 else()
-	message(FATAL_ERROR "Not supported Qt version defined")
+	find_package(QT NAMES Qt${QTVERSION} REQUIRED)
 endif()
+
+set(_QTV ${QT_VERSION_MAJOR})
+if(_QTV EQUAL 6)
+	set(_QT_MIN_VER 6.1)
+else()
+	set(_QT_MIN_VER 5.15)
+endif()
+
+# Core Qt components
+find_package(Qt${_QTV} ${_QT_MIN_VER} REQUIRED COMPONENTS Core Gui Widgets)
+set(LIBRARIES ${LIBRARIES} Qt${_QTV}::Widgets)
+
+if(_QTV EQUAL 6)
+	find_package(Qt6 REQUIRED COMPONENTS Core5Compat)
+	set(LIBRARIES ${LIBRARIES} Qt6::Core Qt6::Gui Qt6::Core5Compat)
+endif()
+
+cmake_language(CALL qt${_QTV}_add_resources RESOURCES ${QRCFILES})
+cmake_language(CALL qt${_QTV}_wrap_ui UIHEADERS ${UIFILES})
+cmake_language(CALL qt${_QTV}_wrap_cpp MOCHEADERS ${MOCFILES})
+
+# Optional: network
+if(USEQTNETWORK)
+	find_package(Qt${_QTV} REQUIRED COMPONENTS Network)
+	set(LIBRARIES ${LIBRARIES} Qt${_QTV}::Network)
+	add_definitions(-DUSENETWORK)
+endif()
+
+# Optional: OpenGL
+if(USEOPENGL)
+	find_package(OpenGL REQUIRED)
+	if(_QTV EQUAL 6)
+		set(_QT_GL OpenGLWidgets)
+	else()
+		set(_QT_GL OpenGL)
+	endif()
+	find_package(Qt${_QTV} REQUIRED COMPONENTS ${_QT_GL})
+	set(LIBRARIES ${LIBRARIES} Qt${_QTV}::${_QT_GL} ${OPENGL_LIBRARIES})
+	add_definitions(-DUSEOPENGL)
+endif()
+
+# Packaging dependencies
+if(_QTV EQUAL 6)
+	set(CPACK_RPM_PACKAGE_REQUIRES "libQt6Gui6 >= ${_QT_MIN_VER}, libQt6Widgets6 >= ${_QT_MIN_VER}, libQt6Core5Compat6 >= ${_QT_MIN_VER}")
+	set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt6gui6 (>=${_QT_MIN_VER}), libqt6widgets6 (>=${_QT_MIN_VER}), libqt6core5compat6 (>=${_QT_MIN_VER})")
+	if(USEQTNETWORK)
+		set(CPACK_RPM_PACKAGE_REQUIRES "${CPACK_RPM_PACKAGE_REQUIRES}, libQt6Network6 >= ${_QT_MIN_VER}")
+		set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, libqt6network6 (>=${_QT_MIN_VER})")
+	endif()
+	if(USEOPENGL)
+		set(CPACK_RPM_PACKAGE_REQUIRES "${CPACK_RPM_PACKAGE_REQUIRES}, libQt6OpenGL6 >= ${_QT_MIN_VER}")
+		set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, libqt6opengl6 (>=${_QT_MIN_VER})")
+	endif()
+else()
+	set(CPACK_RPM_PACKAGE_REQUIRES "libQt5Gui5 >= ${_QT_MIN_VER}, libQt5Widgets5 >= ${_QT_MIN_VER}")
+	set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt5gui5 (>=${_QT_MIN_VER}), libqt5widgets5 (>=${_QT_MIN_VER})")
+	if(USEQTNETWORK)
+		set(CPACK_RPM_PACKAGE_REQUIRES "${CPACK_RPM_PACKAGE_REQUIRES}, libQt5Network5 >= ${_QT_MIN_VER}")
+		set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, libqt5network5 (>=${_QT_MIN_VER})")
+	endif()
+	if(USEOPENGL)
+		set(CPACK_RPM_PACKAGE_REQUIRES "${CPACK_RPM_PACKAGE_REQUIRES}, libQt5OpenGL5 >= ${_QT_MIN_VER}")
+		set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, libqt5opengl5 (>=${_QT_MIN_VER})")
+	endif()
+endif()
+
+set(QT_VER ${QT_VERSION})
 
 # SDL
 
-if(${SDL1BUILD})
-	find_package(SDL REQUIRED)
-	if(${SDL_FOUND})
-		add_definitions(-DHAVESDL1)
-		include_directories(${SDL_INCLUDE_DIR})
-		set(LIBRARIES ${LIBRARIES} ${SDL_LIBRARY})
-		set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, libSDL1.2debian (>=1.2)")
-		set(CPACK_RPM_PACKAGE_DEPENDS "${CPACK_RPM_PACKAGE_DEPENDS}, SDL >= 1.2")
-		set(SDL_VER ${SDL_VERSION_STRING})
-		set(SDL_NAME "SDL")
-	endif(${SDL_FOUND})
-else(${SDL1BUILD})
-	find_package(SDL2 REQUIRED)
-	if (${SDL2_FOUND})
-		add_definitions(-DHAVESDL2)
-		include_directories(${SDL2_INCLUDE_DIR})
-		set(LIBRARIES ${LIBRARIES} ${SDL2_LIBRARY})
-		set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, libsdl2-2.0-0 (>=2.0) | libSDL2 (>=2.0)")
-		set(CPACK_RPM_PACKAGE_DEPENDS "${CPACK_RPM_PACKAGE_DEPENDS}, SDL2 >= 2.0")
-		set(SDL_VER "2.x")
-		set(SDL_NAME "SDL2")
-		message(STATUS "SDL2_INCLUDE_DIR = " ${SDL2_INCLUDE_DIR})
-	endif(${SDL2_FOUND})
-endif(${SDL1BUILD})
+find_package(SDL2 REQUIRED)
+if (${SDL2_FOUND})
+	add_definitions(-DHAVESDL2)
+	include_directories(${SDL2_INCLUDE_DIR})
+	set(LIBRARIES ${LIBRARIES} ${SDL2_LIBRARY})
+	set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, libsdl2-2.0-0 (>=2.0) | libSDL2 (>=2.0)")
+	set(CPACK_RPM_PACKAGE_DEPENDS "${CPACK_RPM_PACKAGE_DEPENDS}, SDL2 >= 2.0")
+	set(SDL_VER "2.x")
+	set(SDL_NAME "SDL2")
+	message(STATUS "SDL2_INCLUDE_DIR = " ${SDL2_INCLUDE_DIR})
+endif(${SDL2_FOUND})
 
 # zlib (for rzx)
 
@@ -316,20 +292,16 @@ if(ZLIB_FOUND)
 	set(CPACK_RPM_PACKAGE_DEPENDS "${CPACK_RPM_PACKAGE_DEPENDS}, zlib >= 1.2")
 endif(ZLIB_FOUND)
 
-# flags
+# vendored dependencies
 
-if(${IBM})
-	add_definitions(-DUSEIBM=1)
-endif()
+include_directories(${PROJECT_SOURCE_DIR}/3rdparty/xdgpp)
 
-# other
+# executable
 
-if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-	add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS} ${UIHEADERS} ${RESOURCES} ${MOCHEADERS})
-elseif(${CMAKE_SYSTEM_NAME} MATCHES "/BSD$/")
-	add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS} ${UIHEADERS} ${RESOURCES} ${MOCHEADERS})
-elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-	add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${SOURCES} ${HEADERS} ${UIHEADERS} ${RESOURCES} ${MOCHEADERS} ${BUNDLE_ICON_PATH})
+set(ALL_SRCS ${SOURCES} ${HEADERS} ${UIHEADERS} ${RESOURCES} ${MOCHEADERS})
+
+if(APPLE)
+	add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${ALL_SRCS} ${BUNDLE_ICON_PATH})
 	find_program(MACDEPLOYQTEXE macdeployqt)
 	add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 		COMMAND ${MACDEPLOYQTEXE} ARGS ${BUNDLE_PATH} -always-overwrite
@@ -339,8 +311,10 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	)
 	set(CMAKE_INSTALL_PREFIX "/Applications")
 	install(TARGETS ${PROJECT_NAME} BUNDLE DESTINATION .)
-elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-	add_executable(${PROJECT_NAME} WIN32 ${SOURCES} ${HEADERS} ${UIHEADERS} ${RESOURCES} ${MOCHEADERS} ${CMAKE_SOURCE_DIR}/xpeccy.rc)
+elseif(WIN32)
+	add_executable(${PROJECT_NAME} WIN32 ${ALL_SRCS} ${CMAKE_SOURCE_DIR}/xpeccy.rc)
+else()
+	add_executable(${PROJECT_NAME} ${ALL_SRCS})
 endif()
 
 include_directories(${INCLUDIRS})
