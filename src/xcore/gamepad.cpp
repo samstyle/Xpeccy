@@ -114,7 +114,9 @@ void xGamepad::delItem(int i) {
 
 void xGamepad::loadMap(std::string mapname) {
 	if (mapname.empty()) return;
-	std::ifstream file(conf.path.confDir / mapname);
+	const auto maybe = conf.path.tryFind(ResourceKind::Gamepad, mapname);
+	if (!maybe) return;
+	std::ifstream file(*maybe);
 	if (!file) return;
 	xJoyMapEntry jent;
 	int num;
@@ -196,7 +198,8 @@ void xGamepad::loadMap(std::string mapname) {
 
 void xGamepad::saveMap(std::string mapname) {
 	if (mapname.empty()) return;
-	std::ofstream out(conf.path.confDir / mapname, std::ios::binary);
+	std::ofstream out(conf.path.writableDir(ResourceKind::Gamepad) / mapname,
+	                  std::ios::binary);
 	if (!out) return;
 	foreach(xJoyMapEntry jent, map) {
 		out << padGetChar(jent.type, pabhChars) << jent.num;
@@ -229,18 +232,21 @@ void xGamepad::saveMap(std::string mapname) {
 }
 
 int padExists(std::string name) {
-	std::error_code ec;
-	return fs::exists(conf.path.confDir / name, ec);
+	return conf.path.tryFind(ResourceKind::Gamepad, name).has_value();
 }
 
 int padCreate(std::string name) {
 	if (padExists(name)) return 0;
-	return std::ofstream(conf.path.confDir / name, std::ios::binary).is_open();
+	return std::ofstream(conf.path.writableDir(ResourceKind::Gamepad) / name,
+	                     std::ios::binary).is_open();
 }
 
+// Only removes a user-writable copy. A same-named read-only pad map shipped
+// under /usr/share/.../gamepads/ remains intact — deleting the writable copy
+// just lets the system default shine through again.
 void padDelete(std::string name) {
 	std::error_code ec;
-	fs::remove(conf.path.confDir / name, ec);
+	fs::remove(conf.path.writableDir(ResourceKind::Gamepad) / name, ec);
 }
 
 // xGamepad

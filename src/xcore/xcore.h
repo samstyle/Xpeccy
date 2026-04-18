@@ -92,6 +92,7 @@ enum class ResourceKind {
 	PluginCpu,
 	Style,
 	Keymap,
+	Gamepad,
 	COUNT
 };
 
