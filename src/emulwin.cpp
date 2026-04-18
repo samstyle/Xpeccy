@@ -1059,17 +1059,9 @@ void MainWin::fillUserMenu() {
 	act->setCheckable(true);
 	if (conf.prof.cur) {
 		if (conf.prof.cur->kmapName.empty()) act->setChecked(true);
-		QDir dir(toQString(conf.path.confDir));
-		QStringList lst = dir.entryList(QStringList() << "*.map",QDir::Files,QDir::Name);
-		dir.setPath(toQString(conf.path.confDir / "keymaps"));
-		lst.append(dir.entryList(QStringList() << "*.map",QDir::Files,QDir::Name));
-		lst.sort();
-		foreach(QString str, lst) {
-			act = keyMenu->addAction(str);
-			act->setData(str);
-			act->setCheckable(true);
-			act->setChecked(conf.prof.cur->kmapName == std::string(str.toUtf8().data()));
-		}
+		fillCheckableMenuFromResources(keyMenu, ResourceKind::Keymap,
+		                               byExtension({".map"}),
+		                               toQString(conf.prof.cur->kmapName));
 	}
 	// fill shader menu
 	shdMenu->clear();

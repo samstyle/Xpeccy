@@ -204,13 +204,16 @@ void loadKeys() {
 	if (!prf) return;
 	initKeyMap();
 	if ((prf->kmapName == "") || (prf->kmapName == "default")) return;
-	std::ifstream file(conf.path.confDir / prf->kmapName);
+	const auto maybe = conf.path.tryFind(ResourceKind::Keymap, prf->kmapName);
+	if (!maybe) {
+		printf("Can't find keymap '%s'. Default one will be used\n",
+		       prf->kmapName.c_str());
+		return;
+	}
+	std::ifstream file(*maybe);
 	if (!file.good()) {
-		file.open(conf.path.confDir / "keymaps" / prf->kmapName);
-		if (!file.good()) {
-			printf("Can't open keyboard layout. Default one will be used\n");
-			return;
-		}
+		printf("Can't open keyboard layout. Default one will be used\n");
+		return;
 	}
 	std::string line;
 	while (std::getline(file, line)) {
