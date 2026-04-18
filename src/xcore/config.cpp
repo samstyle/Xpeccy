@@ -288,6 +288,13 @@ void conf_init(char* wpath, char* confdir) {
 		                  conf.path.cacheDir / "debuga.layout",
 		                  MoveKind::SingleFile, "debuga.layout", ec);
 	}
+
+	// State home for machine-authored persistent state (CMOS RTC, NVRAM).
+	conf.path.stateDir = xdgPathOrFallback(xdg::StateHomeDir,
+		conf.path.confDir / "state", "xdg state home");
+	conf.path.prfStateDir = conf.path.stateDir / "profiles";
+	makeDir(conf.path.stateDir,    "stateDir");
+	makeDir(conf.path.prfStateDir, "prfStateDir");
 #elif defined(__WIN32)
 	if (confdir == NULL) {
 		conf.path.confDir = fs::path(wpath).parent_path() / "config";
@@ -315,16 +322,20 @@ void conf_init(char* wpath, char* confdir) {
 	conf.path.prfDir = conf.path.confDir / "profiles";
 	conf.path.confFile = conf.path.confDir / "config.conf";
 	conf.path.boot = conf.path.confDir / "boot.$B";
-	// No XDG cache home on Windows; stash cache artifacts under confDir/cache.
-	conf.path.cacheDir = conf.path.confDir / "cache";
+	// No XDG cache/state homes on Windows; stash everything under confDir subdirs.
+	conf.path.cacheDir    = conf.path.confDir / "cache";
+	conf.path.stateDir    = conf.path.confDir / "state";
+	conf.path.prfStateDir = conf.path.stateDir / "profiles";
 	{
 		std::error_code wec;
 		fs::create_directories(conf.path.confDir, wec);
 		for (const auto &dirs : conf.path.resources) {
 			fs::create_directories(dirs.writable, wec);
 		}
-		fs::create_directories(conf.path.prfDir, wec);
-		fs::create_directories(conf.path.cacheDir, wec);
+		fs::create_directories(conf.path.prfDir,      wec);
+		fs::create_directories(conf.path.cacheDir,    wec);
+		fs::create_directories(conf.path.stateDir,    wec);
+		fs::create_directories(conf.path.prfStateDir, wec);
 	}
 #endif
 	conf.scrShot.format = "png";
