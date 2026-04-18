@@ -1,9 +1,9 @@
 #include "opt_gamepad.h"
 
 #include "../xgui.h"
+#include "../resources_ui.h"
 #include "../../xcore/xcore.h"
 
-#include <QDir>
 #include <QInputDialog>
 #include <QLabel>
 #include <QLayout>
@@ -166,15 +166,13 @@ void xGamepadWidget::updateList() {
 }
 
 void xGamepadWidget::update(std::string mapname) {
-	QStringList lst;
 	int i;
 	updateList();
 	ui.sldDeadZone->setValue(gpad->deadZone());
-	QDir dir(toQString(conf.path.confDir));
 	ui.cbMapFile->clear();
-	lst = dir.entryList(QStringList() << "*.pad",QDir::Files,QDir::Name);
-	lst.prepend("none");
-	ui.cbMapFile->addItems(lst);
+	ui.cbMapFile->addItem("none");
+	fillComboFromResources(ui.cbMapFile, ResourceKind::Gamepad,
+	                       byExtension({".pad"}));
 	if (mapname.empty()) {
 		ui.cbMapFile->setCurrentIndex(0);
 	} else {
