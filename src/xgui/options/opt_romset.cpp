@@ -1,6 +1,5 @@
 #include "opt_romset.h"
 
-#include <QDir>
 #include <QDebug>
 
 // ROMSET EDITOR

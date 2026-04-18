@@ -1,4 +1,3 @@
-#include <QDir>
 #include <QIcon>
 #include <QMatrix4x4>
 #include <QMenu>
