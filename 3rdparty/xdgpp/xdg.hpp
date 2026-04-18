@@ -230,6 +230,55 @@ private:
     return BaseDirectories::GetInstance().Runtime();
 }
 
+namespace detail {
+
+// Pure: strip leading/trailing ASCII whitespace. View-in, view-out.
+inline auto trim(std::string_view s) -> std::string_view {
+    const auto space = [](char c) {
+        return std::isspace(static_cast<unsigned char>(c));
+    };
+    while (!s.empty() && space(s.front())) s.remove_prefix(1);
+    while (!s.empty() && space(s.back()))  s.remove_suffix(1);
+    return s;
+}
+
+// Pure: strip a matched pair of surrounding double quotes. No-op otherwise.
+inline auto unquote(std::string_view s) -> std::string_view {
+    if (s.size() >= 2 && s.front() == '"' && s.back() == '"') {
+        s.remove_prefix(1);
+        s.remove_suffix(1);
+    }
+    return s;
+}
+
+// Pure: expand a leading "$HOME" or "$HOME/" — the only substitution that
+// xdg-user-dirs-update emits into user-dirs.dirs.
+inline auto expandHome(std::string_view v, const std::string &home)
+    -> std::string {
+    if (v == "$HOME") return home;
+    if (v.substr(0, 6) == "$HOME/") return home + std::string{v.substr(5)};
+    return std::string{v};
+}
+
+// Pure: one line of user-dirs.dirs + the key to match + $HOME → resolved path,
+// or nullopt if the line is a comment/blank, doesn't assign `key`, or has an
+// empty value.
+inline auto parseUserDirLine(std::string_view line,
+                             std::string_view key,
+                             const std::string &home)
+    -> std::optional<std::filesystem::path> {
+    line = trim(line);
+    if (line.empty() || line.front() == '#') return std::nullopt;
+    const auto eq = line.find('=');
+    if (eq == std::string_view::npos) return std::nullopt;
+    if (trim(line.substr(0, eq)) != key) return std::nullopt;
+    const auto value = unquote(trim(line.substr(eq + 1)));
+    if (value.empty()) return std::nullopt;
+    return std::filesystem::path{expandHome(value, home)};
+}
+
+} // namespace detail
+
 // Local extension: parse $XDG_CONFIG_HOME/user-dirs.dirs (xdg-user-dirs spec)
 // and return the value for `key` (e.g. "XDG_PICTURES_DIR"). Expands a leading
 // $HOME; strips surrounding double quotes; skips comments and malformed lines.
@@ -243,33 +292,7 @@ private:
     const std::string &home = BaseDirectories::GetInstance().Home().string();
     std::string line;
     while (std::getline(file, line)) {
-        auto is_space = [](unsigned char c) { return std::isspace(c); };
-        const auto begin = std::find_if_not(line.begin(), line.end(), is_space);
-        if (begin == line.end() || *begin == '#') continue;
-        const auto eq = std::find(begin, line.end(), '=');
-        if (eq == line.end()) continue;
-        auto name_end = eq;
-        while (name_end > begin && is_space(*(name_end - 1))) --name_end;
-        if (std::string_view(&*begin, name_end - begin) != key) continue;
-        auto value_begin = eq + 1;
-        while (value_begin != line.end() && is_space(*value_begin)) ++value_begin;
-        auto value_end = line.end();
-        while (value_end > value_begin && is_space(*(value_end - 1))) --value_end;
-        if (value_begin != value_end && *value_begin == '"' &&
-            *(value_end - 1) == '"' && value_end - value_begin >= 2) {
-            ++value_begin;
-            --value_end;
-        }
-        std::string value(value_begin, value_end);
-        if (value.empty()) return std::nullopt;
-        // Expand a leading "$HOME" or "$HOME/" — the only substitution
-        // xdg-user-dirs-update ever emits.
-        if (value == "$HOME") {
-            value = home;
-        } else if (value.rfind("$HOME/", 0) == 0) {
-            value = home + value.substr(5);
-        }
-        return std::filesystem::path{value};
+        if (auto hit = detail::parseUserDirLine(line, key, home)) return hit;
     }
     return std::nullopt;
 }
