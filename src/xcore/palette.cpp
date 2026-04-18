@@ -5,57 +5,34 @@
 // load preset colors for zx palette
 
 QList<QColor> loadColors(std::string fname) {
-	QList<QColor> list;
-	QColor col;
-	std::string path = conf.path.find(ResourceKind::Palette, fname).string();
-	QFile file(path.c_str());
-	int i = 0;
-	QString line;
-	QString hexPart;
-	uint rgb;
-	bool ok;
-	int pos;
-	if (file.open(QFile::ReadOnly)) {
-		while (!file.atEnd() && (i < 16)) {
-			line = file.readLine();
-			pos = line.indexOf('#');
-			if ((pos >= 0) && ((pos + 6) < line.size())) {
-				hexPart = line.mid(pos + 1, 6);
-				rgb = hexPart.toUInt(&ok, 16);
-				if (ok) {
-					col.setRed((rgb >> 16) & 0xff);
-					col.setGreen((rgb >> 8) & 0xff);
-					col.setBlue(rgb & 0xff);
-					list.append(col);
-					i++;
-				}
-			}
-		}
-		file.close();
+	QFile file(toQString(conf.path.find(ResourceKind::Palette, fname)));
+	if (!file.open(QFile::ReadOnly)) return {};
+	QList<QColor> colors;
+	while (!file.atEnd() && colors.size() < 16) {
+		const QString line = file.readLine();
+		const int pos = line.indexOf('#');
+		if (pos < 0 || pos + 6 >= line.size()) continue;
+		bool ok;
+		const uint rgb = line.mid(pos + 1, 6).toUInt(&ok, 16);
+		if (ok) colors.append(QColor::fromRgb((rgb >> 16) & 0xff,
+		                                      (rgb >> 8)  & 0xff,
+		                                      rgb         & 0xff));
 	}
-	return list;
+	return colors;
 }
 
 int saveColors(std::string fname, QList<QColor> pal) {
 	if (pal.size() < 16) return ERR_SIZE;
-	std::string path = (conf.path.writableDir(ResourceKind::Palette) / fname).string();
-	QFile file(path.c_str());
-	int err = ERR_OK;
-	QColor col;
-	QString str;
-	if (file.open(QFile::WriteOnly)) {
-		foreach(col, pal) {
-			str = "#";
-			str.append(gethexbyte(col.red()));
-			str.append(gethexbyte(col.green()));
-			str.append(gethexbyte(col.blue()));
-			file.write(str.toLocal8Bit());
-			file.write("\r\n");
-		}
-	} else {
-		err = ERR_CANT_OPEN;
+	QFile file(toQString(conf.path.writableDir(ResourceKind::Palette) / fname));
+	if (!file.open(QFile::WriteOnly)) return ERR_CANT_OPEN;
+	for (const QColor &col : pal) {
+		file.write(QString("#%1%2%3\r\n")
+		               .arg(gethexbyte(col.red()),
+		                    gethexbyte(col.green()),
+		                    gethexbyte(col.blue()))
+		               .toLocal8Bit());
 	}
-	return err;
+	return ERR_OK;
 }
 
 void loadPalette(xProfile* prf) {
