@@ -1,6 +1,5 @@
 #include "opt_romset.h"
 
-#include <QDir>
 #include <QDebug>
 
 // ROMSET EDITOR
@@ -17,14 +16,6 @@ xRomsetEditor::xRomsetEditor(QWidget* par):QDialog(par) {
 
 void xRomsetEditor::edit(xRomFile f) {
 	xrf = f;
-//	QDir rdir(QString(conf.path.romDir.c_str()));
-//	QStringList rlst = rdir.entryList(QStringList() << "*.rom" << "*.bin", QDir::Files, QDir::Name);
-//	QString str;
-//	ui.cbFile->clear();
-//	foreach(str, rlst) {
-//		ui.cbFile->addItem(str, str);
-//	}
-//	ui.cbFile->setCurrentIndex(rlst.indexOf(f.name.c_str()));
 	ui.cbFile->setCurrentFile(f.name.c_str());
 	ui.cbFoffset->setValue(f.foffset);
 	ui.cbFsize->setValue(f.fsize);
@@ -33,7 +24,6 @@ void xRomsetEditor::edit(xRomFile f) {
 }
 
 void xRomsetEditor::store() {
-//	xrf.name = getRFText(ui.cbFile);
 	xrf.name = std::string(ui.cbFile->currentFile().toLocal8Bit().data());
 	if (xrf.name.empty()) return;
 	xrf.foffset = ui.cbFoffset->value();

@@ -687,7 +687,6 @@ struct xConfig {
 		}
 
 		fs::path prfDir;
-		fs::path font;
 		fs::path boot;
 	} path;
 	struct {

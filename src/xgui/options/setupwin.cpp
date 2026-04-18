@@ -1,5 +1,4 @@
 #include <QStandardItemModel>
-#include <QDir>
 #include <QInputDialog>
 #include <QColorDialog>
 #include <QFontDialog>
@@ -615,12 +614,6 @@ void SetupWin::start() {
 	gpwid_b->update(prof->jmapNameB);
 //	ui.sldDeadZone->setValue(conf.joy.gpad->deadZone());
 //	ui.cbGamepad->blockSignals(true);
-//	fillRFBox(ui.cbGamepad, conf.joy.gpad->getList());
-//	setRFIndex(ui.cbGamepad, conf.joy.gpad->name()); // curName);
-//	ui.cbGamepad->blockSignals(false);
-//	padModel->update();
-//	buildpadlist();
-//	setRFIndex(ui.cbPadMap, conf.prof.cur->jmapNameA.c_str());
 // flp
 	ui.diskTypeBox->setCurrentIndex(ui.diskTypeBox->findData(comp->dif->type));
 	ui.bdtbox->setChecked(fdcFlag & FDC_FAST);
@@ -1222,12 +1215,6 @@ void SetupWin::setRom(xRomFile f) {
 }
 
 // lists
-
-void SetupWin::buildpadlist() {
-//	QDir dir(conf.path.confDir.c_str());
-//	QStringList lst = dir.entryList(QStringList() << "*.pad",QDir::Files,QDir::Name);
-//	fillRFBox(ui.cbPadMap, lst);
-}
 
 void SetupWin::buildkeylist() {
 	ui.keyMapBox->clear();
