@@ -62,7 +62,11 @@ struct ResourceSpec {
 	std::string_view label;        // for diagnostic messages
 };
 
-#if defined(__linux) || defined(__APPLE__) || defined(__BSD)
+// A single layout table serves every platform. On Linux/macOS/BSD the
+// legacySubdir triggers a one-time move from confDir/<subdir> to the
+// XDG-resolved writable dir. On Windows, writable == confDir/<subdir>, so
+// migrateDir sees from == to and short-circuits — the Linux-shaped entries
+// are effectively no-ops there.
 constexpr ResourceSpec kResourceLayout[] = {
 	{ ResourceKind::Rom,       "roms",        "roms",        ResourceBase::Data,   "romDir" },
 	{ ResourceKind::Shader,    "shaders",     "shaders",     ResourceBase::Data,   "shdDir" },
@@ -72,17 +76,6 @@ constexpr ResourceSpec kResourceLayout[] = {
 	{ ResourceKind::Keymap,    "keymaps",     "",            ResourceBase::Config, "keymapDir" },
 	{ ResourceKind::Gamepad,   "gamepads",    "",            ResourceBase::Config, "padDir" },
 };
-#elif defined(__WIN32)
-constexpr ResourceSpec kResourceLayout[] = {
-	{ ResourceKind::Rom,       "roms",        "", ResourceBase::Data,   "romDir" },
-	{ ResourceKind::Shader,    "shaders",     "", ResourceBase::Data,   "shdDir" },
-	{ ResourceKind::Palette,   "palettes",    "", ResourceBase::Data,   "palDir" },
-	{ ResourceKind::PluginCpu, "plugins/cpu", "", ResourceBase::Data,   "plgDir" },
-	{ ResourceKind::Style,     "styles",      "", ResourceBase::Data,   "qssDir" },
-	{ ResourceKind::Keymap,    "keymaps",     "", ResourceBase::Config, "keymapDir" },
-	{ ResourceKind::Gamepad,   "gamepads",    "", ResourceBase::Config, "padDir" },
-};
-#endif
 
 // Pure: build a ResourceDirs value from a spec and the already-resolved XDG
 // roots. Picks the Config- or Data-home pair based on spec.base. No filesystem
@@ -104,12 +97,47 @@ ResourceDirs buildResourceDirs(const ResourceSpec &spec,
 	return out;
 }
 
+// Whether a move targets a single regular file or a whole directory tree.
+// Determines which copy/remove pair to use on the cross-device fallback path.
+enum class MoveKind { SingleFile, DirectoryTree };
+
+// Try fs::rename; if the target is on another filesystem (EXDEV), fall back to
+// copy-then-remove with the kind-appropriate operations. Logs the attempt and
+// any final error, then clears `ec` so callers don't carry the failure forward.
+void moveAcrossDevices(const fs::path &from, const fs::path &to, MoveKind kind,
+                       std::string_view what, std::error_code &ec) {
+	std::cout << "Moving " << from << " -> " << to << std::endl;
+	fs::rename(from, to, ec);
+	if (ec == std::errc::cross_device_link) {
+		ec.clear();
+		if (kind == MoveKind::SingleFile) {
+			fs::copy_file(from, to, ec);
+		} else {
+			fs::copy(from, to, fs::copy_options::recursive, ec);
+		}
+		if (!ec) {
+			if (kind == MoveKind::SingleFile) fs::remove(from, ec);
+			else                              fs::remove_all(from, ec);
+		}
+	}
+	if (ec) {
+		std::cout << "legacy " << what << " migration failed: "
+		          << ec.message() << std::endl;
+		ec.clear();
+	}
+}
+
+std::string toLowerCopy(std::string s) {
+	std::transform(s.begin(), s.end(), s.begin(),
+	               [](unsigned char c) { return std::tolower(c); });
+	return s;
+}
+
 // Move every regular file with the given extension (case-insensitive, dot
 // included, e.g. ".map") from `from` to `to`. Preserves filenames; skips any
-// file whose destination already exists. Uses fs::rename by preference and
-// falls back to copy + remove on cross-device errors, mirroring migrateDir.
-// Intended for one-shot flattening of pre-subdir resource files sitting at the
-// root of confDir (e.g. legacy *.map keymaps, *.pad gamepad maps).
+// file whose destination already exists. Intended for one-shot flattening of
+// pre-subdir resource files sitting at the root of confDir (e.g. legacy *.map
+// keymaps, *.pad gamepad maps).
 void migrateFilesByExtension(const fs::path &from, const fs::path &to,
                              std::string_view ext, std::string_view what,
                              std::error_code &ec) {
@@ -121,38 +149,22 @@ void migrateFilesByExtension(const fs::path &from, const fs::path &to,
 	ec.clear();
 	fs::create_directories(to, ec);
 	ec.clear();
-	std::string wantExt(ext);
-	std::transform(wantExt.begin(), wantExt.end(), wantExt.begin(),
-	               [](unsigned char c) { return std::tolower(c); });
+	const std::string wantExt = toLowerCopy(std::string{ext});
 	for (auto it = fs::directory_iterator(from, ec);
 	     !ec && it != fs::directory_iterator();
 	     it.increment(ec)) {
 		std::error_code fec;
 		if (!it->is_regular_file(fec)) continue;
-		std::string got = it->path().extension().string();
-		std::transform(got.begin(), got.end(), got.begin(),
-		               [](unsigned char c) { return std::tolower(c); });
-		if (got != wantExt) continue;
+		if (toLowerCopy(it->path().extension().string()) != wantExt) continue;
 		const fs::path dst = to / it->path().filename();
 		if (fs::exists(dst, fec)) continue;        // don't clobber existing
-		std::cout << "Moving " << it->path() << " -> " << dst << std::endl;
-		fs::rename(it->path(), dst, fec);
-		if (fec == std::errc::cross_device_link) {
-			fec.clear();
-			fs::copy_file(it->path(), dst, fec);
-			if (!fec) fs::remove(it->path(), fec);
-		}
-		if (fec) {
-			std::cout << "legacy " << what << " migration failed: "
-			          << fec.message() << std::endl;
-		}
+		moveAcrossDevices(it->path(), dst, MoveKind::SingleFile, what, fec);
 	}
 	ec.clear();
 }
 
-// Try to move an existing directory to a new location. Uses fs::rename by
-// preference and falls back to recursive copy + remove on cross-device errors.
-// No-op if `from` doesn't exist or `to` already does.
+// Move an existing directory to a new location. No-op if `from` doesn't exist
+// or `to` already does. Falls back to recursive copy + remove on cross-device.
 void migrateDir(const fs::path &from, const fs::path &to, std::string_view what,
                 std::error_code &ec) {
 	if (!fs::exists(from, ec) || fs::exists(to, ec)) {
@@ -162,18 +174,7 @@ void migrateDir(const fs::path &from, const fs::path &to, std::string_view what,
 	ec.clear();
 	fs::create_directories(to.parent_path(), ec);
 	ec.clear();
-	std::cout << "Moving " << from << " -> " << to << std::endl;
-	fs::rename(from, to, ec);
-	if (ec == std::errc::cross_device_link) {
-		ec.clear();
-		fs::copy(from, to, fs::copy_options::recursive, ec);
-		if (!ec) fs::remove_all(from, ec);
-	}
-	if (ec) {
-		std::cout << "legacy " << what << " migration failed: "
-		          << ec.message() << std::endl;
-		ec.clear();
-	}
+	moveAcrossDevices(from, to, MoveKind::DirectoryTree, what, ec);
 }
 
 } // namespace
@@ -196,17 +197,34 @@ void conf_init(char* wpath, char* confdir) {
 		fs::create_directories(p, ec);
 		check(std::string("create ").append(label).append(" failed"));
 	};
+	// Wrap an xdgpp single-path getter: append dataDirsSuffix on success, fall
+	// back to a precomposed path on exception.
+	auto xdgPathOrFallback = [&dataDirsSuffix](auto &&getter,
+	                                           const fs::path &fallback,
+	                                           std::string_view label) -> fs::path {
+		try { return getter() / dataDirsSuffix; }
+		catch (const std::exception &e) {
+			std::cout << label << ": " << e.what() << std::endl;
+			return fallback;
+		}
+	};
+	// Wrap an xdgpp dir-list getter: each element gets dataDirsSuffix appended;
+	// returns an empty vector on exception.
+	auto xdgDirsOrEmpty = [&dataDirsSuffix](auto &&getter,
+	                                        std::string_view label) -> std::vector<fs::path> {
+		std::vector<fs::path> out;
+		try {
+			for (auto &d : getter()) out.push_back(d / dataDirsSuffix);
+		} catch (const std::exception &e) {
+			std::cout << label << ": " << e.what() << std::endl;
+		}
+		return out;
+	};
 
 	if (confdir == NULL) {
-		try {
-			conf.path.confDir = xdg::ConfigHomeDir() / dataDirsSuffix;
-		} catch (const std::exception &e) {
-			std::cout << "xdg config home: " << e.what()
-			          << "; falling back to $HOME/.config" << std::endl;
-			conf.path.confDir =
-				(home ? fs::path(home) : fs::path("."))
-				/ ".config" / dataDirsSuffix;
-		}
+		conf.path.confDir = xdgPathOrFallback(xdg::ConfigHomeDir,
+			(home ? fs::path(home) : fs::path(".")) / ".config" / dataDirsSuffix,
+			"xdg config home");
 
 		// Legacy migration: if XDG_CONFIG_HOME points somewhere other than
 		// the default ~/.config, move the old ~/.config/samstyle/xpeccy into
@@ -221,36 +239,14 @@ void conf_init(char* wpath, char* confdir) {
 	}
 	makeDir(conf.path.confDir, "confDir");
 
-	fs::path dataHomeDir;
-	try {
-		dataHomeDir = xdg::DataHomeDir() / dataDirsSuffix;
-	} catch (const std::exception &e) {
-		std::cout << "xdg data home: " << e.what()
-		          << "; falling back to confDir" << std::endl;
-		dataHomeDir = conf.path.confDir;
-	}
+	const fs::path dataHomeDir = xdgPathOrFallback(xdg::DataHomeDir,
+		conf.path.confDir, "xdg data home");
 	makeDir(dataHomeDir, "dataHomeDir");
 
-	// Compute the system-wide data dir bases once; buildResourceDirs uses
-	// them to derive each resource's readonly search path.
-	std::vector<fs::path> xdgDataDirs;
-	try {
-		for (auto &dir : xdg::DataDirs()) {
-			xdgDataDirs.push_back(dir / dataDirsSuffix);
-		}
-	} catch (const std::exception &e) {
-		std::cout << "xdg data dirs: " << e.what() << std::endl;
-	}
-
-	// Same, but for Config-kind resources: mirrors XDG_CONFIG_DIRS (default /etc/xdg).
-	std::vector<fs::path> xdgConfigDirs;
-	try {
-		for (auto &dir : xdg::ConfigDirs()) {
-			xdgConfigDirs.push_back(dir / dataDirsSuffix);
-		}
-	} catch (const std::exception &e) {
-		std::cout << "xdg config dirs: " << e.what() << std::endl;
-	}
+	// System-wide bases for readonly search paths: XDG_DATA_DIRS for Data
+	// kinds, XDG_CONFIG_DIRS for Config kinds.
+	const auto xdgDataDirs   = xdgDirsOrEmpty(xdg::DataDirs,   "xdg data dirs");
+	const auto xdgConfigDirs = xdgDirsOrEmpty(xdg::ConfigDirs, "xdg config dirs");
 
 	// Populate resources: pure construction via buildResourceDirs, then
 	// imperative migration + mkdir.
