@@ -692,6 +692,8 @@ struct xConfig {
 
 		fs::path prfDir;
 		fs::path boot;
+		fs::path cacheDir;   // $XDG_CACHE_HOME/samstyle/xpeccy — UI dock state and other
+		                     // derived, non-essential artifacts
 	} path;
 	struct {
 		unsigned labels:1;
