@@ -588,7 +588,7 @@ DebugWin::DebugWin(QWidget* par):QMainWindow(par) {
 
 	resize(minimumSize());
 
-	QFile file(toQString(conf.path.confDir / "debuga.layout"));
+	QFile file(toQString(conf.path.cacheDir / "debuga.layout"));
 	if (file.open(QFile::ReadOnly)) {
 		QByteArray state = file.readAll();
 		file.close();
@@ -598,7 +598,7 @@ DebugWin::DebugWin(QWidget* par):QMainWindow(par) {
 
 DebugWin::~DebugWin() {
 	QByteArray state = saveState();
-	QFile file(toQString(conf.path.confDir / "debuga.layout"));
+	QFile file(toQString(conf.path.cacheDir / "debuga.layout"));
 	if (file.open(QFile::WriteOnly)) {
 		file.write(state);
 		file.close();

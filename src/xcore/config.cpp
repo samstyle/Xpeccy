@@ -276,6 +276,18 @@ void conf_init(char* wpath, char* confdir) {
 	makeDir(conf.path.prfDir, "prfDir");
 	conf.path.confFile = conf.path.confDir / "config.conf";
 	conf.path.boot = conf.path.confDir / "boot.$B";
+
+	// Cache home for derived non-essential artifacts (UI dock state etc.).
+	conf.path.cacheDir = xdgPathOrFallback(xdg::CacheHomeDir,
+		conf.path.confDir / "cache", "xdg cache home");
+	makeDir(conf.path.cacheDir, "cacheDir");
+	// One-shot: pull debuga.layout out of confDir into cacheDir.
+	if (std::error_code cec; fs::exists(conf.path.confDir / "debuga.layout", cec) &&
+	    !fs::exists(conf.path.cacheDir / "debuga.layout", cec)) {
+		moveAcrossDevices(conf.path.confDir / "debuga.layout",
+		                  conf.path.cacheDir / "debuga.layout",
+		                  MoveKind::SingleFile, "debuga.layout", ec);
+	}
 #elif defined(__WIN32)
 	if (confdir == NULL) {
 		conf.path.confDir = fs::path(wpath).parent_path() / "config";
@@ -303,6 +315,8 @@ void conf_init(char* wpath, char* confdir) {
 	conf.path.prfDir = conf.path.confDir / "profiles";
 	conf.path.confFile = conf.path.confDir / "config.conf";
 	conf.path.boot = conf.path.confDir / "boot.$B";
+	// No XDG cache home on Windows; stash cache artifacts under confDir/cache.
+	conf.path.cacheDir = conf.path.confDir / "cache";
 	{
 		std::error_code wec;
 		fs::create_directories(conf.path.confDir, wec);
@@ -310,6 +324,7 @@ void conf_init(char* wpath, char* confdir) {
 			fs::create_directories(dirs.writable, wec);
 		}
 		fs::create_directories(conf.path.prfDir, wec);
+		fs::create_directories(conf.path.cacheDir, wec);
 	}
 #endif
 	conf.scrShot.format = "png";
