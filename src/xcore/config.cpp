@@ -64,19 +64,21 @@ struct ResourceSpec {
 
 #if defined(__linux) || defined(__APPLE__) || defined(__BSD)
 constexpr ResourceSpec kResourceLayout[] = {
-	{ ResourceKind::Rom,       "roms",        "roms",        ResourceBase::Data, "romDir" },
-	{ ResourceKind::Shader,    "shaders",     "shaders",     ResourceBase::Data, "shdDir" },
-	{ ResourceKind::Palette,   "palettes",    "palettes",    ResourceBase::Data, "palDir" },
-	{ ResourceKind::PluginCpu, "plugins/cpu", "plugins/cpu", ResourceBase::Data, "plgDir" },
-	{ ResourceKind::Style,     "styles",      "styles",      ResourceBase::Data, "qssDir" },
+	{ ResourceKind::Rom,       "roms",        "roms",        ResourceBase::Data,   "romDir" },
+	{ ResourceKind::Shader,    "shaders",     "shaders",     ResourceBase::Data,   "shdDir" },
+	{ ResourceKind::Palette,   "palettes",    "palettes",    ResourceBase::Data,   "palDir" },
+	{ ResourceKind::PluginCpu, "plugins/cpu", "plugins/cpu", ResourceBase::Data,   "plgDir" },
+	{ ResourceKind::Style,     "styles",      "styles",      ResourceBase::Data,   "qssDir" },
+	{ ResourceKind::Keymap,    "keymaps",     "",            ResourceBase::Config, "keymapDir" },
 };
 #elif defined(__WIN32)
 constexpr ResourceSpec kResourceLayout[] = {
-	{ ResourceKind::Rom,       "roms",        "", ResourceBase::Data, "romDir" },
-	{ ResourceKind::Shader,    "shaders",     "", ResourceBase::Data, "shdDir" },
-	{ ResourceKind::Palette,   "palettes",    "", ResourceBase::Data, "palDir" },
-	{ ResourceKind::PluginCpu, "plugins/cpu", "", ResourceBase::Data, "plgDir" },
-	{ ResourceKind::Style,     "styles",      "", ResourceBase::Data, "qssDir" },
+	{ ResourceKind::Rom,       "roms",        "", ResourceBase::Data,   "romDir" },
+	{ ResourceKind::Shader,    "shaders",     "", ResourceBase::Data,   "shdDir" },
+	{ ResourceKind::Palette,   "palettes",    "", ResourceBase::Data,   "palDir" },
+	{ ResourceKind::PluginCpu, "plugins/cpu", "", ResourceBase::Data,   "plgDir" },
+	{ ResourceKind::Style,     "styles",      "", ResourceBase::Data,   "qssDir" },
+	{ ResourceKind::Keymap,    "keymaps",     "", ResourceBase::Config, "keymapDir" },
 };
 #endif
 
@@ -98,6 +100,52 @@ ResourceDirs buildResourceDirs(const ResourceSpec &spec,
 	               std::back_inserter(out.readonly),
 	               [&spec](const fs::path &base) { return base / spec.subdir; });
 	return out;
+}
+
+// Move every regular file with the given extension (case-insensitive, dot
+// included, e.g. ".map") from `from` to `to`. Preserves filenames; skips any
+// file whose destination already exists. Uses fs::rename by preference and
+// falls back to copy + remove on cross-device errors, mirroring migrateDir.
+// Intended for one-shot flattening of pre-subdir resource files sitting at the
+// root of confDir (e.g. legacy *.map keymaps, *.pad gamepad maps).
+void migrateFilesByExtension(const fs::path &from, const fs::path &to,
+                             std::string_view ext, std::string_view what,
+                             std::error_code &ec) {
+	if (from == to) return;
+	if (!fs::exists(from, ec) || !fs::is_directory(from, ec)) {
+		ec.clear();
+		return;
+	}
+	ec.clear();
+	fs::create_directories(to, ec);
+	ec.clear();
+	std::string wantExt(ext);
+	std::transform(wantExt.begin(), wantExt.end(), wantExt.begin(),
+	               [](unsigned char c) { return std::tolower(c); });
+	for (auto it = fs::directory_iterator(from, ec);
+	     !ec && it != fs::directory_iterator();
+	     it.increment(ec)) {
+		std::error_code fec;
+		if (!it->is_regular_file(fec)) continue;
+		std::string got = it->path().extension().string();
+		std::transform(got.begin(), got.end(), got.begin(),
+		               [](unsigned char c) { return std::tolower(c); });
+		if (got != wantExt) continue;
+		const fs::path dst = to / it->path().filename();
+		if (fs::exists(dst, fec)) continue;        // don't clobber existing
+		std::cout << "Moving " << it->path() << " -> " << dst << std::endl;
+		fs::rename(it->path(), dst, fec);
+		if (fec == std::errc::cross_device_link) {
+			fec.clear();
+			fs::copy_file(it->path(), dst, fec);
+			if (!fec) fs::remove(it->path(), fec);
+		}
+		if (fec) {
+			std::cout << "legacy " << what << " migration failed: "
+			          << fec.message() << std::endl;
+		}
+	}
+	ec.clear();
 }
 
 // Try to move an existing directory to a new location. Uses fs::rename by
@@ -215,6 +263,13 @@ void conf_init(char* wpath, char* confdir) {
 		makeDir(dirs.writable, spec.label);
 	}
 
+	// Pull any flat-rooted *.map keymap files out of confDir into the Keymap
+	// resource dir. Historically these lived at confDir/<name>.map; the Keymap
+	// kind now roots them at confDir/keymaps/. Idempotent after the first run.
+	migrateFilesByExtension(conf.path.confDir,
+	                        conf.path.writableDir(ResourceKind::Keymap),
+	                        ".map", "keymapDir", ec);
+
 	conf.path.prfDir = conf.path.confDir / "profiles";
 	makeDir(conf.path.prfDir, "prfDir");
 	conf.path.confFile = conf.path.confDir / "config.conf";
@@ -233,6 +288,12 @@ void conf_init(char* wpath, char* confdir) {
 		conf.path.resources[static_cast<size_t>(spec.kind)] =
 			buildResourceDirs(spec, conf.path.confDir, conf.path.confDir,
 			                  noExtraDirs, noExtraDirs);
+	}
+	{
+		std::error_code mec;
+		migrateFilesByExtension(conf.path.confDir,
+		                        conf.path.writableDir(ResourceKind::Keymap),
+		                        ".map", "keymapDir", mec);
 	}
 	conf.path.prfDir = conf.path.confDir / "profiles";
 	conf.path.confFile = conf.path.confDir / "config.conf";

@@ -91,6 +91,7 @@ enum class ResourceKind {
 	Palette,
 	PluginCpu,
 	Style,
+	Keymap,
 	COUNT
 };
 
