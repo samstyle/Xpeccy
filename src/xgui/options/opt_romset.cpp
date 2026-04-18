@@ -72,58 +72,53 @@ QVariant xRomsetModel::headerData(int sect, Qt::Orientation ori, int role) const
 
 QVariant xRomsetModel::data(const QModelIndex& idx, int role) const {
 	QVariant res;
-	QFileInfo inf;
-	std::string buf;
 	if (!idx.isValid()) return res;
-	int row = idx.row();
-	int col = idx.column();
+	const int row = idx.row();
+	const int col = idx.column();
 	if ((row < 0) || (row >= rowCount())) return res;
 	if ((col < 0) || (col >= columnCount())) return res;
-	int rlsz = (int)rset->roms.size();
-	switch (role) {
-		case Qt::DisplayRole:
-			switch(col) {
-				case 0:
-					if (row < rlsz) {
-						res = "ROM";
-					} else if (row == rlsz) {
-						res = "GS";
-					} else if (row == rlsz+1){
-						res = "Font";
-					} else {
-						res = "VGA";
-					}
-					break;
-				case 1:
-					if (row < rlsz) {
-						res = QString(rset->roms[row].name.c_str());
-					} else if (row == rlsz) {
-						res = QString(rset->gsFile.c_str());
-					} else if (row == rlsz+1) {
-						res = QString(rset->fntFile.c_str());
-					} else {
-						res = QString(rset->vBiosFile.c_str());
-					}
-					break;
-				case 2:
-					if (row >= rlsz) break;
-					res = rset->roms[row].foffset;
-					break;
-				case 3:
-					if (row >= rlsz) break;
-					if (rset->roms[row].fsize > 0) {
-						res = rset->roms[row].fsize;
-					} else {
-						buf = conf.path.find(ResourceKind::Rom, rset->roms[row].name).string();
-						inf.setFile(tr(buf.c_str()));
-						res = QString("( %0 )").arg(inf.size() >> 10);
-					}
-					break;
-				case 4:
-					if (row >= rlsz) break;
-					res = rset->roms[row].roffset;
-					break;
+	const int rlsz = (int)rset->roms.size();
+	if (role != Qt::DisplayRole) return res;
+	switch(col) {
+		case 0:
+			if (row < rlsz) {
+				res = "ROM";
+			} else if (row == rlsz) {
+				res = "GS";
+			} else if (row == rlsz+1){
+				res = "Font";
+			} else {
+				res = "VGA";
 			}
+			break;
+		case 1:
+			if (row < rlsz) {
+				res = QString(rset->roms[row].name.c_str());
+			} else if (row == rlsz) {
+				res = QString(rset->gsFile.c_str());
+			} else if (row == rlsz+1) {
+				res = QString(rset->fntFile.c_str());
+			} else {
+				res = QString(rset->vBiosFile.c_str());
+			}
+			break;
+		case 2:
+			if (row >= rlsz) break;
+			res = rset->roms[row].foffset;
+			break;
+		case 3:
+			if (row >= rlsz) break;
+			if (rset->roms[row].fsize > 0) {
+				res = rset->roms[row].fsize;
+			} else if (const auto path = conf.path.tryFind(ResourceKind::Rom, rset->roms[row].name)) {
+				res = QString("( %0 )").arg(QFileInfo(toQString(*path)).size() >> 10);
+			} else {
+				res = "( missing )";
+			}
+			break;
+		case 4:
+			if (row >= rlsz) break;
+			res = rset->roms[row].roffset;
 			break;
 	}
 	return res;
