@@ -101,10 +101,14 @@ struct ResourceDirs {
 	std::vector<fs::path> readonly;    // System dirs from $XDG_DATA_DIRS (empty on Windows)
 };
 
+// Which side of the search path an enumerated entry came from. Named so call
+// sites don't have to interpret a bare bool.
+enum class ResourceOrigin { User, System };
+
 struct ResolvedEntry {
-	fs::path path;    // full path on disk
-	fs::path name;    // basename
-	bool user;        // true = writable user dir, false = read-only system dir
+	fs::path path;           // full path on disk
+	fs::path name;           // basename (or relative path for enumerateRecursive)
+	ResourceOrigin origin;   // User (writable dir) or System (readonly dir)
 };
 
 // Small adapter so callers don't have to write QString::fromStdString(p.string())
@@ -618,7 +622,7 @@ struct xConfig {
 		std::vector<ResolvedEntry> enumerate(ResourceKind kind, Pred &&predicate) const {
 			std::vector<ResolvedEntry> out;
 			std::error_code ec;
-			auto addFromDir = [&](const fs::path &dir, bool user) {
+			auto addFromDir = [&](const fs::path &dir, ResourceOrigin origin) {
 				if (!fs::exists(dir, ec) || !fs::is_directory(dir, ec)) {
 					ec.clear();
 					return;
@@ -628,13 +632,13 @@ struct xConfig {
 				     it.increment(ec)) {
 					if (!it->is_regular_file(ec)) continue;
 					if (!predicate(it->path())) continue;
-					out.push_back({it->path(), it->path().filename(), user});
+					out.push_back({it->path(), it->path().filename(), origin});
 				}
 				ec.clear();
 			};
 			const auto &dirs = dirsFor(kind);
-			addFromDir(dirs.writable, true);
-			for (const auto &ro : dirs.readonly) addFromDir(ro, false);
+			addFromDir(dirs.writable, ResourceOrigin::User);
+			for (const auto &ro : dirs.readonly) addFromDir(ro, ResourceOrigin::System);
 			std::sort(out.begin(), out.end(),
 			          [](const ResolvedEntry &a, const ResolvedEntry &b) {
 			              return a.name < b.name;
@@ -655,7 +659,7 @@ struct xConfig {
 		template <typename Pred>
 		std::vector<ResolvedEntry> enumerateRecursive(ResourceKind kind, Pred &&predicate) const {
 			std::vector<ResolvedEntry> out;
-			auto addFromDir = [&](const fs::path &dir, bool user) {
+			auto addFromDir = [&](const fs::path &dir, ResourceOrigin origin) {
 				std::error_code ec;
 				if (!fs::exists(dir, ec) || !fs::is_directory(dir, ec)) return;
 				const auto opts = fs::directory_options::skip_permission_denied;
@@ -667,7 +671,7 @@ struct xConfig {
 					if (it->is_regular_file(fec) && predicate(it->path())) {
 						out.push_back({it->path(),
 						               it->path().lexically_relative(dir),
-						               user});
+						               origin});
 					}
 					std::error_code iec;
 					it.increment(iec);
@@ -675,8 +679,8 @@ struct xConfig {
 				}
 			};
 			const auto &dirs = dirsFor(kind);
-			addFromDir(dirs.writable, true);
-			for (const auto &ro : dirs.readonly) addFromDir(ro, false);
+			addFromDir(dirs.writable, ResourceOrigin::User);
+			for (const auto &ro : dirs.readonly) addFromDir(ro, ResourceOrigin::System);
 			std::sort(out.begin(), out.end(),
 			          [](const ResolvedEntry &a, const ResolvedEntry &b) {
 			              return a.name < b.name;

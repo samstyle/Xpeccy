@@ -1,11 +1,10 @@
 #include "xgui.h"
+#include "resources_ui.h"
 #include "../xcore/xcore.h"
 
-#include <QIcon>
 #include <QPalette>
 #include <QPainter>
 #include <QDebug>
-#include <QStyle>
 
 QString gethexword(int);
 QString gethexbyte(uchar);
@@ -250,13 +249,10 @@ void xTreeBox::setResource(ResourceKind kind,
                            std::initializer_list<const char*> extensions) {
 	clear();
 	setDuplicatesEnabled(true);
-	const QIcon userIcon = style()->standardIcon(QStyle::SP_DirHomeIcon);
-	const QIcon sysIcon  = style()->standardIcon(QStyle::SP_ComputerIcon);
-	for (const auto &e : conf.path.enumerateRecursive(kind, byExtension(extensions))) {
-		addItem(e.user ? userIcon : sysIcon,
-		        toQString(e.name),
-		        toQString(e.path));
-	}
+	forEachResource(this, kind, byExtension(extensions),
+		[this](const QIcon &icon, const ResolvedEntry &e) {
+			addItem(icon, toQString(e.name), toQString(e.path));
+		});
 }
 
 void xTreeBox::setCurrentFile(QString name) {
