@@ -36,6 +36,36 @@ void saveFixedBlob(const fs::path &path, const T *src, std::size_t bytes) {
 	if (f) f.write(reinterpret_cast<const char*>(src), bytes);
 }
 
+// Canonical location for a per-profile state blob (cmos/nvram) under the XDG
+// state-home tree.
+fs::path profileStatePath(const xProfile *prf, std::string_view ext) {
+	return conf.path.prfStateDir / prf->name / (prf->name + std::string(ext));
+}
+
+// One-shot migration of a per-profile state file from older locations into the
+// state-home tree. Checks in order: current (stateDir) → legacy profDir → deep
+// legacy confDir root. First hit wins. Idempotent once target exists.
+void migrateProfileState(const xProfile *prf, std::string_view ext) {
+	const fs::path target = profileStatePath(prf, ext);
+	std::error_code ec;
+	if (fs::exists(target, ec)) return;
+	const fs::path legacy[] = {
+		conf.path.prfDir  / prf->name / (prf->name + std::string(ext)),
+		conf.path.confDir / (prf->name + std::string(ext)),
+	};
+	for (const auto &src : legacy) {
+		if (!fs::exists(src, ec)) continue;
+		fs::create_directories(target.parent_path(), ec);
+		fs::rename(src, target, ec);
+		if (ec == std::errc::cross_device_link) {
+			ec.clear();
+			fs::copy_file(src, target, ec);
+			if (!ec) fs::remove(src, ec);
+		}
+		return;
+	}
+}
+
 } // namespace
 
 void prf_load_cmos(xProfile* prf, const fs::path &path) {
@@ -77,8 +107,10 @@ xProfile* addProfile(std::string nm, std::string fp) {
 	const fs::path profDir = conf.path.prfDir / nprof->name;
 	std::error_code ec;
 	fs::create_directories(profDir, ec);
-	prf_load_cmos(nprof, profDir / (nprof->name + ".cmos"));
-	prf_load_nvram(nprof, profDir / (nprof->name + ".nvram"));
+	migrateProfileState(nprof, ".cmos");
+	migrateProfileState(nprof, ".nvram");
+	prf_load_cmos(nprof,  profileStatePath(nprof, ".cmos"));
+	prf_load_nvram(nprof, profileStatePath(nprof, ".nvram"));
 	prfSetHardware(nprof,"Dummy");
 	conf.prof.list.push_back(nprof);
 	return nprof;
@@ -125,14 +157,14 @@ int delProfile(std::string nm) {
 	// remove all such profiles from list & free mem
 	for (int i = 0; i < conf.prof.list.size(); i++) {
 		if (conf.prof.list[i]->name == nm) {
-			const fs::path profDir = conf.path.prfDir / prf->name;
+			const fs::path profDir  = conf.path.prfDir      / prf->name;
+			const fs::path stateDir = conf.path.prfStateDir / prf->name;
 			std::error_code ec;
-			for (const std::string &leaf : {prf->file,
-			                                 prf->name + ".cmos",
-			                                 prf->name + ".nvram"}) {
-				fs::remove(profDir / leaf, ec);
-			}
-			fs::remove(profDir, ec);         // remove directory (leave it if there is files)
+			fs::remove(profDir / prf->file, ec);
+			fs::remove(stateDir / (prf->name + ".cmos"), ec);
+			fs::remove(stateDir / (prf->name + ".nvram"), ec);
+			fs::remove(profDir,  ec);        // remove directories (leaves them if non-empty)
+			fs::remove(stateDir, ec);
 			compDestroy(prf->zx);            // delete computer
 			delete(prf);
 			conf.prof.list.erase(conf.prof.list.begin() + i);
@@ -568,29 +600,24 @@ int prfLoad(std::string nm) {
 	xProfile* prf = findProfile(nm);
 	if (prf == NULL) return PLOAD_NF;
 	const fs::path profDir = conf.path.prfDir / prf->name;
-	const fs::path cfname = profDir / prf->file;                     // new location: $CONFDIR/profiles/$PROFILENAME/$FILENAME
-	const fs::path ofname = conf.path.confDir / prf->file;           // old location: $CONFDIR/$FILENAME
-	const fs::path ocmos  = conf.path.confDir / (prf->name + ".cmos");
-	const fs::path ncmos  = profDir / (prf->name + ".cmos");
-	const fs::path onvr   = conf.path.confDir / (prf->name + ".nvram");
-	const fs::path nnvr   = profDir / (prf->name + ".nvram");
+	const fs::path cfname  = profDir / prf->file;              // current: $CONFDIR/profiles/$NAME/$FILE
+	const fs::path ofname  = conf.path.confDir / prf->file;    // deep legacy: $CONFDIR/$FILE
 
+	// Pre-subdir layout: the .conf, .cmos, and .nvram all lived flat in
+	// confDir. If ofname exists, migrate .conf alongside the usual state-
+	// file migration so the old flat layout gets fully cleared.
 	std::error_code ec;
 	int res = prf_load_conf(prf, ofname, 0);
 	if (res == PLOAD_OK) {
-		copyFile(ofname, cfname);                   // copy old file to new location
-		fs::remove(ofname, ec);                     // remove old conf file
-		prf_load_cmos(prf, ocmos);
-		copyFile(ocmos, ncmos);
-		fs::remove(ocmos, ec);
-		prf_load_nvram(prf, onvr);
-		copyFile(onvr, nnvr);
-		fs::remove(onvr, ec);
+		copyFile(ofname, cfname);
+		fs::remove(ofname, ec);
 	} else {
 		res = prf_load_conf(prf, cfname, 1);
-		prf_load_cmos(prf, ncmos);
-		prf_load_nvram(prf, nnvr);
 	}
+	migrateProfileState(prf, ".cmos");
+	migrateProfileState(prf, ".nvram");
+	prf_load_cmos(prf,  profileStatePath(prf, ".cmos"));
+	prf_load_nvram(prf, profileStatePath(prf, ".nvram"));
 	return res;
 }
 
@@ -623,10 +650,11 @@ int prfSave(std::string nm) {
 	const fs::path profDir = conf.path.prfDir / prf->name;
 	std::error_code ec;
 	fs::create_directories(profDir, ec);
+	fs::create_directories(conf.path.prfStateDir / prf->name, ec);
 	const fs::path cfname = profDir / prf->file;
 
-	prf_save_cmos(prf, profDir / (prf->name + ".cmos"));
-	prf_save_nvram(prf, profDir / (prf->name + ".nvram"));
+	prf_save_cmos(prf,  profileStatePath(prf, ".cmos"));
+	prf_save_nvram(prf, profileStatePath(prf, ".nvram"));
 
 	std::ofstream out(cfname, std::ios::binary);
 	if (!out) {
