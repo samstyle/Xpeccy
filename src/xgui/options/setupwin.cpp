@@ -1230,12 +1230,10 @@ void SetupWin::buildpadlist() {
 }
 
 void SetupWin::buildkeylist() {
-	QDir dir(toQString(conf.path.confDir));
-	QStringList lst = dir.entryList(QStringList() << "*.map",QDir::Files,QDir::Name);
-	dir.setPath(toQString(conf.path.confDir / "keymaps"));
-	lst.append(dir.entryList(QStringList() << "*.map",QDir::Files,QDir::Name));
-	lst.sort();
-	fillRFBox(ui.keyMapBox,lst);
+	ui.keyMapBox->clear();
+	ui.keyMapBox->addItem("none", "");
+	fillComboFromResources(ui.keyMapBox, ResourceKind::Keymap,
+	                       byExtension({".map"}));
 }
 
 struct xMemName {
