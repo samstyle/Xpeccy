@@ -81,7 +81,12 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 	install(FILES ${CMAKE_BINARY_DIR}/${PROJECT_NAME} DESTINATION bin
 		PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE WORLD_READ WORLD_EXECUTE GROUP_READ GROUP_EXECUTE
 	)
-	install(FILES images/xpeccy.png DESTINATION share/icons)
+	# Install the icon per the legacy pixmaps fallback documented in Icon
+	# Theme Spec §2.1 — universally supported by desktop icon lookup even on
+	# systems without a configured hicolor theme. (The source icon is 126x126
+	# which is awkward to slot into hicolor/<size>x<size>/apps; pixmaps is the
+	# cleaner fit until a multi-size icon set ships.)
+	install(FILES images/xpeccy.png DESTINATION share/pixmaps)
 	install(FILES Xpeccy.desktop DESTINATION share/applications)
 	# Ship bundled palettes under the XDG Data readonly search path. The
 	# framework resolves ResourceKind::Palette via $XDG_DATA_DIRS entries +
