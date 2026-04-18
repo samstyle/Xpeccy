@@ -83,6 +83,13 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 	)
 	install(FILES images/xpeccy.png DESTINATION share/icons)
 	install(FILES Xpeccy.desktop DESTINATION share/applications)
+	# Ship bundled palettes under the XDG Data readonly search path. The
+	# framework resolves ResourceKind::Palette via $XDG_DATA_DIRS entries +
+	# samstyle/xpeccy/palettes, so files installed here appear as system
+	# defaults alongside any user copies in $XDG_DATA_HOME.
+	install(DIRECTORY conf/palettes/
+	        DESTINATION share/samstyle/xpeccy/palettes
+	        FILES_MATCHING PATTERN "*.txt" PATTERN "*.pal")
 
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "BSD")
 
