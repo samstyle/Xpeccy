@@ -49,41 +49,52 @@ xConfig conf;
 
 namespace {
 
+// Which XDG root a resource kind lives under. Per the XDG Base Directory spec:
+// Config = settings that customize app behavior (keybindings, input maps).
+// Data   = assets and large blobs (ROMs, shaders, plugins, palettes, styles).
+enum class ResourceBase { Config, Data };
+
 struct ResourceSpec {
 	ResourceKind kind;
-	std::string_view subdir;       // relative to dataHomeDir (Linux) or confDir (Windows)
+	std::string_view subdir;       // relative to the selected base home dir
 	std::string_view legacySubdir; // subdir under confDir to migrate from; empty = none
+	ResourceBase base;             // Config ($XDG_CONFIG_HOME) or Data ($XDG_DATA_HOME)
 	std::string_view label;        // for diagnostic messages
 };
 
 #if defined(__linux) || defined(__APPLE__) || defined(__BSD)
 constexpr ResourceSpec kResourceLayout[] = {
-	{ ResourceKind::Rom,       "roms",        "roms",     "romDir" },
-	{ ResourceKind::Shader,    "shaders",     "shaders",  "shdDir" },
-	{ ResourceKind::Palette,   "palettes",    "palettes", "palDir" },
-	{ ResourceKind::PluginCpu, "plugins/cpu", "plugins/cpu", "plgDir" },
-	{ ResourceKind::Style,     "styles",      "styles",   "qssDir" },
+	{ ResourceKind::Rom,       "roms",        "roms",        ResourceBase::Data, "romDir" },
+	{ ResourceKind::Shader,    "shaders",     "shaders",     ResourceBase::Data, "shdDir" },
+	{ ResourceKind::Palette,   "palettes",    "palettes",    ResourceBase::Data, "palDir" },
+	{ ResourceKind::PluginCpu, "plugins/cpu", "plugins/cpu", ResourceBase::Data, "plgDir" },
+	{ ResourceKind::Style,     "styles",      "styles",      ResourceBase::Data, "qssDir" },
 };
 #elif defined(__WIN32)
 constexpr ResourceSpec kResourceLayout[] = {
-	{ ResourceKind::Rom,       "roms",        "", "romDir" },
-	{ ResourceKind::Shader,    "shaders",     "", "shdDir" },
-	{ ResourceKind::Palette,   "palettes",    "", "palDir" },
-	{ ResourceKind::PluginCpu, "plugins/cpu", "", "plgDir" },
-	{ ResourceKind::Style,     "styles",      "", "qssDir" },
+	{ ResourceKind::Rom,       "roms",        "", ResourceBase::Data, "romDir" },
+	{ ResourceKind::Shader,    "shaders",     "", ResourceBase::Data, "shdDir" },
+	{ ResourceKind::Palette,   "palettes",    "", ResourceBase::Data, "palDir" },
+	{ ResourceKind::PluginCpu, "plugins/cpu", "", ResourceBase::Data, "plgDir" },
+	{ ResourceKind::Style,     "styles",      "", ResourceBase::Data, "qssDir" },
 };
 #endif
 
 // Pure: build a ResourceDirs value from a spec and the already-resolved XDG
-// roots. No filesystem access, no logging — side-effect-free, trivially
-// testable in isolation.
+// roots. Picks the Config- or Data-home pair based on spec.base. No filesystem
+// access, no logging — side-effect-free, trivially testable in isolation.
 ResourceDirs buildResourceDirs(const ResourceSpec &spec,
+                               const fs::path &configHomeDir,
                                const fs::path &dataHomeDir,
+                               const std::vector<fs::path> &xdgConfigDirBases,
                                const std::vector<fs::path> &xdgDataDirBases) {
+	const bool isConfig = spec.base == ResourceBase::Config;
+	const fs::path &homeDir        = isConfig ? configHomeDir     : dataHomeDir;
+	const auto     &readonlyBases  = isConfig ? xdgConfigDirBases : xdgDataDirBases;
 	ResourceDirs out;
-	out.writable = dataHomeDir / spec.subdir;
-	out.readonly.reserve(xdgDataDirBases.size());
-	std::transform(xdgDataDirBases.begin(), xdgDataDirBases.end(),
+	out.writable = homeDir / spec.subdir;
+	out.readonly.reserve(readonlyBases.size());
+	std::transform(readonlyBases.begin(), readonlyBases.end(),
 	               std::back_inserter(out.readonly),
 	               [&spec](const fs::path &base) { return base / spec.subdir; });
 	return out;
@@ -181,11 +192,22 @@ void conf_init(char* wpath, char* confdir) {
 		std::cout << "xdg data dirs: " << e.what() << std::endl;
 	}
 
+	// Same, but for Config-kind resources: mirrors XDG_CONFIG_DIRS (default /etc/xdg).
+	std::vector<fs::path> xdgConfigDirs;
+	try {
+		for (auto &dir : xdg::ConfigDirs()) {
+			xdgConfigDirs.push_back(dir / dataDirsSuffix);
+		}
+	} catch (const std::exception &e) {
+		std::cout << "xdg config dirs: " << e.what() << std::endl;
+	}
+
 	// Populate resources: pure construction via buildResourceDirs, then
 	// imperative migration + mkdir.
 	for (const auto &spec : kResourceLayout) {
 		auto &dirs = conf.path.resources[static_cast<size_t>(spec.kind)] =
-			buildResourceDirs(spec, dataHomeDir, xdgDataDirs);
+			buildResourceDirs(spec, conf.path.confDir, dataHomeDir,
+			                  xdgConfigDirs, xdgDataDirs);
 		if (!spec.legacySubdir.empty()) {
 			migrateDir(conf.path.confDir / spec.legacySubdir,
 			           dirs.writable, spec.label, ec);
@@ -203,12 +225,14 @@ void conf_init(char* wpath, char* confdir) {
 	} else {
 		conf.path.confDir = confdir;
 	}
-	// No XDG search path on Windows: buildResourceDirs receives an empty
-	// xdgDataDirBases, so each entry's `readonly` list comes out empty.
+	// No XDG search path on Windows: buildResourceDirs receives empty
+	// readonly-base vectors, so each entry's `readonly` list comes out empty.
+	// Config- and Data-kind both root at conf.path.confDir.
 	const std::vector<fs::path> noExtraDirs;
 	for (const auto &spec : kResourceLayout) {
 		conf.path.resources[static_cast<size_t>(spec.kind)] =
-			buildResourceDirs(spec, conf.path.confDir, noExtraDirs);
+			buildResourceDirs(spec, conf.path.confDir, conf.path.confDir,
+			                  noExtraDirs, noExtraDirs);
 	}
 	conf.path.prfDir = conf.path.confDir / "profiles";
 	conf.path.confFile = conf.path.confDir / "config.conf";
