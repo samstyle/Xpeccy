@@ -87,7 +87,7 @@ class xTreeBox : public QComboBox {
 	Q_OBJECT
 	public:
 		xTreeBox(QWidget* p = NULL);
-		void setResource(ResourceKind kind,
+		void setResource(const ResourceDirs &dirs,
 		                 std::initializer_list<const char*> extensions);
 		void setCurrentFile(QString);
 		QString currentFile();

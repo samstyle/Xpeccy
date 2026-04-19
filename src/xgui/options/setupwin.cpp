@@ -81,7 +81,7 @@ void fill_shader_list(QComboBox* box) {
 	box->addItem("none", 0);
 #if defined(USEOPENGL)
 	if (conf.vid.shd_support) {
-		fillComboFromResources(box, ResourceKind::Shader,
+		fillComboFromResources(box, conf.path.shader,
 		                       byExtension({".txt"}), QVariant(1));
 		box->setCurrentIndex(box->findText(conf.vid.shader.c_str()));
 		if (box->currentIndex() < 0)
@@ -95,14 +95,14 @@ void fill_shader_list(QComboBox* box) {
 void fill_palette_list(QComboBox* box) {
 	box->clear();
 	box->addItem("default");
-	fillComboFromResources(box, ResourceKind::Palette, byExtension({".txt", ".pal"}));
+	fillComboFromResources(box, conf.path.palette, byExtension({".txt", ".pal"}));
 	setRFIndex(box, conf.prof.cur->palette.c_str(), 0);
 }
 
 void fill_style_list(QComboBox* box) {
 	box->clear();
 	box->addItem("System");
-	fillComboFromResources(box, ResourceKind::Style, byExtension({".qss"}));
+	fillComboFromResources(box, conf.path.style, byExtension({".qss"}));
 	setRFIndex(box, conf.style.c_str(), 0);
 }
 
@@ -154,7 +154,8 @@ void opt_fill_cpu(QComboBox* box) {
 	QLibrary lib;
 	cpuCore* tab;
 	cpuCore*(*foo)();
-	for (const auto &e : conf.path.enumerateRecursive(ResourceKind::PluginCpu)) {
+	for (const auto &e : conf.path.pluginCpu.enumerateRecursive(
+	         [](const fs::path&) { return true; })) {
 		const QString fn = toQString(e.name);
 		if (!QLibrary::isLibrary(fn)) continue;
 		lib.setFileName(toQString(e.path));
@@ -1219,7 +1220,7 @@ void SetupWin::setRom(xRomFile f) {
 void SetupWin::buildkeylist() {
 	ui.keyMapBox->clear();
 	ui.keyMapBox->addItem("none", "");
-	fillComboFromResources(ui.keyMapBox, ResourceKind::Keymap,
+	fillComboFromResources(ui.keyMapBox, conf.path.keymap,
 	                       byExtension({".map"}));
 }
 

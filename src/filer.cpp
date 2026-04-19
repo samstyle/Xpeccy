@@ -356,7 +356,7 @@ void disk_boot(Computer* comp, int drv, int id) {
 	while (boot_ft[idx] && (boot_ft[idx] != id))
 		idx++;
 	if (boot_ft[idx]) {
-		if (const auto path = conf.path.tryFind(ResourceKind::Boot, "boot.$B"))
+		if (const auto path = conf.path.boot.tryFind("boot.$B"))
 			loadBoot(comp, path->string().c_str(), drv);
 	}
 }

@@ -5,7 +5,7 @@
 // load preset colors for zx palette
 
 QList<QColor> loadColors(std::string fname) {
-	QFile file(toQString(conf.path.find(ResourceKind::Palette, fname)));
+	QFile file(toQString(conf.path.palette.find(fname)));
 	if (!file.open(QFile::ReadOnly)) return {};
 	QList<QColor> colors;
 	while (!file.atEnd() && colors.size() < 16) {
@@ -23,7 +23,7 @@ QList<QColor> loadColors(std::string fname) {
 
 int saveColors(std::string fname, QList<QColor> pal) {
 	if (pal.size() < 16) return ERR_SIZE;
-	QFile file(toQString(conf.path.writableDir(ResourceKind::Palette) / fname));
+	QFile file(toQString(conf.path.palette.writable / fname));
 	if (!file.open(QFile::WriteOnly)) return ERR_CANT_OPEN;
 	for (const QColor &col : pal) {
 		file.write(QString("#%1%2%3\r\n")

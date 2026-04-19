@@ -9,7 +9,7 @@ std::string getRFText(QComboBox*);
 
 xRomsetEditor::xRomsetEditor(QWidget* par):QDialog(par) {
 	ui.setupUi(this);
-	ui.cbFile->setResource(ResourceKind::Rom, {".rom", ".bin"});
+	ui.cbFile->setResource(conf.path.rom, {".rom", ".bin"});
 	connect(ui.rse_apply, SIGNAL(clicked()), this, SLOT(store()));
 	connect(ui.rse_cancel, SIGNAL(clicked()), this, SLOT(hide()));
 }
@@ -110,7 +110,7 @@ QVariant xRomsetModel::data(const QModelIndex& idx, int role) const {
 			if (row >= rlsz) break;
 			if (rset->roms[row].fsize > 0) {
 				res = rset->roms[row].fsize;
-			} else if (const auto path = conf.path.tryFind(ResourceKind::Rom, rset->roms[row].name)) {
+			} else if (const auto path = conf.path.rom.tryFind(rset->roms[row].name)) {
 				res = QString("( %0 )").arg(QFileInfo(toQString(*path)).size() >> 10);
 			} else {
 				res = "( missing )";
