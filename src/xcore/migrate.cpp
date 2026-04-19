@@ -16,8 +16,14 @@ std::string toLowerCopy(std::string s) {
 	return s;
 }
 
-} // namespace
+// Whether a move targets a single regular file or a whole directory tree.
+// Selects which copy/remove pair to use on the cross-device fallback path.
+enum class MoveKind { SingleFile, DirectoryTree };
 
+// Try fs::rename; if the target is on another filesystem (EXDEV), fall back
+// to copy-then-remove with the kind-appropriate operations. Logs the attempt
+// and any final error. The shared engine underneath the three public
+// migrate* wrappers; nothing outside this TU needs it.
 void moveAcrossDevices(const fs::path &from, const fs::path &to, MoveKind kind,
                        std::string_view what) {
 	std::cout << "Moving " << from << " -> " << to << std::endl;
@@ -40,6 +46,8 @@ void moveAcrossDevices(const fs::path &from, const fs::path &to, MoveKind kind,
 		          << ec.message() << std::endl;
 	}
 }
+
+} // namespace
 
 void migrateSingleFile(const fs::path &from, const fs::path &to,
                        std::string_view what) {

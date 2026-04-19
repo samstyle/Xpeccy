@@ -11,7 +11,6 @@
 #include "xcore.h"
 #include "migrate.h"
 #include "../xgui/xgui.h"
-#include "sound.h"
 #include "filer.h"
 #include "gamepad.h"
 
