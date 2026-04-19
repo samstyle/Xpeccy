@@ -9,6 +9,7 @@
 #include <sys/stat.h>
 
 #include "xcore.h"
+#include "migrate.h"
 #include "../xgui/xgui.h"
 #include "sound.h"
 #include "filer.h"
@@ -44,25 +45,18 @@ fs::path profileStatePath(const xProfile *prf, std::string_view ext) {
 
 // One-shot migration of a per-profile state file from older locations into the
 // state-home tree. Checks in order: current (stateDir) → legacy profDir → deep
-// legacy confDir root. First hit wins. Idempotent once target exists.
+// legacy confDir root. First legacy hit wins; migrateSingleFile short-circuits
+// any remaining attempts because `to` now exists.
 void migrateProfileState(const xProfile *prf, std::string_view ext) {
 	const fs::path target = profileStatePath(prf, ext);
-	std::error_code ec;
-	if (fs::exists(target, ec)) return;
+	const std::string leaf = prf->name + std::string(ext);
 	const fs::path legacy[] = {
-		conf.path.prfDir  / prf->name / (prf->name + std::string(ext)),
-		conf.path.confDir / (prf->name + std::string(ext)),
+		conf.path.prfDir  / prf->name / leaf,
+		conf.path.confDir / leaf,
 	};
+	std::error_code ec;
 	for (const auto &src : legacy) {
-		if (!fs::exists(src, ec)) continue;
-		fs::create_directories(target.parent_path(), ec);
-		fs::rename(src, target, ec);
-		if (ec == std::errc::cross_device_link) {
-			ec.clear();
-			fs::copy_file(src, target, ec);
-			if (!ec) fs::remove(src, ec);
-		}
-		return;
+		migrate::migrateSingleFile(src, target, "profile state", ec);
 	}
 }
 
