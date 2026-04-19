@@ -265,84 +265,79 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 		prf = conf.prof.cur;
 	prf->rsName = rnm;
 	xRomset* rset = findRomset(rnm);
+	if (!rset) return;
 	int romsz = MEM_256; // prf->zx->mem->romSize;	// 0?
 
-	struct RomResolution {
-		bool found;
-		fs::path path;
-	};
-	auto resolveRom = [](const std::string &name) -> RomResolution {
-		const auto maybe = conf.path.tryFind(ResourceKind::Rom, name);
-		return {
-			maybe.has_value(),
-			maybe.value_or(conf.path.writableDir(ResourceKind::Rom) / name)
-		};
-	};
-
-	if (rset) {
-		memset(prf->zx->mem->romData, 0xff, MEM_512K);
-		foreach(xRomFile xrf, rset->roms) {
-			const int foff = xrf.foffset * 1024;
-			const int roff = xrf.roffset * 1024;
-			const auto r = resolveRom(xrf.name);
-			std::ifstream file(r.path, std::ios::binary);
-			if (file) {
-				std::error_code ec;
-				int fsze = (xrf.fsize <= 0)
-					? static_cast<int>(fs::file_size(r.path, ec))
-					: xrf.fsize * 1024;
-				if (roff + fsze > romsz) {	// check crossing rom top
-					romsz = toLimits(roff + fsze, MEM_256, MEM_512K);
-					romsz = toPower(romsz);
-				}
-				if (roff + fsze > romsz)	// check again (if 512K limit)
-					fsze = romsz - roff;
-				if ((foff >= 0) && (roff >= 0) && (roff < MEM_512K) && (fsze > 0)) {	// load rom if all is ok
-					file.seekg(foff);
-					file.read(reinterpret_cast<char*>(prf->zx->mem->romData + roff), fsze);
-				}
-			} else if (!r.found) {
-				printf("Can't find rom '%s' in any search path\n", xrf.name.c_str());
-			} else {
-				std::cout << "Can't load rom file " << r.path << std::endl;
-			}
+	memset(prf->zx->mem->romData, 0xff, MEM_512K);
+	foreach(xRomFile xrf, rset->roms) {
+		const int foff = xrf.foffset * 1024;
+		const int roff = xrf.roffset * 1024;
+		const auto maybePath = conf.path.tryFind(ResourceKind::Rom, xrf.name);
+		if (!maybePath) {
+			printf("Can't find rom '%s' in any search path\n", xrf.name.c_str());
+			continue;
 		}
-		memSetSize(prf->zx->mem, -1, romsz);
+		std::ifstream file(*maybePath, std::ios::binary);
+		if (!file) {
+			std::cout << "Can't load rom file " << *maybePath << std::endl;
+			continue;
+		}
+		std::error_code ec;
+		int fsze = (xrf.fsize <= 0)
+			? static_cast<int>(fs::file_size(*maybePath, ec))
+			: xrf.fsize * 1024;
+		if (roff + fsze > romsz) {	// check crossing rom top
+			romsz = toLimits(roff + fsze, MEM_256, MEM_512K);
+			romsz = toPower(romsz);
+		}
+		if (roff + fsze > romsz)	// check again (if 512K limit)
+			fsze = romsz - roff;
+		if ((foff >= 0) && (roff >= 0) && (roff < MEM_512K) && (fsze > 0)) {	// load rom if all is ok
+			file.seekg(foff);
+			file.read(reinterpret_cast<char*>(prf->zx->mem->romData + roff), fsze);
+		}
+	}
+	memSetSize(prf->zx->mem, -1, romsz);
 // load GS ROM
-		if (!rset->gsFile.empty()) {
-			const auto r = resolveRom(rset->gsFile);
-			if (!loadFixedBlob(r.path, prf->zx->gs->mem->romData, MEM_32K)) {
-				if (!r.found) {
-					printf("Can't find gs rom '%s' in any search path (profile %s)\n",
-					       rset->gsFile.c_str(), prf->name.c_str());
-				} else {
-					std::cout << "Can't load gs rom " << r.path
-					          << " (profile " << prf->name << ")" << std::endl;
-				}
+	if (!rset->gsFile.empty()) {
+		if (const auto path = conf.path.tryFind(ResourceKind::Rom, rset->gsFile)) {
+			if (!loadFixedBlob(*path, prf->zx->gs->mem->romData, MEM_32K)) {
+				std::cout << "Can't load gs rom " << *path
+				          << " (profile " << prf->name << ")" << std::endl;
 				memset((char*)prf->zx->gs->mem->romData, 0xff, MEM_32K);
 			}
+		} else {
+			printf("Can't find gs rom '%s' in any search path (profile %s)\n",
+			       rset->gsFile.c_str(), prf->name.c_str());
+			memset((char*)prf->zx->gs->mem->romData, 0xff, MEM_32K);
 		}
-// load font data
-		if (!rset->fntFile.empty()) {
-			const auto r = resolveRom(rset->fntFile);
-			vid_fnt_load(prf->zx->vid, r.path.string().c_str());
-			if (!r.found) {
-				printf("Can't find font '%s' in any search path\n", rset->fntFile.c_str());
+	}
+// load font data. vid_fnt_load is called unconditionally with a path (tryFind's
+// value or the synthesized writable-dir fallback) to match the pre-refactor
+// behaviour — the C API handles a nonexistent path gracefully and may also do
+// per-call teardown that we don't want to skip.
+	if (!rset->fntFile.empty()) {
+		const auto maybePath = conf.path.tryFind(ResourceKind::Rom, rset->fntFile);
+		const fs::path path = maybePath.value_or(
+			conf.path.writableDir(ResourceKind::Rom) / rset->fntFile);
+		vid_fnt_load(prf->zx->vid, path.string().c_str());
+		if (!maybePath) {
+			printf("Can't find font '%s' in any search path\n", rset->fntFile.c_str());
+		}
+	} else {
+		vid_fnt_del(prf->zx->vid);
+	}
+// load ega/vga bios (64K max)
+	memset(prf->zx->vid->bios, 0xff, MEM_64K);
+	prf->zx->vid->vga.cga = 1;
+	if (!rset->vBiosFile.empty()) {
+		if (const auto path = conf.path.tryFind(ResourceKind::Rom, rset->vBiosFile)) {
+			if (loadFixedBlob(*path, prf->zx->vid->bios, MEM_64K)) {
+				prf->zx->vid->vga.cga = 0;
 			}
 		} else {
-			vid_fnt_del(prf->zx->vid);
-		}
-// load ega/vga bios (64K max)
-		memset(prf->zx->vid->bios, 0xff, MEM_64K);
-		prf->zx->vid->vga.cga = 1;
-		if (!rset->vBiosFile.empty()) {
-			const auto r = resolveRom(rset->vBiosFile);
-			if (loadFixedBlob(r.path, prf->zx->vid->bios, MEM_64K)) {
-				prf->zx->vid->vga.cga = 0;
-			} else if (!r.found) {
-				printf("Can't find VGA bios '%s' in any search path\n",
-				       rset->vBiosFile.c_str());
-			}
+			printf("Can't find VGA bios '%s' in any search path\n",
+			       rset->vBiosFile.c_str());
 		}
 	}
 }
