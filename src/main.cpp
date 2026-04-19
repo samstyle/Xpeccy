@@ -58,15 +58,10 @@ void xApp::d_frame() {
 }
 
 void xApp::d_style() {
-	if (conf.style.empty()) {
-		setStyleSheet("");
-	} else {
-		std::string path = conf.path.qssDir + SLASH + conf.style;
-		QFile file(path.c_str());
-		if (file.open(QFile::ReadOnly)) {
-			setStyleSheet(file.readAll().data());
-			file.close();
-		}
+	if (conf.style.empty()) { setStyleSheet(""); return; }
+	QFile file(toQString(conf.path.style.find(conf.style)));
+	if (file.open(QFile::ReadOnly)) {
+		setStyleSheet(QString::fromUtf8(file.readAll()));
 	}
 }
 
@@ -105,7 +100,7 @@ int main(int ac,char** av) {
 #endif
 	printf("Using Qt ver %s\n",qVersion());
 
-#if (QT_VERSION >= QT_VERSION_CHECK(5,6,0)) && (QT_VERSION < QT_VERSION_CHECK(6,0,0))
+#if QT_VERSION < QT_VERSION_CHECK(6,0,0)
 	QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 	QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 #endif

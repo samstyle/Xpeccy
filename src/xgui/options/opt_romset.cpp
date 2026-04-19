@@ -1,6 +1,5 @@
 #include "opt_romset.h"
 
-#include <QDir>
 #include <QDebug>
 
 // ROMSET EDITOR
@@ -10,21 +9,13 @@ std::string getRFText(QComboBox*);
 
 xRomsetEditor::xRomsetEditor(QWidget* par):QDialog(par) {
 	ui.setupUi(this);
-	ui.cbFile->setDir(conf.path.romDir.c_str());
+	ui.cbFile->setResource(conf.path.rom, {".rom", ".bin"});
 	connect(ui.rse_apply, SIGNAL(clicked()), this, SLOT(store()));
 	connect(ui.rse_cancel, SIGNAL(clicked()), this, SLOT(hide()));
 }
 
 void xRomsetEditor::edit(xRomFile f) {
 	xrf = f;
-//	QDir rdir(QString(conf.path.romDir.c_str()));
-//	QStringList rlst = rdir.entryList(QStringList() << "*.rom" << "*.bin", QDir::Files, QDir::Name);
-//	QString str;
-//	ui.cbFile->clear();
-//	foreach(str, rlst) {
-//		ui.cbFile->addItem(str, str);
-//	}
-//	ui.cbFile->setCurrentIndex(rlst.indexOf(f.name.c_str()));
 	ui.cbFile->setCurrentFile(f.name.c_str());
 	ui.cbFoffset->setValue(f.foffset);
 	ui.cbFsize->setValue(f.fsize);
@@ -33,7 +24,6 @@ void xRomsetEditor::edit(xRomFile f) {
 }
 
 void xRomsetEditor::store() {
-//	xrf.name = getRFText(ui.cbFile);
 	xrf.name = std::string(ui.cbFile->currentFile().toLocal8Bit().data());
 	if (xrf.name.empty()) return;
 	xrf.foffset = ui.cbFoffset->value();
@@ -82,58 +72,53 @@ QVariant xRomsetModel::headerData(int sect, Qt::Orientation ori, int role) const
 
 QVariant xRomsetModel::data(const QModelIndex& idx, int role) const {
 	QVariant res;
-	QFileInfo inf;
-	std::string buf;
 	if (!idx.isValid()) return res;
-	int row = idx.row();
-	int col = idx.column();
+	const int row = idx.row();
+	const int col = idx.column();
 	if ((row < 0) || (row >= rowCount())) return res;
 	if ((col < 0) || (col >= columnCount())) return res;
-	int rlsz = (int)rset->roms.size();
-	switch (role) {
-		case Qt::DisplayRole:
-			switch(col) {
-				case 0:
-					if (row < rlsz) {
-						res = "ROM";
-					} else if (row == rlsz) {
-						res = "GS";
-					} else if (row == rlsz+1){
-						res = "Font";
-					} else {
-						res = "VGA";
-					}
-					break;
-				case 1:
-					if (row < rlsz) {
-						res = QString(rset->roms[row].name.c_str());
-					} else if (row == rlsz) {
-						res = QString(rset->gsFile.c_str());
-					} else if (row == rlsz+1) {
-						res = QString(rset->fntFile.c_str());
-					} else {
-						res = QString(rset->vBiosFile.c_str());
-					}
-					break;
-				case 2:
-					if (row >= rlsz) break;
-					res = rset->roms[row].foffset;
-					break;
-				case 3:
-					if (row >= rlsz) break;
-					if (rset->roms[row].fsize > 0) {
-						res = rset->roms[row].fsize;
-					} else {
-						buf = conf.path.romDir + SLASH + rset->roms[row].name;
-						inf.setFile(tr(buf.c_str()));
-						res = QString("( %0 )").arg(inf.size() >> 10);
-					}
-					break;
-				case 4:
-					if (row >= rlsz) break;
-					res = rset->roms[row].roffset;
-					break;
+	const int rlsz = (int)rset->roms.size();
+	if (role != Qt::DisplayRole) return res;
+	switch(col) {
+		case 0:
+			if (row < rlsz) {
+				res = "ROM";
+			} else if (row == rlsz) {
+				res = "GS";
+			} else if (row == rlsz+1){
+				res = "Font";
+			} else {
+				res = "VGA";
 			}
+			break;
+		case 1:
+			if (row < rlsz) {
+				res = QString(rset->roms[row].name.c_str());
+			} else if (row == rlsz) {
+				res = QString(rset->gsFile.c_str());
+			} else if (row == rlsz+1) {
+				res = QString(rset->fntFile.c_str());
+			} else {
+				res = QString(rset->vBiosFile.c_str());
+			}
+			break;
+		case 2:
+			if (row >= rlsz) break;
+			res = rset->roms[row].foffset;
+			break;
+		case 3:
+			if (row >= rlsz) break;
+			if (rset->roms[row].fsize > 0) {
+				res = rset->roms[row].fsize;
+			} else if (const auto path = conf.path.rom.tryFind(rset->roms[row].name)) {
+				res = QString("( %0 )").arg(QFileInfo(toQString(*path)).size() >> 10);
+			} else {
+				res = "( missing )";
+			}
+			break;
+		case 4:
+			if (row >= rlsz) break;
+			res = rset->roms[row].roffset;
 			break;
 	}
 	return res;

@@ -7,6 +7,7 @@
 #include <SDL_events.h>
 #include <SDL_joystick.h>
 
+#include <fstream>
 #include <stdio.h>
 
 #include "xcore.h"
@@ -113,22 +114,20 @@ void xGamepad::delItem(int i) {
 
 void xGamepad::loadMap(std::string mapname) {
 	if (mapname.empty()) return;
+	const auto maybe = conf.path.gamepad.tryFind(mapname);
+	if (!maybe) return;
+	std::ifstream file(*maybe);
+	if (!file) return;
 	xJoyMapEntry jent;
-	FILE* file;
 	int num;
 	int idx;
 	char buf[1024];
 	char* ptr;
 
-	std::string path = conf.path.confDir + SLASH + mapname;
-	file = fopen(path.c_str(), "rb");
-	if (file) {
-		map.clear();
-		while(!feof(file)) {
-			memset(buf, 0x00, 1024);
-			fgets(buf, 1023, file);
-			ptr = strtok(buf, ":\n");
-			if (ptr) {
+	map.clear();
+	while (file.getline(buf, sizeof(buf) - 1)) {
+		ptr = strtok(buf, ":\n");
+		if (ptr) {
 				jent.type = padGetId(ptr[0], pabhChars);
 				jent.num = atoi(&ptr[1]);
 				idx = 1;
@@ -193,75 +192,60 @@ void xGamepad::loadMap(std::string mapname) {
 					if (jent.dev != JMAP_NONE)
 						map.push_back(jent);
 				}
-			}
 		}
-		fclose(file);
 	}
 }
 
 void xGamepad::saveMap(std::string mapname) {
 	if (mapname.empty()) return;
-	std::string path = conf.path.confDir + SLASH + mapname;
-	FILE* file;
-	file = fopen(path.c_str(), "wb");
-	if (file) {
-		foreach(xJoyMapEntry jent, map) {
-			fprintf(file, "%c%i", padGetChar(jent.type, pabhChars), jent.num);
-			switch (jent.type) {
-				case JOY_AXIS:
-					fputc((jent.state < 0) ? '-' : '+', file);
-					break;
-				case JOY_HAT:
-					fputc(padGetChar(jent.state, hatChars), file);
-					break;
-			}
-			fprintf(file, ":%c", padGetChar(jent.dev, devChars));
-			switch(jent.dev) {
-				case JMAP_KEY:
-#if USE_SEQ_BIND
-					fprintf(file, "%s", jent.seq.toString().toUtf8().data());
-#else
-					fprintf(file, "%s", getKeyNameById(jent.key));
-#endif
-					break;
-				case JMAP_JOY:
-				case JMAP_JOYB:
-					fputc(padGetChar(jent.dir, kjoyChars), file);
-					break;
-				case JMAP_MOUSE:
-					fputc(padGetChar(jent.dir, kmouChars), file);
-					break;
-				default:
-					fprintf(file, "?");
-			}
-			if (jent.rpt > 0)
-				fprintf(file, ":%i", jent.rpt);
-			fputc('\n', file);
+	std::ofstream out(conf.path.gamepad.writable / mapname, std::ios::binary);
+	if (!out) return;
+	foreach(xJoyMapEntry jent, map) {
+		out << padGetChar(jent.type, pabhChars) << jent.num;
+		switch (jent.type) {
+			case JOY_AXIS: out << ((jent.state < 0) ? '-' : '+'); break;
+			case JOY_HAT:  out << padGetChar(jent.state, hatChars); break;
 		}
-		fclose(file);
+		out << ':' << padGetChar(jent.dev, devChars);
+		switch(jent.dev) {
+			case JMAP_KEY:
+#if USE_SEQ_BIND
+				out << jent.seq.toString();
+#else
+				out << getKeyNameById(jent.key);
+#endif
+				break;
+			case JMAP_JOY:
+			case JMAP_JOYB:
+				out << padGetChar(jent.dir, kjoyChars);
+				break;
+			case JMAP_MOUSE:
+				out << padGetChar(jent.dir, kmouChars);
+				break;
+			default:
+				out << '?';
+		}
+		if (jent.rpt > 0) out << ':' << jent.rpt;
+		out << '\n';
 	}
 }
 
 int padExists(std::string name) {
-	std::string path = conf.path.confDir + SLASH + name;
-	FILE* file = fopen(path.c_str(), "rb");
-	if (!file) return 0;
-	fclose(file);
-	return 1;
+	return conf.path.gamepad.tryFind(name).has_value();
 }
 
 int padCreate(std::string name) {
 	if (padExists(name)) return 0;
-	std::string path = conf.path.confDir + SLASH + name;
-	FILE* file = fopen(path.c_str(), "wb");
-	if (!file) return 0;
-	fclose(file);
-	return 1;
+	return std::ofstream(conf.path.gamepad.writable / name,
+	                     std::ios::binary).is_open();
 }
 
+// Only removes a user-writable copy. A same-named read-only pad map shipped
+// under /usr/share/.../gamepads/ remains intact — deleting the writable copy
+// just lets the system default shine through again.
 void padDelete(std::string name) {
-	std::string path = conf.path.confDir + SLASH + name;
-	remove(path.c_str());
+	std::error_code ec;
+	fs::remove(conf.path.gamepad.writable / name, ec);
 }
 
 // xGamepad

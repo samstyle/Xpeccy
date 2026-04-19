@@ -355,8 +355,10 @@ void disk_boot(Computer* comp, int drv, int id) {
 	int idx = 0;
 	while (boot_ft[idx] && (boot_ft[idx] != id))
 		idx++;
-	if (boot_ft[idx])
-		loadBoot(comp, conf.path.boot.c_str(), drv);
+	if (boot_ft[idx]) {
+		if (const auto path = conf.path.boot.tryFind("boot.$B"))
+			loadBoot(comp, path->string().c_str(), drv);
+	}
 }
 
 int load_file(Computer* comp, const char* name, int id, int drv) {

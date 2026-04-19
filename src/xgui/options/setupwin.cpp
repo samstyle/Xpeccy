@@ -3,7 +3,9 @@
 #include <QColorDialog>
 #include <QFontDialog>
 #include <QFileDialog>
+#include <QIcon>
 #include <QMessageBox>
+#include <QStyle>
 #include <QVector3D>
 #include <QLibrary>
 #include <QPainter>
@@ -14,6 +16,7 @@
 
 #include "filer.h"
 #include "setupwin.h"
+#include "xgui/resources_ui.h"
 #include "xgui/xgui.h"
 #include "xcore/gamepad.h"
 #include "xcore/xcore.h"
@@ -74,16 +77,12 @@ void fill_layout_list(QComboBox* box, QString txt = QString()) {
 }
 
 void fill_shader_list(QComboBox* box) {
-	QDir dir(conf.path.shdDir.c_str());
-	QFileInfoList lst = dir.entryInfoList(QStringList() << "*.txt", QDir::Files, QDir::Name);
-	QFileInfo inf;
 	box->clear();
 	box->addItem("none", 0);
 #if defined(USEOPENGL)
 	if (conf.vid.shd_support) {
-		foreach(inf, lst) {
-			box->addItem(inf.fileName(), 1);
-		}
+		fillComboFromResources(box, conf.path.shader,
+		                       byExtension({".txt"}), QVariant(1));
 		box->setCurrentIndex(box->findText(conf.vid.shader.c_str()));
 		if (box->currentIndex() < 0)
 			box->setCurrentIndex(0);
@@ -93,32 +92,18 @@ void fill_shader_list(QComboBox* box) {
 #endif
 }
 
-/*
 void fill_palette_list(QComboBox* box) {
-	QDir dir(conf.path.palDir.c_str());
-	QFileInfoList lst = dir.entryInfoList(QStringList() << "*.txt", QDir::Files, QDir::Name);
-	QFileInfo inf;
 	box->clear();
-	box->addItem("default");					// empty data (no filename = default pal)
-	foreach(inf, lst) {
-		box->addItem(inf.fileName(), inf.fileName());		// need data=text, cuz setRFIndex using data, not text
-	}
-	setRFIndex(box, conf.prof.cur->palette.c_str());
-	if (box->currentIndex() < 0)
-		box->setCurrentIndex(0);
+	box->addItem("default");
+	fillComboFromResources(box, conf.path.palette, byExtension({".txt", ".pal"}));
+	setRFIndex(box, conf.prof.cur->palette.c_str(), 0);
 }
-*/
 
-void fillComboBox(QComboBox* box, QString path, QStringList filt, QString def = "", QString sel = "") {
-	QDir dir(path);
-	QFileInfoList lst = dir.entryInfoList(filt, QDir::Files, QDir::Name);
-	QFileInfo inf;
+void fill_style_list(QComboBox* box) {
 	box->clear();
-	if (!def.isEmpty()) box->addItem(def);
-	foreach(inf, lst) {
-		box->addItem(inf.fileName(), inf.fileName());
-	}
-	setRFIndex(box, sel, 0);
+	box->addItem("System");
+	fillComboFromResources(box, conf.path.style, byExtension({".qss"}));
+	setRFIndex(box, conf.style.c_str(), 0);
 }
 
 // OBJECT
@@ -140,10 +125,11 @@ void dbg_fill_chip_boxes(QComboBox* cbtype, QComboBox* cbstereo) {
 
 enum {
 	roleName = Qt::UserRole,
-	roleLib
+	roleLib,
+	roleDir
 };
 
-void opt_fill_cpu_add(QComboBox* box, cpuCore* tab, QString libname) {
+void opt_fill_cpu_add(QComboBox* box, cpuCore* tab, QString libname, QString libdir) {
 	int i = 0;
 	int cnt = box->count();
 	QString name;
@@ -154,7 +140,8 @@ void opt_fill_cpu_add(QComboBox* box, cpuCore* tab, QString libname) {
 		}
 		box->addItem(name);
 		box->setItemData(cnt, QString(tab[i].name), roleName);		// name of cpu
-		box->setItemData(cnt, libname, roleLib);			// name of library, empty for built-in
+		box->setItemData(cnt, libname, roleLib);			// library filename, empty for built-in
+		box->setItemData(cnt, libdir, roleDir);				// directory that library lives in
 		cnt++;
 		i++;
 	}
@@ -162,28 +149,26 @@ void opt_fill_cpu_add(QComboBox* box, cpuCore* tab, QString libname) {
 
 void opt_fill_cpu(QComboBox* box) {
 	box->clear();
-	opt_fill_cpu_add(box, cpuTab, "");	// buit-in
-	// add modules to ui.cbCpu, type=filename (not number) -> all files (so/dll/dylib) from ${plgDir}/cpu
-	QDir dir(QString(conf.path.plgDir.c_str()) + SLASH + "cpu");
-	QStringList fnlst = dir.entryList(QStringList() << "*.*", QDir::Files, QDir::Name);
+	opt_fill_cpu_add(box, cpuTab, "", "");	// built-in
+	// Add CPU plugins from every dir in the PluginCpu search path.
 	QLibrary lib;
 	cpuCore* tab;
 	cpuCore*(*foo)();
-	QString cn;
-	foreach(QString fn, fnlst) {
-		if (QLibrary::isLibrary(fn)) {
-			lib.setFileName(dir.absoluteFilePath(fn));
-			if (lib.load()) {
-				foo = (cpuCore*(*)())(lib.resolve("getCore"));
-				if (foo) {
-					tab = foo();
-					opt_fill_cpu_add(box, tab, fn);
-				}
-				lib.unload();
-			} else {
-				qDebug() << lib.errorString();
-			}
+	for (const auto &e : conf.path.pluginCpu.enumerateRecursive(
+	         [](const fs::path&) { return true; })) {
+		const QString fn = toQString(e.name);
+		if (!QLibrary::isLibrary(fn)) continue;
+		lib.setFileName(toQString(e.path));
+		if (!lib.load()) {
+			qDebug() << lib.errorString();
+			continue;
 		}
+		foo = (cpuCore*(*)())(lib.resolve("getCore"));
+		if (foo) {
+			tab = foo();
+			opt_fill_cpu_add(box, tab, fn, toQString(e.path.parent_path()));
+		}
+		lib.unload();
 	}
 }
 
@@ -261,8 +246,7 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	ui.labShader->setVisible(false);
 	ui.cbShader->setVisible(false);
 #endif
-	//fill_palette_list(ui.cbPalPreset);
-	fillComboBox(ui.cbPalPreset, conf.path.palDir.c_str(), QStringList() << "*.txt" << "*.pal", "default", conf.prof.cur->palette.c_str());
+	fill_palette_list(ui.cbPalPreset);
 	paleditor = new xPalEditor(this);
 	ui.cbNoflicMode->addItem("2-frames (fullscreen)", AF_2C_FULL);
 	ui.cbNoflicMode->addItem("2-frames (adaptive)", AF_2C_ADAPTIVE);
@@ -584,8 +568,7 @@ void SetupWin::start() {
 	ui.ulaPlus->setChecked(comp->vid->ula->enabled);
 	ui.cbDDp->setChecked(comp->flgDDP);
 	fill_shader_list(ui.cbShader);
-	//fill_palette_list(ui.cbPalPreset);
-	fillComboBox(ui.cbPalPreset, conf.path.palDir.c_str(), QStringList() << "*.txt" << "*.pal", "default", conf.prof.cur->palette.c_str());
+	fill_palette_list(ui.cbPalPreset);
 // sound
 	ui.cbGS->setChecked(comp->gs->enable);
 	ui.gsrbox->setChecked(comp->gs->reset);
@@ -632,12 +615,6 @@ void SetupWin::start() {
 	gpwid_b->update(prof->jmapNameB);
 //	ui.sldDeadZone->setValue(conf.joy.gpad->deadZone());
 //	ui.cbGamepad->blockSignals(true);
-//	fillRFBox(ui.cbGamepad, conf.joy.gpad->getList());
-//	setRFIndex(ui.cbGamepad, conf.joy.gpad->name()); // curName);
-//	ui.cbGamepad->blockSignals(false);
-//	padModel->update();
-//	buildpadlist();
-//	setRFIndex(ui.cbPadMap, conf.prof.cur->jmapNameA.c_str());
 // flp
 	ui.diskTypeBox->setCurrentIndex(ui.diskTypeBox->findData(comp->dif->type));
 	ui.bdtbox->setChecked(fdcFlag & FDC_FAST);
@@ -734,7 +711,7 @@ void SetupWin::start() {
 	setToolButtonColor(ui.tbDbgSelBG, "dbg.sel.bg","#c0e0c0");
 	setToolButtonColor(ui.tbDbgSelFG, "dbg.sel.txt","#000000");
 	setToolButtonColor(ui.tbDbgBrkFG, "dbg.brk.txt","#e08080");
-	fillComboBox(ui.cbStyleSheet, conf.path.qssDir.c_str(), QStringList() << "*.qss", "System", conf.style.c_str());
+	fill_style_list(ui.cbStyleSheet);
 // profiles
 	ui.defstart->setChecked(conf.defProfile);
 	buildproflist();
@@ -759,24 +736,13 @@ void SetupWin::apply() {
 	// cpu
 	QString name = ui.cbCpu->itemData(ui.cbCpu->currentIndex(), roleName).toString();
 	QString libn = ui.cbCpu->itemData(ui.cbCpu->currentIndex(), roleLib).toString();
+	QString libd = ui.cbCpu->itemData(ui.cbCpu->currentIndex(), roleDir).toString();
 	if (libn.isEmpty()) {	// built-in
 		cpu_set_type(comp->cpu, name.toLocal8Bit().data(), NULL, NULL);
 	} else {
-		std::string cpdir = conf.path.plgDir + SLASH + "cpu";
-		cpu_set_type(comp->cpu, name.toLocal8Bit().data(), cpdir.c_str(), libn.toLocal8Bit().data());
+		cpu_set_type(comp->cpu, name.toLocal8Bit().data(),
+		             libd.toLocal8Bit().data(), libn.toLocal8Bit().data());
 	}
-/*
-	int res = getRFIData(ui.cbCpu);
-	if (res < 0) {
-		std::string fpath = conf.path.plgDir + SLASH + "cpu";
-		res = cpuSetLib(comp->cpu, fpath.c_str(), getRFSData(ui.cbCpu).toLocal8Bit().data());
-		if (res < 0) {
-			shitHappens("Can't set CPU from library");
-		}
-	} else {
-		cpuSetType(comp->cpu, getRFIData(ui.cbCpu));
-	}
-*/
 	compSetBaseFrq(comp, ui.sbFreq->value());
 	compSetTurbo(comp, ui.sbMult->value());
 	comp->flgEM1 = ui.scrpwait->isChecked();
@@ -1251,19 +1217,11 @@ void SetupWin::setRom(xRomFile f) {
 
 // lists
 
-void SetupWin::buildpadlist() {
-//	QDir dir(conf.path.confDir.c_str());
-//	QStringList lst = dir.entryList(QStringList() << "*.pad",QDir::Files,QDir::Name);
-//	fillRFBox(ui.cbPadMap, lst);
-}
-
 void SetupWin::buildkeylist() {
-	QDir dir(conf.path.confDir.c_str());
-	QStringList lst = dir.entryList(QStringList() << "*.map",QDir::Files,QDir::Name);
-	dir.setPath(dir.path().append("/keymaps/"));
-	lst.append(dir.entryList(QStringList() << "*.map",QDir::Files,QDir::Name));
-	lst.sort();
-	fillRFBox(ui.keyMapBox,lst);
+	ui.keyMapBox->clear();
+	ui.keyMapBox->addItem("none", "");
+	fillComboFromResources(ui.keyMapBox, conf.path.keymap,
+	                       byExtension({".map"}));
 }
 
 struct xMemName {
