@@ -99,11 +99,75 @@ ResourceDirs buildResourceDirs(const ResourceSpec &spec,
 	return out;
 }
 
-} // namespace
+// Resolved XDG roots (or their Windows-side equivalents). `conf_init` fills
+// one of these per-platform; `applyPlatformRoots` consumes it to populate
+// `conf.path` and run migrations. Keeps the platform-specific resolution
+// separate from the shared persistence layer.
+struct PlatformRoots {
+	fs::path confHome;    // $XDG_CONFIG_HOME/samstyle/xpeccy (or Windows confdir)
+	fs::path dataHome;    // $XDG_DATA_HOME/samstyle/xpeccy   (or confHome on Windows)
+	fs::path cacheHome;   // $XDG_CACHE_HOME/samstyle/xpeccy  (or confHome/cache)
+	fs::path stateHome;   // $XDG_STATE_HOME/samstyle/xpeccy  (or confHome/state)
+	std::vector<fs::path> configDirs;  // $XDG_CONFIG_DIRS bases + suffix (empty on Windows)
+	std::vector<fs::path> dataDirs;    // $XDG_DATA_DIRS bases + suffix   (empty on Windows)
+};
 
-using migrate::migrateDir;
-using migrate::migrateFilesByExtension;
-using migrate::migrateSingleFile;
+void makeDir(const fs::path &p, std::string_view label) {
+	std::error_code ec;
+	fs::create_directories(p, ec);
+	if (ec) {
+		std::cout << "create " << label << " failed: " << ec.message() << std::endl;
+	}
+}
+
+// Populate conf.path.* and conf.path.resources from `roots`, create every
+// directory, and run one-shot legacy migrations from confDir into per-kind
+// subdirs. Idempotent on re-run — migrations short-circuit once targets exist.
+void applyPlatformRoots(const PlatformRoots &roots) {
+	conf.path.confDir     = roots.confHome;
+	conf.path.prfDir      = conf.path.confDir / "profiles";
+	conf.path.confFile    = conf.path.confDir / "config.conf";
+	conf.path.cacheDir    = roots.cacheHome;
+	conf.path.stateDir    = roots.stateHome;
+	conf.path.prfStateDir = conf.path.stateDir / "profiles";
+	makeDir(conf.path.confDir,     "confDir");
+	makeDir(roots.dataHome,        "dataHomeDir");
+	makeDir(conf.path.prfDir,      "prfDir");
+	makeDir(conf.path.cacheDir,    "cacheDir");
+	makeDir(conf.path.stateDir,    "stateDir");
+	makeDir(conf.path.prfStateDir, "prfStateDir");
+
+	std::error_code ec;
+	for (const auto &spec : kResourceLayout) {
+		auto &dirs = conf.path.resources[static_cast<size_t>(spec.kind)] =
+			buildResourceDirs(spec, roots.confHome, roots.dataHome,
+			                  roots.configDirs, roots.dataDirs);
+		if (!spec.legacySubdir.empty()) {
+			migrate::migrateDir(conf.path.confDir / spec.legacySubdir,
+			                    dirs.writable, spec.label, ec);
+		}
+		makeDir(dirs.writable, spec.label);
+	}
+
+	// Pull pre-subdir flat files out of confDir into their per-kind subdirs.
+	// Historically *.map keymaps and *.pad gamepad maps lived flat in confDir;
+	// boot.$B and debuga.layout were also confDir-rooted. No-op on Windows
+	// (source equals destination) and on any run after the first.
+	migrate::migrateFilesByExtension(conf.path.confDir,
+	                                 conf.path.writableDir(ResourceKind::Keymap),
+	                                 ".map", "keymapDir", ec);
+	migrate::migrateFilesByExtension(conf.path.confDir,
+	                                 conf.path.writableDir(ResourceKind::Gamepad),
+	                                 ".pad", "padDir", ec);
+	migrate::migrateSingleFile(conf.path.confDir / "boot.$B",
+	                           conf.path.writableDir(ResourceKind::Boot) / "boot.$B",
+	                           "bootDir", ec);
+	migrate::migrateSingleFile(conf.path.confDir  / "debuga.layout",
+	                           conf.path.cacheDir / "debuga.layout",
+	                           "debuga.layout", ec);
+}
+
+} // namespace
 
 void conf_init(char* wpath, char* confdir) {
 	// Default screenshot output to the user's Pictures directory per the
@@ -121,21 +185,12 @@ void conf_init(char* wpath, char* confdir) {
 	conf.scrShot.dir = std::string(getenv(ENVHOME));
 #endif
 	conf.port = 30000;
+
+	PlatformRoots roots;
 #if defined(__linux) || defined(__APPLE__) || defined(__BSD)
 	const fs::path dataDirsSuffix = "samstyle/xpeccy";
-	std::error_code ec;
 	const char *home = getenv(ENVHOME);
 
-	auto check = [&ec](std::string_view what) {
-		if (ec) {
-			std::cout << what << ": " << ec.message() << std::endl;
-			ec.clear();
-		}
-	};
-	auto makeDir = [&ec, &check](const fs::path &p, std::string_view label) {
-		fs::create_directories(p, ec);
-		check(std::string("create ").append(label).append(" failed"));
-	};
 	// Wrap an xdgpp single-path getter: append dataDirsSuffix on success, fall
 	// back to a precomposed path on exception.
 	auto xdgPathOrFallback = [&dataDirsSuffix](auto &&getter,
@@ -161,121 +216,39 @@ void conf_init(char* wpath, char* confdir) {
 	};
 
 	if (confdir == NULL) {
-		conf.path.confDir = xdgPathOrFallback(xdg::ConfigHomeDir,
+		roots.confHome = xdgPathOrFallback(xdg::ConfigHomeDir,
 			(home ? fs::path(home) : fs::path(".")) / ".config" / dataDirsSuffix,
 			"xdg config home");
-
-		// Legacy migration: if XDG_CONFIG_HOME points somewhere other than
-		// the default ~/.config, move the old ~/.config/samstyle/xpeccy into
-		// the new location. When old == new, migrateDir's existence checks
-		// short-circuit and it's a no-op.
+		// Pre-XDG-aware migration: if XDG_CONFIG_HOME points somewhere other
+		// than ~/.config, move the old ~/.config/samstyle/xpeccy across. Must
+		// run before applyPlatformRoots creates the new confDir — otherwise
+		// migrateDir sees the destination already present and short-circuits.
 		if (home) {
-			migrateDir(fs::path(home) / ".config" / dataDirsSuffix,
-			           conf.path.confDir, "confDir", ec);
+			std::error_code ec;
+			migrate::migrateDir(fs::path(home) / ".config" / dataDirsSuffix,
+			                    roots.confHome, "confDir", ec);
 		}
 	} else {
-		conf.path.confDir = confdir;
+		roots.confHome = confdir;
 	}
-	makeDir(conf.path.confDir, "confDir");
-
-	const fs::path dataHomeDir = xdgPathOrFallback(xdg::DataHomeDir,
-		conf.path.confDir, "xdg data home");
-	makeDir(dataHomeDir, "dataHomeDir");
-
-	// System-wide bases for readonly search paths: XDG_DATA_DIRS for Data
-	// kinds, XDG_CONFIG_DIRS for Config kinds.
-	const auto xdgDataDirs   = xdgDirsOrEmpty(xdg::DataDirs,   "xdg data dirs");
-	const auto xdgConfigDirs = xdgDirsOrEmpty(xdg::ConfigDirs, "xdg config dirs");
-
-	// Populate resources: pure construction via buildResourceDirs, then
-	// imperative migration + mkdir.
-	for (const auto &spec : kResourceLayout) {
-		auto &dirs = conf.path.resources[static_cast<size_t>(spec.kind)] =
-			buildResourceDirs(spec, conf.path.confDir, dataHomeDir,
-			                  xdgConfigDirs, xdgDataDirs);
-		if (!spec.legacySubdir.empty()) {
-			migrateDir(conf.path.confDir / spec.legacySubdir,
-			           dirs.writable, spec.label, ec);
-		}
-		makeDir(dirs.writable, spec.label);
-	}
-
-	// Pull any flat-rooted *.map / *.pad files out of confDir into their
-	// per-kind subdirs. Historically these lived at confDir/<name>.{map,pad};
-	// the Keymap and Gamepad kinds now root them under confDir/{keymaps,gamepads}/.
-	// Idempotent after the first run.
-	migrateFilesByExtension(conf.path.confDir,
-	                        conf.path.writableDir(ResourceKind::Keymap),
-	                        ".map", "keymapDir", ec);
-	migrateFilesByExtension(conf.path.confDir,
-	                        conf.path.writableDir(ResourceKind::Gamepad),
-	                        ".pad", "padDir", ec);
-	// Pull any legacy confDir/boot.$B into the Boot resource dir.
-	migrateSingleFile(conf.path.confDir / "boot.$B",
-	                  conf.path.writableDir(ResourceKind::Boot) / "boot.$B",
-	                  "bootDir", ec);
-
-	conf.path.prfDir = conf.path.confDir / "profiles";
-	makeDir(conf.path.prfDir, "prfDir");
-	conf.path.confFile = conf.path.confDir / "config.conf";
-
-	// Cache home for derived non-essential artifacts (UI dock state etc.).
-	conf.path.cacheDir = xdgPathOrFallback(xdg::CacheHomeDir,
-		conf.path.confDir / "cache", "xdg cache home");
-	makeDir(conf.path.cacheDir, "cacheDir");
-	// One-shot: pull debuga.layout out of confDir into cacheDir.
-	migrateSingleFile(conf.path.confDir / "debuga.layout",
-	                  conf.path.cacheDir  / "debuga.layout",
-	                  "debuga.layout", ec);
-
-	// State home for machine-authored persistent state (CMOS RTC, NVRAM).
-	conf.path.stateDir = xdgPathOrFallback(xdg::StateHomeDir,
-		conf.path.confDir / "state", "xdg state home");
-	conf.path.prfStateDir = conf.path.stateDir / "profiles";
-	makeDir(conf.path.stateDir,    "stateDir");
-	makeDir(conf.path.prfStateDir, "prfStateDir");
+	roots.dataHome   = xdgPathOrFallback(xdg::DataHomeDir,  roots.confHome,            "xdg data home");
+	roots.cacheHome  = xdgPathOrFallback(xdg::CacheHomeDir, roots.confHome / "cache",  "xdg cache home");
+	roots.stateHome  = xdgPathOrFallback(xdg::StateHomeDir, roots.confHome / "state",  "xdg state home");
+	roots.configDirs = xdgDirsOrEmpty(xdg::ConfigDirs, "xdg config dirs");
+	roots.dataDirs   = xdgDirsOrEmpty(xdg::DataDirs,   "xdg data dirs");
 #elif defined(__WIN32)
-	if (confdir == NULL) {
-		conf.path.confDir = fs::path(wpath).parent_path() / "config";
-	} else {
-		conf.path.confDir = confdir;
-	}
-	// No XDG search path on Windows: buildResourceDirs receives empty
-	// readonly-base vectors, so each entry's `readonly` list comes out empty.
-	// Config- and Data-kind both root at conf.path.confDir.
-	const std::vector<fs::path> noExtraDirs;
-	for (const auto &spec : kResourceLayout) {
-		conf.path.resources[static_cast<size_t>(spec.kind)] =
-			buildResourceDirs(spec, conf.path.confDir, conf.path.confDir,
-			                  noExtraDirs, noExtraDirs);
-	}
-	{
-		std::error_code mec;
-		migrateFilesByExtension(conf.path.confDir,
-		                        conf.path.writableDir(ResourceKind::Keymap),
-		                        ".map", "keymapDir", mec);
-		migrateFilesByExtension(conf.path.confDir,
-		                        conf.path.writableDir(ResourceKind::Gamepad),
-		                        ".pad", "padDir", mec);
-	}
-	conf.path.prfDir = conf.path.confDir / "profiles";
-	conf.path.confFile = conf.path.confDir / "config.conf";
-	// No XDG cache/state homes on Windows; stash everything under confDir subdirs.
-	conf.path.cacheDir    = conf.path.confDir / "cache";
-	conf.path.stateDir    = conf.path.confDir / "state";
-	conf.path.prfStateDir = conf.path.stateDir / "profiles";
-	{
-		std::error_code wec;
-		fs::create_directories(conf.path.confDir, wec);
-		for (const auto &dirs : conf.path.resources) {
-			fs::create_directories(dirs.writable, wec);
-		}
-		fs::create_directories(conf.path.prfDir,      wec);
-		fs::create_directories(conf.path.cacheDir,    wec);
-		fs::create_directories(conf.path.stateDir,    wec);
-		fs::create_directories(conf.path.prfStateDir, wec);
-	}
+	roots.confHome = (confdir == NULL)
+		? fs::path(wpath).parent_path() / "config"
+		: fs::path(confdir);
+	// No XDG equivalents on Windows; everything roots at confHome. The
+	// readonly dir vectors stay default-constructed (empty), making every
+	// resource's `readonly` list empty and the one-shot migrations no-ops
+	// (source paths equal destinations).
+	roots.dataHome  = roots.confHome;
+	roots.cacheHome = roots.confHome / "cache";
+	roots.stateHome = roots.confHome / "state";
 #endif
+	applyPlatformRoots(roots);
 	conf.scrShot.format = "png";
 // Pentagon geometry:
 // rows: 16Vblk + (16 invis + 48 vis) top border + 192 screen + 48 bottom border = 320 rows
