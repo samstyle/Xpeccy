@@ -245,11 +245,11 @@ void xLabel::mousePressEvent(QMouseEvent* ev) {
 xTreeBox::xTreeBox(QWidget *p):QComboBox(p) {
 }
 
-void xTreeBox::setResource(ResourceKind kind,
+void xTreeBox::setResource(const ResourceDirs &dirs,
                            std::initializer_list<const char*> extensions) {
 	clear();
 	setDuplicatesEnabled(true);
-	forEachResource(this, kind, byExtension(extensions),
+	forEachResource(this, dirs, byExtension(extensions),
 		[this](const QIcon &icon, const ResolvedEntry &e) {
 			addItem(icon, toQString(e.name), toQString(e.path));
 		});

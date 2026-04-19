@@ -114,7 +114,7 @@ void xGamepad::delItem(int i) {
 
 void xGamepad::loadMap(std::string mapname) {
 	if (mapname.empty()) return;
-	const auto maybe = conf.path.tryFind(ResourceKind::Gamepad, mapname);
+	const auto maybe = conf.path.gamepad.tryFind(mapname);
 	if (!maybe) return;
 	std::ifstream file(*maybe);
 	if (!file) return;
@@ -198,8 +198,7 @@ void xGamepad::loadMap(std::string mapname) {
 
 void xGamepad::saveMap(std::string mapname) {
 	if (mapname.empty()) return;
-	std::ofstream out(conf.path.writableDir(ResourceKind::Gamepad) / mapname,
-	                  std::ios::binary);
+	std::ofstream out(conf.path.gamepad.writable / mapname, std::ios::binary);
 	if (!out) return;
 	foreach(xJoyMapEntry jent, map) {
 		out << padGetChar(jent.type, pabhChars) << jent.num;
@@ -232,12 +231,12 @@ void xGamepad::saveMap(std::string mapname) {
 }
 
 int padExists(std::string name) {
-	return conf.path.tryFind(ResourceKind::Gamepad, name).has_value();
+	return conf.path.gamepad.tryFind(name).has_value();
 }
 
 int padCreate(std::string name) {
 	if (padExists(name)) return 0;
-	return std::ofstream(conf.path.writableDir(ResourceKind::Gamepad) / name,
+	return std::ofstream(conf.path.gamepad.writable / name,
 	                     std::ios::binary).is_open();
 }
 
@@ -246,7 +245,7 @@ int padCreate(std::string name) {
 // just lets the system default shine through again.
 void padDelete(std::string name) {
 	std::error_code ec;
-	fs::remove(conf.path.writableDir(ResourceKind::Gamepad) / name, ec);
+	fs::remove(conf.path.gamepad.writable / name, ec);
 }
 
 // xGamepad

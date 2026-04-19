@@ -10,22 +10,22 @@
 
 #include "../xcore/xcore.h"
 
-// Enumerate a resource kind, precompute the user/system icon pair once, and
+// Enumerate a resource set, precompute the user/system icon pair once, and
 // invoke `add(icon, entry)` for every matching entry. This is the common spine
 // shared by the combo, menu, and xTreeBox fillers — each specializes only in
 // what they do per item. Icons are looked up via `styleSrc->style()` so the
 // host widget decides the icon theme.
 template <typename Pred, typename Adder>
-inline void forEachResource(QWidget *styleSrc, ResourceKind kind,
+inline void forEachResource(QWidget *styleSrc, const ResourceDirs &dirs,
                             Pred &&pred, Adder &&add) {
 	const QIcon userIcon = styleSrc->style()->standardIcon(QStyle::SP_DirHomeIcon);
 	const QIcon sysIcon  = styleSrc->style()->standardIcon(QStyle::SP_ComputerIcon);
-	for (const auto &e : conf.path.enumerateRecursive(kind, std::forward<Pred>(pred))) {
+	for (const auto &e : dirs.enumerateRecursive(std::forward<Pred>(pred))) {
 		add(e.origin == ResourceOrigin::User ? userIcon : sysIcon, e);
 	}
 }
 
-// Populate a QComboBox with entries for a resource kind, using icons to mark
+// Populate a QComboBox with entries from a resource set, using icons to mark
 // each entry as writable (user) or read-only (system). The predicate filters
 // the enumeration (typically byExtension({...})).
 //
@@ -34,10 +34,10 @@ inline void forEachResource(QWidget *styleSrc, ResourceKind kind,
 // data — useful when the caller uses user data as a type tag (e.g. shader
 // list distinguishing "none" vs "shader").
 template <typename Pred>
-inline void fillComboFromResources(QComboBox *box, ResourceKind kind,
+inline void fillComboFromResources(QComboBox *box, const ResourceDirs &dirs,
                                    Pred &&pred,
                                    const QVariant &commonData = QVariant()) {
-	forEachResource(box, kind, std::forward<Pred>(pred),
+	forEachResource(box, dirs, std::forward<Pred>(pred),
 		[&](const QIcon &icon, const ResolvedEntry &e) {
 			const QString name = toQString(e.name);
 			box->addItem(icon, name,
@@ -45,14 +45,14 @@ inline void fillComboFromResources(QComboBox *box, ResourceKind kind,
 		});
 }
 
-// Populate a QMenu with checkable actions for a resource kind. Each action's
+// Populate a QMenu with checkable actions from a resource set. Each action's
 // data is the filename; the action whose filename equals `current` is marked
 // checked.
 template <typename Pred>
-inline void fillCheckableMenuFromResources(QMenu *menu, ResourceKind kind,
+inline void fillCheckableMenuFromResources(QMenu *menu, const ResourceDirs &dirs,
                                            Pred &&pred,
                                            const QString &current) {
-	forEachResource(menu, kind, std::forward<Pred>(pred),
+	forEachResource(menu, dirs, std::forward<Pred>(pred),
 		[&](const QIcon &icon, const ResolvedEntry &e) {
 			const QString name = toQString(e.name);
 			QAction *act = menu->addAction(icon, name);

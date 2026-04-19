@@ -204,7 +204,7 @@ void loadKeys() {
 	if (!prf) return;
 	initKeyMap();
 	if ((prf->kmapName == "") || (prf->kmapName == "default")) return;
-	const auto maybe = conf.path.tryFind(ResourceKind::Keymap, prf->kmapName);
+	const auto maybe = conf.path.keymap.tryFind(prf->kmapName);
 	if (!maybe) {
 		printf("Can't find keymap '%s'. Default one will be used\n",
 		       prf->kmapName.c_str());
