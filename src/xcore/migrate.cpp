@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <cctype>
 #include <iostream>
+#include <string>
+#include <system_error>
 
 namespace migrate {
 
@@ -17,8 +19,9 @@ std::string toLowerCopy(std::string s) {
 } // namespace
 
 void moveAcrossDevices(const fs::path &from, const fs::path &to, MoveKind kind,
-                       std::string_view what, std::error_code &ec) {
+                       std::string_view what) {
 	std::cout << "Moving " << from << " -> " << to << std::endl;
+	std::error_code ec;
 	fs::rename(from, to, ec);
 	if (ec == std::errc::cross_device_link) {
 		ec.clear();
@@ -35,45 +38,31 @@ void moveAcrossDevices(const fs::path &from, const fs::path &to, MoveKind kind,
 	if (ec) {
 		std::cout << "legacy " << what << " migration failed: "
 		          << ec.message() << std::endl;
-		ec.clear();
 	}
 }
 
 void migrateSingleFile(const fs::path &from, const fs::path &to,
-                       std::string_view what, std::error_code &ec) {
-	if (!fs::exists(from, ec) || fs::exists(to, ec)) {
-		ec.clear();
-		return;
-	}
-	ec.clear();
+                       std::string_view what) {
+	std::error_code ec;
+	if (!fs::exists(from, ec) || fs::exists(to, ec)) return;
 	fs::create_directories(to.parent_path(), ec);
-	ec.clear();
-	moveAcrossDevices(from, to, MoveKind::SingleFile, what, ec);
+	moveAcrossDevices(from, to, MoveKind::SingleFile, what);
 }
 
 void migrateDir(const fs::path &from, const fs::path &to,
-                std::string_view what, std::error_code &ec) {
-	if (!fs::exists(from, ec) || fs::exists(to, ec)) {
-		ec.clear();
-		return;
-	}
-	ec.clear();
+                std::string_view what) {
+	std::error_code ec;
+	if (!fs::exists(from, ec) || fs::exists(to, ec)) return;
 	fs::create_directories(to.parent_path(), ec);
-	ec.clear();
-	moveAcrossDevices(from, to, MoveKind::DirectoryTree, what, ec);
+	moveAcrossDevices(from, to, MoveKind::DirectoryTree, what);
 }
 
 void migrateFilesByExtension(const fs::path &from, const fs::path &to,
-                             std::string_view ext, std::string_view what,
-                             std::error_code &ec) {
+                             std::string_view ext, std::string_view what) {
 	if (from == to) return;
-	if (!fs::exists(from, ec) || !fs::is_directory(from, ec)) {
-		ec.clear();
-		return;
-	}
-	ec.clear();
+	std::error_code ec;
+	if (!fs::exists(from, ec) || !fs::is_directory(from, ec)) return;
 	fs::create_directories(to, ec);
-	ec.clear();
 	const std::string wantExt = toLowerCopy(std::string{ext});
 	for (auto it = fs::directory_iterator(from, ec);
 	     !ec && it != fs::directory_iterator();
@@ -83,9 +72,8 @@ void migrateFilesByExtension(const fs::path &from, const fs::path &to,
 		if (toLowerCopy(it->path().extension().string()) != wantExt) continue;
 		const fs::path dst = to / it->path().filename();
 		if (fs::exists(dst, fec)) continue;        // don't clobber existing
-		moveAcrossDevices(it->path(), dst, MoveKind::SingleFile, what, fec);
+		moveAcrossDevices(it->path(), dst, MoveKind::SingleFile, what);
 	}
-	ec.clear();
 }
 
 } // namespace migrate

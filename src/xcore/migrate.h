@@ -7,9 +7,7 @@
 // whole header can be deleted when the XDG transition window closes.
 
 #include <filesystem>
-#include <string>
 #include <string_view>
-#include <system_error>
 
 namespace fs = std::filesystem;
 
@@ -21,29 +19,28 @@ enum class MoveKind { SingleFile, DirectoryTree };
 
 // Try fs::rename; if the target is on another filesystem (EXDEV), fall back
 // to copy-then-remove with the kind-appropriate operations. Logs the attempt
-// and any final error, then clears `ec` so callers don't carry the failure
-// forward. Expects `to.parent_path()` to already exist.
+// and any final error. All error-code handling is internal — callers treat
+// these as fire-and-forget. Expects `to.parent_path()` to already exist.
 void moveAcrossDevices(const fs::path &from, const fs::path &to, MoveKind kind,
-                       std::string_view what, std::error_code &ec);
+                       std::string_view what);
 
 // If `from` exists and `to` does not, move `from` → `to`. No-op otherwise.
 // Thin convenience around moveAcrossDevices for the "legacy file hanging
 // around; move it if present, ignore it if not" idiom.
 void migrateSingleFile(const fs::path &from, const fs::path &to,
-                       std::string_view what, std::error_code &ec);
+                       std::string_view what);
 
 // Move an existing directory to a new location. No-op if `from` doesn't
 // exist or `to` already does. Falls back to recursive copy + remove on
 // cross-device moves.
 void migrateDir(const fs::path &from, const fs::path &to,
-                std::string_view what, std::error_code &ec);
+                std::string_view what);
 
 // Move every regular file whose extension matches `ext` (case-insensitive,
 // dot included, e.g. ".map") from `from` into `to`. Preserves filenames;
 // skips files whose destination already exists. Intended for flattening
 // pre-subdir resource files sitting at the root of confDir.
 void migrateFilesByExtension(const fs::path &from, const fs::path &to,
-                             std::string_view ext, std::string_view what,
-                             std::error_code &ec);
+                             std::string_view ext, std::string_view what);
 
 } // namespace migrate

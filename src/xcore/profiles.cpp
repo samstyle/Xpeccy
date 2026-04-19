@@ -64,9 +64,8 @@ void migrateProfileState(const xProfile *prf, std::string_view ext) {
 		profileConfigDir(prf) / leaf,
 		conf.path.confDir     / leaf,
 	};
-	std::error_code ec;
 	for (const auto &src : legacy) {
-		migrate::migrateSingleFile(src, target, "profile state", ec);
+		migrate::migrateSingleFile(src, target, "profile state");
 	}
 }
 
