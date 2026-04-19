@@ -110,11 +110,11 @@ void cia1_porta_wr(int adr, int v, void* p) {
 }
 
 int c64_cia1_rd(int adr, void* p) {
-	return c64_cia_rd(((Computer*)p)->c64.cia1, adr);
+	return c64_cia_rd(((Computer*)p)->cia1, adr);
 }
 
 void c64_cia1_wr(int adr, int val, void* p) {
-	c64_cia_wr(((Computer*)p)->c64.cia1, adr, val);
+	c64_cia_wr(((Computer*)p)->cia1, adr, val);
 }
 
 // dd00..ddff	cia2 (0x10 registers + mirrors)
@@ -124,11 +124,11 @@ void cia2_porta_wr(int adr, int v, void* p) {
 }
 
 int c64_cia2_rd(int adr, void* p) {
-	return c64_cia_rd(((Computer*)p)->c64.cia2, adr);
+	return c64_cia_rd(((Computer*)p)->cia2, adr);
 }
 
 void c64_cia2_wr(int adr, int val, void* p) {
-	c64_cia_wr(((Computer*)p)->c64.cia2, adr, val);
+	c64_cia_wr(((Computer*)p)->cia2, adr, val);
 }
 
 // de00..deff	io1
@@ -209,8 +209,8 @@ void c64_reset(Computer* comp) {
 	int i;
 	xColor xcol;
 	for (i = 0; i < 16; i++) {
-		comp->c64.cia1->reg[i] = 0x00;
-		comp->c64.cia2->reg[i] = 0x00;
+		comp->cia1->reg[i] = 0x00;
+		comp->cia2->reg[i] = 0x00;
 		xcol = c64_palette[i];
 		vid_set_col(comp->vid, i, xcol);
 	}
@@ -287,10 +287,10 @@ void c64_init(Computer* comp) {
 	fdc_set_hd(comp->dif->fdc, 0);
 	comp->vid->mrd = c64_vic_mrd;
 //	comp->tape->xen = 1;
-	cia_set_port(comp->c64.cia1, 0, cia1_porta_rd, cia1_porta_wr);
-	cia_set_port(comp->c64.cia1, 1, cia1_portb_rd, NULL);
-	cia_set_port(comp->c64.cia2, 0, NULL, cia2_porta_wr);
-	cia_set_port(comp->c64.cia2, 1, NULL, NULL);
+	cia_set_port(comp->cia1, 0, cia1_porta_rd, cia1_porta_wr);
+	cia_set_port(comp->cia1, 1, cia1_portb_rd, NULL);
+	cia_set_port(comp->cia2, 0, NULL, cia2_porta_wr);
+	cia_set_port(comp->cia2, 1, NULL, NULL);
 	kbd_set_type(comp->keyb, KBD_C64);
 }
 
@@ -302,7 +302,7 @@ void c64_irq(Computer* comp, int t) {
 			comp->cpu->intrq |= MOS6502_INT_IRQ;
 			break;
 		case IRQ_TAP_0:
-			cia_irq(comp->c64.cia1, CIA_IRQ_FLAG);
+			cia_irq(comp->cia1, CIA_IRQ_FLAG);
 			break;
 		case IRQ_VIC:
 			printf("vic int\n");
@@ -316,11 +316,11 @@ void c64_sync(Computer* comp, int ns) {
 		int vol = comp->tape->volPlay;
 		tapSync(comp->tape, ns);
 		if ((vol > 0x80) && (comp->tape->volPlay < 0x80)) {	// front 1->0
-			cia_irq(comp->c64.cia1, CIA_IRQ_FLAG);
+			cia_irq(comp->cia1, CIA_IRQ_FLAG);
 		}
 	}
-	cia_sync(comp->c64.cia1, ns, comp->nsPerTick);
-	cia_sync(comp->c64.cia2, ns, comp->nsPerTick);
+	cia_sync(comp->cia1, ns, comp->nsPerTick);
+	cia_sync(comp->cia2, ns, comp->nsPerTick);
 }
 
 void c64_keyp(Computer* comp, keyEntry* ent) {

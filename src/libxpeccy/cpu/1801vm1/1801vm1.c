@@ -322,8 +322,8 @@ void pdp_iot(CPU* cpu) {
 // 0005:reset
 void pdp_res(CPU* cpu) {
 	cpu->t += 448;
-	cpu->timer.val = 0xffff;
-	cpu->timer.ival = 0xffff;
+	cpu->timer.val.w = 0xffff;
+	cpu->timer.ival.w = 0xffff;
 	cpu->timer.flag = 0xff;
 	cpu->xirq(PDP11_INIT, cpu->xptr);	// cpu->iwr(0, PDP11_INIT, cpu->xptr);
 }
@@ -1406,18 +1406,18 @@ void pdp_timer(CPU* cpu, int t) {
 	while (cpu->timer.cnt < 0) {
 		cpu->timer.cnt += cpu->timer.per;
 		if (cpu->timer.flag & 0x10) {
-			cpu->timer.val--;
-			if (cpu->timer.val == 0xffff) {
+			cpu->timer.val.w--;
+			if (cpu->timer.val.w == 0xffff) {
 				if (cpu->timer.flag & 0x04) {
 					cpu->timer.flag |= 0x80;
 					cpu->intrq |= PDP_INT_TIMER;
 				}
 				if (cpu->timer.flag & 0x02) {
-					cpu->timer.val = 0xffff;
+					cpu->timer.val.w = 0xffff;
 				} else if (cpu->timer.flag & 0x08) {
 					cpu->timer.flag &= ~0x10;
 				} else {
-					cpu->timer.val = cpu->timer.ival;
+					cpu->timer.val.w = cpu->timer.ival.w;
 				}
 			}
 		}

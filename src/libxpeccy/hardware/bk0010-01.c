@@ -31,8 +31,8 @@
 // fdc
 
 int bk_fdc_rd(Computer* comp, int adr) {
-	comp->wdata = difIn(comp->dif, (adr & 2) >> 1, NULL, 0) & 0xffff;
-	return 0;
+	return difIn(comp->dif, (adr & 2) >> 1, NULL, 0) & 0xffff;
+	// return 0;
 }
 
 void bk_fdc_wr(Computer* comp, int adr, int val) {
@@ -43,8 +43,8 @@ void bk_fdc_wr(Computer* comp, int adr, int val) {
 
 // 177660
 int bk_kbf_rd(Computer* comp, int adr) {
-	comp->wdata = (comp->keyb->drq << 7) | (!comp->keyb->inten << 6);
-	return 0;
+	return (comp->keyb->drq << 7) | (!comp->keyb->inten << 6);
+	// return 0;
 }
 
 void bk_kbf_wr(Computer* comp, int adr, int val) {
@@ -53,9 +53,9 @@ void bk_kbf_wr(Computer* comp, int adr, int val) {
 
 // ffb2 (177662)
 int bk_kbd_rd(Computer* comp, int adr) {
-	comp->wdata = kbd_rd(comp->keyb, 0) & 0x7f; // comp->keyb->keycode & 0x7f;
+	return kbd_rd(comp->keyb, 0) & 0x7f; // comp->keyb->keycode & 0x7f;
 //	comp->keyb->drq = 0;
-	return 0;
+	//return 0;
 }
 
 void bk11_kbd_wr(Computer* comp, int adr, int val) {
@@ -75,10 +75,10 @@ void bk11_kbd_wr(Computer* comp, int adr, int val) {
 // scroller
 
 int bk_scr_rd(Computer* comp, int adr) {
-	comp->wdata = comp->vid->sc.y & 0x00ff;
+	int r = comp->vid->sc.y & 0x00ff;
 	if (!comp->vid->cutscr)
-		comp->wdata |= 0x200;
-	return 0;
+		r |= 0x200;
+	return r;
 }
 
 void bk_scr_wr(Computer* comp, int adr, int val) {
@@ -93,40 +93,40 @@ void bk_scr_wr(Computer* comp, int adr, int val) {
 // pc/psw
 
 int bk_str_rd(Computer* comp, int adr) {
-	comp->wdata = (adr & 2) ? comp->cpu->reg177676 : comp->cpu->reg177674;
+	return (adr & 2) ? comp->cpu->reg177676 : comp->cpu->reg177674;
 	// comp->wdata = (comp->iomap[adr & ~1] & 0xff) | ((comp->iomap[adr | 1] << 8) & 0xff00);
-	return 0;
+	//return 0;
 }
 
 // timer
 
 int bk_tiv_rd(Computer* comp, int adr) {
-	comp->wdata = comp->cpu->timer.ival;
-	return 0;
+	return comp->cpu->timer.ival.w;
+	//return 0;
 }
 
 int bk_tva_rd(Computer* comp, int adr) {
-	comp->wdata = comp->cpu->timer.val;
-	return 0;
+	return comp->cpu->timer.val.w;
+	// return 0;
 }
 
 int bk_tfl_rd(Computer* comp, int adr) {
-	comp->wdata = (comp->cpu->timer.flag & 0xff) | 0xff00;
-	return 0;
+	return (comp->cpu->timer.flag & 0xff) | 0xff00;
+	//return 0;
 }
 
 void bk_tiv_wr(Computer* comp, int adr, int val) {
 	if (comp->cpu->regNOD & 1)
-		comp->cpu->timer.ivl = val & 0xff;
+		comp->cpu->timer.ival.l = val & 0xff;
 	if (comp->cpu->regNOD & 2)
-		comp->cpu->timer.ivh = (val >> 8) & 0xff;
+		comp->cpu->timer.ival.h = (val >> 8) & 0xff;
 }
 
 void bk_tva_wr(Computer* comp, int adr, int val) {
 	if (comp->cpu->regNOD & 1)
-		comp->cpu->timer.vl = val & 0xff;
+		comp->cpu->timer.val.l = val & 0xff;
 	if (comp->cpu->regNOD & 2)
-		comp->cpu->timer.vh = (val >> 8) & 0xff;
+		comp->cpu->timer.val.h = (val >> 8) & 0xff;
 }
 
 void bk_tfl_wr(Computer* comp, int adr, int val) {
@@ -142,28 +142,27 @@ void bk_tfl_wr(Computer* comp, int adr, int val) {
 // external
 
 int bk_fcc_rd(Computer* comp, int adr) {
-	comp->wdata = 0;
 	return 0;
 }
 
 // 177776: system
 int bk_sys_rd(Computer* comp, int adr) {
-	comp->wdata = 0x8000;		// 8000 for 0010
-	// comp->wdata |= 0x80;		// TL ready
+	int r = 0x8000;			// 8000 for 0010
+	// r |= 0x80;		// TL ready
 	if (comp->regCE) {		// b2: write to system port flag
-		comp->wdata |= 4;
+		r |= 4;
 		comp->regCE = 0;	// reset on reading
 	}
 	// b5: tape signal
 	if (comp->tape->on && !comp->tape->rec && (comp->tape->volPlay & 0x80)) {
-		comp->wdata |= 0x20;
+		r |= 0x20;
 	}
 	// b6: key pressed
 	if (!comp->keyb->kpress) {
-		comp->wdata |= 0x40;		// = 0 if any key pressed, 1 if not
+		r |= 0x40;		// = 0 if any key pressed, 1 if not
 	}
 	// b7: TL ready
-	return 0;
+	return r;
 }
 
 // b2,5,6 = tape signal (msb b6)
@@ -190,22 +189,22 @@ void bk_sys_wr(Computer* comp, int adr, int val) {
 
 // 177716: system
 int bk11_sys_rd(Computer* comp, int adr) {
-	comp->wdata = 0xc000;
+	int r = 0xc000;
 	// comp->wdata |= 0x80;		// TL ready
 	if (comp->regCE) {		// b2: write to system port flag
-		comp->wdata |= 4;
+		r |= 4;
 		comp->regCE = 0;	// reset on reading
 	}
 	// b5: tape signal
 	if (comp->tape->on && !comp->tape->rec && (comp->tape->volPlay & 0x80)) {
-		comp->wdata |= 0x20;
+		r |= 0x20;
 	}
 	// b6: key pressed
 	if (!comp->keyb->kpress) {
-		comp->wdata |= 0x40;		// = 0 if any key pressed, 1 if not
+		r |= 0x40;		// = 0 if any key pressed, 1 if not
 	}
 	// b7: TL ready
-	return 0;
+	return r;
 }
 
 // b2,5,6 = tape signal (msb b6)
@@ -244,10 +243,10 @@ void bk11_sys_wr(Computer* comp, int adr, int val) {
 // * debug
 
 int bk_dbg_rd(Computer* comp, int adr) {
-	comp->wdata = 0xffff;
+	return 0xffff;
 //	printf("%.4X : rd %.4X\n",comp->cpu->preg[7], adr);
 //	assert(0);
-	return -1;
+	//return -1;
 }
 
 void bk_dbg_wr(Computer* comp, int adr, int val) {
@@ -287,15 +286,15 @@ static xPort bk11_io_tab[] = {
 int bk_io_rd(int adr, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 	adr &= ~1;
-	hwIn(bk_io_tab, comp, adr);
-	return comp->wdata;
+	return hwIn(bk_io_tab, comp, adr);
+	// return comp->wdata;
 }
 
 int bk11_io_rd(int adr, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 	adr &= ~1;
-	hwIn(bk11_io_tab, comp, adr);
-	return comp->wdata;
+	return hwIn(bk11_io_tab, comp, adr);
+	// return comp->wdata;
 }
 
 void bk_io_wr(int adr, int val, void* ptr) {

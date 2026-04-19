@@ -94,8 +94,8 @@ typedef int(*cbdmr)(int, void*);
 #define OF_PRT		(1<<7)		// i286:protect mode only
 #define OF_MODRM	(1<<8)		// i286:mod r/m byte present
 #define OF_COMEXT	(1<<9)		// mod r/m contains command extension bits
-#define OF_GEN		(1<<10)		// opcode depends on cpu generation (86/186/286 or vm1/vm2) cpu->tab is sub-table[cpu->gen]
 #define OF_MODCOM	(OF_MODRM | OF_COMEXT)
+#define OF_GEN		(1<<10)		// opcode depends on cpu generation (86/186/286 or vm1/vm2) op->tab is sub-table[cpu->gen]
 
 typedef struct CPU CPU;
 typedef struct opCode opCode;
@@ -112,8 +112,8 @@ struct opCode {
 
 typedef struct {
 	int flag;
-	PAIR(ival,ivh,ivl);
-	PAIR(val,vh,vl);
+	xreg16 ival;
+	xreg16 val;
 	int bper;
 	int per;
 	int cnt;

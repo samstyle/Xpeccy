@@ -29,9 +29,15 @@ typedef struct {
 	int type;			// type of page (ram/rom/slt/io/ext...)
 	int num;			// page number
 	void* data;			// ptr for rd/wr func
-	extmrd rd;			// external rd (for type MEM_EXT)
-	extmwr wr;			// external wr (for type MEM_EXT)
+	extmrd rd;			// external rd
+	extmwr wr;			// external wr
 } MemPage;
+
+typedef struct {
+	unsigned char* data;
+	unsigned int size;
+	unsigned int mask;
+} xMemItem;
 
 typedef struct {
 	MemPage map[256];			// 256 x 256 | 256 x 64K

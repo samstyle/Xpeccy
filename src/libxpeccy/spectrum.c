@@ -405,8 +405,8 @@ Computer* compCreate() {
 	comp->beep = bcCreate();
 	comp->nesapu = apuCreate(nes_apu_ext_rd, comp_irq, comp);
 // c64
-	comp->c64.cia1 = cia_create(IRQ_CIA1, comp_irq, comp);
-	comp->c64.cia2 = cia_create(IRQ_CIA2, comp_irq, comp);
+	comp->cia1 = cia_create(IRQ_CIA1, comp_irq, comp);
+	comp->cia2 = cia_create(IRQ_CIA2, comp_irq, comp);
 // ibm
 	comp->dma1 = dma_create(comp, 0);
 	comp->dma2 = dma_create(comp, 1);
@@ -459,8 +459,8 @@ void compDestroy(Computer* comp) {
 	dma_destroy(comp->dma1);
 	dma_destroy(comp->dma2);
 	pit_destroy(comp->pit);
-	cia_destroy(comp->c64.cia1);
-	cia_destroy(comp->c64.cia2);
+	cia_destroy(comp->cia1);
+	cia_destroy(comp->cia2);
 	upd4990_destroy(comp->rtc);
 	free(comp);
 }
