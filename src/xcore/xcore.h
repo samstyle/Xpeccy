@@ -1,7 +1,6 @@
 #pragma once
 
 #include <algorithm>
-#include <array>
 #include <cctype>
 #include <initializer_list>
 #include <optional>
