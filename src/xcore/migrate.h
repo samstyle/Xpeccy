@@ -11,22 +11,15 @@
 
 namespace fs = std::filesystem;
 
+// Public migration API — three "what to migrate" shapes: a single file, a
+// whole directory, or every file with a given extension. All three share an
+// internal rename-or-copy-on-EXDEV engine; callers treat these as
+// fire-and-forget (error handling and logging are internal).
 namespace migrate {
 
-// Whether a move targets a single regular file or a whole directory tree.
-// Selects which copy/remove pair to use on the cross-device fallback path.
-enum class MoveKind { SingleFile, DirectoryTree };
-
-// Try fs::rename; if the target is on another filesystem (EXDEV), fall back
-// to copy-then-remove with the kind-appropriate operations. Logs the attempt
-// and any final error. All error-code handling is internal — callers treat
-// these as fire-and-forget. Expects `to.parent_path()` to already exist.
-void moveAcrossDevices(const fs::path &from, const fs::path &to, MoveKind kind,
-                       std::string_view what);
-
 // If `from` exists and `to` does not, move `from` → `to`. No-op otherwise.
-// Thin convenience around moveAcrossDevices for the "legacy file hanging
-// around; move it if present, ignore it if not" idiom.
+// The "legacy file hanging around; move it if present, ignore it if not"
+// idiom.
 void migrateSingleFile(const fs::path &from, const fs::path &to,
                        std::string_view what);
 
