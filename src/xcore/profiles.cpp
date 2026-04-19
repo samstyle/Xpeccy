@@ -37,10 +37,20 @@ void saveFixedBlob(const fs::path &path, const T *src, std::size_t bytes) {
 	if (f) f.write(reinterpret_cast<const char*>(src), bytes);
 }
 
+// Canonical per-profile directories. Config dir holds the user-editable .conf;
+// state dir holds machine-authored cmos/nvram blobs. Both are keyed by profile
+// name. Single-source-of-truth so the "<root>/<name>" pattern doesn't drift.
+fs::path profileConfigDir(const xProfile *prf) {
+	return conf.path.prfDir / prf->name;
+}
+fs::path profileStateDir(const xProfile *prf) {
+	return conf.path.prfStateDir / prf->name;
+}
+
 // Canonical location for a per-profile state blob (cmos/nvram) under the XDG
 // state-home tree.
 fs::path profileStatePath(const xProfile *prf, std::string_view ext) {
-	return conf.path.prfStateDir / prf->name / (prf->name + std::string(ext));
+	return profileStateDir(prf) / (prf->name + std::string(ext));
 }
 
 // One-shot migration of a per-profile state file from older locations into the
@@ -51,8 +61,8 @@ void migrateProfileState(const xProfile *prf, std::string_view ext) {
 	const fs::path target = profileStatePath(prf, ext);
 	const std::string leaf = prf->name + std::string(ext);
 	const fs::path legacy[] = {
-		conf.path.prfDir  / prf->name / leaf,
-		conf.path.confDir / leaf,
+		profileConfigDir(prf) / leaf,
+		conf.path.confDir     / leaf,
 	};
 	std::error_code ec;
 	for (const auto &src : legacy) {
@@ -98,9 +108,8 @@ xProfile* addProfile(std::string nm, std::string fp) {
 	nprof->layName = std::string("default");
 	nprof->zx = compCreate();
 	nprof->curlabset = nullptr;
-	const fs::path profDir = conf.path.prfDir / nprof->name;
 	std::error_code ec;
-	fs::create_directories(profDir, ec);
+	fs::create_directories(profileConfigDir(nprof), ec);
 	migrateProfileState(nprof, ".cmos");
 	migrateProfileState(nprof, ".nvram");
 	prf_load_cmos(nprof,  profileStatePath(nprof, ".cmos"));
@@ -121,8 +130,8 @@ int copyProfile(std::string src, std::string dst) {
 	} else {
 		dprf->file = dfile;
 	}
-	const fs::path sfname = conf.path.prfDir / sprf->name / sprf->file;
-	const fs::path dfname = conf.path.prfDir / dprf->name / dfile;
+	const fs::path sfname = profileConfigDir(sprf) / sprf->file;
+	const fs::path dfname = profileConfigDir(dprf) / dfile;
 	copyFile(sfname, dfname);
 	prfLoad(dst);
 	return 1;
@@ -151,13 +160,13 @@ int delProfile(std::string nm) {
 	// remove all such profiles from list & free mem
 	for (int i = 0; i < conf.prof.list.size(); i++) {
 		if (conf.prof.list[i]->name == nm) {
-			const fs::path profDir  = conf.path.prfDir      / prf->name;
-			const fs::path stateDir = conf.path.prfStateDir / prf->name;
+			const fs::path confDir  = profileConfigDir(prf);
+			const fs::path stateDir = profileStateDir(prf);
 			std::error_code ec;
-			fs::remove(profDir / prf->file, ec);
-			fs::remove(stateDir / (prf->name + ".cmos"), ec);
-			fs::remove(stateDir / (prf->name + ".nvram"), ec);
-			fs::remove(profDir,  ec);        // remove directories (leaves them if non-empty)
+			fs::remove(confDir / prf->file, ec);
+			fs::remove(profileStatePath(prf, ".cmos"),  ec);
+			fs::remove(profileStatePath(prf, ".nvram"), ec);
+			fs::remove(confDir,  ec);        // remove directories (leaves them if non-empty)
 			fs::remove(stateDir, ec);
 			compDestroy(prf->zx);            // delete computer
 			delete(prf);
@@ -593,9 +602,8 @@ int prf_load_conf(xProfile* prf, const fs::path &cfname, int flag) {
 int prfLoad(std::string nm) {
 	xProfile* prf = findProfile(nm);
 	if (prf == NULL) return PLOAD_NF;
-	const fs::path profDir = conf.path.prfDir / prf->name;
-	const fs::path cfname  = profDir / prf->file;              // current: $CONFDIR/profiles/$NAME/$FILE
-	const fs::path ofname  = conf.path.confDir / prf->file;    // deep legacy: $CONFDIR/$FILE
+	const fs::path cfname  = profileConfigDir(prf) / prf->file;  // current: $CONFDIR/profiles/$NAME/$FILE
+	const fs::path ofname  = conf.path.confDir     / prf->file;  // deep legacy: $CONFDIR/$FILE
 
 	// Pre-subdir layout: the .conf, .cmos, and .nvram all lived flat in
 	// confDir. If ofname exists, migrate .conf alongside the usual state-
@@ -641,11 +649,10 @@ int prfSave(std::string nm) {
 	if (prf == NULL) return PSAVE_NF;
 	Computer* comp = prf->zx;
 
-	const fs::path profDir = conf.path.prfDir / prf->name;
 	std::error_code ec;
-	fs::create_directories(profDir, ec);
-	fs::create_directories(conf.path.prfStateDir / prf->name, ec);
-	const fs::path cfname = profDir / prf->file;
+	fs::create_directories(profileConfigDir(prf), ec);
+	fs::create_directories(profileStateDir(prf),  ec);
+	const fs::path cfname = profileConfigDir(prf) / prf->file;
 
 	prf_save_cmos(prf,  profileStatePath(prf, ".cmos"));
 	prf_save_nvram(prf, profileStatePath(prf, ".nvram"));
