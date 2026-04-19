@@ -171,7 +171,7 @@ void xGamepadWidget::update(std::string mapname) {
 	ui.sldDeadZone->setValue(gpad->deadZone());
 	ui.cbMapFile->clear();
 	ui.cbMapFile->addItem("none");
-	fillComboFromResources(ui.cbMapFile, ResourceKind::Gamepad,
+	fillComboFromResources(ui.cbMapFile, conf.path.gamepad,
 	                       byExtension({".pad"}));
 	if (mapname.empty()) {
 		ui.cbMapFile->setCurrentIndex(0);

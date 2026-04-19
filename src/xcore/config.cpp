@@ -56,27 +56,9 @@ namespace {
 enum class ResourceBase { Config, Data };
 
 struct ResourceSpec {
-	ResourceKind kind;
 	std::string_view subdir;       // relative to the selected base home dir
-	std::string_view legacySubdir; // subdir under confDir to migrate from; empty = none
+	std::string_view legacySubdir; // subdir under confDir to migrate from; "" = none
 	ResourceBase base;             // Config ($XDG_CONFIG_HOME) or Data ($XDG_DATA_HOME)
-	std::string_view label;        // for diagnostic messages
-};
-
-// A single layout table serves every platform. On Linux/macOS/BSD the
-// legacySubdir triggers a one-time move from confDir/<subdir> to the
-// XDG-resolved writable dir. On Windows, writable == confDir/<subdir>, so
-// migrateDir sees from == to and short-circuits — the Linux-shaped entries
-// are effectively no-ops there.
-constexpr ResourceSpec kResourceLayout[] = {
-	{ ResourceKind::Rom,       "roms",        "roms",        ResourceBase::Data,   "romDir" },
-	{ ResourceKind::Shader,    "shaders",     "shaders",     ResourceBase::Data,   "shdDir" },
-	{ ResourceKind::Palette,   "palettes",    "palettes",    ResourceBase::Data,   "palDir" },
-	{ ResourceKind::PluginCpu, "plugins/cpu", "plugins/cpu", ResourceBase::Data,   "plgDir" },
-	{ ResourceKind::Style,     "styles",      "styles",      ResourceBase::Data,   "qssDir" },
-	{ ResourceKind::Keymap,    "keymaps",     "",            ResourceBase::Config, "keymapDir" },
-	{ ResourceKind::Gamepad,   "gamepads",    "",            ResourceBase::Config, "padDir" },
-	{ ResourceKind::Boot,      "boot",        "",            ResourceBase::Data,   "bootDir" },
 };
 
 // Pure: build a ResourceDirs value from a spec and the already-resolved XDG
@@ -120,50 +102,55 @@ void makeDir(const fs::path &p, std::string_view label) {
 	}
 }
 
-// Populate conf.path.* and conf.path.resources from `roots`, create every
-// directory, and run one-shot legacy migrations from confDir into per-kind
-// subdirs. Idempotent on re-run — migrations short-circuit once targets exist.
+// Populate conf.path.* from `roots`, create every directory, and run one-shot
+// legacy migrations from confDir into per-kind subdirs. Idempotent on re-run
+// — migrations short-circuit once targets exist.
 void applyPlatformRoots(const PlatformRoots &roots) {
-	conf.path.confDir     = roots.confHome;
-	conf.path.prfDir      = conf.path.confDir / "profiles";
-	conf.path.confFile    = conf.path.confDir / "config.conf";
-	conf.path.cacheDir    = roots.cacheHome;
-	conf.path.stateDir    = roots.stateHome;
-	conf.path.prfStateDir = conf.path.stateDir / "profiles";
-	makeDir(conf.path.confDir,     "confDir");
-	makeDir(roots.dataHome,        "dataHomeDir");
-	makeDir(conf.path.prfDir,      "prfDir");
-	makeDir(conf.path.cacheDir,    "cacheDir");
-	makeDir(conf.path.stateDir,    "stateDir");
-	makeDir(conf.path.prfStateDir, "prfStateDir");
+	auto &p = conf.path;
+	p.confDir     = roots.confHome;
+	p.prfDir      = p.confDir / "profiles";
+	p.confFile    = p.confDir / "config.conf";
+	p.cacheDir    = roots.cacheHome;
+	p.stateDir    = roots.stateHome;
+	p.prfStateDir = p.stateDir / "profiles";
+	makeDir(p.confDir,     "confDir");
+	makeDir(roots.dataHome,"dataHomeDir");
+	makeDir(p.prfDir,      "prfDir");
+	makeDir(p.cacheDir,    "cacheDir");
+	makeDir(p.stateDir,    "stateDir");
+	makeDir(p.prfStateDir, "prfStateDir");
 
-	for (const auto &spec : kResourceLayout) {
-		auto &dirs = conf.path.resources[static_cast<size_t>(spec.kind)] =
-			buildResourceDirs(spec, roots.confHome, roots.dataHome,
-			                  roots.configDirs, roots.dataDirs);
+	// Per-kind setup: build the search set, migrate any legacy subdir, mkdir
+	// the writable target. `label` doubles as the `subdir` for diagnostics
+	// (identical in practice) and as the "what" argument for migrateDir.
+	auto initKind = [&](ResourceDirs &out, const ResourceSpec &spec) {
+		out = buildResourceDirs(spec, roots.confHome, roots.dataHome,
+		                        roots.configDirs, roots.dataDirs);
 		if (!spec.legacySubdir.empty()) {
-			migrate::migrateDir(conf.path.confDir / spec.legacySubdir,
-			                    dirs.writable, spec.label);
+			migrate::migrateDir(p.confDir / spec.legacySubdir, out.writable,
+			                    spec.subdir);
 		}
-		makeDir(dirs.writable, spec.label);
-	}
+		makeDir(out.writable, spec.subdir);
+	};
+	initKind(p.rom,       {"roms",        "roms",        ResourceBase::Data});
+	initKind(p.shader,    {"shaders",     "shaders",     ResourceBase::Data});
+	initKind(p.palette,   {"palettes",    "palettes",    ResourceBase::Data});
+	initKind(p.pluginCpu, {"plugins/cpu", "plugins/cpu", ResourceBase::Data});
+	initKind(p.style,     {"styles",      "styles",      ResourceBase::Data});
+	initKind(p.keymap,    {"keymaps",     "",            ResourceBase::Config});
+	initKind(p.gamepad,   {"gamepads",    "",            ResourceBase::Config});
+	initKind(p.boot,      {"boot",        "",            ResourceBase::Data});
 
 	// Pull pre-subdir flat files out of confDir into their per-kind subdirs.
 	// Historically *.map keymaps and *.pad gamepad maps lived flat in confDir;
 	// boot.$B and debuga.layout were also confDir-rooted. No-op on Windows
 	// (source equals destination) and on any run after the first.
-	migrate::migrateFilesByExtension(conf.path.confDir,
-	                                 conf.path.writableDir(ResourceKind::Keymap),
-	                                 ".map", "keymapDir");
-	migrate::migrateFilesByExtension(conf.path.confDir,
-	                                 conf.path.writableDir(ResourceKind::Gamepad),
-	                                 ".pad", "padDir");
-	migrate::migrateSingleFile(conf.path.confDir / "boot.$B",
-	                           conf.path.writableDir(ResourceKind::Boot) / "boot.$B",
-	                           "bootDir");
-	migrate::migrateSingleFile(conf.path.confDir  / "debuga.layout",
-	                           conf.path.cacheDir / "debuga.layout",
-	                           "debuga.layout");
+	migrate::migrateFilesByExtension(p.confDir, p.keymap.writable,  ".map", "keymaps");
+	migrate::migrateFilesByExtension(p.confDir, p.gamepad.writable, ".pad", "gamepads");
+	migrate::migrateSingleFile(p.confDir / "boot.$B",
+	                           p.boot.writable / "boot.$B", "boot");
+	migrate::migrateSingleFile(p.confDir  / "debuga.layout",
+	                           p.cacheDir / "debuga.layout", "debuga.layout");
 }
 
 } // namespace
@@ -428,9 +415,9 @@ void loadConfig() {
 		// Only seed the default ROM if no system-wide copy already resolves —
 		// otherwise we'd permanently shadow a distro-shipped 1982.rom with a
 		// private copy that never gets updated.
-		if (!conf.path.tryFind(ResourceKind::Rom, "1982.rom")) {
+		if (!conf.path.rom.tryFind("1982.rom")) {
 			copyResource(":/conf/1982.rom",
-			             conf.path.writableDir(ResourceKind::Rom) / "1982.rom");
+			             conf.path.rom.writable / "1982.rom");
 		}
 		file.open(conf.path.confFile);
 		if (!file.good()) {

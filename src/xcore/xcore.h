@@ -83,25 +83,6 @@
 
 namespace fs = std::filesystem;
 
-// Categorizes shippable resource files that may live both in a user-writable
-// directory and in one or more system data directories.
-enum class ResourceKind {
-	Rom,
-	Shader,
-	Palette,
-	PluginCpu,
-	Style,
-	Keymap,
-	Gamepad,
-	Boot,     // TRDOS boot loader blobs (e.g. boot.$B)
-	COUNT
-};
-
-struct ResourceDirs {
-	fs::path writable;                 // User-writable dir (under dataHomeDir or confDir on Windows)
-	std::vector<fs::path> readonly;    // System dirs from $XDG_DATA_DIRS (empty on Windows)
-};
-
 // Which side of the search path an enumerated entry came from. Named so call
 // sites don't have to interpret a bare bool.
 enum class ResourceOrigin { User, System };
@@ -110,6 +91,71 @@ struct ResolvedEntry {
 	fs::path path;           // full path on disk
 	fs::path name;           // basename (or relative path for enumerateRecursive)
 	ResourceOrigin origin;   // User (writable dir) or System (readonly dir)
+};
+
+// A resolved XDG search set for one shippable resource kind: one user-writable
+// dir plus zero or more system dirs (from $XDG_{CONFIG,DATA}_DIRS on Linux;
+// empty on Windows). Populated once in conf_init, then queried directly at
+// call sites as `conf.path.<field>.tryFind(...)` etc.
+struct ResourceDirs {
+	fs::path writable;                 // User-writable dir
+	std::vector<fs::path> readonly;    // System dirs in search order
+
+	// Search for a file by name: writable dir first, then each readonly dir.
+	// Returns nullopt if nothing exists. Use this when the caller wants to
+	// distinguish "not found anywhere" from "found but unusable".
+	std::optional<fs::path> tryFind(const fs::path &name) const {
+		const fs::path user = writable / name;
+		if (fs::exists(user)) return user;
+		for (const auto &ro : readonly) {
+			if (const fs::path p = ro / name; fs::exists(p)) return p;
+		}
+		return std::nullopt;
+	}
+
+	// Convenience: falls back to the writable-dir path when nothing exists so
+	// callers that only want an error-message location get one for free.
+	fs::path find(const fs::path &name) const {
+		return tryFind(name).value_or(writable / name);
+	}
+
+	// Higher-order enumerator: descends into subdirs of every search path,
+	// passing each candidate to the predicate. Accepted entries are returned
+	// tagged User (writable) or System (readonly). ResolvedEntry::name is the
+	// relative path from the search root (e.g. "zx48/48k.rom"). Symlinks are
+	// NOT followed; permission errors in subtrees are skipped. No de-dup: if
+	// the same basename exists on both sides, both entries appear. Results
+	// are sorted by relative path.
+	template <typename Pred>
+	std::vector<ResolvedEntry> enumerateRecursive(Pred &&predicate) const {
+		std::vector<ResolvedEntry> out;
+		auto addFromDir = [&](const fs::path &dir, ResourceOrigin origin) {
+			std::error_code ec;
+			if (!fs::exists(dir, ec) || !fs::is_directory(dir, ec)) return;
+			const auto opts = fs::directory_options::skip_permission_denied;
+			fs::recursive_directory_iterator it(dir, opts, ec);
+			if (ec) return;
+			const fs::recursive_directory_iterator end;
+			while (it != end) {
+				std::error_code fec;
+				if (it->is_regular_file(fec) && predicate(it->path())) {
+					out.push_back({it->path(),
+					               it->path().lexically_relative(dir),
+					               origin});
+				}
+				std::error_code iec;
+				it.increment(iec);
+				if (iec) break;
+			}
+		};
+		addFromDir(writable, ResourceOrigin::User);
+		for (const auto &ro : readonly) addFromDir(ro, ResourceOrigin::System);
+		std::sort(out.begin(), out.end(),
+		          [](const ResolvedEntry &a, const ResolvedEntry &b) {
+		              return a.name < b.name;
+		          });
+		return out;
+	}
 };
 
 // Small adapter so callers don't have to write QString::fromStdString(p.string())
@@ -576,127 +622,24 @@ struct xConfig {
 	struct {
 		fs::path confDir;
 		fs::path confFile;
-
-		// Per-kind writable + read-only search paths. Populated in conf_init.
-		std::array<ResourceDirs, static_cast<size_t>(ResourceKind::COUNT)> resources;
-
-		// Index-hiding accessor: removes the static_cast noise from call sites.
-		const ResourceDirs& dirsFor(ResourceKind kind) const {
-			return resources[static_cast<size_t>(kind)];
-		}
-
-		const fs::path& writableDir(ResourceKind kind) const {
-			return dirsFor(kind).writable;
-		}
-
-		// Search for a file by name: writable dir first, then each readonly
-		// dir in order. Returns nullopt if nothing exists. This is the pure
-		// primitive — use it when the caller wants to distinguish "not found
-		// anywhere" from "found but unusable".
-		std::optional<fs::path> tryFind(ResourceKind kind, const fs::path &name) const {
-			const auto &dirs = dirsFor(kind);
-			const fs::path user = dirs.writable / name;
-			if (fs::exists(user)) return user;
-			for (const auto &ro : dirs.readonly) {
-				if (const fs::path p = ro / name; fs::exists(p)) return p;
-			}
-			return std::nullopt;
-		}
-
-		// Convenience wrapper: falls back to the writable-dir path so callers
-		// that only care about building an error message get a sensible
-		// "expected location" string for free.
-		fs::path find(ResourceKind kind, const fs::path &name) const {
-			return tryFind(kind, name).value_or(dirsFor(kind).writable / name);
-		}
-
-		// Higher-order enumerator: walks every dir for the kind, passing each
-		// candidate path to the predicate. Entries accepted by the predicate
-		// are returned, tagged as user (writable dir) or system (readonly).
-		// No de-duplication: if the same basename exists in both writable and
-		// readonly dirs, both entries appear. Results are sorted by name so
-		// the output is deterministic.
-		template <typename Pred>
-		std::vector<ResolvedEntry> enumerate(ResourceKind kind, Pred &&predicate) const {
-			std::vector<ResolvedEntry> out;
-			std::error_code ec;
-			auto addFromDir = [&](const fs::path &dir, ResourceOrigin origin) {
-				if (!fs::exists(dir, ec) || !fs::is_directory(dir, ec)) {
-					ec.clear();
-					return;
-				}
-				for (auto it = fs::directory_iterator(dir, ec);
-				     !ec && it != fs::directory_iterator();
-				     it.increment(ec)) {
-					if (!it->is_regular_file(ec)) continue;
-					if (!predicate(it->path())) continue;
-					out.push_back({it->path(), it->path().filename(), origin});
-				}
-				ec.clear();
-			};
-			const auto &dirs = dirsFor(kind);
-			addFromDir(dirs.writable, ResourceOrigin::User);
-			for (const auto &ro : dirs.readonly) addFromDir(ro, ResourceOrigin::System);
-			std::sort(out.begin(), out.end(),
-			          [](const ResolvedEntry &a, const ResolvedEntry &b) {
-			              return a.name < b.name;
-			          });
-			return out;
-		}
-
-		// Convenience overload: accept every regular file.
-		std::vector<ResolvedEntry> enumerate(ResourceKind kind) const {
-			return enumerate(kind, [](const fs::path &) { return true; });
-		}
-
-		// Like enumerate, but descends into subdirectories. ResolvedEntry::name
-		// is the relative path from the search-root dir (e.g. "zx48/48k.rom"
-		// if the rom dir contains zx48/48k.rom). Symlinks are NOT followed to
-		// avoid infinite loops, and permission errors in subtrees are skipped
-		// rather than thrown. Results are sorted by relative path.
-		template <typename Pred>
-		std::vector<ResolvedEntry> enumerateRecursive(ResourceKind kind, Pred &&predicate) const {
-			std::vector<ResolvedEntry> out;
-			auto addFromDir = [&](const fs::path &dir, ResourceOrigin origin) {
-				std::error_code ec;
-				if (!fs::exists(dir, ec) || !fs::is_directory(dir, ec)) return;
-				const auto opts = fs::directory_options::skip_permission_denied;
-				fs::recursive_directory_iterator it(dir, opts, ec);
-				if (ec) return;
-				const fs::recursive_directory_iterator end;
-				while (it != end) {
-					std::error_code fec;
-					if (it->is_regular_file(fec) && predicate(it->path())) {
-						out.push_back({it->path(),
-						               it->path().lexically_relative(dir),
-						               origin});
-					}
-					std::error_code iec;
-					it.increment(iec);
-					if (iec) break;
-				}
-			};
-			const auto &dirs = dirsFor(kind);
-			addFromDir(dirs.writable, ResourceOrigin::User);
-			for (const auto &ro : dirs.readonly) addFromDir(ro, ResourceOrigin::System);
-			std::sort(out.begin(), out.end(),
-			          [](const ResolvedEntry &a, const ResolvedEntry &b) {
-			              return a.name < b.name;
-			          });
-			return out;
-		}
-
-		// Convenience overload: accept every regular file.
-		std::vector<ResolvedEntry> enumerateRecursive(ResourceKind kind) const {
-			return enumerateRecursive(kind, [](const fs::path &) { return true; });
-		}
-
 		fs::path prfDir;
 		fs::path cacheDir;   // $XDG_CACHE_HOME/samstyle/xpeccy — UI dock state and other
 		                     // derived, non-essential artifacts
 		fs::path stateDir;   // $XDG_STATE_HOME/samstyle/xpeccy — persistent machine-
 		                     // authored state (cmos/nvram blobs)
 		fs::path prfStateDir;// stateDir / profiles — per-profile state subtree
+
+		// Per-kind search sets, populated by applyPlatformRoots. Each is queried
+		// directly: `conf.path.rom.tryFind("1982.rom")`, etc. Adding a new kind
+		// is a field here + an initKind call in applyPlatformRoots.
+		ResourceDirs rom;        // $XDG_DATA_HOME/.../roms
+		ResourceDirs shader;     // $XDG_DATA_HOME/.../shaders
+		ResourceDirs palette;    // $XDG_DATA_HOME/.../palettes
+		ResourceDirs pluginCpu;  // $XDG_DATA_HOME/.../plugins/cpu
+		ResourceDirs style;      // $XDG_DATA_HOME/.../styles
+		ResourceDirs keymap;     // $XDG_CONFIG_HOME/.../keymaps
+		ResourceDirs gamepad;    // $XDG_CONFIG_HOME/.../gamepads
+		ResourceDirs boot;       // $XDG_DATA_HOME/.../boot  (TRDOS boot loader)
 	} path;
 	struct {
 		unsigned labels:1;

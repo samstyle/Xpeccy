@@ -272,7 +272,7 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 	foreach(xRomFile xrf, rset->roms) {
 		const int foff = xrf.foffset * 1024;
 		const int roff = xrf.roffset * 1024;
-		const auto maybePath = conf.path.tryFind(ResourceKind::Rom, xrf.name);
+		const auto maybePath = conf.path.rom.tryFind(xrf.name);
 		if (!maybePath) {
 			printf("Can't find rom '%s' in any search path\n", xrf.name.c_str());
 			continue;
@@ -300,7 +300,7 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 	memSetSize(prf->zx->mem, -1, romsz);
 // load GS ROM
 	if (!rset->gsFile.empty()) {
-		if (const auto path = conf.path.tryFind(ResourceKind::Rom, rset->gsFile)) {
+		if (const auto path = conf.path.rom.tryFind(rset->gsFile)) {
 			if (!loadFixedBlob(*path, prf->zx->gs->mem->romData, MEM_32K)) {
 				std::cout << "Can't load gs rom " << *path
 				          << " (profile " << prf->name << ")" << std::endl;
@@ -317,9 +317,9 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 // behaviour — the C API handles a nonexistent path gracefully and may also do
 // per-call teardown that we don't want to skip.
 	if (!rset->fntFile.empty()) {
-		const auto maybePath = conf.path.tryFind(ResourceKind::Rom, rset->fntFile);
+		const auto maybePath = conf.path.rom.tryFind(rset->fntFile);
 		const fs::path path = maybePath.value_or(
-			conf.path.writableDir(ResourceKind::Rom) / rset->fntFile);
+			conf.path.rom.writable / rset->fntFile);
 		vid_fnt_load(prf->zx->vid, path.string().c_str());
 		if (!maybePath) {
 			printf("Can't find font '%s' in any search path\n", rset->fntFile.c_str());
@@ -331,7 +331,7 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 	memset(prf->zx->vid->bios, 0xff, MEM_64K);
 	prf->zx->vid->vga.cga = 1;
 	if (!rset->vBiosFile.empty()) {
-		if (const auto path = conf.path.tryFind(ResourceKind::Rom, rset->vBiosFile)) {
+		if (const auto path = conf.path.rom.tryFind(rset->vBiosFile)) {
 			if (loadFixedBlob(*path, prf->zx->vid->bios, MEM_64K)) {
 				prf->zx->vid->vga.cga = 0;
 			}
@@ -463,8 +463,7 @@ int prf_load_conf(xProfile* prf, const fs::path &cfname, int flag) {
 						if (pspl.second.empty()) {		// no @, use built-in
 							cpu_set_type(comp->cpu, pval.c_str(), NULL, NULL);
 						} else {
-							const auto maybePath = conf.path.tryFind(
-								ResourceKind::PluginCpu, pspl.second);
+							const auto maybePath = conf.path.pluginCpu.tryFind(pspl.second);
 							if (maybePath) {
 								const std::string dir = maybePath->parent_path().string();
 								cpu_set_type(comp->cpu, pspl.first.c_str(),

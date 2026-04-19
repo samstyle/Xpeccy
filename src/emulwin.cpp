@@ -1058,7 +1058,7 @@ void MainWin::fillUserMenu() {
 	act->setCheckable(true);
 	if (conf.prof.cur) {
 		if (conf.prof.cur->kmapName.empty()) act->setChecked(true);
-		fillCheckableMenuFromResources(keyMenu, ResourceKind::Keymap,
+		fillCheckableMenuFromResources(keyMenu, conf.path.keymap,
 		                               byExtension({".map"}),
 		                               toQString(conf.prof.cur->kmapName));
 	}
@@ -1070,7 +1070,7 @@ void MainWin::fillUserMenu() {
 	if (conf.vid.shader.empty()) act->setChecked(true);
 #ifdef USEOPENGL
 	if (conf.vid.shd_support) {
-		fillCheckableMenuFromResources(shdMenu, ResourceKind::Shader,
+		fillCheckableMenuFromResources(shdMenu, conf.path.shader,
 		                               byExtension({".txt"}),
 		                               toQString(conf.vid.shader));
 	}
@@ -1081,7 +1081,7 @@ void MainWin::fillUserMenu() {
 	act->setData("");
 	act->setCheckable(true);
 	if (conf.prof.cur->palette.empty()) act->setChecked(true);
-	fillCheckableMenuFromResources(palMenu, ResourceKind::Palette,
+	fillCheckableMenuFromResources(palMenu, conf.path.palette,
 	                               byExtension({".txt"}),
 	                               toQString(conf.prof.cur->palette));
 }

@@ -59,7 +59,7 @@ void xApp::d_frame() {
 
 void xApp::d_style() {
 	if (conf.style.empty()) { setStyleSheet(""); return; }
-	QFile file(toQString(conf.path.find(ResourceKind::Style, conf.style)));
+	QFile file(toQString(conf.path.style.find(conf.style)));
 	if (file.open(QFile::ReadOnly)) {
 		setStyleSheet(QString::fromUtf8(file.readAll()));
 	}
