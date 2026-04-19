@@ -58,15 +58,10 @@ void xApp::d_frame() {
 }
 
 void xApp::d_style() {
-	if (conf.style.empty()) {
-		setStyleSheet("");
-	} else {
-		std::string path = conf.path.find(ResourceKind::Style, conf.style).string();
-		QFile file(path.c_str());
-		if (file.open(QFile::ReadOnly)) {
-			setStyleSheet(file.readAll().data());
-			file.close();
-		}
+	if (conf.style.empty()) { setStyleSheet(""); return; }
+	QFile file(toQString(conf.path.find(ResourceKind::Style, conf.style)));
+	if (file.open(QFile::ReadOnly)) {
+		setStyleSheet(QString::fromUtf8(file.readAll()));
 	}
 }
 
