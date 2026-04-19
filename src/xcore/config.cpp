@@ -137,14 +137,13 @@ void applyPlatformRoots(const PlatformRoots &roots) {
 	makeDir(conf.path.stateDir,    "stateDir");
 	makeDir(conf.path.prfStateDir, "prfStateDir");
 
-	std::error_code ec;
 	for (const auto &spec : kResourceLayout) {
 		auto &dirs = conf.path.resources[static_cast<size_t>(spec.kind)] =
 			buildResourceDirs(spec, roots.confHome, roots.dataHome,
 			                  roots.configDirs, roots.dataDirs);
 		if (!spec.legacySubdir.empty()) {
 			migrate::migrateDir(conf.path.confDir / spec.legacySubdir,
-			                    dirs.writable, spec.label, ec);
+			                    dirs.writable, spec.label);
 		}
 		makeDir(dirs.writable, spec.label);
 	}
@@ -155,35 +154,31 @@ void applyPlatformRoots(const PlatformRoots &roots) {
 	// (source equals destination) and on any run after the first.
 	migrate::migrateFilesByExtension(conf.path.confDir,
 	                                 conf.path.writableDir(ResourceKind::Keymap),
-	                                 ".map", "keymapDir", ec);
+	                                 ".map", "keymapDir");
 	migrate::migrateFilesByExtension(conf.path.confDir,
 	                                 conf.path.writableDir(ResourceKind::Gamepad),
-	                                 ".pad", "padDir", ec);
+	                                 ".pad", "padDir");
 	migrate::migrateSingleFile(conf.path.confDir / "boot.$B",
 	                           conf.path.writableDir(ResourceKind::Boot) / "boot.$B",
-	                           "bootDir", ec);
+	                           "bootDir");
 	migrate::migrateSingleFile(conf.path.confDir  / "debuga.layout",
 	                           conf.path.cacheDir / "debuga.layout",
-	                           "debuga.layout", ec);
+	                           "debuga.layout");
 }
 
 } // namespace
 
 void conf_init(char* wpath, char* confdir) {
 	// Default screenshot output to the user's Pictures directory per the
-	// xdg-user-dirs spec. PicturesDir() falls back to $HOME/Pictures, which
-	// itself falls back gracefully if HOME isn't set. Users can override the
-	// choice in config.conf (see `scrDir` there) — that wins on subsequent
-	// launches.
-#if defined(__linux) || defined(__APPLE__) || defined(__BSD)
+	// xdg-user-dirs spec. On Windows (where xdgpp's BaseDirectories throws
+	// because $HOME is unset) or whenever anything in that chain fails, fall
+	// back to $ENVHOME — which is HOMEPATH on Windows, HOME elsewhere. Users
+	// can override via config.conf's `scrDir` — that wins on subsequent loads.
 	try {
 		conf.scrShot.dir = xdg::PicturesDir().string();
 	} catch (const std::exception &) {
 		conf.scrShot.dir = std::string(getenv(ENVHOME));
 	}
-#else
-	conf.scrShot.dir = std::string(getenv(ENVHOME));
-#endif
 	conf.port = 30000;
 
 	PlatformRoots roots;
@@ -224,9 +219,8 @@ void conf_init(char* wpath, char* confdir) {
 		// run before applyPlatformRoots creates the new confDir — otherwise
 		// migrateDir sees the destination already present and short-circuits.
 		if (home) {
-			std::error_code ec;
 			migrate::migrateDir(fs::path(home) / ".config" / dataDirsSuffix,
-			                    roots.confHome, "confDir", ec);
+			                    roots.confHome, "confDir");
 		}
 	} else {
 		roots.confHome = confdir;
