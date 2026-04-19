@@ -11,6 +11,7 @@
 #include <QtCore>
 
 #include "xcore.h"
+#include "migrate.h"
 #include "vscalers.h"
 #include "../xgui/xgui.h"
 #include "sound.h"
@@ -98,87 +99,11 @@ ResourceDirs buildResourceDirs(const ResourceSpec &spec,
 	return out;
 }
 
-// Whether a move targets a single regular file or a whole directory tree.
-// Determines which copy/remove pair to use on the cross-device fallback path.
-enum class MoveKind { SingleFile, DirectoryTree };
-
-// Try fs::rename; if the target is on another filesystem (EXDEV), fall back to
-// copy-then-remove with the kind-appropriate operations. Logs the attempt and
-// any final error, then clears `ec` so callers don't carry the failure forward.
-void moveAcrossDevices(const fs::path &from, const fs::path &to, MoveKind kind,
-                       std::string_view what, std::error_code &ec) {
-	std::cout << "Moving " << from << " -> " << to << std::endl;
-	fs::rename(from, to, ec);
-	if (ec == std::errc::cross_device_link) {
-		ec.clear();
-		if (kind == MoveKind::SingleFile) {
-			fs::copy_file(from, to, ec);
-		} else {
-			fs::copy(from, to, fs::copy_options::recursive, ec);
-		}
-		if (!ec) {
-			if (kind == MoveKind::SingleFile) fs::remove(from, ec);
-			else                              fs::remove_all(from, ec);
-		}
-	}
-	if (ec) {
-		std::cout << "legacy " << what << " migration failed: "
-		          << ec.message() << std::endl;
-		ec.clear();
-	}
-}
-
-std::string toLowerCopy(std::string s) {
-	std::transform(s.begin(), s.end(), s.begin(),
-	               [](unsigned char c) { return std::tolower(c); });
-	return s;
-}
-
-// Move every regular file with the given extension (case-insensitive, dot
-// included, e.g. ".map") from `from` to `to`. Preserves filenames; skips any
-// file whose destination already exists. Intended for one-shot flattening of
-// pre-subdir resource files sitting at the root of confDir (e.g. legacy *.map
-// keymaps, *.pad gamepad maps).
-void migrateFilesByExtension(const fs::path &from, const fs::path &to,
-                             std::string_view ext, std::string_view what,
-                             std::error_code &ec) {
-	if (from == to) return;
-	if (!fs::exists(from, ec) || !fs::is_directory(from, ec)) {
-		ec.clear();
-		return;
-	}
-	ec.clear();
-	fs::create_directories(to, ec);
-	ec.clear();
-	const std::string wantExt = toLowerCopy(std::string{ext});
-	for (auto it = fs::directory_iterator(from, ec);
-	     !ec && it != fs::directory_iterator();
-	     it.increment(ec)) {
-		std::error_code fec;
-		if (!it->is_regular_file(fec)) continue;
-		if (toLowerCopy(it->path().extension().string()) != wantExt) continue;
-		const fs::path dst = to / it->path().filename();
-		if (fs::exists(dst, fec)) continue;        // don't clobber existing
-		moveAcrossDevices(it->path(), dst, MoveKind::SingleFile, what, fec);
-	}
-	ec.clear();
-}
-
-// Move an existing directory to a new location. No-op if `from` doesn't exist
-// or `to` already does. Falls back to recursive copy + remove on cross-device.
-void migrateDir(const fs::path &from, const fs::path &to, std::string_view what,
-                std::error_code &ec) {
-	if (!fs::exists(from, ec) || fs::exists(to, ec)) {
-		ec.clear();
-		return;
-	}
-	ec.clear();
-	fs::create_directories(to.parent_path(), ec);
-	ec.clear();
-	moveAcrossDevices(from, to, MoveKind::DirectoryTree, what, ec);
-}
-
 } // namespace
+
+using migrate::migrateDir;
+using migrate::migrateFilesByExtension;
+using migrate::migrateSingleFile;
 
 void conf_init(char* wpath, char* confdir) {
 	// Default screenshot output to the user's Pictures directory per the
@@ -286,12 +211,9 @@ void conf_init(char* wpath, char* confdir) {
 	                        conf.path.writableDir(ResourceKind::Gamepad),
 	                        ".pad", "padDir", ec);
 	// Pull any legacy confDir/boot.$B into the Boot resource dir.
-	if (std::error_code bec; fs::exists(conf.path.confDir / "boot.$B", bec) &&
-	    !fs::exists(conf.path.writableDir(ResourceKind::Boot) / "boot.$B", bec)) {
-		moveAcrossDevices(conf.path.confDir / "boot.$B",
-		                  conf.path.writableDir(ResourceKind::Boot) / "boot.$B",
-		                  MoveKind::SingleFile, "bootDir", ec);
-	}
+	migrateSingleFile(conf.path.confDir / "boot.$B",
+	                  conf.path.writableDir(ResourceKind::Boot) / "boot.$B",
+	                  "bootDir", ec);
 
 	conf.path.prfDir = conf.path.confDir / "profiles";
 	makeDir(conf.path.prfDir, "prfDir");
@@ -302,12 +224,9 @@ void conf_init(char* wpath, char* confdir) {
 		conf.path.confDir / "cache", "xdg cache home");
 	makeDir(conf.path.cacheDir, "cacheDir");
 	// One-shot: pull debuga.layout out of confDir into cacheDir.
-	if (std::error_code cec; fs::exists(conf.path.confDir / "debuga.layout", cec) &&
-	    !fs::exists(conf.path.cacheDir / "debuga.layout", cec)) {
-		moveAcrossDevices(conf.path.confDir / "debuga.layout",
-		                  conf.path.cacheDir / "debuga.layout",
-		                  MoveKind::SingleFile, "debuga.layout", ec);
-	}
+	migrateSingleFile(conf.path.confDir / "debuga.layout",
+	                  conf.path.cacheDir  / "debuga.layout",
+	                  "debuga.layout", ec);
 
 	// State home for machine-authored persistent state (CMOS RTC, NVRAM).
 	conf.path.stateDir = xdgPathOrFallback(xdg::StateHomeDir,
