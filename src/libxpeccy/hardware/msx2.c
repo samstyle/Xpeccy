@@ -215,6 +215,7 @@ int msx2_b5in(Computer* comp, int port) {
 	return (res & 0x0f);
 }
 
+void msx_init(Computer*);
 void msx2_init(Computer* comp) {
 	msx_init(comp);
 	comp->ppi->a.rd = NULL;
@@ -273,5 +274,9 @@ int msx2In(Computer* comp, int port) {
 	return hwIn(msx2ioTab, comp, port);
 }
 
+void msx_sync(Computer*, int);
+void msx_keyp(Computer*, keyEntry*);
+void msx_keyr(Computer*, keyEntry*);
+sndPair msx_vol(Computer*, sndVolume*);
 HardWare mx2_hw_core = {HW_MSX2,HWG_MSX,"MSX2","MSX-2 (alfa)",16,MEM_128K,1.0,&v9938Lay,16,NULL,
 			msx2_init,msx2mapper,msx2Out,msx2In,msx2mrd,msx2mwr,NULL,NULL,msx2Reset,msx_sync,msx_keyp,msx_keyr,msx_vol};

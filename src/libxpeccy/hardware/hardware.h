@@ -143,10 +143,6 @@ HardWare* findHardware(const char*);
 int stdMRd(Computer*, int, int);
 void stdMWr(Computer*, int, int);
 
-void zx_sync(Computer*, int);
-sndPair zx_vol(Computer*, sndVolume*);
-void zx_set_pal(Computer*);
-
 // debug IO
 
 int brkIn(Computer*, int);
@@ -173,223 +169,18 @@ int xInFADF(Computer*, int);
 int xInFBDF(Computer*, int);
 int xInFFDF(Computer*, int);
 
-// dummy
-
-void hw_dum_map(Computer*);
-int hw_dum_mrd(Computer*, int, int);
-void hw_dum_mwr(Computer*, int, int);
-int hw_dum_ird(Computer*, int);
-void hw_dum_iwr(Computer*, int, int);
-sndPair hw_dum_vol(Computer*, sndVolume*);
-
-// zx48
-void zx48_reset(Computer*);
+// common_zx calls
 void zx_init(Computer*);
-void speMapMem(Computer*);
-void speOut(Computer*, int, int);
-int speIn(Computer*, int);
-void speReset(Computer*);
+void zx_reset(Computer*);
 void zx_keyp(Computer*, keyEntry*);
 void zx_keyr(Computer*, keyEntry*);
+void zx_sync(Computer*, int);
+sndPair zx_vol(Computer*, sndVolume*);
+void zx_set_pal(Computer*);	// todo: called from zx_reset only
 
-// pentagon
-void penMapMem(Computer*);
-void penOut(Computer*, int, int);
-int penIn(Computer*, int);
-
-// p1024sl
-void p1mMapMem(Computer*);
-void p1mOut(Computer*, int, int);
-int p1mIn(Computer*, int);
-
-// scorpion
-void scrp_init(Computer*);
-void scoMapMem(Computer*);
-void scoOut(Computer*, int, int);
-int scoIn(Computer*, int);
-int scoMRd(Computer*, int, int);
-
-// plus 2
-void pl2MapMem(Computer*);
-void pl2Out(Computer*, int, int);
-int pl2In(Computer*, int);
-
-// plus 3
-void pl3Out(Computer*, int, int);
-int pl3In(Computer*, int);
-void plusRes(Computer*);
-
-// atm 2
-void atm2MapMem(Computer*);
-void atm2Out(Computer*, int, int);
-int atm2In(Computer*, int);
-void atm2Reset(Computer*);
-void atm2_keyp(Computer*, keyEntry*);
-void atm2_keyr(Computer*, keyEntry*);
-void atm2_sync(Computer*, int);
-
-// Evo baseconf
-void evoMapMem(Computer*);
-void evoOut(Computer*, int, int);
-int evoIn(Computer*, int);
-int evoMRd(Computer*, int, int);
-void evoMWr(Computer*, int, int);
-void evoReset(Computer*);
-
-// Evo tsconf
-void tslMapMem(Computer*);
-void tslOut(Computer*, int, int);
-int tslIn(Computer*, int);
-int tslMRd(Computer*, int, int);
-void tslMWr(Computer*, int, int);
-void tslReset(Computer*);
-
-// Profi
-void prf_init(Computer*);
-void prfMapMem(Computer*);
-void prfOut(Computer*, int, int);
-int prfIn(Computer*, int);
-void prfReset(Computer*);
-int prfMRd(Computer*, int, int);
-void prf_keyp(Computer*, keyEntry*);
-void prf_keyr(Computer*, keyEntry*);
-
-// ZXM Phoenix
-void phxMapMem(Computer*);
-void phxOut(Computer*, int, int);
-int phxIn(Computer*, int);
-void phxReset(Computer*);
-
-// ALF
-void alf_mapmem(Computer*);
-int alf_mrd(Computer*, int, int);
-void alf_mwr(Computer*, int, int);
-int alf_ird(Computer*, int);
-void alf_iwr(Computer*, int, int);
-int alf_ack(Computer*);
-void alf_reset(Computer*);
-void alf_sync(Computer*, int);
-sndPair alf_vol(Computer*, sndVolume*);
-
-// msx
-void msx_init(Computer*);
-void msxMapMem(Computer*);
-void msxOut(Computer*, int, int);
-int msxIn(Computer*, int);
-void msxReset(Computer*);
-int msxMRd(Computer*, int, int);
-void msxMWr(Computer*, int, int);
-void msx_sync(Computer*, int);
-void msx_keyp(Computer*, keyEntry*);
-void msx_keyr(Computer*, keyEntry*);
-sndPair msx_vol(Computer*, sndVolume*);
-
-// msx2
-void msx2_init(Computer*);
-void msx2mapper(Computer*);
-void msx2Out(Computer*, int, int);
-int msx2In(Computer*, int);
-void msx2Reset(Computer*);
-int msx2mrd(Computer*, int, int);
-void msx2mwr(Computer*, int, int);
-
-// gameboy
-void gbc_init(Computer*);
-void gbMaper(Computer*);
-void gbReset(Computer*);
-int gbMemRd(Computer*, int, int);
-void gbMemWr(Computer*, int, int);
-void gbc_irq(Computer*, int);
-void gbcSync(Computer*, int);
-void gbc_keyp(Computer*, keyEntry*);
-void gbc_keyr(Computer*, keyEntry*);
-sndPair gbc_vol(Computer*, sndVolume*);
-
-// nes
-void nes_init(Computer*);
-void nesMaper(Computer*);
-void nesReset(Computer*);
-int nesMemRd(Computer*, int, int);
-void nesMemWr(Computer*, int, int);
-void nes_irq(Computer*, int);
-void nesSync(Computer*, int);
-void nes_keyp(Computer*, keyEntry*);
-void nes_keyr(Computer*, keyEntry*);
-sndPair nes_vol(Computer*, sndVolume*);
+// nes calls (need for deBUGa widget)
 int nes_apu_ext_rd(int, void*);
 int nes_ppu_ext_rd(int, void*);
-
-// c64
-void c64_init(Computer*);
-void c64_maper(Computer*);
-void c64_reset(Computer*);
-void c64_mwr(Computer*, int, int);
-int c64_mrd(Computer*, int, int);
-sndPair c64_vol(Computer*, sndVolume*);
-void c64_sync(Computer*, int);
-void c64_keyp(Computer*, keyEntry*);
-void c64_keyr(Computer*, keyEntry*);
-void c64_irq(Computer*, int);
-
-// bk0010
-void bk_init(Computer*);
-void bk_mem_map(Computer*);
-void bk_reset(Computer*);
-void bk_mwr(Computer*, int, int);
-int bk_mrd(Computer* comp, int, int);
-void bk_iowr(Computer*, int, int);
-void bk_sync(Computer*, int);
-void bk_keyp(Computer*, keyEntry*);
-void bk_keyr(Computer*, keyEntry*);
-sndPair bk_vol(Computer*, sndVolume*);
-void bk_irq(Computer*, int);
-
-// bk0011
-void bk11_init(Computer*);
-void bk11_mem_map(Computer*);
-void bk11_reset(Computer*);
-
-// pc specialist
-void spc_init(Computer*);
-void spc_mem_map(Computer*);
-void spc_reset(Computer*);
-int spc_mrd(Computer*, int, int);
-int spc_vid_rd(int, void*);
-void spc_mwr(Computer*, int, int);
-void spc_sync(Computer*, int);
-void spc_keyp(Computer*, keyEntry*);
-void spc_keyr(Computer*, keyEntry*);
-sndPair spc_vol(Computer*, sndVolume*);
-
-// ibm pc/at
-void ibm_init(Computer*);
-void ibm_mem_map(Computer*);
-void ibm_reset(Computer*);
-void ibm_sync(Computer*, int);
-int ibm_mrd(Computer*, int, int);
-void ibm_mwr(Computer*, int, int);
-void ibm_irq(Computer*, int);
-int ibm_ack(Computer*);
-int ibm_iord(Computer*, int);
-void ibm_iowr(Computer*, int, int);
-void ibm_keyp(Computer*, keyEntry*);
-void ibm_keyr(Computer*, keyEntry*);
-sndPair ibm_vol(Computer*, sndVolume*);
-
-// pc98xx
-void pc98xx_init(Computer*);
-void pc98xx_reset(Computer*);
-void pc98xx_mem_map(Computer*);
-int pc98xx_mrd(Computer*, int, int);
-void pc98xx_mwr(Computer*, int, int);
-int pc98xx_iord(Computer*, int);
-void pc98xx_iowr(Computer*, int, int);
-void pc98xx_irq(Computer*, int);
-int pc98xx_ack(Computer*);
-void pc98xx_sync(Computer*, int);
-void pc98xx_keyp(Computer*, keyEntry*);
-void pc98xx_keyr(Computer*, keyEntry*);
-sndPair pc98xx_vol(Computer*, sndVolume*);
 
 #ifdef __cplusplus
 }

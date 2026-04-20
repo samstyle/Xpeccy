@@ -15,6 +15,23 @@
 
 #define regMADR	reg[16]		// 15AF[0..3] = MapAddr
 
+void tslMapMem(Computer* comp) {
+// bank0 maping taken from Unreal(TSConf)
+	if (comp->flgVDOS) {
+		memSetBank(comp->mem,0x00,MEM_RAM,0xff, MEM_16K,NULL,NULL,NULL);		// vdos on : ramFF in bank0
+	} else if (comp->tsconf.p21af & 8) {
+		if (comp->tsconf.p21af & 4)
+			memSetBank(comp->mem,0x00,MEM_RAM,comp->tsconf.Page0, MEM_16K,NULL,NULL,NULL);
+		else
+			memSetBank(comp->mem,0x00,MEM_RAM, (comp->tsconf.Page0 & 0xfc) | ((comp->flgROM) ? 1 : 0) | (comp->flgDOS ? 0 : 2), MEM_16K,NULL,NULL,NULL);
+	} else {
+		if (comp->tsconf.p21af & 4)
+			memSetBank(comp->mem,0x00,MEM_ROM,comp->tsconf.Page0, MEM_16K,NULL,NULL,NULL);
+		else
+			memSetBank(comp->mem,0x00,MEM_ROM, (comp->tsconf.Page0 & 0xfc) | ((comp->flgROM) ? 1 : 0) | (comp->flgDOS ? 0 : 2), MEM_16K,NULL,NULL,NULL);
+	}
+}
+
 void tslReset(Computer* comp) {
 	comp->vid->tsconf.scrPal = 0xf0;
 	memset(comp->vid->tsconf.cram,0x00,0x200);
@@ -44,23 +61,6 @@ void tslReset(Computer* comp) {
 	comp->flgVDOS = 0;
 	tslUpdatePorts(comp->vid);
 	tslMapMem(comp);
-}
-
-void tslMapMem(Computer* comp) {
-// bank0 maping taken from Unreal(TSConf)
-	if (comp->flgVDOS) {
-		memSetBank(comp->mem,0x00,MEM_RAM,0xff, MEM_16K,NULL,NULL,NULL);		// vdos on : ramFF in bank0
-	} else if (comp->tsconf.p21af & 8) {
-		if (comp->tsconf.p21af & 4)
-			memSetBank(comp->mem,0x00,MEM_RAM,comp->tsconf.Page0, MEM_16K,NULL,NULL,NULL);
-		else
-			memSetBank(comp->mem,0x00,MEM_RAM, (comp->tsconf.Page0 & 0xfc) | ((comp->flgROM) ? 1 : 0) | (comp->flgDOS ? 0 : 2), MEM_16K,NULL,NULL,NULL);
-	} else {
-		if (comp->tsconf.p21af & 4)
-			memSetBank(comp->mem,0x00,MEM_ROM,comp->tsconf.Page0, MEM_16K,NULL,NULL,NULL);
-		else
-			memSetBank(comp->mem,0x00,MEM_ROM, (comp->tsconf.Page0 & 0xfc) | ((comp->flgROM) ? 1 : 0) | (comp->flgDOS ? 0 : 2), MEM_16K,NULL,NULL,NULL);
-	}
 }
 
 static const unsigned char tslCoLevs[32] = {

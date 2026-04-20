@@ -62,6 +62,7 @@ int spc_rd_io(int adr, void* p) {
 // NP = 0: RAM in 0x0000..0xbfff
 // comp->flgROM = NP
 
+void spc_mem_map(Computer*);
 void spc_wr_io_ch(int val, void* p) {
 	Computer* comp = (Computer*)p;
 	if (comp->flgROM && !(val & 0x10)) {		// b4: 0 will reset NP till next RESET

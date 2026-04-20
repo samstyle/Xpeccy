@@ -169,7 +169,7 @@ void opt_fill_cpu(QComboBox* box) {
 	QLibrary lib;
 	cpuCore* tab;
 	cpuCore*(*foo)();
-	QString cn;
+//	QString cn;
 	foreach(QString fn, fnlst) {
 		if (QLibrary::isLibrary(fn)) {
 			lib.setFileName(dir.absoluteFilePath(fn));

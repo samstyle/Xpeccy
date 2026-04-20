@@ -11,7 +11,7 @@ void zx48_reset(Computer* comp) {
 	vid_set_mode(comp->vid, VID_ULA_SCR);
 }
 
-void speReset(Computer* comp) {
+void zx_reset(Computer* comp) {
 	zx_set_pal(comp);
 	vid_set_mode(comp->vid, VID_NORMAL);
 }
