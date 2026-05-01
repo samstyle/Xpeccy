@@ -1,4 +1,5 @@
 #include "xgui.h"
+#include "resources_ui.h"
 #include "../xcore/xcore.h"
 
 #include <QPalette>
@@ -242,56 +243,25 @@ void xLabel::mousePressEvent(QMouseEvent* ev) {
 // xTreeBox
 
 xTreeBox::xTreeBox(QWidget *p):QComboBox(p) {
-	tree = new QTreeView;
-	mod = new QFileSystemModel;
-	setModel(mod);
-	setView(tree);
-	mod->setNameFilters(QStringList() << "*.rom" << "*.bin");
-	mod->setReadOnly(true);
-	mod->setFilter(QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot);
-	mod->setNameFilterDisables(false);
-	tree->setEditTriggers(QTableView::NoEditTriggers);
-	tree->setSelectionBehavior(QAbstractItemView::SelectRows);
-	tree->setSelectionMode(QAbstractItemView::SingleSelection);
-	tree->header()->setVisible(false);
 }
 
-void xTreeBox::setDir(QString dir) {
-	QModelIndex idx = mod->setRootPath(dir);
-	setRootModelIndex(idx);
+void xTreeBox::setResource(const ResourceDirs &dirs,
+                           std::initializer_list<const char*> extensions) {
+	clear();
+	setDuplicatesEnabled(true);
+	forEachResource(this, dirs, byExtension(extensions),
+		[this](const QIcon &icon, const ResolvedEntry &e) {
+			addItem(icon, toQString(e.name), toQString(e.path));
+		});
 }
 
-void xTreeBox::showPopup() {
-	for (int i = 1; i < mod->columnCount(); i++) {
-		tree->hideColumn(i);
-	}
-	QComboBox::showPopup();
-}
-
-void xTreeBox::hidePopup() {
-	QModelIndex idx = tree->selectionModel()->currentIndex();
-	QFileInfo inf = mod->fileInfo(idx);
-	if (inf.isDir()) return;
-	QComboBox::hidePopup();
-}
-
-void xTreeBox::setCurrentFile(QString path) {
-	path.prepend(SLSH);
-	path.prepend(mod->rootPath());
-	QModelIndex idx = mod->index(path, 0);
-	if (!idx.isValid()) return;
-	QModelIndex x = rootModelIndex();
-	setRootModelIndex(idx.parent());
-	setModelColumn(0);
-	setCurrentIndex(idx.row());
-	setRootModelIndex(x);
-	tree->setCurrentIndex(idx);
+void xTreeBox::setCurrentFile(QString name) {
+	const int idx = findText(name);
+	if (idx >= 0) setCurrentIndex(idx);
 }
 
 QString xTreeBox::currentFile() {
-	QModelIndex idx = tree->selectionModel()->currentIndex();
-	QFileInfo inf = mod->fileInfo(idx);
-	return mod->rootDirectory().relativeFilePath(inf.filePath());
+	return currentText();
 }
 
 // base table model

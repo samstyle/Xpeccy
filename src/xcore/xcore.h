@@ -1,8 +1,15 @@
 #pragma once
 
+#include <algorithm>
+#include <cctype>
+#include <initializer_list>
+#include <optional>
+#include <ostream>
 #include <string>
+#include <string_view>
 #include <vector>
 #include <map>
+#include <filesystem>
 
 #if defined(__linux) || defined(__BSD)
 #include <linux/limits.h>
@@ -10,6 +17,9 @@
 
 #include <SDL_joystick.h>
 
+#include <xdg.hpp>
+
+#include <QDebug>
 #include <QKeySequence>
 #include <QString>
 #include <QPoint>
@@ -39,16 +49,12 @@
 	#define xEventY position().y()
 	#define xGlobalX globalPosition().x()
 	#define xGlobalY globalPosition().y()
-#elif QT_VERSION >= QT_VERSION_CHECK(5,0,0)
+#else
 	#define yDelta angleDelta().y()
 	#define xEventX x()
 	#define xEventY y()
 	#define xGlobalX globalX()
 	#define xGlobalY globalY()
-#else
-	#define yDelta delta()
-	#define xEventX x()
-	#define xEventY y()
 #endif
 
 #if QT_VERSION >= QT_VERSION_CHECK(5,14,0)
@@ -68,13 +74,144 @@
 	#include <QSurfaceFormat>
 	#define X_BackgroundRole Qt::BackgroundRole
 	#define X_MidButton Qt::MiddleButton
-	typedef QSurfaceFormat QGLFormat;
-	typedef QOpenGLContext QGLContext;
 #else
 	#include <QRegExp>
 	#define X_BackgroundRole Qt::BackgroundColorRole
 	#define X_MidButton Qt::MidButton
 #endif
+
+namespace fs = std::filesystem;
+
+// Which side of the search path an enumerated entry came from. Named so call
+// sites don't have to interpret a bare bool.
+enum class ResourceOrigin { User, System };
+
+struct ResolvedEntry {
+	fs::path path;           // full path on disk
+	fs::path name;           // basename (or relative path for enumerateRecursive)
+	ResourceOrigin origin;   // User (writable dir) or System (readonly dir)
+};
+
+// A resolved XDG search set for one shippable resource kind: one user-writable
+// dir plus zero or more system dirs (from $XDG_{CONFIG,DATA}_DIRS on Linux;
+// empty on Windows). Populated once in conf_init, then queried directly at
+// call sites as `conf.path.<field>.tryFind(...)` etc.
+struct ResourceDirs {
+	fs::path writable;                 // User-writable dir
+	std::vector<fs::path> readonly;    // System dirs in search order
+
+	// Search for a file by name: writable dir first, then each readonly dir.
+	// Returns nullopt if nothing exists. Use this when the caller wants to
+	// distinguish "not found anywhere" from "found but unusable".
+	std::optional<fs::path> tryFind(const fs::path &name) const {
+		const fs::path user = writable / name;
+		if (fs::exists(user)) return user;
+		for (const auto &ro : readonly) {
+			if (const fs::path p = ro / name; fs::exists(p)) return p;
+		}
+		return std::nullopt;
+	}
+
+	// Convenience: falls back to the writable-dir path when nothing exists so
+	// callers that only want an error-message location get one for free.
+	fs::path find(const fs::path &name) const {
+		return tryFind(name).value_or(writable / name);
+	}
+
+	// Higher-order enumerator: descends into subdirs of every search path,
+	// passing each candidate to the predicate. Accepted entries are returned
+	// tagged User (writable) or System (readonly). ResolvedEntry::name is the
+	// relative path from the search root (e.g. "zx48/48k.rom"). Symlinks are
+	// NOT followed; permission errors in subtrees are skipped. No de-dup: if
+	// the same basename exists on both sides, both entries appear. Results
+	// are sorted by relative path.
+	template <typename Pred>
+	std::vector<ResolvedEntry> enumerateRecursive(Pred &&predicate) const {
+		std::vector<ResolvedEntry> out;
+		auto addFromDir = [&](const fs::path &dir, ResourceOrigin origin) {
+			std::error_code ec;
+			if (!fs::exists(dir, ec) || !fs::is_directory(dir, ec)) return;
+			const auto opts = fs::directory_options::skip_permission_denied;
+			fs::recursive_directory_iterator it(dir, opts, ec);
+			if (ec) return;
+			const fs::recursive_directory_iterator end;
+			while (it != end) {
+				std::error_code fec;
+				if (it->is_regular_file(fec) && predicate(it->path())) {
+					out.push_back({it->path(),
+					               it->path().lexically_relative(dir),
+					               origin});
+				}
+				std::error_code iec;
+				it.increment(iec);
+				if (iec) break;
+			}
+		};
+		addFromDir(writable, ResourceOrigin::User);
+		for (const auto &ro : readonly) addFromDir(ro, ResourceOrigin::System);
+		std::sort(out.begin(), out.end(),
+		          [](const ResolvedEntry &a, const ResolvedEntry &b) {
+		              return a.name < b.name;
+		          });
+		return out;
+	}
+};
+
+// Small adapter so callers don't have to write QString::fromStdString(p.string())
+// at every Qt boundary. fs::path::string() returns UTF-8 on all supported
+// platforms, matching QString::fromStdString's input expectation.
+inline QString toQString(const fs::path &p) {
+	return QString::fromStdString(p.string());
+}
+// Overload for std::string so every Qt-string conversion in the xdg pipeline
+// funnels through one helper instead of mixing fromStdString and toQString.
+inline QString toQString(const std::string &s) {
+	return QString::fromStdString(s);
+}
+
+// QString has no std::ostream inserter by default; add one so writeKV and
+// direct `out << qstring` work uniformly. UTF-8 is used for consistency with
+// fs::path::string() and toQString, which both use UTF-8.
+inline std::ostream& operator<<(std::ostream &out, const QString &s) {
+	return out << s.toUtf8().constData();
+}
+
+// Helper for writing INI-style "key = value\n" entries to an ostream. Factors
+// out the repeating pattern in saveConfig/prfSave where dozens of keys are
+// dumped one per line. Variadic: any number of value arguments are emitted
+// left-to-right (via a C++17 fold expression) between the "key = " prefix
+// and the trailing newline. Stream flags (e.g. std::fixed/setprecision that
+// the caller already set for %f-style formatting) are preserved because we
+// write directly into the destination stream rather than an intermediate
+// buffer. Works for anything with an operator<<(ostream, T), including
+// const char*, std::string, int, char, YESNO() macro, fs::path, QString.
+template <typename... Args>
+inline void writeKV(std::ostream &out, std::string_view key, const Args&... values) {
+	out << key << " = ";
+	(out << ... << values);
+	out << '\n';
+}
+
+// Predicate factory: returns a callable that matches a path if its extension
+// is any of the given ones (leading dot included, e.g. ".txt"). Matching is
+// case-insensitive so that e.g. "foo.ROM" matches ".rom". Captures the
+// normalized extension list by value so the returned predicate owns its data.
+inline auto byExtension(std::initializer_list<const char *> exts) {
+	auto toLower = [](std::string s) {
+		std::transform(s.begin(), s.end(), s.begin(),
+		               [](unsigned char c) { return std::tolower(c); });
+		return s;
+	};
+	std::vector<std::string> owned;
+	owned.reserve(exts.size());
+	for (const char *e : exts) owned.push_back(toLower(std::string{e}));
+	return [owned = std::move(owned), toLower](const fs::path &p) {
+		if (owned.empty()) return true;
+		const auto ext = toLower(p.extension().string());
+		return std::any_of(owned.begin(), owned.end(),
+		                   [&](const std::string &e) { return ext == e; });
+	};
+}
 
 // common
 
@@ -86,7 +223,8 @@ void setFlagBit(bool, int*, int);
 bool str2bool(std::string);
 std::vector<std::string> splitstr(std::string,const char*);
 std::pair<std::string,std::string> splitline(std::string, char = '=');
-void copyFile(const char*, const char*);
+void copyFile(const fs::path &src, const fs::path &dst);
+void copyResource(std::string_view src, const fs::path &dst);
 
 int toPower(int);
 int toLimits(int, int, int);
@@ -481,16 +619,26 @@ struct xConfig {
 		unsigned halt:1;
 	} led;
 	struct {
-		std::string confDir;
-		std::string confFile;
-		std::string romDir;
-		std::string prfDir;
-		std::string shdDir;
-		std::string palDir;
-		std::string plgDir;	// so/dll/dynlib (experimental, works only for CPU)
-		std::string qssDir;	// visual styles
-		std::string font;
-		std::string boot;
+		fs::path confDir;
+		fs::path confFile;
+		fs::path prfDir;
+		fs::path cacheDir;   // $XDG_CACHE_HOME/samstyle/xpeccy — UI dock state and other
+		                     // derived, non-essential artifacts
+		fs::path stateDir;   // $XDG_STATE_HOME/samstyle/xpeccy — persistent machine-
+		                     // authored state (cmos/nvram blobs)
+		fs::path prfStateDir;// stateDir / profiles — per-profile state subtree
+
+		// Per-kind search sets, populated by applyPlatformRoots. Each is queried
+		// directly: `conf.path.rom.tryFind("1982.rom")`, etc. Adding a new kind
+		// is a field here + an initKind call in applyPlatformRoots.
+		ResourceDirs rom;        // $XDG_DATA_HOME/.../roms
+		ResourceDirs shader;     // $XDG_DATA_HOME/.../shaders
+		ResourceDirs palette;    // $XDG_DATA_HOME/.../palettes
+		ResourceDirs pluginCpu;  // $XDG_DATA_HOME/.../plugins/cpu
+		ResourceDirs style;      // $XDG_DATA_HOME/.../styles
+		ResourceDirs keymap;     // $XDG_CONFIG_HOME/.../keymaps
+		ResourceDirs gamepad;    // $XDG_CONFIG_HOME/.../gamepads
+		ResourceDirs boot;       // $XDG_DATA_HOME/.../boot  (TRDOS boot loader)
 	} path;
 	struct {
 		unsigned labels:1;
@@ -505,6 +653,7 @@ struct xConfig {
 		QPoint pos;
 		QSize siz;
 	} dbg;
+
 };
 
 extern xConfig conf;
