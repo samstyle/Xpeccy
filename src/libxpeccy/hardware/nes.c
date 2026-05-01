@@ -275,7 +275,7 @@ void nes_init(Computer* comp) {
 	comp->vid->ntsc = 0;
 	switch(comp->regNEST) {
 		case NES_PAL:
-			comp->fps = 50;
+//			comp->fps = 50;
 			comp->cpuFrq = 1.66;
 			//perNoTurbo = 1e3 / comp->cpuFrq;		// ~601
 			perNoTurbo = 592;		// 1.6(891)MHz
@@ -287,7 +287,7 @@ void nes_init(Computer* comp) {
 			comp->nesapu->wdiv = 3107;		// 5/6 = 3107? or 166/179 = 3458
 			break;
 		case NES_NTSC:
-			comp->fps = 60;
+//			comp->fps = 60;
 			comp->cpuFrq = 1.79;
 			//perNoTurbo = 1e3 / comp->cpuFrq;		// ~559
 			perNoTurbo = 555;		// 1.8(018) MHz
@@ -300,7 +300,7 @@ void nes_init(Computer* comp) {
 			comp->vid->ntsc = 1;
 			break;
 		default:							// dendy
-			comp->fps = 59;
+//			comp->fps = 59;
 			comp->cpuFrq = 1.77;
 			//perNoTurbo = 1e3 / comp->cpuFrq;
 			perNoTurbo = 555;

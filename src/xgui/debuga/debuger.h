@@ -67,7 +67,7 @@ class DebugWin : public QMainWindow {
 	private:
 		unsigned block:1;
 		int tabMode;
-		int cputype;
+		cpuCore* curCpuCore;
 		// tracer
 		unsigned trace:1;
 		int traceType;

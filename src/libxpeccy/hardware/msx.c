@@ -155,7 +155,7 @@ int msx9938rd(Computer* comp, int adr) {
 }
 
 void msx_init(Computer* comp) {
-	comp->fps = 60;
+//	comp->fps = 60;
 	vid_upd_timings(comp->vid, comp->nsPerTick * 2 / 3);
 	fdc_set_hd(comp->dif->fdc, 0);
 	ppi_set_cb(comp->ppi, comp, NULL, msx_ppi_a_wr,\

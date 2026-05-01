@@ -8,6 +8,9 @@
 #define reg6F	reg[19]
 #define reg8F	reg[20]
 
+#define memFlag(_n) reg[0xf0 + (_n)]
+#define memPage(_n) reg[0xf8 + (_n)]
+
 void evoReset(Computer* comp) {
 	comp->flgDOS = 1;
 	comp->regBF = 0;
@@ -51,10 +54,11 @@ void evoMWr(Computer* comp, int adr, int val) {
 	memWr(comp->mem,adr,val);
 }
 
-void evoSetBank(Computer* comp, int bank, memEntry me) {
-	unsigned char page = me.page ^ 0xff;
-	if (me.flag & 0x80) {
-		if (me.flag & 0x40) {
+void evoSetBank(Computer* comp, int bank, int idx) { // memEntry me) {
+	idx &= 7;
+	unsigned char page = comp->memPage(idx) ^ 0xff;
+	if (comp->memFlag(idx) & 0x80) {
+		if (comp->memFlag(idx) & 0x40) {
 			if (comp->pEFF7 & 4) {
 				page = (page & 0xf8) | (comp->p7FFD & 7);				// mix with b0..2 (7FFD) - 128K mode
 			} else {
@@ -64,16 +68,16 @@ void evoSetBank(Computer* comp, int bank, memEntry me) {
 			page = (page & 0x3e) | (comp->flgDOS ? 1 : 0);				// mix with dosen
 		}
 	}
-	memSetBank(comp->mem, bank, (me.flag & 0x40) ? MEM_RAM : MEM_ROM, page, MEM_16K, NULL, NULL, NULL);
+	memSetBank(comp->mem, bank, (comp->memFlag(idx) & 0x40) ? MEM_RAM : MEM_ROM, page, MEM_16K, NULL, NULL, NULL);
 }
 
 void evoMapMem(Computer* comp) {
 	if (comp->prt2 & 0x20) {		// A8.xx77
 		int adr = (comp->flgROM) ? 4 : 0;
-		evoSetBank(comp,0x00,comp->memMap[adr]);
-		evoSetBank(comp,0x40,comp->memMap[adr+1]);
-		evoSetBank(comp,0x80,comp->memMap[adr+2]);
-		evoSetBank(comp,0xc0,comp->memMap[adr+3]);
+		evoSetBank(comp, 0x00, adr); //comp->memMap[adr]);
+		evoSetBank(comp, 0x40, adr+1); //comp->memMap[adr+1]);
+		evoSetBank(comp, 0x80, adr+2); //comp->memMap[adr+2]);
+		evoSetBank(comp, 0xc0, adr+3); //comp->memMap[adr+3]);
 	} else {
 		comp->flgDOS = 1;
 		memSetBank(comp->mem,0x00,MEM_ROM,0xff, MEM_16K, NULL, NULL, NULL);
@@ -108,21 +112,21 @@ int evoInBE(Computer* comp, int port) {
 	int res = -1;
 	int i;
 	if ((port & 0xf800) == 0x0000) {
-		res = comp->memMap[(port & 0x0700) >> 8].page;
+		res = comp->memPage((port >> 8) & 7); // comp->memMap[(port & 0x0700) >> 8].page;
 	} else {
 		switch (port & 0xff00) {
 			case 0x0800:
 				res = 0;
 				for (i = 0; i < 8; i++) {
 					res = (res >> 1);
-					if (comp->memMap[i].flag & 0x40) res |= 0x80;
+					if (comp->memFlag(i) & 0x40) res |= 0x80;
 				}
 				break;
 			case 0x0900:
 				res = 0;
 				for (i = 0; i < 8; i++) {
 					res = (res >> 1);
-					if (comp->memMap[i].flag & 0x80) res |= 0x80;
+					if (comp->memFlag(i) & 0x80) res |= 0x80;
 				}
 				break;
 			case 0x0a00: res = comp->p7FFD; break;
@@ -227,11 +231,11 @@ void evoOut77d(Computer* comp, int port, int val) {
 void evoOutF7(Computer* comp, int port, int val) {
 	int adr = ((comp->flgROM) ? 4 : 0) | ((port & 0xc000) >> 14);
 	if (port & 0x0800) {
-		comp->memMap[adr].flag = val & 0xc0;
-		comp->memMap[adr].page = (val & 0xff) | 0xc0;
+		comp->memFlag(adr) = val & 0xc0;
+		comp->memPage(adr) = (val & 0xff) | 0xc0;
 	} else {
-		comp->memMap[adr].flag |= 0x40;		// ram
-		comp->memMap[adr].page = val & 0xff;
+		comp->memFlag(adr) |= 0x40;		// ram
+		comp->memPage(adr) = val & 0xff;
 	}
 	evoMapMem(comp);
 }

@@ -264,7 +264,7 @@ void DebugWin::closeEvent(QCloseEvent*) {stop();}
 DebugWin::DebugWin(QWidget* par):QMainWindow(par) {
 	int i;
 
-	cputype = -1;
+	curCpuCore = nullptr;
 
 	setTabPosition(Qt::AllDockWidgetAreas, QTabWidget::North);
 	setWindowTitle("Xpeccy deBUGa");
@@ -1095,8 +1095,8 @@ void DebugWin::fillCPU() {
 	CPU* cpu = conf.prof.cur->zx->cpu;
 	xRegBunch bunch = cpuGetRegs(cpu);
 #if 1
-	if (cpu->core->type != cputype) {
-		cputype = cpu->core->type;
+	if (cpu->core != curCpuCore) {
+		curCpuCore = cpu->core;
 		reFormCPU(&bunch);
 	}
 	int c = 0;

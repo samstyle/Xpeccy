@@ -7,6 +7,9 @@
 #define p77hi	reg[16]
 #define p77lo	reg[17]
 
+#define memFlag(_n)	reg[0xf0 + (_n)]
+#define memPage(_n)	reg[0xf8 + (_n)]
+
 // TODO : fill memMap & set prt1 for reset to separate ROM pages
 void atm2Reset(Computer* comp) {
 	comp->flgDOS = 1;
@@ -19,25 +22,26 @@ void atm2Reset(Computer* comp) {
 	comp_kbd_release(comp);
 }
 
-void atmSetBank(Computer* comp, int bank, memEntry me) {
-	unsigned char page = me.page ^ 0xff;
-	if (me.flag & 0x80) {
-		if (me.flag & 0x40) {
+void atmSetBank(Computer* comp, int bank, int idx) { // memEntry me) {
+	idx &= 7;
+	unsigned char page = comp->memPage(idx) ^ 0xff;
+	if (comp->memFlag(idx) & 0x80) {
+		if (comp->memFlag(idx) & 0x40) {
 			page = (page & 0x38) | (comp->p7FFD & 7);	// mix with 7FFD bank;
 		} else {
 			page = (page & 0x3e) | (comp->flgDOS ? 1 : 0);	// mix with dosen
 		}
 	}
-	memSetBank(comp->mem, bank, (me.flag & 0x40) ? MEM_RAM : MEM_ROM, page, MEM_16K, NULL, NULL, NULL);
+	memSetBank(comp->mem, bank, (comp->memFlag(idx) & 0x40) ? MEM_RAM : MEM_ROM, page, MEM_16K, NULL, NULL, NULL);
 }
 
 void atm2MapMem(Computer* comp) {
 	if (comp->p77hi & 1) {			// pen = 0: last rom page in every bank && dosen on
 		int adr = (comp->flgROM) ? 4 : 0;
-		atmSetBank(comp,0x00,comp->memMap[adr]);
-		atmSetBank(comp,0x40,comp->memMap[adr+1]);
-		atmSetBank(comp,0x80,comp->memMap[adr+2]);
-		atmSetBank(comp,0xc0,comp->memMap[adr+3]);
+		atmSetBank(comp, 0x00, adr); // comp->memMap[adr]);
+		atmSetBank(comp, 0x40, adr+1); //comp->memMap[adr+1]);
+		atmSetBank(comp, 0x80, adr+2); //comp->memMap[adr+2]);
+		atmSetBank(comp, 0xc0, adr+3); //comp->memMap[adr+3]);
 	} else {
 		comp->flgDOS = 1;
 		memSetBank(comp->mem,0x00,MEM_ROM,0xff,MEM_16K, NULL, NULL, NULL);
@@ -75,8 +79,8 @@ void atm2Out77(Computer* comp, int port, int val) {		// dos
 
 void atm2OutF7(Computer* comp, int port, int val) {			// dos
 	int adr = (comp->flgROM ? 4 : 0) | ((port & 0xc000) >> 14);	// rom2.a15.a14
-	comp->memMap[adr].flag = val & 0xc0;				// copy b6,7 to flag
-	comp->memMap[adr].page = (val & 0x3f) | 0xc0;			// set b6,7 for PentEvo capability
+	comp->memFlag(adr) = val & 0xc0;				// copy b6,7 to flag
+	comp->memPage(adr) = (val & 0x3f) | 0xc0;			// set b6,7 for PentEvo capability
 	atm2MapMem(comp);
 }
 

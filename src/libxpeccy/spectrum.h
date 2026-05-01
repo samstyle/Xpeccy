@@ -56,18 +56,6 @@ enum {
 	DBG_VIEW_EXEC = 0x50
 };
 
-// TODO: DMAaddr = xreg32 (x -> ih)
-typedef struct {
-	unsigned char l;
-	unsigned char h;
-	unsigned char x;
-} DMAaddr;
-
-typedef struct {
-	unsigned char flag;
-	unsigned char page;
-} memEntry;
-
 typedef struct {
 	int t;
 	int a;
@@ -98,12 +86,11 @@ typedef struct {
 #define flgBDI	sysflag[15]
 
 typedef struct {
-	double fps;
+	struct HardWare *hw;	// computer core - misc params, callbacks
+
 	double cpuFrq;
 	double frqMul;
 	unsigned char intVector;
-
-	struct HardWare *hw;	// computer core - misc params, callbacks
 
 	int brkt;		// breakpoint type (cpu, ram, rom...)
 	int brka;		// breakpoint addr
@@ -117,10 +104,10 @@ typedef struct {
 	int fCount;		// T in last frame
 	int nsPerTick;
 
-	bool flag[128];
-	bool sysflag[32];
+	bool flag[128];			// each machine have its own flags
+	bool sysflag[32];		// some common flags used by several machines or debuga
 	unsigned char reg[512];		// internal registers
-	xreg32 xreg[32];		// 32/16/8 bits registers
+	xreg32 xreg[32];		// combined 32/16/8 bits registers
 // base
 	CPU* cpu;
 // TODO: align memory/brkMaps, respect ram/rom size
@@ -148,6 +135,18 @@ typedef struct {
 // misc
 	PPI* ppi;			// i8255-like chip
 	CMOS cmos;
+// c64
+	CIA* cia1;		// mos6526
+	CIA* cia2;
+// ibm
+	PIT* pit;		// i8253, timer
+	PIC* mpic;		// i8259, master pic
+	PIC* spic;		//	slave pic
+	PS2Ctrl* ps2c;		// i8042
+	i8237DMA* dma1;		// i8237, 8-bit dma
+	i8237DMA* dma2;		// i8237, 16-bit dma
+	upd4990* rtc;
+	UART* uart;		// com1 (mouse) controller
 
 #ifdef HAVEZLIB
 
@@ -170,18 +169,11 @@ typedef struct {
 
 #endif
 
-	memEntry memMap[16];			// memory map for ATM2, PentEvo
 	unsigned char brkRamMap[MEM_4M];	// ram brk/type : b0..3:brk flags, b4..7:type
 	unsigned char brkRomMap[MEM_512K];	// rom brk/type : b0..3:brk flags, b4..7:type
 	unsigned char brkAdrMap[MEM_64K];	// adr brk
 	unsigned char brkIOMap[MEM_64K];	// io brk
-
-	struct {
-		DMAaddr src;		// -> xreg32 ???
-		DMAaddr dst;
-		unsigned char len;
-		unsigned char num;
-	} dma;
+	// TODO: try to move this somewhere
 	struct {
 		unsigned char Page0;
 		unsigned char p21af;
@@ -202,18 +194,6 @@ typedef struct {
 		unsigned char iram[256];	// internal ram (FF80..FFFE)
 		unsigned char iomap[128];
 	} gb;
-// c64
-	CIA* cia1;		// mos6526
-	CIA* cia2;
-// ibm
-	PIT* pit;		// timer
-	PIC* mpic;		// master pic
-	PIC* spic;		// slave pic
-	PS2Ctrl* ps2c;
-	i8237DMA* dma1;		// 8-bit dma
-	i8237DMA* dma2;		// 16-bit dma
-	upd4990* rtc;
-	UART* uart;		// com1 (mouse) controller
 } Computer;
 
 #include "hardware/hardware.h"

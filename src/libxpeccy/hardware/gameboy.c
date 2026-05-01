@@ -12,6 +12,9 @@
 #define regVBNK	reg[16]
 #define regWBNK reg[17]
 
+#define dmaSrc	xreg[0]
+#define dmaDst	xreg[1]
+
 // IO ports
 
 // video modes:
@@ -462,15 +465,15 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 			}
 			break;
 //	dma
-		case 0x51: comp->dma.src.h = val; break;
-		case 0x52: comp->dma.src.l = val & 0xf0; break;		// low 4 bits = 0
-		case 0x53: comp->dma.dst.h = val & 0x1f; break;		// dst is vram, hi 3 bits ignored
-		case 0x54: comp->dma.dst.l = val & 0xf0; break;
+		case 0x51: comp->dmaSrc.h = val; break;
+		case 0x52: comp->dmaSrc.l = val & 0xf0; break;		// low 4 bits = 0
+		case 0x53: comp->dmaDst.h = val & 0x1f; break;		// dst is vram, hi 3 bits ignored
+		case 0x54: comp->dmaDst.l = val & 0xf0; break;
 		case 0x55:
-			sadr = (comp->dma.src.h << 8) | comp->dma.src.l;	// rom/ram adr
+			sadr = comp->dmaSrc.w; // (comp->dma.src.h << 8) | comp->dma.src.l;	// rom/ram adr
 			//if ((sadr & 0xe000) == 0x8000) break;	// not vram
 			//if (sadr > 0xdfff) break;		// not wram
-			dadr = (comp->dma.dst.h << 8) | comp->dma.dst.l;	// vram adr (0000...1ff0)
+			dadr = comp->dmaDst.w; // (comp->dma.dst.h << 8) | comp->dma.dst.l;	// vram adr (0000...1ff0)
 			per = ((val & 0x7f) + 1) << 4;				// bytes to transfer (10..800)
 			// TODO: b7,val: 0=copy now, 1=copy by 16 bytes each HBlank
 			while (per > 0) {
@@ -735,7 +738,7 @@ void gbc_irq(Computer* comp, int t) {
 
 // called from comp_update_timings. comp->nsPerTick is no-turbo tick duration
 void gbc_init(Computer* comp) {
-	comp->fps = 60;
+//	comp->fps = 60;
 	comp->gbsnd->wav.period = comp->nsPerTick << 5;				// 128KHz period for wave generator = cpu.frq / 32
 	comp->gb.timer.div.per = (comp->nsPerTick / comp->frqMul) * 256;	// 16KHz timer divider tick. this timer depends on turbo speed
 	comp->vid->mrd = gbc_vid_mrd;

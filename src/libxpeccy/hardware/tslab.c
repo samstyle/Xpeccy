@@ -12,8 +12,12 @@
 #define p04AF	reg[10]
 #define p05AF	reg[11]
 //#define p21AF	reg[12]
-
 #define regMADR	reg[16]		// 15AF[0..3] = MapAddr
+#define dmaLen	reg[17]
+#define dmaCnt	reg[18]
+
+#define dmaSrc	xreg[0]
+#define dmaDst	xreg[1]
 
 void tslMapMem(Computer* comp) {
 // bank0 maping taken from Unreal(TSConf)
@@ -299,12 +303,12 @@ void tsOut17AF(Computer* comp, int port, int val) {comp->vid->tsconf.T0GPage = v
 void tsOut18AF(Computer* comp, int port, int val) {comp->vid->tsconf.T1GPage = val & 0xf8;}
 void tsOut19AF(Computer* comp, int port, int val) {comp->vid->tsconf.SGPage = val & 0xf8;}
 
-void tsOut1AAF(Computer* comp, int port, int val) {comp->dma.src.l = val & 0xff;}
-void tsOut1BAF(Computer* comp, int port, int val) {comp->dma.src.h = val & 0xff;}
-void tsOut1CAF(Computer* comp, int port, int val) {comp->dma.src.x = val & 0xff;}
-void tsOut1DAF(Computer* comp, int port, int val) {comp->dma.dst.l = val & 0xff;}
-void tsOut1EAF(Computer* comp, int port, int val) {comp->dma.dst.h = val & 0xff;}
-void tsOut1FAF(Computer* comp, int port, int val) {comp->dma.dst.x = val & 0xff;}
+void tsOut1AAF(Computer* comp, int port, int val) {comp->dmaSrc.l = val & 0xff;}
+void tsOut1BAF(Computer* comp, int port, int val) {comp->dmaSrc.h = val & 0xff;}
+void tsOut1CAF(Computer* comp, int port, int val) {comp->dmaSrc.ih = val & 0xff;}
+void tsOut1DAF(Computer* comp, int port, int val) {comp->dmaDst.l = val & 0xff;}
+void tsOut1EAF(Computer* comp, int port, int val) {comp->dmaDst.h = val & 0xff;}
+void tsOut1FAF(Computer* comp, int port, int val) {comp->dmaDst.ih = val & 0xff;}
 
 void tsOut20AF(Computer* comp, int port, int val) {
 	switch (val & 3) {
@@ -338,7 +342,7 @@ void tsOut24AF(Computer* comp, int port, int val) {
 }
 
 void tsOut26AF(Computer* comp, int port, int val) {
-	comp->dma.len = val & 0xff;
+	comp->dmaLen = val & 0xff;
 }
 
 int tsIn27AF(Computer* comp, int port) {return 0x00;}
@@ -347,13 +351,13 @@ void tsOut27AF(Computer* comp, int port, int val) {
 	int cnt, cnt2;
 	int tmp;
 	unsigned char* ptr = NULL;
-	int sadr = (comp->dma.src.x << 14) | ((comp->dma.src.h & 0x3f) << 8) | (comp->dma.src.l & 0xfe);
-	int dadr = (comp->dma.dst.x << 14) | ((comp->dma.dst.h & 0x3f) << 8) | (comp->dma.dst.l & 0xfe);
-	int lcnt = (comp->dma.len + 1) << 1;
-	comp->vid->tsconf.dmabytes = (comp->dma.len + 1) * (comp->dma.num + 1);
+	int sadr = (comp->dmaSrc.ih << 14) | (comp->dmaSrc.w & 0x3ffe); // (comp->dma.src.x << 14) | ((comp->dma.src.h & 0x3f) << 8) | (comp->dma.src.l & 0xfe);
+	int dadr = (comp->dmaDst.ih << 14) | (comp->dmaDst.w & 0x3ffe); // (comp->dma.dst.x << 14) | ((comp->dma.dst.h & 0x3f) << 8) | (comp->dma.dst.l & 0xfe);
+	int lcnt = (comp->dmaLen + 1) << 1;
+	comp->vid->tsconf.dmabytes = (comp->dmaLen + 1) * (comp->dmaCnt + 1);
 	switch (val & 0x87) {
 		case 0x01:		// ram->ram
-			for (cnt = 0; cnt <= comp->dma.num; cnt++) {
+			for (cnt = 0; cnt <= comp->dmaCnt; cnt++) {
 				for (cnt2 = 0; cnt2 < lcnt; cnt2++) {
 					comp->mem->ramData[dadr + cnt2] = comp->mem->ramData[sadr + cnt2];
 				}
@@ -362,7 +366,7 @@ void tsOut27AF(Computer* comp, int port, int val) {
 			}
 			break;
 		case 0x81:		// blitter
-			for (cnt = 0; cnt <= comp->dma.num; cnt++) {
+			for (cnt = 0; cnt <= comp->dmaCnt; cnt++) {
 				for (cnt2 = 0; cnt2 < lcnt; cnt2++) {
 					tmp = comp->mem->ramData[sadr + cnt2];
 					if (val & 0x08) {
@@ -385,7 +389,7 @@ void tsOut27AF(Computer* comp, int port, int val) {
 			break;
 		case 0x02:		// SPI->RAM
 //			printf("spi->ram\t%.2X:%.4X,%.2X:%.3X\n",comp->dma.dst.x,dadr & 0x3fff,comp->dma.num,lcnt);
-			for (cnt = 0; cnt <= comp->dma.num; cnt++) {
+			for (cnt = 0; cnt <= comp->dmaCnt; cnt++) {
 				for (cnt2 = 0; cnt2 < lcnt; cnt2++) {
 					comp->mem->ramData[dadr + cnt2] = sdcRead(comp->sdc) & 0xff;
 				}
@@ -393,7 +397,7 @@ void tsOut27AF(Computer* comp, int port, int val) {
 			}
 			break;
 		case 0x82:		// RAM->SPI
-			for (cnt = 0; cnt <= comp->dma.num; cnt++) {
+			for (cnt = 0; cnt <= comp->dmaCnt; cnt++) {
 				for (cnt2 = 0; cnt2 < lcnt; cnt2++) {
 					sdcWrite(comp->sdc, comp->mem->ramData[sadr + cnt2]);
 				}
@@ -401,7 +405,7 @@ void tsOut27AF(Computer* comp, int port, int val) {
 			}
 			break;
 		case 0x03:		// IDE->RAM
-			for (cnt = 0; cnt <= comp->dma.num; cnt++) {
+			for (cnt = 0; cnt <= comp->dmaCnt; cnt++) {
 				for (cnt2 = 0; cnt2 < lcnt; cnt2++) {
 					if (!ideIn(comp->ide, 0x00, &tmp, 1)) tmp = 0xff;
 					comp->mem->ramData[dadr + cnt2] = tmp & 0xff;
@@ -410,7 +414,7 @@ void tsOut27AF(Computer* comp, int port, int val) {
 			}
 			break;
 		case 0x83:		// RAM->IDE
-			for (cnt = 0; cnt <= comp->dma.num; cnt++) {
+			for (cnt = 0; cnt <= comp->dmaCnt; cnt++) {
 				for (cnt2 = 0; cnt2 < lcnt; cnt2++) {
 					ideOut(comp->ide, 0x00, comp->mem->ramData[sadr + cnt2], 1);
 				}
@@ -418,7 +422,7 @@ void tsOut27AF(Computer* comp, int port, int val) {
 			}
 			break;
 		case 0x04:		// FILL->RAM
-			for (cnt = 0; cnt <= comp->dma.num; cnt++) {
+			for (cnt = 0; cnt <= comp->dmaCnt; cnt++) {
 				for (cnt2 = 0; cnt2 < lcnt; cnt2++) {
 					comp->mem->ramData[dadr + cnt2] = comp->mem->ramData[sadr + (cnt2 & 1)];
 				}
@@ -438,18 +442,20 @@ void tsOut27AF(Computer* comp, int port, int val) {
 			// comp->brk = 1;
 			break;
 	}
-	comp->dma.src.x = ((sadr & 0x3fc000) >> 14);
-	comp->dma.src.h = ((sadr & 0x3f00) >> 8);
-	comp->dma.src.l = sadr & 0xff;
-	comp->dma.dst.x = ((dadr & 0x3fc000) >> 14);
-	comp->dma.dst.h = ((dadr & 0x3f00) >> 8);
-	comp->dma.dst.l = dadr & 0xff;
+	comp->dmaSrc.ih = ((sadr & 0x3fc000) >> 14);
+	comp->dmaSrc.w = sadr & 0x3fff;
+//	comp->dma.src.h = ((sadr & 0x3f00) >> 8);
+//	comp->dma.src.l = sadr & 0xff;
+	comp->dmaDst.ih = ((dadr & 0x3fc000) >> 14);
+	comp->dmaDst.w = dadr & 0x3fff;
+//	comp->dmaDst.h = ((dadr & 0x3f00) >> 8);
+//	comp->dmaDst.l = dadr & 0xff;
 	if (comp->vid->inten & 4)
 		comp->vid->intDMA = 1;
 }
 
 void tsOut28AF(Computer* comp, int port, int val) {
-	comp->dma.num = val & 0xff;
+	comp->dmaCnt = val & 0xff;
 }
 
 void tsOut29AF(Computer* comp, int port, int val) {

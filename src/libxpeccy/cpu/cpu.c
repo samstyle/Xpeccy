@@ -121,14 +121,21 @@ void cpuSetCore(CPU* cpu, cpuCore* core) {
 }
 
 // new
+
+void cpu_close_lib(CPU* cpu) {
+	if (cpu->lib) {
+		dlclose(cpu->libhnd);
+		cpu->lib = 0;
+	}
+}
+
 int cpu_open_lib(CPU* cpu, const char* dir, const char* fname) {
 	int res = 0;
 	if (cpu->lib) {					// some library opened
 		if (!strcmp(cpu->libname, fname)) {	// same lib
 			res = 1;
 		} else {
-			dlclose(cpu->libhnd);
-			cpu->lib = 0;
+			cpu_close_lib(cpu);
 		}
 	}
 	if (!res) {
@@ -153,38 +160,37 @@ int cpu_open_lib(CPU* cpu, const char* dir, const char* fname) {
 	return res;
 }
 
-void cpu_close_lib(CPU* cpu) {
-	if (cpu->lib) {
-		dlclose(cpu->libhnd);
-		cpu->lib = 0;
-	}
-}
-
 // if fname==NULL take it from built-in table
 // e.g	cpu_set_type(cpu, "name", NULL, NULL) = built-in
 //	cpu_set_type(cpu, "name", dir, file) = from library
 int cpu_set_type(CPU* cpu, const char* name, const char* dir, const char* fname) {
-	cpuCore* tab;
+	cpuCore* itm;
 	int res = 0;
 	if (fname) {
 		if (cpu_open_lib(cpu, dir, fname)) {
 			cpuCore*(*foo)();
 			foo = dlsym(cpu->libhnd, "getCore");
-			tab = foo();
+			if (foo) {
+				itm = foo();
+			} else {
+				itm = cpuTab;
+				cpu_close_lib(cpu);	// if lib isn't suitable
+			}
 		} else {
-			tab = cpuTab;
+			itm = cpuTab;
+			cpu_close_lib(cpu);		// if was opened before
 		}
 	} else {
-		tab = cpuTab;
+		itm = cpuTab;
 		cpu_close_lib(cpu);
 	}
-	int i = 0;
-	while ((tab[i].type != CPU_NONE) && strcmp(tab[i].name, name)) {
-		i++;
-	}
-	if (tab[i].type != CPU_NONE) {		// found?
-		cpuSetCore(cpu, &tab[i]);
-		res = 1;
+	while ((itm->type != CPU_NONE) && !res) {
+		if (!strcmp(itm->name, name)) {
+			cpuSetCore(cpu, itm);
+			res = 1;
+		} else {
+			itm++;
+		}
 	}
 	return res;
 }
