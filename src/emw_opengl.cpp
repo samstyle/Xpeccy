@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <vector>
 
-#if defined(USEOPENGL) && !BLOCKGL
+#ifdef USEOPENGL
 
 namespace {
 
@@ -174,7 +174,6 @@ QString shimLegacyShader(QString src,
 
 void MainWin::initializeGL() {
 	qDebug() << __FUNCTION__;
-#if !ISLEGACYGL
 	initializeOpenGLFunctions();
 	conf.vid.shd_support = QOpenGLShader::hasOpenGLShaders(QOpenGLShader::Vertex) && QOpenGLShader::hasOpenGLShaders(QOpenGLShader::Fragment);
 	curtex = 0;
@@ -182,20 +181,6 @@ void MainWin::initializeGL() {
 	vtx_shd = new QOpenGLShader(QOpenGLShader::Vertex);
 	qDebug() << "frg_shd";
 	frg_shd = new QOpenGLShader(QOpenGLShader::Fragment);
-#else
-//	QGLFormat frmt;
-//	frmt.setDoubleBuffer(false);
-//	cont = new QGLContext(frmt);
-//	setContext(cont);
-//	setAutoBufferSwap(true);
-//	makeCurrent();
-//	curtex = 0;
-//	conf.vid.shd_support = QGLShader::hasOpenGLShaders(QGLShader::Vertex) && QGLShader::hasOpenGLShaders(QGLShader::Fragment);
-//	qDebug() << "vtx_shd";
-//	vtx_shd = new QGLShader(QGLShader::Vertex, cont);
-//	qDebug() << "frg_shd";
-//	frg_shd = new QGLShader(QGLShader::Fragment, cont);
-#endif
 	glGenTextures(4, texids);
 	glEnable(GL_MULTISAMPLE);
 	for (int i = 0; i < 4; i++) {
@@ -206,7 +191,6 @@ void MainWin::initializeGL() {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	}
 
-#if !ISLEGACYGL
 	vao.create();
 	vao.bind();
 	vbo.create();
@@ -221,7 +205,6 @@ void MainWin::initializeGL() {
 	                      reinterpret_cast<void *>(2 * sizeof(GLfloat)));
 	vbo.release();
 	vao.release();
-#endif
 
 	loadShader();
 	if (!conf.vid.shd_support) qDebug() << "WARNING: Shaders not supported";
@@ -254,7 +237,7 @@ void MainWin::paintGL() {
 #endif
 
 void MainWin::loadShader() {
-#if defined(USEOPENGL) && !BLOCKGL
+#ifdef USEOPENGL
 	if (!conf.vid.shd_support) return;
 
 	QString vtx;
