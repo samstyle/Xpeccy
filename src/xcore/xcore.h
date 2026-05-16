@@ -213,7 +213,6 @@ typedef struct {
 	QMap<int, QMap<int, QString> > labmap;	// [memtype][addr] = name
 	QList<xLabelSet*> labsets;
 	xLabelSet* curlabset;			// curlabset->list = labels
-//	QMap<QString,xAdr> labels;		// name->xAdr
 } xProfile;
 
 #define	DELP_ERR	-1
@@ -380,9 +379,10 @@ typedef struct {
 
 typedef struct {
 	std::string name;
-	std::string gsFile;
-	std::string fntFile;
-	std::string vBiosFile;
+	std::string gsFile;		// general sound
+	std::string fntFile;		// charset
+	std::string vBiosFile;		// video bios
+	std::string sBiosFile;		// sound bios (or use GS bios?)
 	QList<xRomFile> roms;
 } xRomset;
 

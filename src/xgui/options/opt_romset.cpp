@@ -17,14 +17,6 @@ xRomsetEditor::xRomsetEditor(QWidget* par):QDialog(par) {
 
 void xRomsetEditor::edit(xRomFile f) {
 	xrf = f;
-//	QDir rdir(QString(conf.path.romDir.c_str()));
-//	QStringList rlst = rdir.entryList(QStringList() << "*.rom" << "*.bin", QDir::Files, QDir::Name);
-//	QString str;
-//	ui.cbFile->clear();
-//	foreach(str, rlst) {
-//		ui.cbFile->addItem(str, str);
-//	}
-//	ui.cbFile->setCurrentIndex(rlst.indexOf(f.name.c_str()));
 	ui.cbFile->setCurrentFile(f.name.c_str());
 	ui.cbFoffset->setValue(f.foffset);
 	ui.cbFsize->setValue(f.fsize);
@@ -33,7 +25,6 @@ void xRomsetEditor::edit(xRomFile f) {
 }
 
 void xRomsetEditor::store() {
-//	xrf.name = getRFText(ui.cbFile);
 	xrf.name = std::string(ui.cbFile->currentFile().toLocal8Bit().data());
 	if (xrf.name.empty()) return;
 	xrf.foffset = ui.cbFoffset->value();
@@ -62,7 +53,7 @@ int xRomsetModel::columnCount(const QModelIndex& idx) const {
 
 int xRomsetModel::rowCount(const QModelIndex& idx) const {
 	if (idx.isValid()) return 0;
-	return rset->roms.size() + 3;
+	return rset->roms.size() + 4;
 }
 
 
@@ -98,10 +89,12 @@ QVariant xRomsetModel::data(const QModelIndex& idx, int role) const {
 						res = "ROM";
 					} else if (row == rlsz) {
 						res = "GS";
-					} else if (row == rlsz+1){
+					} else if (row == rlsz+1) {
 						res = "Font";
-					} else {
+					} else if (row == rlsz+2) {
 						res = "VGA";
+					} else if (row == rlsz+3) {
+						res = "SND";
 					}
 					break;
 				case 1:
@@ -111,8 +104,10 @@ QVariant xRomsetModel::data(const QModelIndex& idx, int role) const {
 						res = QString(rset->gsFile.c_str());
 					} else if (row == rlsz+1) {
 						res = QString(rset->fntFile.c_str());
-					} else {
+					} else if (row == rlsz+2) {
 						res = QString(rset->vBiosFile.c_str());
+					} else if (row == rlsz+3) {
+						res = QString(rset->sBiosFile.c_str());
 					}
 					break;
 				case 2:

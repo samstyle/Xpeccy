@@ -3,6 +3,11 @@
 #define	regCharHeight	reg[0]
 #define regCharBegin	reg[1]
 #define regCharEnd	reg[2]
+#define regCrsStart	reg[3]
+#define regCrsEnd	reg[4]
+
+#define flgShowCrs	flag[0]
+#define flgCrsBlink	flag[1]
 
 typedef struct {
 	unsigned char data[32];

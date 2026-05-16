@@ -1144,6 +1144,7 @@ void SetupWin::romPreset() {
 	rs.gsFile = presets[i].gsf;
 	rs.fntFile = presets[i].fnf;
 	rs.vBiosFile.clear();
+	rs.sBiosFile.clear();
 	rs.roms.clear();
 	int dx = 0;
 	while (presets[i].lst[dx].name != "") {
@@ -1202,8 +1203,10 @@ void SetupWin::delRom() {
 		conf.rsList[idx].gsFile.clear();
 	} else if (row == sz+1) {
 		conf.rsList[idx].fntFile.clear();
-	} else {
+	} else if (row == sz+2) {
 		conf.rsList[idx].vBiosFile.clear();
+	} else if (row == sz+3) {
+		conf.rsList[idx].sBiosFile.clear();
 	}
 	rsmodel->fill(&conf.rsList[idx]);
 }
@@ -1224,8 +1227,10 @@ void SetupWin::editRom() {
 		f.name = conf.rsList[idx].gsFile;
 	} else if (row == sz+1) {
 		f.name = conf.rsList[idx].fntFile;
-	} else {
+	} else if (row == sz+2) {
 		f.name = conf.rsList[idx].vBiosFile;
+	} else if (row == sz+3) {
+		f.name = conf.rsList[idx].sBiosFile;
 	}
 	eidx = row;
 	rseditor->edit(f);
@@ -1243,8 +1248,10 @@ void SetupWin::setRom(xRomFile f) {
 		conf.rsList[idx].gsFile = f.name;
 	} else if (eidx == sz+1) {
 		conf.rsList[idx].fntFile = f.name;
-	} else {
+	} else if (eidx == sz+2) {
 		conf.rsList[idx].vBiosFile = f.name;
+	} else if (eidx == sz+3) {
+		conf.rsList[idx].sBiosFile = f.name;
 	}
 	rsmodel->fill(&conf.rsList[idx]);
 }

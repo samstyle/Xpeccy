@@ -108,8 +108,6 @@ void conf_init(char* wpath, char* confdir) {
 	conf.emu.pause = 0;
 	conf.emu.fast = 0;
 	conf.gpctrl = new xGamepadController;
-//	conf.joy.gpad = new xGamepad; qDebug() << conf.joy.gpad;
-//	conf.joy.gpadb = new xGamepad; qDebug() << conf.joy.gpadb;
 	addProfile("default","xpeccy.conf");
 }
 
@@ -181,6 +179,8 @@ void saveConfig() {
 			fprintf(cfile, "font = %s\n", rms.fntFile.c_str());
 		if (!rms.vBiosFile.empty())
 			fprintf(cfile, "vga = %s\n", rms.vBiosFile.c_str());
+		if (!rms.sBiosFile.empty())
+			fprintf(cfile, "snd = %s\n", rms.sBiosFile.c_str());
 	}
 
 	fprintf(cfile, "\n[SOUND]\n\n");
@@ -516,6 +516,7 @@ void loadConfig() {
 						if (pnam=="gs") rsListist.back().gsFile=fnam;
 						if (pnam=="font") rsListist.back().fntFile=fnam;
 						if (pnam=="vga") rsListist.back().vBiosFile=fnam;
+						if (pnam=="snd") rsListist.back().sBiosFile=fnam;
 					}
 					break;
 				case SECT_SOUND:

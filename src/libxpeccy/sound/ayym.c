@@ -1,7 +1,9 @@
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "ayym.h"
+#include "../defines.h"
 
 // tables
 
@@ -92,13 +94,16 @@ void aymResetChan(aymChan* ch) {
 
 TSound* tsCreate(int tp,int tpA,int tpB) {
 	TSound* ts = (TSound*)malloc(sizeof(TSound));
-	ts->type = tp;
-	ts->chipA = aymCreate(tpA);
-	ts->chipB = aymCreate(tpB);
-	ts->chipC = aymCreate(SND_NONE);
-	ts->chipD = aymCreate(SND_NONE);
-	ts->mute_l = 0;
-	ts->mute_r = 0;
+	if (ts) {
+		memset(ts, 0x00, sizeof(TSound));
+		ts->type = tp;
+		ts->chipA = aymCreate(tpA);
+		ts->chipB = aymCreate(tpB);
+		ts->chipC = aymCreate(SND_NONE);
+		ts->chipD = aymCreate(SND_NONE);
+		ts->mute_l = 0;
+		ts->mute_r = 0;
+	}
 	return ts;
 }
 
@@ -136,6 +141,46 @@ void tsReset(TSound* ts) {
 	ts->curChip = ts->chipA;
 	ts->mute_l = 0;
 	ts->mute_r = 0;
+}
+
+void tsSetRomSize(TSound* ts, int sz) {
+	if (sz < 1) {
+		if (ts->rom.data) {
+			free(ts->rom.data);
+			ts->rom.data = NULL;
+			ts->rom.size = 0;
+			ts->rom.mask = 0;
+		}
+	} else {
+		if (sz < MEM_256) {
+			sz = MEM_256;
+		} else if (sz > MEM_128K) {
+			sz = MEM_128K;
+		} else {
+			int s = MEM_256;
+			while (s < sz) {
+				s <<= 1;
+			}
+			sz = s;
+		}
+		ts->rom.data = realloc(ts->rom.data, sz);
+		ts->rom.size = sz;
+		ts->rom.mask = sz - 1;
+	}
+}
+
+void tsLoadRom(TSound* ts, const char* path) {
+	FILE* file = fopen(path, "rb");
+	if (file) {
+		fseek(file, 0, SEEK_END);
+		int sz = ftell(file);
+		rewind(file);
+		tsSetRomSize(ts, sz);
+		fread(ts->rom.data, ts->rom.size, 1, file);
+		fclose(file);
+	} else {
+		tsSetRomSize(ts, 0);
+	}
 }
 
 // fffd (a14 = 1)	wr:reg.num	rd:reg.data
@@ -178,6 +223,16 @@ void tsOut(TSound* ts, int port, int val) {
 	} else {
 		ts->curChip->wr(ts->curChip, port, val);
 	}
+}
+
+int tsReadRom(TSound* ts, int adr) {
+	int r;
+	if (ts->rom.size > adr) {
+		r = ts->rom.data[adr];
+	} else {
+		r = 0x00;
+	}
+	return r;
 }
 
 // overall

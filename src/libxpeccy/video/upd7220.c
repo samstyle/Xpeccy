@@ -110,6 +110,13 @@ void upd7220_sync(Video* vid, upd7220* upd) {
 // p3:2-0	BRH
 // p3:7-3	cursor bottom line
 void upd7220_cchar(Video* vid, upd7220* upd) {
+	vid->regCharHeight = upd->inbuf.data[1] & 0x1f;
+	vid->flgShowCrs = !!(upd->inbuf.data[1] & 0x80);
+	vid->regCrsStart = upd->inbuf.data[2] & 0x1f;
+	vid->flgCrsBlink = !!(upd->inbuf.data[2] & 0x20);
+	// TODO: blink rate
+	vid->regCrsEnd = (upd->inbuf.data[3] >> 3) & 0x1f;
+
 }
 
 // com = 47	pitch
@@ -143,9 +150,10 @@ void upd7220_pram(Video* vid, upd7220* upd) {
 // com = 49		set cursor EAD
 // p1,p2,p3:bit1,0	address (p3 is graphic mode only)
 // p3:7-4		dot address in word
+// NOTE: EAD is word number, real address is (EAD*2)
 void upd7220_curs(Video* vid, upd7220* upd) {
-	upd->ead = upd->inbuf.data[1] | (upd->inbuf.data[2] << 8) | ((upd->inbuf.data[3] & 3) << 16);
-	upd->dpos = (upd->inbuf.data[3] >> 4) & 15;
+	upd->ead = (upd->inbuf.data[1] | (upd->inbuf.data[2] << 8)) << 1; // | ((upd->inbuf.data[3] & 3) << 16);
+	// upd->dpos = (upd->inbuf.data[3] >> 4) & 15;
 }
 
 // 001.type:2.0.mod:2		write
@@ -155,11 +163,43 @@ void upd7220_curs(Video* vid, upd7220* upd) {
 // mod: 00-replace,01-compliment,10-reset,11-set (write only)
 
 void upd7220_rdat(Video* vid, upd7220* upd) {
+//	int type = (upd->inbuf.data[0] >> 3) & 3;
+}
 
+void upd7220_wsetcnt(upd7220* upd, int type) {
+	switch(type) {
+		case 0: upd->inbuf.cnt = 2;
+			break;
+		case 1:
+		case 3: upd->inbuf.cnt = 1;
+			break;
+		case 2:	// wut to do here?
+			break;
+	}
 }
 
 void upd7220_wdat(Video* vid, upd7220* upd) {
-
+	int type = (upd->inbuf.data[0] >> 3) & 3;
+//	int mode = upd->inbuf.data[0] & 3;
+	if (upd->inbuf.pos == 1) {	// no params transfered yet
+		upd7220_wsetcnt(upd, type);
+	} else {
+		switch(type) {
+			case 0:
+				vid->ram[upd->ead & 0x3fff] = upd->inbuf.data[1];
+				vid->ram[(upd->ead + 1) & 0x3fff] = upd->inbuf.data[2];
+				break;
+			case 1:
+				vid->ram[upd->ead & 0x3fff] = upd->inbuf.data[1];
+				break;
+			case 3:
+				vid->ram[(upd->ead + 1) & 0x3fff] = upd->inbuf.data[1];
+				break;
+		}
+		upd->ead += 2;
+		upd->inbuf.pos = 1;
+		upd7220_wsetcnt(upd, type);
+	}
 }
 
 struct upd7220com {
@@ -186,8 +226,8 @@ struct upd7220com {
 	{0xff, 0x49, 2, upd7220_curs},	// csrw		set cursor address
 	{0xff, 0xe0, 5, NULL},	// csrr			read cursor address
 	{0xff, 0x4a, 1, NULL},	// mask
-	{0xe4, 0x40, 1, NULL},	// write
-	{0xe4, 0xa0, 0, NULL},	// read
+	{0xe4, 0x40, 0, upd7220_wdat},	// write
+	{0xe4, 0xa0, 0, upd7220_rdat},	// read
 	{0xe4, 0x44, 0, NULL},	// dmaw
 	{0xe4, 0xa4, 0, NULL},	// dmar
 	{0,0,0, NULL}		// (eot)
@@ -232,6 +272,8 @@ int upd7220_rd(Video* vid, upd7220* upd, int adr) {
 	return res;
 }
 
+// TODO: you can write less/more params for command, but every byte must be counted
+// example: csrw command may have 2 or 3 params
 void upd7220_wr(Video* vid, upd7220* upd, int adr, int val) {
 	if (adr & 1) {
 		// fifo wr:command
@@ -329,11 +371,18 @@ void upd7220_line(Video* vid) {
 		for (i = 0; i < 80; i++) {
 			chr = (vid->ram[adr] & 0xff) | (vid->ram[adr + 1] << 8);
 			atr = (vid->ram[adr | 0x2000] & 0xff) | (vid->ram[adr | 0x2001] << 8);	// char attribute
-			c = (atr >> 5) & 7;
+			c = 7; // (atr >> 5) & 7;				// color
 			chr = (chr << 3) + clin;			// for 8x8 chars
 			chr = (vid_fnt_rd(vid, chr) << 8) | (vid_fnt_rd(vid, chr | 1) & 0xff);		// 16 bit of pixels, do something with 283K kanjirom
 			if (atr & 4) chr ^= 0xffff;			// invert
 			if ((atr & 2) && vid->flash) chr ^= 0xffff;	// blink TODO:blink rate
+
+			if (/*vid->flgShowCrs && */(adr == vid->txt7220->ead)) {
+				if (((vid->ray.ys & 7) == 7)) { // >= vid->regCrsStart) && ((vid->ray.ys & 7) < vid->regCrsEnd)) {
+					chr = 0xffff;
+				}
+			}
+
 			// TODO: atr.invert, atr.blink, atr.stroked
 			for (j = 0; j < 8; j++) {
 				// TODO: fg/bg color for text mode

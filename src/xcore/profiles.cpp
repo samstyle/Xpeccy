@@ -302,6 +302,13 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 				prf->zx->vid->vga.cga = 0;
 			}
 		}
+// load sound card bios (allocate in TSound)
+		if (rset->sBiosFile.empty()) {
+			tsSetRomSize(prf->zx->ts, 0);
+		} else {
+			fpath = conf.path.romDir + SLASH + rset->sBiosFile;
+			tsLoadRom(prf->zx->ts, fpath.c_str());
+		}
 	}
 }
 

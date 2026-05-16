@@ -113,6 +113,13 @@ typedef struct {
 	unsigned mute_l:1;
 	unsigned mute_r:1;
 	int type;
+
+	struct {
+		unsigned char* data;
+		int size;
+		int mask;
+	} rom;
+
 	aymChip* chipA;
 	aymChip* chipB;
 	aymChip* chipC;
@@ -130,11 +137,12 @@ void tsDestroy(TSound*);
 void tsReset(TSound*);
 int tsIn(TSound*,int);
 void tsOut(TSound*,int,int);
-
 void tsSync(TSound*, int);
+void tsSetRomSize(TSound*, int);
+void tsLoadRom(TSound*, const char*);
+int tsReadRom(TSound*, int);
 
 sndPair tsGetVolume(TSound*);
-//sndPair aymGetVolume(aymChip*);
 
 #ifdef __cplusplus
 }

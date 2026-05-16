@@ -32,6 +32,7 @@
 #define DIPSW1	reg[71]
 #define DIPSW2	reg[72]
 #define DIPSW3	reg[73]
+#define MEMSW(_n) reg[73+(_n)]	// 73-76, 6 switches
 
 #define flgNMI	flag[0]
 #define flgKBDm flag[1]		// upd8251 mode (0:mode, 1:command)
@@ -55,12 +56,46 @@ void pc98xx_ram_wr(int adr, int val, void* p) {
 // video
 int pc98xx_vid_rd(int adr, void* p) {
 	Computer* comp = (Computer*)p;
-	return comp->vid->ram[adr & 0x1ffff];
+	int r = comp->vid->ram[adr & 0x1ffff] & 0xff;
+	switch (adr) {
+		case 0xa3fe2:
+		case 0xa3fe6:
+		case 0xa3fea:
+		case 0xa3ff2:
+		case 0xa3ff6:
+			printf("%X : rd SWx: %X = %.2X\n", comp->cpu->cs.base + comp->cpu->oldpc, adr, r);
+			break;
+		case 0xa3fee:
+			r = 0x00;
+			if (comp->ts->rom.data != NULL) r |= 8;		// sound rom
+			break;
+	}
+	return r;
 }
 
 void pc98xx_vid_wr(int adr, int val, void* p) {
 	Computer* comp = (Computer*)p;
+	switch(adr) {
+		case 0xa3fe2:
+		case 0xa3fe6:
+		case 0xa3fea:
+		case 0xa3fee:
+		case 0xa3ff2:
+		case 0xa3ff6:
+			printf("wr SWx: %X,%.2X\n", adr, val);
+			break;
+	}
 	comp->vid->ram[adr & 0x1ffff] = val;
+}
+
+int pc98xx_vex_rd(int adr, void* p) {
+	Computer* comp = p;
+	return comp->vid->ram[(adr & 0x7fff) + MEM_128K];
+}
+
+void pc98xx_vex_wr(int adr, int val, void* p) {
+	Computer* comp = p;
+	comp->vid->ram[(adr & 0x7fff) + MEM_128K] = val;
 }
 
 // bios
@@ -70,29 +105,86 @@ int pc98xx_bios_rd(int adr, void* p) {
 	return comp->mem->romData[adr & comp->mem->romMask];
 }
 
-// external bios (c0000-e7fff)
-int pc98xx_ext_rd(int adr, void* p) {
-//	Computer* comp = (Computer*)p;
-//	comp_brk(comp, -1);
-	return -1;
+// sound board bios (cc000-cffff)
+int pc98xx_snd_rd(int adr, void* p) {
+	Computer* comp = p;
+	return tsReadRom(comp->ts, adr & 0x3fff);
 }
 
 // adr bus width 20 bit
 // max.adr = FFFFF (1MB)
 // page size = 4096 bytes
 
+// TODO:
+// d4000-d5fff	gp/ib interface rom
+// d0000-d3fff	rs232 rom
+// cc000-cffff	sound board rom
+
+// TODO:memory switches (see 'pc98 programmers bible')
+// A3FE2/E3FE2:default 0x48
+// b6,7	: stop bits (01:1, 10:1.5, 11:2)
+// b5	: parity value
+// b4	: parity check on
+// b2,3	: data bits (10:7, 11:8)
+// b1	: transmission method (0:full duplex, 1:half duplex)
+// b0	: X parameter on (?)
+
+// A3FE6/E3FE6:default 05
+// b7	: S parameter on (?)
+// b6	: return key (0:cr, 1:cr+lf)
+// b5	: CR code (cr/cr+lf)
+// b0..4: bodrate (0000: none, others: 75*2^(n-1): 75,150,300,600... 9600)
+
+// A3FEA/E3FEA:default 04
+// b7	: DEL code (0:term-08,io-7F, 1:00/00)
+// b6	: initial text mode screen color (0:white, 1:black)
+// b5	: cpu clock? (10 / 8 or 16 MHz)
+// b4	: cpu is v30
+// b3	: cpu is x86
+// b0..2: memory size (128/256/384/512/640/768 KB)
+
+// A3FEE/E3FEE:default 00
+// b7	: expansion rom on CE000-CFFFF (X:user unavailable)
+// b6	: expansion rom on CA000-CBFFF (X:user unavailable)
+// b5	: GP/IB rom @ D4000-D5FFF (0:off, 1:on)
+// b4	: RS232/BRANCH4670 rom @ D0000-D3FFF
+// b3	: sound rom @ CC000-CFFFF
+// b2	: expansion rom @ C8000-C9FFF
+// b0,1	: 00
+
+// A3FF2/E3FF2:default 01
+// b4..7: floppy disks
+// b3	: screen hard copy (0:b/w, 1:color)
+// b2	:
+// b1	:
+// b0	: printer present
+
+// A3FF6:default 00
+// b6,7	: unused
+// b5	: phone control
+// b4	: extend function control
+// b3	: memory mode
+// b0..2: unused
+
+// TODO: highres mode memory map is different
+
 void pc98xx_mem_map(Computer* comp) {
 	memSetBank(comp->mem, 0x00, MEM_RAM, 0, MEM_1M, pc98xx_ram_rd, pc98xx_ram_wr, comp);	// ram (1M)
 	memSetBank(comp->mem, 0xa0, MEM_EXT, 0, MEM_128K, pc98xx_vid_rd, pc98xx_vid_wr, comp);	// video ram (128K)
-	memSetBank(comp->mem, 0xc0, MEM_EXT, 0, MEM_128K, pc98xx_ext_rd, NULL, comp);		// expand roms (128K) <- sound.rom?
-	memSetBank(comp->mem, 0xe0, MEM_EXT, 0, MEM_32K, NULL, NULL, comp);			// video ram (32K)
+
+	memSetBank(comp->mem, 0xc0, MEM_EXT, 0, MEM_128K, NULL, NULL, comp);			// expand roms (128K), reserved
+	memSetBank(comp->mem, 0xcc, MEM_ROM, 1, MEM_16K, pc98xx_snd_rd, NULL, comp);		// sound.rom (16K)
+
+	memSetBank(comp->mem, 0xe0, MEM_EXT, 0, MEM_32K, pc98xx_vex_rd, pc98xx_vex_wr, comp);	// video ram (32K)
 	memSetBank(comp->mem, 0xe8, MEM_ROM, 0, MEM_64K, pc98xx_bios_rd, NULL, comp);		// bios (96K)
 	memSetBank(comp->mem, 0xf8, MEM_ROM, 2, MEM_32K, pc98xx_bios_rd, NULL, comp);
 }
 
 void pc98xx_reset(Computer* comp) {
 	cpu_reset(comp->cpu);
-	comp->DIPSW1 = 1;
+	comp->DIPSW1 = 0x01;
+	comp->DIPSW2 = 0x03;
+	comp->DIPSW3 = 0xa0;
 	comp->portB = 0x00;	// b3:1=highres
 	comp->portC = 0xff;
 	comp->flgKBDm = 0;
@@ -103,21 +195,47 @@ void pc98xx_reset(Computer* comp) {
 	vid_set_mode(comp->vid, VID_PC98XX);
 	vid_set_resolution(comp->vid, 640, 400);
 	comp->vid->linedbl = !(comp->portB & 8);
+	dma_reset(comp->dma1);
+	pit_reset(comp->pit);
+	pic_reset(comp->mpic);
+	pic_reset(comp->spic);
 }
 
+// DIPSW1
+// b0	display clk - 1:24KHz, 0:15KHz (system port)
+// b1	superimpose mode
+// b2	digital display (printer port)
+// b3	if on, switch floppies 1-2/3-4 (default: 1-2 internal, 3-4 external)
+// b4,5	rs232 transfer mode (mouse port)
+// b6	-
+// b7	1:16col, 0:8col mode (printer port)
+
+// DIPSW2
+// b0	-
+// b1	1:terminal mode, 0:basic mode
+// b2	1:80 0:40 chars/line
+// b3	1:25 0:20 char lines/screen
+// b4	1:clear ram on reset
+// b5	1:disable internal hdd
+// b6	-
+// b7	gdc dot clk: 1:5mhz, 0:2.5MHz	(640/320 dots/line)
+
+// DIPSW3
+// b0	1:auto detect fdd type (by default see b1)
+// b1	1:fdd is dd, 0:fdd is hd
+// b2	-
+// b3	-
+// b4	-
+// b5	memory 1:512K, 0:640K (mouse port)
+// b6	-
+// b7	cpu 1:x86, 0:v30 (printer port)
+
 // uPD8255 - misc data (rs232,soft reset,misc flags) (31,33,35,37)
-// portA - system switch, DIPSW2 full (ro)
-//		b0: 0-640x200, 1-640x400
-//		b1: superimpose mode
-//		b2: digital display
-//		b3: switch floppies 1-2 and 3-4
-//		b4,5: rs232 transfer protocol mode
-//		b6: vf key
-//		b7: on - 16 cols of 4096 / off - 8 cols
+// portA - system switch, DIPSW2 full (ro) - see above
 // portB (ro)	b0:CDAT (upd4990 data out)
 //		b1:EMCK (ext.ram parity error)
 //		b2:IMCK (int.ram parity error)
-//		b3:CRTT (1:24KHz, 0:15KHz) - display hires, DIPSW1-1
+//		b3:CRTT (1:24KHz, 0:15KHz) - display hires, DIPSW1-0
 //		b4:INT3 (HDD)
 //		b5:CD - RS232
 //		b6:CS - RS232
@@ -135,7 +253,7 @@ void pc98xx_reset(Computer* comp) {
 //		b1,2,3:ADR0,1,2
 //		meaning: write bit(ADR)=DT
 
-int pc98xx_ppia_rd(void* comp) {return ((Computer*)comp)->DIPSW1;}
+int pc98xx_ppia_rd(void* comp) {return ((Computer*)comp)->DIPSW2;}
 int pc98xx_ppib_rd(void* ptr) {
 	Computer* comp = (Computer*)ptr;
 	int res = comp->portB & 0xfe;
@@ -619,11 +737,11 @@ void pc98xx_rs_wr(Computer* comp, int adr, int val) {
 
 // uPD8255 - printer
 // 40 wr data
-// 42 rd 1.0.mod.sw1-3.sw1-8.!bsy.acpu.0
+// 42 rd 1.0.mod.sw1-3.sw1-8.!bsy.sw3-7.0
 //	mod: system clock 0:10MHz, 1:8MHz - how?
 //	sw1-3: printer display on/off
 //	sw1-8: color depth. 1:16col, 0:8col
-//	acpu: 1 for V30, 0 for others
+//	sw3-7: 1 for V30, 0 for others
 // 44 rw pstb.0.0.0.0.0.0.0
 // 46 rd 82
 // 46 wr 8255 control word/mode
@@ -636,6 +754,7 @@ int pc98xx_prn_rd(Computer* comp, int adr) {
 		case 1: res = 0xa4;
 			if (comp->DIPSW1 & 0x08) res |= 0x10;
 			if (comp->DIPSW1 & 0x80) res |= 0x08;
+			if (comp->DIPSW3 & 0x80) res |= 0x02;
 			break;
 		case 2: break;
 		case 3: res = 0x82;
@@ -800,12 +919,14 @@ void pc98xx_sync(Computer* comp, int ns) {
 
 // kbd uart: 19200bps = 2400Bps
 void pc98xx_init(Computer* comp) {
+	// 8255, system ports
 	ppi_set_cb(comp->ppi, comp, pc98xx_ppia_rd, pc98xx_ppia_wr, pc98xx_ppib_rd, pc98xx_ppib_wr, pc98xx_ppic_rd, pc98xx_ppich_wr, pc98xx_ppic_rd, pc98xx_ppicl_wr);
-
+	// keyboard uart
 	uart_set_type(comp->uart, UPD_8251);
 	uart_set_rate(comp->uart, 100);
+	uart_set_irq(comp->uart, IRQ_UART_0);
 	uart_set_dev(comp->uart, uart_kbd_rd, uart_kbd_wr, comp->keyb);
-
+	// keyboard
 	kbd_set_type(comp->keyb, KBD_NEC98XX);
 }
 

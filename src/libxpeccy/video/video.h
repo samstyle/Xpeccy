@@ -5,6 +5,7 @@ extern "C" {
 #endif
 
 #include <stddef.h>
+#include <stdbool.h>
 
 #include "vidcommon.h"
 #include "../defines.h"
@@ -346,7 +347,7 @@ struct Video {
 	unsigned char ram[MEM_256K];			// video memory
 	unsigned char oam[MEM_256];			// nes/gb oam memory
 	unsigned char reg[256];				// max 256 registers
-//	bool flag[256];
+	bool flag[256];
 
 	ulaPlus* ula;
 	upd7220* txt7220;
