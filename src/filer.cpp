@@ -73,6 +73,8 @@ static xFileTypeInfo ft_tab[] = {
 #endif
 	{FL_BKRAWTAP, 0, NULL, "*", bkLoadToTape, NULL, "RAW file to BK tape"},
 	{FL_RAW, 0, NULL, "*", loadRaw, NULL, "RAW file to TRDOS disk"},			// * for all files; *.* for all files that have extension
+	{FL_98FDI, 1, ".fdi", "*.fdi", loadFDI98, NULL, "pc98xx FDI disk image"},
+//	{FL_98HDM, 0, NULL, "*.hdm", loadHDM, NULL, "pc98xx HDM disk image"},
 	{0, 0, NULL, NULL, NULL, NULL, NULL}
 };
 
@@ -106,6 +108,7 @@ static xFileGroupInfo fg_tab[] = {
 	{FG_BKTAPE, ".wav", -1, "BK tape", NULL, {FL_WAV, 0}},
 	{FG_BKRAW, "", -1, "BK raw file to tape", &ft_bktap,  {FL_BKRAWTAP, 0}},
 	{FG_PCDISK, "", 0, "FDD image", NULL, {FL_IMA, FL_PCIMG, 0}},
+	{FG_98DISK, "", 0, "98xx FDD image", NULL, {FL_98FDI, 0}},
 	{FG_BKDISK, "", 0, "BK disk image", NULL, {FL_BKIMG, FL_BKBKD, FL_UDI, 0}},
 	{FG_RKSTAP, "", -1, "RKS to tape", &ft_rkstap, {FL_RKS, 0}},
 	{FG_RKSMEM, "", -1, "RKS to memory", NULL, {FL_RKS, 0}},
@@ -126,6 +129,7 @@ static xFileHWInfo fh_tab[] = {
 	{FH_SLOTS, {FG_GAMEBOY, FG_NES, FG_MSX, FG_IF2_ROM, 0}},
 	{FH_SPCLST, {FG_RKSMEM, FG_RKSTAP, 0}},
 	{FH_PC, {FG_PCDISK, 0}},
+	{FH_98XX, {FG_98DISK, 0}},
 	{FH_DRIVE_A, {FG_DISK_A, FG_RAW, 0}},
 	{FH_DRIVE_B, {FG_DISK_B, FG_RAW, 0}},
 	{FH_DRIVE_C, {FG_DISK_C, FG_RAW, 0}},
@@ -143,6 +147,7 @@ static xFileHWInfo hw_tab[] = {
 	{FH_BK, {HW_BK0010, HW_BK0011M, 0}},
 	{FH_SPCLST, {HW_SPCLST, 0}},
 	{FH_PC, {HW_IBM_PC, 0}},
+	{FH_98XX, {HW_PC9801, 0}},
 	{0, {0}}
 };
 

@@ -19,6 +19,7 @@ enum {
 	DIF_P3DOS,
 	DIF_PC,
 	DIF_SMK512,
+	DIF_PC98,
 	DIF_END	= -1
 };
 

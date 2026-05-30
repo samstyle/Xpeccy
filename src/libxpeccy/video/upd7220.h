@@ -33,6 +33,7 @@ void upd7220_destroy(upd7220*);
 
 int upd7220_rd(Video*, upd7220*, int);
 void upd7220_wr(Video*, upd7220*, int, int);
+void upd7220_reset(Video*, upd7220*);
 
 void upd7220_frame(Video*);
 void upd7220_line(Video*);

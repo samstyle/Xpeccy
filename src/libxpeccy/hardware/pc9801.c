@@ -2,16 +2,6 @@
 // CPU: 8086
 // Hardware: almost IBM PC
 
-// Memory map:
-// 00000-9ffff - ram
-// a0000-a7fff - text video mode data
-// a8000-bffff - graphics video mode data (layers 0-2)
-// c0000-c7fff - expansion rom (user)
-// c8000-dffff - expansion rom (system)
-// e0000-e7fff - video ram (optional - layer 3)
-// e8000-fffff - bios
-// reset @ ffff:0000 = ffff0
-
 #include "../cpu/x86/i80286.h"
 #include "../video/upd7220.h"
 
@@ -26,13 +16,12 @@
 #define fntSH	reg[56]
 #define fntLN	reg[57]
 
-//#define portA	reg[64] = DIPSW1
 #define portB	reg[65]
 #define portC	reg[66]
 #define DIPSW1	reg[71]
 #define DIPSW2	reg[72]
 #define DIPSW3	reg[73]
-#define MEMSW(_n) reg[73+(_n)]	// 73-76, 6 switches
+#define MEMSW(_n) reg[73+(_n)]	// 73-78, 6 switches
 
 #define flgNMI	flag[0]
 #define flgKBDm flag[1]		// upd8251 mode (0:mode, 1:command)
@@ -56,16 +45,17 @@ void pc98xx_ram_wr(int adr, int val, void* p) {
 // video
 int pc98xx_vid_rd(int adr, void* p) {
 	Computer* comp = (Computer*)p;
-	int r = comp->vid->ram[adr & 0x1ffff] & 0xff;
+	adr &= 0x1ffff;
+	int r = comp->vid->ram[adr] & 0xff;
 	switch (adr) {
-		case 0xa3fe2:
-		case 0xa3fe6:
-		case 0xa3fea:
-		case 0xa3ff2:
-		case 0xa3ff6:
+		case 0x03fe2:
+		case 0x03fe6:
+		case 0x03fea:
+		case 0x03ff2:
+		case 0x03ff6:
 			printf("%X : rd SWx: %X = %.2X\n", comp->cpu->cs.base + comp->cpu->oldpc, adr, r);
 			break;
-		case 0xa3fee:
+		case 0x03fee:
 			r = 0x00;
 			if (comp->ts->rom.data != NULL) r |= 8;		// sound rom
 			break;
@@ -75,17 +65,18 @@ int pc98xx_vid_rd(int adr, void* p) {
 
 void pc98xx_vid_wr(int adr, int val, void* p) {
 	Computer* comp = (Computer*)p;
+	adr &= 0x1ffff;
 	switch(adr) {
-		case 0xa3fe2:
-		case 0xa3fe6:
-		case 0xa3fea:
-		case 0xa3fee:
-		case 0xa3ff2:
-		case 0xa3ff6:
+		case 0x03fe2:
+		case 0x03fe6:
+		case 0x03fea:
+		case 0x03fee:
+		case 0x03ff2:
+		case 0x03ff6:
 			printf("wr SWx: %X,%.2X\n", adr, val);
 			break;
 	}
-	comp->vid->ram[adr & 0x1ffff] = val;
+	comp->vid->ram[adr] = val;
 }
 
 int pc98xx_vex_rd(int adr, void* p) {
@@ -167,6 +158,23 @@ int pc98xx_snd_rd(int adr, void* p) {
 // b0..2: unused
 
 // TODO: highres mode memory map is different
+// Memory map (normal mode):
+// 00000-9ffff - ram (max 640KB)
+// a0000-a7fff - text video mode data (+memswitches)
+// a5000-a7fff - unused
+// a8000-bffff - graphics video mode data (layers 0-2)
+// c0000-dffff - expansion roms
+// e0000-e7fff - video ram (optional - layer 3)
+// e8000-fffff - bios
+// reset @ ffff:0000 = ffff0
+
+// Memory map (highres mode):
+// 00000-7ffff - ram (512KB)
+// 80000-bffff - ram window (256KB)
+// c0000-dffff - graphic vram (128KB x 4)
+// e0000-e4fff - text vram (+memswitches)
+// e5000-e7fff - expansion roms (?)
+// e8000-fffff - bios
 
 void pc98xx_mem_map(Computer* comp) {
 	memSetBank(comp->mem, 0x00, MEM_RAM, 0, MEM_1M, pc98xx_ram_rd, pc98xx_ram_wr, comp);	// ram (1M)
@@ -192,6 +200,8 @@ void pc98xx_reset(Computer* comp) {
 	comp->regKBDs = 0;
 	pc98xx_mem_map(comp);
 	kbd_set_type(comp->keyb, KBD_NEC98XX);
+	upd7220_reset(comp->vid, comp->vid->txt7220);
+	upd7220_reset(comp->vid, comp->vid->grf7220);
 	vid_set_mode(comp->vid, VID_PC98XX);
 	vid_set_resolution(comp->vid, 640, 400);
 	comp->vid->linedbl = !(comp->portB & 8);
@@ -694,6 +704,17 @@ void pc98xx_fnt_wr(Computer* comp, int adr, int val) {
 // uPD765 - FDC x 2
 // 80,82: 5" flop
 // 90,92,94,96: 1MB flop
+
+int pc98xx_fdc_rd(Computer* comp, int adr) {
+	int res = -1;
+	difIn(comp->dif, (adr >> 1) & 3, &res, 0);
+	return res;
+}
+
+void pc98xx_fdc_wr(Computer* comp, int adr, int val) {
+	difOut(comp->dif, (adr >> 1) & 3, val, 0);
+}
+
 // uPD8251 - RS232
 
 // 51,53,55,57 - 320KB FDD on 8255
@@ -842,8 +863,10 @@ xPort pc98xx_io_map[] = {
 	{0x0fd, 0x080, 2, 2, 2, pc98xx_hdd_rd,	pc98xx_hdd_wr},		// 80,82: hard disk inerface
 //	{0xff9, 0x188, 2, 2, 2, NULL,		NULL},			// 188,18a,18c,18e: ym2203
 //	{0x0f9, 0x089, 2, 2, 2, NULL,		NULL},			// 89,8b,8d,8f: network interface
-//	{0x0f1, 0x090, 2, 2, 2, NULL,		NULL},			// 90,92,94,96: hd fdd on upd765
+	{0x0f1, 0x090, 2, 2, 2, pc98xx_fdc_rd,	pc98xx_fdc_wr},		// 90,92,94,96 + (copy:98,9a,9c,9e): hd fdd on upd765
+//	{0x0f9, 0x091, 2, 2, 2, NULL,		NULL},			// 91,93,95,97: tape interface (uart,8251)
 //	{0x0fd, 0x099, 2, 2, 2, NULL,		NULL},			// 99,9b: gp-ib switch
+//	{0x0ff, 0x09f, 2, 2, 2, NULL,		NULL},			// 9f: 68000 board
 	{0xcf1, 0x0a0, 2, 2, 2, pc98xx_gra_rd,	pc98xx_gra_wr},		// a0,a2,a4,a6,a8,aa,ac,ae: graphic video upd7220a
 //	{0xcf1, 0x1a0, 2, 2, 2, NULL,		NULL},			// ecg
 //	{0xff1, 0x9a0, 2, 2, 2, NULL,		NULL},			// graphic control

@@ -219,6 +219,10 @@ int loadTD0(Computer*,const char*,int);
 int loadBkIMG(Computer*,const char*,int);
 int bkLoadToTape(Computer*,const char*,int);
 
+// pc98xx disk
+
+int loadFDI98(Computer*, const char*, int);
+
 // cartridge
 
 int loadSlot(Computer*,const char*, int);

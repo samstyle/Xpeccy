@@ -37,9 +37,9 @@ void xDiskDump::resizeEvent(QResizeEvent* ev) {
 // model
 
 xDiskDumpModel::xDiskDumpModel(QObject* p):xTableModel(p) {
-	rcnt = 0;
 	drv = 0;
 	trk = 0;
+	setCols(10);
 }
 
 void xDiskDumpModel::setDrive(int dr) {
@@ -65,15 +65,6 @@ void xDiskDumpModel::setDrive(int dr) {
 void xDiskDumpModel::setTrack(int tr) {
 	trk = tr;
 	update();
-//	emit dataChanged(index(0, 0), index(rowCount(), columnCount()));
-}
-
-int xDiskDumpModel::rowCount(const QModelIndex&) const {
-	return rcnt;
-}
-
-int xDiskDumpModel::columnCount(const QModelIndex&) const {
-	return 10;
 }
 
 QVariant xDiskDumpModel::data(const QModelIndex& idx, int role) const {
@@ -164,7 +155,7 @@ xDiskDumpWidget::xDiskDumpWidget(QString i, QString t, QWidget* p):xDockWidget(i
 	connect(ui.cbDrive, SIGNAL(currentIndexChanged(int)), ui.tabDiskDump, SLOT(setDrive(int)));
 	connect(ui.sbTrack, SIGNAL(valueChanged(int)), ui.tabDiskDump, SLOT(setTrack(int)));
 	connect(ui.tbTarget, SIGNAL(released()),this,SLOT(toTarget()));
-	hwList << HWG_ZX << HWG_PC << HWG_BK;
+	hwList << HWG_ZX << HWG_PC << HWG_BK << HWG_PC98XX;
 }
 
 void xDiskDumpWidget::toTarget() {

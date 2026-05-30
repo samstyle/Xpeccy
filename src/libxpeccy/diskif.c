@@ -276,6 +276,28 @@ void dpc_term(DiskIF* dif) {
 	uTCount(dif->fdc);
 }
 
+// pc98xx (upD765)
+
+int p98in(DiskIF* dif, int port, int* rptr, int dos) {
+	int res = -1;
+	switch(port & 3) {
+		case 0: res = uRead(dif->fdc, 0); break;	// status
+		case 1: res = uRead(dif->fdc, 1); break;	// data
+		case 2: res = 0x40; break;			// b6=1, b3=fdd2/3type(0:1mb,1:640kb),b2=fdd0/1type
+	}
+	*rptr = res;
+	return 1;
+}
+
+int p98out(DiskIF* dif, int port, int val, int dos) {
+	switch(port & 3) {
+		case 1: uWrite(dif->fdc, 1, val); break;
+		case 2:						// control register: b7:rst, b6:rdy, b4:1
+			break;
+	}
+	return 1;
+}
+
 // bk
 
 void vp1_reset(FDC*);
@@ -300,11 +322,12 @@ int bkdOut(DiskIF* dif, int port, int val, int dos) {
 // common
 
 static DiskHW dhwTab[] = {
-	{DIF_NONE,&dumReset,&dumIn,&dumOut,&dumSync,NULL,NULL},
-	{DIF_BDI,&bdiReset,&bdiIn,&bdiOut,&dhwSync,NULL,NULL},
-	{DIF_P3DOS,&pdosReset,&pdosIn,&pdosOut,&pdosSync,NULL,NULL},	// upd765 (+3dos)
-	{DIF_PC,&pdosReset,&dpcIn,&dpcOut,&pdosSync,dpc_irq,dpc_term},		// i8275 = upd765
-	{DIF_SMK512,&bkdReset,&bkdIn,&bkdOut,&dhwSync,NULL,NULL},
+	{DIF_NONE,dumReset,dumIn,dumOut,dumSync,NULL,NULL},
+	{DIF_BDI,bdiReset,bdiIn,bdiOut,dhwSync,NULL,NULL},
+	{DIF_P3DOS,pdosReset,pdosIn,pdosOut,pdosSync,NULL,NULL},		// upd765 (+3dos)
+	{DIF_PC,pdosReset,dpcIn,dpcOut,pdosSync,dpc_irq,dpc_term},		// i8275 = upd765
+	{DIF_PC98,pdosReset,p98in,p98out,pdosSync,NULL,NULL},
+	{DIF_SMK512,bkdReset,bkdIn,bkdOut,dhwSync,NULL,NULL},
 	{DIF_END,NULL,NULL,NULL,NULL,NULL,NULL}
 };
 
