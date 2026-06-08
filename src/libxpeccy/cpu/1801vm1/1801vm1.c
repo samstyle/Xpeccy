@@ -1454,22 +1454,42 @@ int pdp11_exec(CPU* cpu) {
 
 // registers
 
+void pdp_set_r0(CPU* cpu, int v) {cpu->regRN(0) = v;}
+void pdp_set_r1(CPU* cpu, int v) {cpu->regRN(1) = v;}
+void pdp_set_r2(CPU* cpu, int v) {cpu->regRN(2) = v;}
+void pdp_set_r3(CPU* cpu, int v) {cpu->regRN(3) = v;}
+void pdp_set_r4(CPU* cpu, int v) {cpu->regRN(4) = v;}
+void pdp_set_r5(CPU* cpu, int v) {cpu->regRN(5) = v;}
+void pdp_set_sp(CPU* cpu, int v) {cpu->regRN(6) = v;}
+void pdp_set_pc(CPU* cpu, int v) {cpu->regRN(7) = v;}
+
+int pdp_get_r0(CPU* cpu) {return cpu->regRN(0);}
+int pdp_get_r1(CPU* cpu) {return cpu->regRN(1);}
+int pdp_get_r2(CPU* cpu) {return cpu->regRN(2);}
+int pdp_get_r3(CPU* cpu) {return cpu->regRN(3);}
+int pdp_get_r4(CPU* cpu) {return cpu->regRN(4);}
+int pdp_get_r5(CPU* cpu) {return cpu->regRN(5);}
+int pdp_get_sp(CPU* cpu) {return cpu->regRN(6);}
+int pdp_get_pc(CPU* cpu) {return cpu->regRN(7);}
+
+// static char* pdpFlags = "I--TNZVC";
+
 xRegDsc pdp11RegTab[] = {
-	{PDP11_REG0, "R0", REG_WORD, REG_RDMP, offsetof(CPU, regRN(0))},
-	{PDP11_REG1, "R1", REG_WORD, REG_RDMP, offsetof(CPU, regRN(1))},
-	{PDP11_REG2, "R2", REG_WORD, REG_RDMP, offsetof(CPU, regRN(2))},
-	{PDP11_REG3, "R3", REG_WORD, REG_RDMP, offsetof(CPU, regRN(3))},
-	{PDP11_REG4, "R4", REG_WORD, REG_RDMP, offsetof(CPU, regRN(4))},
-	{PDP11_REG5, "R5", REG_WORD, REG_RDMP, offsetof(CPU, regRN(5))},
-	{PDP11_REG6, "SP", REG_WORD, REG_RDMP | REG_SP, offsetof(CPU, regRN(6))},
-	{PDP11_REG7, "PC", REG_WORD, REG_RDMP | REG_PC, offsetof(CPU, regRN(7))},
-	{PDP11_REGF, "PSW", REG_32, 0, 0},
-	{REG_EOT, "", 0, 0, 0}
+	{PDP11_REG0, "R0", REG_WORD, REG_RDMP, pdp_get_r0, pdp_set_r0},
+	{PDP11_REG1, "R1", REG_WORD, REG_RDMP, pdp_get_r0, pdp_set_r0},
+	{PDP11_REG2, "R2", REG_WORD, REG_RDMP, pdp_get_r0, pdp_set_r0},
+	{PDP11_REG3, "R3", REG_WORD, REG_RDMP, pdp_get_r0, pdp_set_r0},
+	{PDP11_REG4, "R4", REG_WORD, REG_RDMP, pdp_get_r0, pdp_set_r0},
+	{PDP11_REG5, "R5", REG_WORD, REG_RDMP, pdp_get_r0, pdp_set_r0},
+	{PDP11_REG6, "SP", REG_WORD, REG_RDMP | REG_SP, pdp_get_r0, pdp_set_r0},
+	{PDP11_REG7, "PC", REG_WORD, REG_RDMP | REG_PC, pdp_get_r0, pdp_set_r0},
+	{PDP11_REGF, "PSW", REG_32, REG_FLG, pdp_get_flag, pdp_set_flag},
+	{REG_EOT, "I--TNZVC", 0, 0, NULL, NULL}
 };
 
 static char* regNames[8] = {"R0","R1","R2","R3","R4","R5","SP","PC"};
-static char* pdpFlags = "I--TNZVC";
 
+/*
 unsigned short pdp_get_reg(CPU* cpu, int id) {
 	unsigned short res = 0;
 	switch(id) {
@@ -1491,7 +1511,7 @@ void pdp11_get_regs(CPU* cpu, xRegBunch* bunch) {
 	while (pdp11RegTab[idx].id != REG_EOT) {
 		bunch->regs[idx].id = pdp11RegTab[idx].id;
 		bunch->regs[idx].name = pdp11RegTab[idx].name;
-		bunch->regs[idx].type = pdp11RegTab[idx].type;
+		bunch->regs[idx].type = pdp11RegTab[idx].size;
 		bunch->regs[idx].flag = pdp11RegTab[idx].flag;
 		bunch->regs[idx].value = pdp_get_reg(cpu, pdp11RegTab[idx].id);
 		idx++;
@@ -1515,12 +1535,13 @@ void pdp11_set_regs(CPU* cpu, xRegBunch bunch) {
 			case PDP11_REG4: cpu->regRN(4) = bunch.regs[idx].value; break;
 			case PDP11_REG5: cpu->regRN(5) = bunch.regs[idx].value; break;
 			case PDP11_REG6: cpu->regRN(6) = bunch.regs[idx].value; break;
-			case PDP11_REG7: cpu->regRN(7) = bunch.regs[idx].value; /*cpu->regPC = cpu->regRN(7);*/ break;
+			case PDP11_REG7: cpu->regRN(7) = bunch.regs[idx].value; break;
 			case PDP11_REGF: pdp_set_flag(cpu, bunch.regs[idx].value); break;
 		}
 		idx++;
 	}
 }
+*/
 
 // disasm
 

@@ -98,28 +98,47 @@ xMnem i8080_mnem(CPU* cpu, int qadr, cbdmr mrd, void* data) {
 	return mn;
 }
 
+void i8080_set_pc(CPU* cpu, int v) {cpu->regPC = v;}
+void i8080_set_af(CPU* cpu, int v) {xreg16 r; r.w = v & 0xffff; cpu->regA = r.h; i8080_set_flag(cpu, r.l);}
+void i8080_set_bc(CPU* cpu, int v) {cpu->regBC = v;}
+void i8080_set_de(CPU* cpu, int v) {cpu->regDE = v;}
+void i8080_set_hl(CPU* cpu, int v) {cpu->regHL = v;}
+void i8080_set_sp(CPU* cpu, int v) {cpu->regSP = v;}
+void i8080_set_iff(CPU* cpu, int v) {cpu->flgIFF1 = !!v;}
+void i8080_set_a(CPU* cpu, int v) {cpu->regA = v;}
+
+int i8080_get_pc(CPU* cpu) {return cpu->regPC;}
+int i8080_get_af(CPU* cpu) {xreg16 r; r.h = cpu->regA; r.l = i8080_get_flag(cpu); return r.w;}
+int i8080_get_bc(CPU* cpu) {return cpu->regBC;}
+int i8080_get_de(CPU* cpu) {return cpu->regDE;}
+int i8080_get_hl(CPU* cpu) {return cpu->regHL;}
+int i8080_get_sp(CPU* cpu) {return cpu->regSP;}
+int i8080_get_iff(CPU* cpu) {return cpu->flgIFF1;}
+int i8080_get_a(CPU* cpu) {return cpu->regA;}
+
+//static char* i8080_flags = "SZ5A3P1C";
+
 xRegDsc i8080RegTab[] = {
-	{I8080_REG_PC, "PC", REG_WORD, REG_RDMP | REG_PC, offsetof(CPU, regPC)},
-	{I8080_REG_AF, "AF", REG_WORD, 0, 0},
-	{I8080_REG_BC, "BC", REG_WORD, REG_RDMP, offsetof(CPU, regBC)},
-	{I8080_REG_DE, "DE", REG_WORD, REG_RDMP, offsetof(CPU, regDE)},
-	{I8080_REG_HL, "HL", REG_WORD, REG_RDMP, offsetof(CPU, regHL)},
-	{I8080_REG_SP, "SP", REG_WORD, REG_RDMP | REG_SP, offsetof(CPU, regSP)},
-	{I8080_FLG_IFF, "IFF", REG_BIT, 0, offsetof(CPU, flgIFF1)},
-	{REG_EMPTY, "A", REG_BYTE, 0, offsetof(CPU, regA)},
-	{REG_EMPTY, "F", REG_32, 0, 0},
-	{REG_EOT, "", 0, 0, 0}
+	{I8080_REG_PC, "PC", REG_WORD, REG_RDMP | REG_PC, i8080_get_pc, i8080_set_pc},
+	{I8080_REG_AF, "AF", REG_WORD, 0, i8080_get_af, i8080_set_af},
+	{I8080_REG_BC, "BC", REG_WORD, REG_RDMP, i8080_get_bc, i8080_set_bc},
+	{I8080_REG_DE, "DE", REG_WORD, REG_RDMP, i8080_get_de, i8080_set_de},
+	{I8080_REG_HL, "HL", REG_WORD, REG_RDMP, i8080_get_hl, i8080_set_hl},
+	{I8080_REG_SP, "SP", REG_WORD, REG_RDMP | REG_SP, i8080_get_sp, i8080_set_sp},
+	{I8080_FLG_IFF, "IFF", REG_BIT, 0, i8080_get_iff, i8080_set_iff},
+	{REG_EMPTY, "A", REG_BYTE, 0, i8080_get_a, i8080_set_a},
+	{REG_EMPTY, "F", REG_32, REG_FLG, i8080_get_flag, i8080_set_flag},
+	{REG_EOT, "SZ5A3P1C", 0, 0, NULL, NULL}
 };
 
-static char* i8080_flags = "SZ5A3P1C";
-
+/*
 void i8080_get_regs(CPU* cpu, xRegBunch* bunch) {
 	int idx = 0;
 	PAIR(w,h,l)rx;
 	while(i8080RegTab[idx].id != REG_EOT) {
 		bunch->regs[idx].id = i8080RegTab[idx].id;
 		bunch->regs[idx].name = i8080RegTab[idx].name;
-		bunch->regs[idx].type = i8080RegTab[idx].type;
+		bunch->regs[idx].type = i8080RegTab[idx].size;
 		bunch->regs[idx].flag = i8080RegTab[idx].flag;
 		switch(i8080RegTab[idx].id) {
 			case I8080_REG_PC: bunch->regs[idx].value = cpu->regPC; break;
@@ -157,3 +176,4 @@ void i8080_set_regs(CPU* cpu, xRegBunch bunch) {
 		}
 	}
 }
+*/

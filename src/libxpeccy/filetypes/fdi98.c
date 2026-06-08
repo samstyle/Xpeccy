@@ -30,7 +30,6 @@ int loadFDI98(Computer* comp, const char* name, int drv) {
 		int tcnt = trks * 2;		// logical tracks on both sides. if image is single-side, every 2nd track is skipped
 		char* buf = malloc(trksz);	// one track data
 		flpClearDisk(flp);
-		printf("tcnt = %i\n", tcnt);
 		for (int trk = 0; trk < tcnt; trk++) {
 			fread(buf, trksz, 1, file);
 			flp_format_trk(flp, trk, spt, ssz, buf);

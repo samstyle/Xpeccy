@@ -16,20 +16,6 @@ void i086_init(CPU* cpu) {cpu->gen = 0;}
 void i186_init(CPU* cpu) {cpu->gen = 1;}
 void i286_init(CPU* cpu) {cpu->gen = 2;}
 
-/*
-#define I286_FC	0x0001	// carry
-#define I286_FP 0x0004	// parity
-#define I286_FA 0x0010	// half-carry
-#define I286_FZ 0x0040	// zero
-#define I286_FS 0x0080	// sign
-#define I286_FT 0x0100	// trap
-#define I286_FI 0x0200	// interrupt
-#define I286_FD	0x0400	// direction
-#define I286_FO 0x0800	// overflow
-#define I286_FIP 0x3000	// 2bits: IOPL
-#define I286_FN	0x4000	// nested flag
-*/
-
 void x86_set_flag(CPU* cpu, int v) {
 	cpu->flgC = (v & 1);
 	cpu->flgP = !!(v & 4);
@@ -526,54 +512,93 @@ xMnem i286_mnem(CPU* cpu, int sadr, cbdmr mrd, void* data) {
 
 // asm
 
-xRegDsc i286RegTab[] = {
-	{I286_IP, "IP", REG_WORD, REG_RDMP | REG_PC, offsetof(CPU, regIP)},
-	{I286_SP, "SP", REG_WORD, REG_RDMP | REG_SP, offsetof(CPU, regSP)},
-	{I286_BP, "BP", REG_WORD, REG_RDMP, offsetof(CPU, regBP)},
-	{I286_SI, "SI", REG_WORD, REG_RDMP, offsetof(CPU, regSI)},
-	{I286_DI, "DI", REG_WORD, REG_RDMP, offsetof(CPU, regDI)},
-	{I286_AX, "AX", REG_WORD, REG_RDMP, offsetof(CPU, regAX)},
-	{I286_BX, "BX", REG_WORD, REG_RDMP, offsetof(CPU, regBX)},
-	{I286_CX, "CX", REG_WORD, REG_RDMP, offsetof(CPU, regCX)},
-	{I286_DX, "DX", REG_WORD, REG_RDMP, offsetof(CPU, regDX)},
-	{I286_CS, "CS", REG_WORD, REG_SEG, offsetof(CPU, cs)},
-	{I286_SS, "SS", REG_WORD, REG_SEG, offsetof(CPU, ss)},
-	{I286_DS, "DS", REG_WORD, REG_SEG, offsetof(CPU, ds)},
-	{I286_ES, "ES", REG_WORD, REG_SEG, offsetof(CPU, es)},
-	{I286_MSW, "MSW", REG_32, REG_RO, offsetof(CPU, regMSW)},
-	{I286_LDT, "LDT", REG_24, REG_RO, offsetof(CPU, ldtr)},
-	{I286_GDT, "GDT", REG_24, REG_RO, offsetof(CPU, gdtr)},
-	{I286_IDT, "IDT", REG_24, REG_RO, offsetof(CPU, idtr)},
-	{I286_TSS, "TSS", REG_24, REG_RO, offsetof(CPU, tsdr)},
-	{REG_EOT, "", 0, 0, 0}
-};
-
-xRegDsc i086RegTab[] = {
-	{I286_IP, "IP", REG_WORD, REG_RDMP | REG_PC, offsetof(CPU, regIP)},
-	{I286_SP, "SP", REG_WORD, REG_RDMP | REG_SP, offsetof(CPU, regSP)},
-	{I286_BP, "BP", REG_WORD, REG_RDMP, offsetof(CPU, regBP)},
-	{I286_SI, "SI", REG_WORD, REG_RDMP, offsetof(CPU, regSI)},
-	{I286_DI, "DI", REG_WORD, REG_RDMP, offsetof(CPU, regDI)},
-	{I286_AX, "AX", REG_WORD, REG_RDMP, offsetof(CPU, regAX)},
-	{I286_BX, "BX", REG_WORD, REG_RDMP, offsetof(CPU, regBX)},
-	{I286_CX, "CX", REG_WORD, REG_RDMP, offsetof(CPU, regCX)},
-	{I286_DX, "DX", REG_WORD, REG_RDMP, offsetof(CPU, regDX)},
-	{I286_CS, "CS", REG_WORD, REG_SEG, offsetof(CPU, cs)},
-	{I286_SS, "SS", REG_WORD, REG_SEG, offsetof(CPU, ss)},
-	{I286_DS, "DS", REG_WORD, REG_SEG, offsetof(CPU, ds)},
-	{I286_ES, "ES", REG_WORD, REG_SEG, offsetof(CPU, es)},
-	{REG_EOT, "", 0, 0, 0}
-};
-
 xAsmScan i286_asm(int adr, const char* mnm, char* buf) {
 	xAsmScan res;
 	res.match = 0;
 	return res;
 }
 
-char* i286_flags = "-N**ODITSZ-A-P-C";
-char* i086_flags = "----ODITSZ-A-P-C";
+// registers
 
+void x86_set_ip(CPU* cpu, int v) {cpu->regIP = v;}
+void x86_set_sp(CPU* cpu, int v) {cpu->regSP = v;}
+void x86_set_bp(CPU* cpu, int v) {cpu->regBP = v;}
+void x86_set_si(CPU* cpu, int v) {cpu->regSI = v;}
+void x86_set_di(CPU* cpu, int v) {cpu->regDI = v;}
+void x86_set_ax(CPU* cpu, int v) {cpu->regAX = v;}
+void x86_set_bx(CPU* cpu, int v) {cpu->regBX = v;}
+void x86_set_cx(CPU* cpu, int v) {cpu->regCX = v;}
+void x86_set_dx(CPU* cpu, int v) {cpu->regDX = v;}
+void x86_set_cs(CPU* cpu, int v) {cpu->cs = i286_cash_seg(cpu, v);}
+void x86_set_ss(CPU* cpu, int v) {cpu->ss = i286_cash_seg(cpu, v);}
+void x86_set_ds(CPU* cpu, int v) {cpu->ds = i286_cash_seg(cpu, v);}
+void x86_set_es(CPU* cpu, int v) {cpu->es = i286_cash_seg(cpu, v);}
+void x86_set_msw(CPU* cpu, int v) {cpu->regMSW = v;}
+
+int x86_get_ip(CPU* cpu) {return cpu->regIP;}
+int x86_get_sp(CPU* cpu) {return cpu->regSP;}
+int x86_get_bp(CPU* cpu) {return cpu->regBP;}
+int x86_get_si(CPU* cpu) {return cpu->regSI;}
+int x86_get_di(CPU* cpu) {return cpu->regDI;}
+int x86_get_ax(CPU* cpu) {return cpu->regAX;}
+int x86_get_bx(CPU* cpu) {return cpu->regBX;}
+int x86_get_cx(CPU* cpu) {return cpu->regCX;}
+int x86_get_dx(CPU* cpu) {return cpu->regDX;}
+int x86_get_cs(CPU* cpu) {return cpu->cs.idx;}
+int x86_get_ss(CPU* cpu) {return cpu->ss.idx;}
+int x86_get_ds(CPU* cpu) {return cpu->ds.idx;}
+int x86_get_es(CPU* cpu) {return cpu->es.idx;}
+int x86_get_msw(CPU* cpu) {return cpu->regMSW;}
+int x86_get_ldtr(CPU* cpu) {return cpu->ldtr.base;}
+int x86_get_gdtr(CPU* cpu) {return cpu->gdtr.base;}
+int x86_get_idtr(CPU* cpu) {return cpu->idtr.base;}
+int x86_get_tsdr(CPU* cpu) {return cpu->tsdr.base;}
+
+//static char* i286_flags = "-N**ODITSZ-A-P-C";
+//static char* i086_flags = "----ODITSZ-A-P-C";
+
+xRegDsc i286RegTab[] = {
+	{I286_IP, "IP", REG_WORD, REG_RDMP | REG_PC, x86_get_ip, x86_set_ip},
+	{I286_SP, "SP", REG_WORD, REG_RDMP | REG_SP, x86_get_sp, x86_set_sp},
+	{I286_BP, "BP", REG_WORD, REG_RDMP, x86_get_bp, x86_set_bp},
+	{I286_SI, "SI", REG_WORD, REG_RDMP, x86_get_si, x86_set_si},
+	{I286_DI, "DI", REG_WORD, REG_RDMP, x86_get_di, x86_set_di},
+	{I286_AX, "AX", REG_WORD, REG_RDMP, x86_get_ax, x86_set_ax},
+	{I286_BX, "BX", REG_WORD, REG_RDMP, x86_get_bx, x86_set_bx},
+	{I286_CX, "CX", REG_WORD, REG_RDMP, x86_get_cx, x86_set_cx},
+	{I286_DX, "DX", REG_WORD, REG_RDMP, x86_get_dx, x86_set_dx},
+	{I286_CS, "CS", REG_WORD, REG_SEG, x86_get_cs, x86_set_cs},
+	{I286_SS, "SS", REG_WORD, REG_SEG, x86_get_ss, x86_set_ss},
+	{I286_DS, "DS", REG_WORD, REG_SEG, x86_get_ds, x86_set_ds},
+	{I286_ES, "ES", REG_WORD, REG_SEG, x86_get_es, x86_set_es},
+	{I286_MSW, "MSW", REG_32, REG_RO, x86_get_msw, x86_set_msw},
+	{I286_LDT, "LDT", REG_24, REG_RO, x86_get_ldtr, NULL},
+	{I286_GDT, "GDT", REG_24, REG_RO, x86_get_gdtr, NULL},
+	{I286_IDT, "IDT", REG_24, REG_RO, x86_get_idtr, NULL},
+	{I286_TSS, "TSS", REG_24, REG_RO, x86_get_tsdr, NULL},
+	{REG_EMPTY, "F", REG_WORD, REG_FLG, x86_get_flag, x86_set_flag},
+	{REG_EOT, "-N**ODITSZ-A-P-C", 0, 0, NULL, NULL}
+};
+
+xRegDsc i086RegTab[] = {
+	{I286_IP, "IP", REG_WORD, REG_RDMP | REG_PC, x86_get_ip, x86_set_ip},
+	{I286_SP, "SP", REG_WORD, REG_RDMP | REG_SP, x86_get_sp, x86_set_sp},
+	{I286_BP, "BP", REG_WORD, REG_RDMP, x86_get_bp, x86_set_bp},
+	{I286_SI, "SI", REG_WORD, REG_RDMP, x86_get_si, x86_set_si},
+	{I286_DI, "DI", REG_WORD, REG_RDMP, x86_get_di, x86_set_di},
+	{I286_AX, "AX", REG_WORD, REG_RDMP, x86_get_ax, x86_set_ax},
+	{I286_BX, "BX", REG_WORD, REG_RDMP, x86_get_bx, x86_set_bx},
+	{I286_CX, "CX", REG_WORD, REG_RDMP, x86_get_cx, x86_set_cx},
+	{I286_DX, "DX", REG_WORD, REG_RDMP, x86_get_dx, x86_set_dx},
+	{I286_CS, "CS", REG_WORD, REG_SEG, x86_get_cs, x86_set_cs},
+	{I286_SS, "SS", REG_WORD, REG_SEG, x86_get_ss, x86_set_ss},
+	{I286_DS, "DS", REG_WORD, REG_SEG, x86_get_ds, x86_set_ds},
+	{I286_ES, "ES", REG_WORD, REG_SEG, x86_get_es, x86_set_es},
+	{REG_EMPTY, "F", REG_WORD, REG_FLG, x86_get_flag, x86_set_flag},
+	{REG_EOT, "----ODITSZ-A-P-C", 0, 0}
+};
+
+/*
 void i286_get_regs(CPU* cpu, xRegBunch* bnch) {
 	int idx = 0;
 	int val, bas;
@@ -581,7 +606,7 @@ void i286_get_regs(CPU* cpu, xRegBunch* bnch) {
 	while (tab[idx].id != REG_EOT) {
 		bnch->regs[idx].id = tab[idx].id;
 		bnch->regs[idx].name = tab[idx].name;
-		bnch->regs[idx].type = tab[idx].type;
+		bnch->regs[idx].type = tab[idx].size;
 		bnch->regs[idx].flag = tab[idx].flag;
 		val = -1;
 		bas = 0;
@@ -636,3 +661,4 @@ void i286_set_regs(CPU* cpu, xRegBunch bnch) {
 		idx++;
 	}
 }
+*/

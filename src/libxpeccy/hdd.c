@@ -128,7 +128,7 @@ void ataReadSector(ATADev* dev) {
 		dev->reg.err |= (HDF_ABRT | HDF_IDNF);
 	} else {
 		if (dev->file) {
-			nps = dev->lba * dev->pass.bps;
+			nps = dev->lba * dev->pass.bps + dev->offset;
 			fseek(dev->file,nps,SEEK_SET);			// if filesize < nps, there will be 0xFF in buf
 			fread((char*)dev->buf.data,dev->pass.bps,1,dev->file);
 		} else {
@@ -144,7 +144,8 @@ void ataWriteSector(ATADev* dev) {
 		dev->reg.err |= (HDF_ABRT | HDF_IDNF);
 	} else {
 		if (dev->file) {
-			fseek(dev->file, dev->lba * dev->pass.bps, SEEK_SET);
+			long pos = dev->lba * dev->pass.bps + dev->offset;
+			fseek(dev->file, pos, SEEK_SET);
 			fwrite((char*)dev->buf.data, dev->pass.bps, 1, dev->file);
 		}
 	}
@@ -523,6 +524,7 @@ void ideSetImage(IDE *ide, int wut, const char *name) {
 			dev->pass.spt = 63;
 			dev->pass.cyls = (dev->maxlba / 16 / 63);
 			rewind(dev->file);
+			dev->offset = 0;
 		} else {
 			free(dev->image);
 			dev->image = NULL;

@@ -84,11 +84,13 @@ int z80_exec(CPU*);
 xAsmScan z80_asm(int, const char*, char*);
 xMnem z80_mnem(CPU*, int, cbdmr, void*);
 
+/*
 void z80_get_regs(CPU*, xRegBunch*);
 void z80_set_regs(CPU*, xRegBunch);
-
+*/
 void z80_set_flag(CPU*, int);
 int z80_get_flag(CPU*);
+
 
 // internal
 

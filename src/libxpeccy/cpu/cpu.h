@@ -46,6 +46,7 @@ typedef struct {
 #define REG_TYPE_M	(7<<8)	// 8 types (to find register)
 #define REG_PC		(0<<8)	// execution pointer (pc, ip)
 #define REG_SP		(1<<8)	// stack (sp)
+#define REG_FLG		(2<<8)	// is flag
 #define REG_CS		(4<<8)	// code segment (base)
 
 typedef struct {
@@ -62,12 +63,15 @@ typedef struct {
 	xRegister regs[32];	// registers
 } xRegBunch;
 
+typedef struct CPU CPU;
+
 typedef struct {
 	int id;
-	const char* name;
-	int type;
+	char* name;
+	int size;
 	int flag;
-	size_t offset;		// = offsetof(CPU, <member>), e.g offsetof(CPU, pc)
+	int(*get)(CPU*);
+	void(*set)(CPU*,int);
 } xRegDsc;
 
 // memrq rd
@@ -97,7 +101,6 @@ typedef int(*cbdmr)(int, void*);
 #define OF_MODCOM	(OF_MODRM | OF_COMEXT)
 #define OF_GEN		(1<<10)		// opcode depends on cpu generation (86/186/286 or vm1/vm2) op->tab is sub-table[cpu->gen]
 
-typedef struct CPU CPU;
 typedef struct opCode opCode;
 
 typedef void(*cbcpu)(CPU*);
@@ -251,10 +254,10 @@ struct cpuCore {
 	int (*exec)(CPU*);			// exec opcode, return T
 	xAsmScan (*asmbl)(int,const char*, char*);	// compile mnemonic (adr,src.text,result.buf)
 	xMnem (*mnem)(CPU*, int, cbdmr, void*);
-	void (*getregs)(CPU*,xRegBunch*);	// get cpu registers: name,id,value
-	void (*setregs)(CPU*,xRegBunch);	// set cpu registers
-	int (*getflag)(CPU*);			// get flag value
-	void (*setflag)(CPU*,int);		// set flags from value
+//	void (*rm_getregs)(CPU*,xRegBunch*);	// get cpu registers: name,id,value
+//	void (*rm_setregs)(CPU*,xRegBunch);	// set cpu registers
+//	int (*rm_getflag)(CPU*);			// get flag value
+//	void (*rm_setflag)(CPU*,int);		// set flags from value
 };
 typedef struct cpuCore cpuCore;
 

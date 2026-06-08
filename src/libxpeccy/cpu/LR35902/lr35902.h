@@ -51,9 +51,10 @@ int lr_exec(CPU*);
 xAsmScan lr_asm(int, const char*, char*);
 xMnem lr_mnem(CPU*, int, cbdmr, void*);
 
+/*
 void lr_get_regs(CPU*, xRegBunch*);
 void lr_set_regs(CPU*, xRegBunch);
-
+*/
 int lr_get_flag(CPU*);
 void lr_set_flag(CPU*, int);
 

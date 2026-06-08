@@ -36,17 +36,6 @@ enum {
 	PDP11_INIT = 1
 };
 
-/*
-#define PDP_FC	(1 << 0)
-#define PDP_FV	(1 << 1)
-#define	PDP_FZ	(1 << 2)
-#define PDP_FN	(1 << 3)
-#define PDP_FT	(1 << 4)
-#define PDP_F7	(1 << 7)
-#define PDP_F10	(1 << 10)
-#define PDP_F11 (1 << 11)
-*/
-
 typedef struct {
 	unsigned short mask;
 	unsigned short code;
@@ -69,7 +58,9 @@ void vm2_init(CPU*);
 xMnem pdp11_mnem(CPU*, int, cbdmr, void*);
 xAsmScan pdp11_asm(int, const char*, char*);
 
+/*
 void pdp11_get_regs(CPU*, xRegBunch*);
 void pdp11_set_regs(CPU*, xRegBunch);
 void pdp_set_flag(CPU*, int);
 int pdp_get_flag(CPU*);
+*/

@@ -187,30 +187,53 @@ xMnem lr_mnem(CPU* cpu, int qadr, cbdmr mrd, void* data) {
 
 // registers
 
+void lr_set_pc(CPU* cpu, int v) {cpu->regPC = v;}
+void lr_set_af(CPU* cpu, int v) {xreg16 r; r.w = v; cpu->regA = r.h; lr_set_flag(cpu, r.l);}
+void lr_set_bc(CPU* cpu, int v) {cpu->regBC = v;}
+void lr_set_de(CPU* cpu, int v) {cpu->regDE = v;}
+void lr_set_hl(CPU* cpu, int v) {cpu->regHL = v;}
+void lr_set_sp(CPU* cpu, int v) {cpu->regSP = v;}
+void lr_set_ime(CPU* cpu, int v) {cpu->flgIFF1 = !!v;}
+void lr_set_if(CPU* cpu, int v) {cpu->intrq = v;}
+void lr_set_ie(CPU* cpu, int v) {cpu->inten = v;}
+void lr_set_a(CPU* cpu, int v) {cpu->regA = v;}
+
+int lr_get_pc(CPU* cpu) {return cpu->regPC;}
+int lr_get_af(CPU* cpu) {xreg16 r; r.h = cpu->regA; r.l = lr_get_flag(cpu); return r.w;}
+int lr_get_bc(CPU* cpu) {return cpu->regBC;}
+int lr_get_de(CPU* cpu) {return cpu->regDE;}
+int lr_get_hl(CPU* cpu) {return cpu->regHL;}
+int lr_get_sp(CPU* cpu) {return cpu->regSP;}
+int lr_get_ime(CPU* cpu) {return cpu->flgIFF1;}
+int lr_get_if(CPU* cpu) {return cpu->intrq;}
+int lr_get_ie(CPU* cpu) {return cpu->inten;}
+int lr_get_a(CPU* cpu) {return cpu->regA;}
+
+//static char* lrFlags = "ZNHC----";
+
 xRegDsc lrRegTab[] = {
-	{LR_REG_PC, "PC", REG_WORD, REG_RDMP | REG_PC, offsetof(CPU, regPC)},
-	{LR_REG_AF, "AF", REG_WORD, 0, 0},
-	{LR_REG_BC, "BC", REG_WORD, REG_RDMP, offsetof(CPU, regBC)},
-	{LR_REG_DE, "DE", REG_WORD, REG_RDMP, offsetof(CPU, regDE)},
-	{LR_REG_HL, "HL", REG_WORD, REG_RDMP, offsetof(CPU, regHL)},
-	{LR_REG_SP, "SP", REG_WORD, REG_RDMP | REG_SP, offsetof(CPU, regSP)},
-	{LR_FLG_IFF, "IME", REG_BIT, 0, offsetof(CPU, flgIFF1)},
-	{LR_REG_IF, "IF", REG_WORD, REG_RO, offsetof(CPU, intrq)},
-	{LR_REG_IE, "IE", REG_WORD, REG_RO, offsetof(CPU, inten)},
-	{REG_EMPTY, "A", REG_BYTE, 0, offsetof(CPU, regA)},
-	{REG_EMPTY, "F", REG_32, 0, 0},
-	{REG_EOT, "", 0, 0, 0}
+	{LR_REG_PC, "PC", REG_WORD, REG_RDMP | REG_PC, lr_get_pc, lr_set_pc},
+	{LR_REG_AF, "AF", REG_WORD, 0, lr_get_af, lr_set_af},
+	{LR_REG_BC, "BC", REG_WORD, REG_RDMP, lr_get_bc, lr_set_bc},
+	{LR_REG_DE, "DE", REG_WORD, REG_RDMP, lr_get_de, lr_set_de},
+	{LR_REG_HL, "HL", REG_WORD, REG_RDMP, lr_get_hl, lr_set_hl},
+	{LR_REG_SP, "SP", REG_WORD, REG_RDMP | REG_SP, lr_get_sp, lr_set_sp},
+	{LR_FLG_IFF, "IME", REG_BIT, 0, lr_get_ime, lr_set_ime},
+	{LR_REG_IF, "IF", REG_WORD, REG_RO, lr_get_if, lr_set_if},
+	{LR_REG_IE, "IE", REG_WORD, REG_RO, lr_get_ie, lr_set_ie},
+	{REG_EMPTY, "A", REG_BYTE, 0, lr_get_a, lr_set_a},
+	{REG_EMPTY, "F", REG_32, REG_FLG, lr_get_flag, lr_set_flag},
+	{REG_EOT, "ZNHC----", 0, 0}
 };
 
-static char* lrFlags = "ZNHC----";
-
+/*
 void lr_get_regs(CPU* cpu, xRegBunch* bunch) {
 	int idx = 0;
 	PAIR(w,h,l)rx;
 	while(lrRegTab[idx].id != REG_EOT) {
 		bunch->regs[idx].id = lrRegTab[idx].id;
 		bunch->regs[idx].name = lrRegTab[idx].name;
-		bunch->regs[idx].type = lrRegTab[idx].type;
+		bunch->regs[idx].type = lrRegTab[idx].size;
 		bunch->regs[idx].flag = lrRegTab[idx].flag;
 		switch(lrRegTab[idx].id) {
 			case LR_REG_PC: bunch->regs[idx].value = cpu->regPC; break;
@@ -252,3 +275,4 @@ void lr_set_regs(CPU* cpu, xRegBunch bunch) {
 		}
 	}
 }
+*/

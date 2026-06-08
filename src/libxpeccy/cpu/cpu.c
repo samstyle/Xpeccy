@@ -79,7 +79,7 @@ void nil_set_regs(CPU* cpu, xRegBunch bunch) {}
 int nil_get_flag(CPU* cpu) {return 0;}
 void nil_set_flag(CPU* cpu, int v) {}
 
-cpuCore dumCore = {CPU_NONE, CPUG_NONE, 0, "none", nil_reg_tab, 8, 8, NULL, nil_reset, nil_exec, nil_asm, nil_mnem, nil_get_regs, nil_set_regs, nil_get_flag, nil_set_flag};
+cpuCore dumCore = {CPU_NONE, CPUG_NONE, 0, "none", nil_reg_tab, 8, 8, NULL, nil_reset, nil_exec, nil_asm, nil_mnem};
 
 extern xRegDsc z80RegTab[];
 extern xRegDsc m6502RegTab[];
@@ -90,17 +90,17 @@ extern xRegDsc i286RegTab[];
 extern xRegDsc pdp11RegTab[];
 
 cpuCore cpuTab[] = {
-	{CPU_Z80, CPUG_X80, 0,"Z80", z80RegTab, 16, 8, NULL, z80_reset, z80_exec, z80_asm, z80_mnem, z80_get_regs, z80_set_regs, z80_get_flag, z80_set_flag},
-	{CPU_I8080, CPUG_X80, 0,"i8080", i8080RegTab, 16, 8, NULL, i8080_reset, i8080_exec, i8080_asm, i8080_mnem, i8080_get_regs, i8080_set_regs, i8080_get_flag, i8080_set_flag},
-	{CPU_LR35902, CPUG_X80, 0, "LR35902", lrRegTab, 16, 8, NULL, lr_reset, lr_exec, lr_asm, lr_mnem, lr_get_regs, lr_set_regs, lr_get_flag, lr_set_flag},
-	{CPU_6502, CPUG_MOS, 0, "MOS6502", m6502RegTab, 16, 8, NULL, m6502_reset, m6502_exec, m6502_asm, m6502_mnem, m6502_get_regs, m6502_set_regs, mos_get_flag, mos_set_flag},
-	{CPU_VM1, CPUG_PDP, 0, "1801VM1", pdp11RegTab, 16, 16, NULL, pdp11_reset, pdp11_exec, pdp11_asm, pdp11_mnem, pdp11_get_regs, pdp11_set_regs, pdp_get_flag, pdp_set_flag},
-	{CPU_VM2, CPUG_PDP, 1, "1801VM2", pdp11RegTab, 16, 16, NULL, pdp11_reset, pdp11_exec, pdp11_asm, pdp11_mnem, pdp11_get_regs, pdp11_set_regs, pdp_get_flag, pdp_set_flag},
-	{CPU_I8086, CPUG_X86, 0,"i8086", i086RegTab, 20, 16, NULL, i286_reset, i286_exec, i286_asm, i286_mnem, i286_get_regs, i286_set_regs, x86_get_flag, x86_set_flag},
-	{CPU_I80186, CPUG_X86, 1,"i80186", i086RegTab, 20, 16, NULL, i286_reset, i286_exec, i286_asm, i286_mnem, i286_get_regs, i286_set_regs, x86_get_flag, x86_set_flag},
-	{CPU_I80286, CPUG_X86, 2,"i80286", i286RegTab, 24, 16, NULL, i286_reset, i286_exec, i286_asm, i286_mnem, i286_get_regs, i286_set_regs, x86_get_flag, x86_set_flag},
-//	{CPU_V30, CPUG_X86, 0, "NEC-V30", v30_regtab, 20, 16, NULL, v30_reset, v30_exec, v30_asm, v30_mnem, v30_getregs, v30_setregs, v30_getflag, v30_setflag},
-	{CPU_NONE, CPUG_NONE, 0, "none", nil_reg_tab, 8, 8, NULL, nil_reset, nil_exec, nil_asm, nil_mnem, nil_get_regs, nil_set_regs, nil_get_flag, nil_set_flag}
+	{CPU_Z80, CPUG_X80, 0,"Z80", z80RegTab, 16, 8, NULL, z80_reset, z80_exec, z80_asm, z80_mnem},
+	{CPU_I8080, CPUG_X80, 0,"i8080", i8080RegTab, 16, 8, NULL, i8080_reset, i8080_exec, i8080_asm, i8080_mnem},
+	{CPU_LR35902, CPUG_X80, 0, "LR35902", lrRegTab, 16, 8, NULL, lr_reset, lr_exec, lr_asm, lr_mnem},
+	{CPU_6502, CPUG_MOS, 0, "MOS6502", m6502RegTab, 16, 8, NULL, m6502_reset, m6502_exec, m6502_asm, m6502_mnem},
+	{CPU_VM1, CPUG_PDP, 0, "1801VM1", pdp11RegTab, 16, 16, NULL, pdp11_reset, pdp11_exec, pdp11_asm, pdp11_mnem},
+	{CPU_VM2, CPUG_PDP, 1, "1801VM2", pdp11RegTab, 16, 16, NULL, pdp11_reset, pdp11_exec, pdp11_asm, pdp11_mnem},
+	{CPU_I8086, CPUG_X86, 0,"i8086", i086RegTab, 20, 16, NULL, i286_reset, i286_exec, i286_asm, i286_mnem},
+	{CPU_I80186, CPUG_X86, 1,"i80186", i086RegTab, 20, 16, NULL, i286_reset, i286_exec, i286_asm, i286_mnem},
+	{CPU_I80286, CPUG_X86, 2,"i80286", i286RegTab, 24, 16, NULL, i286_reset, i286_exec, i286_asm, i286_mnem},
+//	{CPU_V30, CPUG_X86, 0, "NEC-V30", v30_regtab, 20, 16, NULL, v30_reset, v30_exec, v30_asm, v30_mnem},
+	{CPU_NONE, CPUG_NONE, 0, "none", nil_reg_tab, 8, 8, NULL, nil_reset, nil_exec, nil_asm, nil_mnem}
 };
 
 cpuCore* findCore(int type) {
@@ -494,34 +494,48 @@ int cpuAsm(CPU* cpu, const char* com, char* buf, unsigned short adr) {
 
 // get/set reg bunch
 
-static const char noname[] = "undef";
-static char* dumFlags = "--------";
+// static const char noname[] = "undef";
+// static char* dumFlags = "--------";
 
-int cpu_get_flag(CPU* cpu) {
-	return cpu->core->getflag ? cpu->core->getflag(cpu) : -1;
-}
-
-void cpu_set_flag(CPU* cpu, int v) {
-	if (cpu->core->setflag)
-		cpu->core->setflag(cpu, v);
-}
-
+// TODO: somehow get cpu flags names. then fill bunch by cpu->core->rdtab
 xRegBunch cpuGetRegs(CPU* cpu) {
 	xRegBunch bunch;
-	int i;
-	for (i = 0; i < 32; i++) {
-		bunch.regs[i].name = noname;
-		bunch.regs[i].id = REG_EOT;
-		bunch.regs[i].value = 0;
-		bunch.regs[i].base = 0;
-		bunch.regs[i].type = 0;
+//	int i;
+//	for (i = 0; i < 32; i++) {
+//		bunch.regs[i].name = noname;
+//		bunch.regs[i].id = REG_EOT;
+//		bunch.regs[i].value = 0;
+//		bunch.regs[i].base = 0;
+//		bunch.regs[i].type = 0;
+//	}
+	int i = 0;
+	xRegDsc* rd = cpu->core->rdsctab;
+	xRegister* reg = bunch.regs;
+	while (rd->id != REG_EOT) {
+		if ((rd->id != REG_EMPTY) && (i < 32)) {
+			reg->name = rd->name;
+			reg->id = rd->id;
+			reg->type = rd->size;
+			reg->flag = rd->flag;
+			reg->value = rd->get ? rd->get(cpu) : -1;
+			reg++;
+			i++;
+		}
+		rd++;
 	}
-	bunch.flags = dumFlags;
-	if (cpu->core->getregs) cpu->core->getregs(cpu, &bunch);
+	if (i < 32) {
+		reg->id = REG_EOT;	// mark end of bunch
+	}
+	bunch.flags = rd->name;		// 'end of table' item name is flag names
+//	bunch.flags = dumFlags;
+//	if (cpu->core->getregs) cpu->core->getregs(cpu, &bunch);
 	return bunch;
 }
 
 int reg_get_value(CPU* cpu, xRegDsc* dsc) {
+#if 1
+	return dsc->get ? dsc->get(cpu) : -1;
+#else
 	int res = -1;
 	if (dsc->flag & REG_SEG) {
 		res = ((xSegPtr*)((cpu + dsc->offset)))->idx & 0xffff;
@@ -538,10 +552,18 @@ int reg_get_value(CPU* cpu, xRegDsc* dsc) {
 		}
 	}
 	return res;
+#endif
 }
 
 int reg_set_value(CPU* cpu, xRegDsc* dsc, int val) {
 	int res = 1;
+#if 1
+	if (dsc->set) {
+		dsc->set(cpu, val);
+	} else {
+		res = 0;
+	}
+#else
 	if (dsc->flag & REG_SEG) return 0;		// what to do with x86 segment registers?
 	if (dsc->offset == 0) {
 		cpu_set_flag(cpu, val);
@@ -556,6 +578,7 @@ int reg_set_value(CPU* cpu, xRegDsc* dsc, int val) {
 			default: res = 0; break;		// fail, unknown type
 		}
 	}
+#endif
 	return res;
 }
 
@@ -563,19 +586,18 @@ xRegister cpuGetReg(CPU* cpu, int id) {
 	xRegister reg;
 	reg.type = REG_EOT;
 	xRegDsc* rt = cpu->core->rdsctab;
-	int i = 0;
 	int work = 1;
-	while (work && (rt[i].id != REG_EOT)) {
-		if (rt[i].id == id) {
+	while (work && (rt->id != REG_EOT)) {
+		if (rt->id == id) {
 			reg.id = id;
-			reg.type = rt[i].type;
-			reg.flag = rt[i].flag;
-			reg.name = rt[i].name;
-			reg.value = reg_get_value(cpu, &rt[i]);		// TODO: for segments - value=selector, base=address
+			reg.type = rt->size;
+			reg.flag = rt->flag;
+			reg.name = rt->name;
+			reg.value = reg_get_value(cpu, rt);		// TODO: for segments - value=selector, base=address
 			reg.base = 0;
 			work = !(reg.value < 0);
 		}
-		i++;
+		rt++;
 	}
 	return reg;
 }
@@ -588,7 +610,7 @@ int cpu_get_reg(CPU* cpu, const char* name, bool* f) {
 	int i = 0;
 	int work = 1;
 	while (work && (rt[i].id != REG_EOT)) {
-		if (!strcmp(name, rt[i].name) && (rt[i].offset != 0)) {
+		if (!strcmp(name, rt[i].name)/* && (rt[i].offset != 0)*/) {
 			res = reg_get_value(cpu, &rt[i]);
 			if (res >= 0) {
 				work = 0;
@@ -607,20 +629,8 @@ bool cpu_set_reg(CPU* cpu, const char* name, int val) {
 //	void* ptr;
 	xRegDsc* rt = cpu->core->rdsctab;
 	while (work && (rt[i].id != REG_EOT)) {
-		if (!strcmp(name, rt[i].name) && (rt[i].offset != 0) && !(rt[i].flag & REG_SEG)) {	// TODO: offset==0 -> setflag (no it's not: AF for example)
+		if (!strcmp(name, rt[i].name) /* && (rt[i].offset != 0) && !(rt[i].flag & REG_SEG)*/) {	// TODO: offset==0 -> setflag (no it's not: AF for example)
 			work = !reg_set_value(cpu, &rt[i], val);	// 0 if succes, 1 if error
-/*
-			ptr = ((void*)cpu) + rt[i].offset;
-			work = 0;
-			switch(rt[i].type) {
-				case REG_BIT: *(bool*)ptr = !!val; break;
-				case REG_BYTE: *(unsigned char*)ptr = val & 0xff; break;
-				case REG_WORD: *(unsigned short*)ptr = val & 0xffff; break;
-				case REG_24: *(int*)ptr = val & 0xffffff; break;
-				case REG_32: *(int*)ptr = val & 0xffffffff; break;
-				default: work = 1; break;
-			}
-*/
 		}
 		i++;
 	}
@@ -628,23 +638,39 @@ bool cpu_set_reg(CPU* cpu, const char* name, int val) {
 }
 
 void cpuSetRegs(CPU* cpu, xRegBunch bunch) {
+#if 1
+	xRegister* reg = bunch.regs;
+	xRegDsc* rd;
+	while (reg->id != REG_EOT) {
+		rd = cpu->core->rdsctab;
+		while(rd->id != REG_EOT) {
+			if (rd->id == reg->id) {
+				if (rd->set) {
+					rd->set(cpu, reg->value);
+				}
+			}
+			rd++;
+		}
+		reg++;
+	}
+#else
 	if (cpu->core->setregs) {
 		cpu->core->setregs(cpu, bunch);
 	}
+#endif
 }
 
 xRegDsc* cpu_find_regtype(CPU* cpu, int type) {
-	int i = 0;
 	int work = 1;
 	xRegDsc* rt = cpu->core->rdsctab;
-	while (work && (rt[i].id != REG_EOT)) {
-		if ((rt[i].flag & REG_TYPE_M) == type) {
+	while (work && (rt->id != REG_EOT)) {
+		if ((rt->flag & REG_TYPE_M) == type) {
 			work = 0;
 		} else {
-			i++;
+			rt++;
 		}
 	}
-	return work ? NULL : &rt[i];
+	return work ? NULL : rt;
 }
 
 int cpu_get_regtype(CPU* cpu, int type) {
@@ -660,3 +686,6 @@ void cpu_set_regtype(CPU* cpu, int type, int val) {
 int cpu_get_sp(CPU* cpu) {return cpu_get_regtype(cpu, REG_SP);}
 int cpu_get_pc(CPU* cpu) {return cpu_get_regtype(cpu, REG_PC);}
 void cpu_set_pc(CPU* cpu, int val) {cpu_set_regtype(cpu, REG_PC, val);}
+// TODO: remove get/set flags callbacks from cpu core, flag register is marked as REG_FLG in cpu->core->rdtab and have get/set callbacks
+int cpu_get_flag(CPU* cpu) {return cpu_get_regtype(cpu, REG_FLG);}
+void cpu_set_flag(CPU* cpu, int v) {cpu_set_regtype(cpu, REG_FLG, v);}

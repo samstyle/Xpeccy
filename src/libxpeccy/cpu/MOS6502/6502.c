@@ -144,19 +144,36 @@ xAsmScan m6502_asm(int a, const char* cbuf, char* buf) {
 	return res;
 }
 
+// registers
+
+void mos_set_pc(CPU* cpu, int v) {cpu->regPC = v;}
+void mos_set_a(CPU* cpu, int v) {cpu->regA = v;}
+void mos_set_x(CPU* cpu, int v) {cpu->regX = v;}
+void mos_set_y(CPU* cpu, int v) {cpu->regY = v;}
+void mos_set_s(CPU* cpu, int v) {cpu->regS = v;}
+void mos_set_sp(CPU* cpu, int v) {cpu->regS = v;}
+
+int mos_get_pc(CPU* cpu) {return cpu->regPC;}
+int mos_get_a(CPU* cpu) {return cpu->regA;}
+int mos_get_x(CPU* cpu) {return cpu->regX;}
+int mos_get_y(CPU* cpu) {return cpu->regY;}
+int mos_get_s(CPU* cpu) {return cpu->regS;}
+int mos_get_sp(CPU* cpu) {return cpu->regSP;}
+
+//static char* mosFlags = "NV-BDIZC";
+
 xRegDsc m6502RegTab[] = {
-	{M6502_REG_PC, "PC", REG_WORD, REG_RDMP | REG_PC, offsetof(CPU, regPC)},
-	{M6502_REG_A, "A", REG_BYTE, 0, offsetof(CPU, regA)},
-	{M6502_REG_X, "X", REG_BYTE, 0, offsetof(CPU, regX)},
-	{M6502_REG_Y, "Y", REG_BYTE, 0, offsetof(CPU, regY)},
-	{M6502_REG_S, "S", REG_BYTE, 0, offsetof(CPU, regS)},
-	{M6502_REG_F, "P", REG_BYTE, 0, 0},
-	{REG_EMPTY, "SP", REG_WORD, REG_RDMP | REG_SP, offsetof(CPU, regSP)},
-	{REG_EOT, "", 0, 0, 0}
+	{M6502_REG_PC, "PC", REG_WORD, REG_RDMP | REG_PC, mos_get_pc, mos_set_pc},
+	{M6502_REG_A, "A", REG_BYTE, 0, mos_get_a, mos_set_a},
+	{M6502_REG_X, "X", REG_BYTE, 0, mos_get_x, mos_set_x},
+	{M6502_REG_Y, "Y", REG_BYTE, 0, mos_get_y, mos_set_y},
+	{M6502_REG_S, "S", REG_BYTE, 0, mos_get_s, mos_set_s},
+	{M6502_REG_F, "P", REG_BYTE, REG_FLG, mos_get_flag, mos_set_flag},
+	{REG_EMPTY, "SP", REG_WORD, REG_RDMP | REG_SP, mos_get_sp, mos_set_sp},
+	{REG_EOT, "NV-BDIZC", 0, 0, NULL, NULL}
 };
 
-static char* mosFlags = "NV-BDIZC";
-
+/*
 void m6502_get_regs(CPU* cpu, xRegBunch* bunch) {
 	int idx = 0;
 	xRegister* reg;
@@ -164,7 +181,7 @@ void m6502_get_regs(CPU* cpu, xRegBunch* bunch) {
 		reg = &bunch->regs[idx];
 		reg->id = m6502RegTab[idx].id;
 		reg->name = m6502RegTab[idx].name;
-		reg->type = m6502RegTab[idx].type;
+		reg->type = m6502RegTab[idx].size;
 		reg->flag = m6502RegTab[idx].flag;
 		switch(m6502RegTab[idx].id) {
 			case M6502_REG_PC: reg->value = cpu->regPC; break;
@@ -195,3 +212,4 @@ void m6502_set_regs(CPU* cpu, xRegBunch bunch) {
 		}
 	}
 }
+*/

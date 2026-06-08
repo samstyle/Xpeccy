@@ -108,8 +108,11 @@ typedef struct {
 	int type;		// none / ata / atapi
 	int lba;
 	int maxlba;
+
 	char* image;
 	FILE* file;
+	int offset;		// for future: data offset inside image (0 by default)
+
 	struct {
 		unsigned char data[HDD_BUFSIZE];
 		unsigned int pos;
