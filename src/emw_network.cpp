@@ -103,7 +103,7 @@ void MainWin::socketRead() {
 			if ((reg.id != REG_EOT) && (reg.id != REG_EMPTY)) {
 				sock->write(reg.name);
 				sock->write(" : ");
-				switch(reg.type) {
+				switch(reg.size) {
 					case REG_BIT: sock->write(reg.value ? "1" : "0"); break;
 					case REG_2: sock->write(gethexbyte(reg.value & 3).toUtf8()); break;
 					case REG_BYTE: sock->write(gethexbyte(reg.value).toUtf8()); break;

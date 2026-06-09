@@ -494,20 +494,42 @@ int cpuAsm(CPU* cpu, const char* com, char* buf, unsigned short adr) {
 
 // get/set reg bunch
 
-// static const char noname[] = "undef";
-// static char* dumFlags = "--------";
+xRegDsc* find_reg_id(CPU* cpu, int id) {
+	xRegDsc* rd = cpu->core->rdsctab;
+	while ((rd->id != REG_EOT) && (rd->id != id)) {
+		rd++;
+	}
+	return (rd->id == REG_EOT) ? NULL : rd;
+}
 
-// TODO: somehow get cpu flags names. then fill bunch by cpu->core->rdtab
+xRegDsc* find_reg_name(CPU* cpu, const char* name) {
+	xRegDsc* rd = cpu->core->rdsctab;
+	int work = 1;
+	while (work && (rd->id != REG_EOT)) {
+		if (!strcmp(rd->name, name)) {
+			work = 0;
+		} else {
+			rd++;
+		}
+	}
+	return work ? NULL : rd;
+}
+
+xRegDsc* find_reg_type(CPU* cpu, int type) {
+	xRegDsc* rd = cpu->core->rdsctab;
+	int work = 1;
+	while (work && (rd->id != REG_EOT)) {
+		if ((rd->flag & REG_TYPE_M) == type) {
+			work = 0;
+		} else {
+			rd++;
+		}
+	}
+	return work ? NULL : rd;
+}
+
 xRegBunch cpuGetRegs(CPU* cpu) {
 	xRegBunch bunch;
-//	int i;
-//	for (i = 0; i < 32; i++) {
-//		bunch.regs[i].name = noname;
-//		bunch.regs[i].id = REG_EOT;
-//		bunch.regs[i].value = 0;
-//		bunch.regs[i].base = 0;
-//		bunch.regs[i].type = 0;
-//	}
 	int i = 0;
 	xRegDsc* rd = cpu->core->rdsctab;
 	xRegister* reg = bunch.regs;
@@ -515,7 +537,7 @@ xRegBunch cpuGetRegs(CPU* cpu) {
 		if ((rd->id != REG_EMPTY) && (i < 32)) {
 			reg->name = rd->name;
 			reg->id = rd->id;
-			reg->type = rd->size;
+			reg->size = rd->size;
 			reg->flag = rd->flag;
 			reg->value = rd->get ? rd->get(cpu) : -1;
 			reg++;
@@ -527,77 +549,33 @@ xRegBunch cpuGetRegs(CPU* cpu) {
 		reg->id = REG_EOT;	// mark end of bunch
 	}
 	bunch.flags = rd->name;		// 'end of table' item name is flag names
-//	bunch.flags = dumFlags;
-//	if (cpu->core->getregs) cpu->core->getregs(cpu, &bunch);
 	return bunch;
 }
 
 int reg_get_value(CPU* cpu, xRegDsc* dsc) {
-#if 1
 	return dsc->get ? dsc->get(cpu) : -1;
-#else
-	int res = -1;
-	if (dsc->flag & REG_SEG) {
-		res = ((xSegPtr*)((cpu + dsc->offset)))->idx & 0xffff;
-	} else if (dsc->offset == 0) {		// is flag
-		res = cpu_get_flag(cpu);
-	} else {
-		void* ptr = ((void*)cpu) + dsc->offset;
-		switch(dsc->type) {
-			case REG_BIT: res = !!(*(bool*)ptr); break;
-			case REG_BYTE: res = (*(unsigned char*)ptr) & 0xff; break;
-			case REG_WORD: res = (*(unsigned short*)ptr) & 0xffff; break;
-			case REG_24: res = (*(int*)ptr) & 0xffffff; break;
-			case REG_32: res = (*(int*)ptr) & 0xffffffff; break;
-		}
-	}
-	return res;
-#endif
 }
 
 int reg_set_value(CPU* cpu, xRegDsc* dsc, int val) {
 	int res = 1;
-#if 1
 	if (dsc->set) {
 		dsc->set(cpu, val);
 	} else {
 		res = 0;
 	}
-#else
-	if (dsc->flag & REG_SEG) return 0;		// what to do with x86 segment registers?
-	if (dsc->offset == 0) {
-		cpu_set_flag(cpu, val);
-	} else {
-		void* ptr = ((void*)cpu) + dsc->offset;
-		switch(dsc->type) {
-			case REG_BIT: *(bool*)ptr = !!val; break;
-			case REG_BYTE: *(unsigned char*)ptr = val & 0xff; break;
-			case REG_WORD: *(unsigned short*)ptr = val & 0xffff; break;
-			case REG_24: *(int*)ptr = val & 0xffffff; break;
-			case REG_32: *(int*)ptr = val & 0xffffffff; break;
-			default: res = 0; break;		// fail, unknown type
-		}
-	}
-#endif
 	return res;
 }
 
 xRegister cpuGetReg(CPU* cpu, int id) {
 	xRegister reg;
-	reg.type = REG_EOT;
-	xRegDsc* rt = cpu->core->rdsctab;
-	int work = 1;
-	while (work && (rt->id != REG_EOT)) {
-		if (rt->id == id) {
-			reg.id = id;
-			reg.type = rt->size;
-			reg.flag = rt->flag;
-			reg.name = rt->name;
-			reg.value = reg_get_value(cpu, rt);		// TODO: for segments - value=selector, base=address
-			reg.base = 0;
-			work = !(reg.value < 0);
-		}
-		rt++;
+	reg.size = REG_EOT;
+	xRegDsc* rd = find_reg_id(cpu, id);
+	if (rd) {
+		reg.size = rd->size;
+		reg.flag = rd->flag;
+		reg.name = rd->name;
+		reg.value = reg_get_value(cpu, rd);
+		reg.base = 0;
 	}
 	return reg;
 }
@@ -606,35 +584,21 @@ xRegister cpuGetReg(CPU* cpu, int id) {
 int cpu_get_reg(CPU* cpu, const char* name, bool* f) {
 	int res = -1;
 	bool err = true;
-	xRegDsc* rt = cpu->core->rdsctab;
-	int i = 0;
-	int work = 1;
-	while (work && (rt[i].id != REG_EOT)) {
-		if (!strcmp(name, rt[i].name)/* && (rt[i].offset != 0)*/) {
-			res = reg_get_value(cpu, &rt[i]);
-			if (res >= 0) {
-				work = 0;
-				err = false;
-			}
-		}
-		i++;
+	xRegDsc* rd = find_reg_name(cpu, name);
+	if (rd) {
+		res = reg_get_value(cpu, rd);
+		err = (res < 0);
+	} else {
+		err = true;
 	}
 	if (f != NULL) {*f = err;}
 	return res;
 }
 
-bool cpu_set_reg(CPU* cpu, const char* name, int val) {
-	int i = 0;
-	int work = 1;
-//	void* ptr;
-	xRegDsc* rt = cpu->core->rdsctab;
-	while (work && (rt[i].id != REG_EOT)) {
-		if (!strcmp(name, rt[i].name) /* && (rt[i].offset != 0) && !(rt[i].flag & REG_SEG)*/) {	// TODO: offset==0 -> setflag (no it's not: AF for example)
-			work = !reg_set_value(cpu, &rt[i], val);	// 0 if succes, 1 if error
-		}
-		i++;
-	}
-	return work ? false : true;
+int cpu_set_reg(CPU* cpu, const char* name, int val) {
+	xRegDsc* rd = find_reg_name(cpu, name);
+	if (rd) reg_set_value(cpu, rd, val);
+	return rd ? 1 : 0;
 }
 
 void cpuSetRegs(CPU* cpu, xRegBunch bunch) {
@@ -642,14 +606,9 @@ void cpuSetRegs(CPU* cpu, xRegBunch bunch) {
 	xRegister* reg = bunch.regs;
 	xRegDsc* rd;
 	while (reg->id != REG_EOT) {
-		rd = cpu->core->rdsctab;
-		while(rd->id != REG_EOT) {
-			if (rd->id == reg->id) {
-				if (rd->set) {
-					rd->set(cpu, reg->value);
-				}
-			}
-			rd++;
+		rd = find_reg_id(cpu, reg->id);
+		if (rd) {
+			if (rd->set) rd->set(cpu, reg->value);
 		}
 		reg++;
 	}
@@ -660,26 +619,13 @@ void cpuSetRegs(CPU* cpu, xRegBunch bunch) {
 #endif
 }
 
-xRegDsc* cpu_find_regtype(CPU* cpu, int type) {
-	int work = 1;
-	xRegDsc* rt = cpu->core->rdsctab;
-	while (work && (rt->id != REG_EOT)) {
-		if ((rt->flag & REG_TYPE_M) == type) {
-			work = 0;
-		} else {
-			rt++;
-		}
-	}
-	return work ? NULL : rt;
-}
-
 int cpu_get_regtype(CPU* cpu, int type) {
-	xRegDsc* rd = cpu_find_regtype(cpu, type);
+	xRegDsc* rd = find_reg_type(cpu, type);
 	return rd ? reg_get_value(cpu, rd) : -1;
 }
 
 void cpu_set_regtype(CPU* cpu, int type, int val) {
-	xRegDsc* rd = cpu_find_regtype(cpu, type);
+	xRegDsc* rd = find_reg_type(cpu, type);
 	if (rd) reg_set_value(cpu, rd, val);
 }
 

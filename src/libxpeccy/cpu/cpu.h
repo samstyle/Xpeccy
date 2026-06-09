@@ -51,7 +51,7 @@ typedef struct {
 
 typedef struct {
 	int id;
-	int type;
+	int size;
 	int flag;
 	const char* name;
 	int value;	// register value (selector)
@@ -282,7 +282,7 @@ int cpu_get_reg(CPU*, const char*, bool*);
 int cpu_get_pc(CPU*);
 void cpu_set_pc(CPU*, int);
 int cpu_get_sp(CPU*);
-bool cpu_set_reg(CPU*, const char*, int);
+int cpu_set_reg(CPU*, const char*, int);
 int cpu_get_flag(CPU*);
 void cpu_set_flag(CPU*, int);
 int reg_get_value(CPU*, xRegDsc*);

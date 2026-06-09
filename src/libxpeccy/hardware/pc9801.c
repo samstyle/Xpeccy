@@ -190,7 +190,7 @@ void pc98xx_mem_map(Computer* comp) {
 
 void pc98xx_reset(Computer* comp) {
 	cpu_reset(comp->cpu);
-	comp->DIPSW1 = 0x01;
+	comp->DIPSW1 = 0x81;
 	comp->DIPSW2 = 0x03;
 	comp->DIPSW3 = 0xa0;
 	comp->portB = 0x00;	// b3:1=highres
@@ -221,8 +221,8 @@ void pc98xx_reset(Computer* comp) {
 // b7	1:16col, 0:8col mode (printer port)
 
 // DIPSW2
-// b0	-
-// b1	1:terminal mode, 0:basic mode
+// b0	1
+// b1	1:basic mode, 0:terminal mode
 // b2	1:80 0:40 chars/line
 // b3	1:25 0:20 char lines/screen
 // b4	1:clear ram on reset

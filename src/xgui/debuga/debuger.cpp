@@ -859,7 +859,7 @@ void DebugWin::customEvent(QEvent* ev) {
 					if (traceregs.regs[i].id != REG_EMPTY) {			// mustn't be visible
 						tracestr.append("|\"");
 						// tracestr.append(traceregs.regs[i].name).append(":");
-						switch(traceregs.regs[i].type) {
+						switch(traceregs.regs[i].size) {
 							case REG_BIT: tracestr.append(traceregs.regs[i].value ? "1" : "0"); break;
 							case REG_BYTE: tracestr.append(gethexbyte(traceregs.regs[i].value)); break;
 							case REG_WORD: tracestr.append(gethexword(traceregs.regs[i].value)); break;
@@ -1059,14 +1059,14 @@ void DebugWin::reFormCPU(xRegBunch* b) {
 				dbgRegLabs[r]->setText(b->regs[c].name);
 				dbgRegLabs[r]->setProperty("regid", b->regs[c].id);
 				dbgRegLabs[r]->setVisible(true);
-				switch(b->regs[c].type) {
+				switch(b->regs[c].size) {
 					case REG_2: dbgRegEdit[r]->setMax(2); break;
 					case REG_BYTE: dbgRegEdit[r]->setMax(0xff); break;
 					case REG_24: dbgRegEdit[r]->setMax(0xffffff); break;
 					case REG_32: dbgRegEdit[r]->setMax(0xffffffff); break;
 					default: dbgRegEdit[r]->setMax(0xffff); break;
 				}
-				if (b->regs[c].type == REG_BIT) {
+				if (b->regs[c].size == REG_BIT) {
 					dbgRegLabs[r]->setProperty("isbit", true);
 					ui_cpu.formRegs->addRow(dbgRegLabs[r], dbgRegBits[r]);
 					dbgRegBits[r]->setCheckable(!(b->regs[c].flag & REG_RO));
@@ -1103,7 +1103,7 @@ void DebugWin::fillCPU() {
 	int r = 0;
 	while (bunch.regs[c].id != REG_EOT) {
 		if (bunch.regs[c].id != REG_EMPTY) {
-			if (bunch.regs[c].type == REG_BIT) {
+			if (bunch.regs[c].size == REG_BIT) {
 				dbgRegBits[r]->setChecked(bunch.regs[c].value);
 			} else {
 				dbgRegEdit[r]->setValue(bunch.regs[c].value);
