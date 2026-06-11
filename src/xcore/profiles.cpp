@@ -464,7 +464,7 @@ int prf_load_conf(xProfile* prf, std::string cfname, int flag) {
 					if (pnam == "lastdir") prf->lastDir = pval;
 					break;
 				case PS_IDE:
-					if (pnam == "iface") comp->ide->type = arg.i;
+					if (pnam == "iface") ide_set_type(comp->ide, arg.i); // comp->ide->type = arg.i;
 					if (pnam == "master.type") comp->ide->master->type = arg.i;
 					if (pnam == "master.lba") comp->ide->master->hasLBA = arg.b;
 					if (pnam == "master.image") ideSetImage(comp->ide,IDE_MASTER, arg.s);

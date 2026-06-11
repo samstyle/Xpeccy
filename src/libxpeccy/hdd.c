@@ -482,13 +482,14 @@ void ataWr(ATADev* dev, int prt, unsigned short val) {
 
 IDE* ideCreate(int tp, cbirq cb, void* p) {
 	IDE* ide = (IDE*)malloc(sizeof(IDE));
-	ide->type = tp;
 	ide->master = ataCreate(IDE_NONE, cb, p, IRQ_HDD_PRI);
 	ide->slave = ataCreate(IDE_NONE, cb, p, IRQ_HDD_PRI);
 	ide->curDev = ide->master;
 	ide->smuc.fdd = 0xc0;
 	ide->smuc.sys = 0x00;
 	ide->smuc.nv = nvCreate();
+	//ide->type = tp;
+	ide_set_type(ide, tp);
 	return ide;
 }
 
@@ -574,13 +575,6 @@ void ideSetPassport(IDE* ide, int iface, ATAPassport pass) {
 
 // SMUC: dos, a0=0,a1=a5=a7=a11=a12=1	xxx1 1xxx 1x1x xx10
 
-typedef struct {
-	unsigned iorq:1;
-	unsigned high:1;
-	unsigned hdd:1;
-	int port;
-} ataAddr;
-
 // dummy
 
 int ide_dum_rd(IDE* ide, int port, int* val, int dos) {return 0;}
@@ -608,33 +602,245 @@ void ide_ata_wr(IDE* ide, int adr, int hi, int val) {
 	}
 }
 
+// common
+
+int ide_common_rd(IDE* ide, ataAddr adr) {
+	return ide_ata_rd(ide, adr.port, adr.high);
+}
+
+void ide_common_wr(IDE* ide, ataAddr adr, int val) {
+	ide_ata_wr(ide, adr.port, adr.high, val);
+}
+
 // atm2
 
-ataAddr ide_atm_chk(int port, int dos) {
+ataAddr ide_atm_decode(int port, int dosen, int wr) {
 	ataAddr res;
-	res.iorq = (((port & 0x001f) == 0x000f) && dos) ? 1 : 0;
+	res.iorq = (((port & 0x001f) == 0x000f) && dosen) ? 1 : 0;
+	res.hdd = 1;
 	res.high = ((port & 0x1ff) == 0x10f) ? 1 : 0;
 	res.port = (port & 0xe0) >> 5;
 	return res;
 }
 
-int ide_atm_rd(IDE* ide, int port, int* val, int dos) {
-	ataAddr res = ide_atm_chk(port, dos);
-	if (res.iorq)
-		*val = ide_ata_rd(ide, res.port, res.high);
-	return res.iorq;
+// nemo evo
+
+ataAddr ide_nemoevo_decode(int port, int dosen, int wr) {
+	ataAddr res;
+	res.iorq = (((port & 0xff) == 0xc8) || ((port & 0xff) == 0x11) || ((port & 0x1f) == 0x10)) ? 1 : 0;
+	res.hdd = 1;
+	res.high = ((port & 0xff) == 0x11) ? 1 : 0;
+	res.port = (port & 0xe0) >> 5;
+	return res;
 }
 
-int ide_atm_wr(IDE* ide, int port, int val, int dos) {
-	ataAddr res = ide_atm_chk(port, dos);
-	if (res.iorq)
-		ide_ata_wr(ide, res.port, res.high, val);
-	return res.iorq;
+int ide_nemoevo_rd(IDE* ide, ataAddr adr) {
+	if (adr.port == HDD_DATA) {
+		if (adr.high) {
+			ide->hiTrig = 0;				// 11 : high, next 10 is low
+		} else {
+			if (ide->hiTrig) adr.high = 1;			// 10 : high byte
+			ide->hiTrig ^= 1;				// switch trigger
+		}
+	} else {
+		ide->hiTrig = 0;		// non-data ports : next 10 is low
+	}
+	return ide_ata_rd(ide, adr.port, adr.high);
 }
 
-// rewrite this
+void ide_nemoevo_wr(IDE* ide, ataAddr adr, int val) {
+	if (adr.hdd) {
+		if (adr.port == HDD_DATA) {
+			if (adr.high) {
+				ide->bus &= 0x00ff;
+				ide->bus |= (val << 8);
+				ide->hiTrig = 2;		// 11 : high, next 10 is low+wr
+			} else {
+				if (ide->hiTrig == 0) {		// 10 : low
+					ide->bus &= 0xff00;
+					ide->bus |= (val & 0xff);
+					ide->hiTrig = 1;
+				} else if (ide->hiTrig == 1) {	// 10 : high + wr
+					ide->bus &= 0x00ff;
+					ide->bus |= ((val & 0xff) << 8);
+					ataWr(ide->curDev, 0, ide->bus);
+					ide->hiTrig = 0;
+				} else if (ide->hiTrig == 2) {	// 10 : low + wr (after 11)
+					ide->bus &= 0xff00;
+					ide->bus |= val;
+					ataWr(ide->curDev, 0, ide->bus);
+					ide->hiTrig = 0;
+				}
+			}
+		} else {
+			ide->hiTrig = 0;		// non-data ports : next 10 is low
+			ataWr(ide->curDev, adr.port, val);
+		}
+	}
+}
+
+// nemo
+
+ataAddr ide_nemo_decode(int port, int dosen, int wr) {
+	ataAddr res;
+	res.iorq = (dosen || (port & 6)) ? 0 : 1;
+	res.hdd = 1;
+	res.high = ((port & 0xe1) == 0x01) ? 1 : 0;
+	res.port = (port & 0xe0) >> 5;
+	return res;
+}
+
+// nemo a8
+
+ataAddr ide_nemoa8_decode(int port, int dosen, int wr) {
+	ataAddr res;
+	res.iorq = (dosen || (port & 6)) ? 0 : 1;
+	res.hdd = 1;
+	res.high = ((port & 0x1e0) == 0x100) ? 1 : 0;
+	res.port = (port & 0xe0) >> 5;
+	return res;
+}
+
+// smuc
+
+ataAddr ide_smuc_decode(int port, int dosen, int wr) {
+	ataAddr res;
+	res.iorq = (((port & 0x18a3) == 0x18a2) && dosen) ? 1 : 0;
+	res.hdd = ((port & 0xf8ff) == 0xf8be) ? 1 : 0;
+	if (port == 0xd8be) {
+		res.hdd = 1;
+		res.high = 1;
+	} else {
+		res.high = 0;
+	}
+	res.port = (port & 0x700) >> 8;
+	return res;
+}
+
+int ide_smuc_rd(IDE* ide, ataAddr adr) {
+	int res = 0xff;
+	if (adr.hdd) {
+		res = ide_ata_rd(ide, adr.port, adr.high);
+	} else {
+		switch (adr.port) {
+			case 0x5fba:		// version
+				res = 0x28;	// 1
+				break;
+			case 0x5fbe:		// revision
+				res = 0x40;	// 2
+				break;
+			case 0xffba:		// system
+				res = (nvRd(ide->smuc.nv) ? 0xff : 0xbf);	// TODO: b7: INTRQ from HDD/CF, b6:SDA?
+				break;
+			case 0x7fba:		// virtual fdd
+				res = ide->smuc.fdd | 0x3f;
+				break;
+			case 0x7ebe:		// pic (not used)
+			case 0x7fbe:
+				res = 0xff;
+				break;
+			case 0xdfba:		// cmos
+				res = (ide->smuc.sys & 0x80) ? 0xff : cmos_rd(ide->smuc.cmos, CMOS_DATA); // ide->smuc.cmos->data[ide->smuc.cmos->adr];
+				break;
+		}
+	}
+	return res;
+}
+
+void ide_smuc_wr(IDE* ide, ataAddr adr, int val) {
+	if (adr.hdd) {
+		ide_ata_wr(ide, adr.port, adr.high, val);
+	} else {
+		switch (adr.port) {
+			case 0xffba:			// system
+				ide->smuc.sys = val;
+				nvWr(ide->smuc.nv, val & 0x10, val & 0x40, val & 0x20);		// nv,sda,scl,wp
+				break;
+			case 0x7fba:			// virtual fdd
+				ide->smuc.fdd = val & 0xc0;
+				break;
+			case 0xdfba:			// cmos
+				if (ide->smuc.sys & 0x80) {		// data
+					cmos_wr(ide->smuc.cmos, CMOS_DATA, val);
+					// ide->smuc.cmos->data[ide->smuc.cmos->adr] = val;
+				} else {				// address
+					cmos_wr(ide->smuc.cmos, CMOS_ADR, val);
+					// ide->smuc.cmos->adr = val;
+				}
+				break;
+		}
+	}
+}
+
+// profi
+
+ataAddr ide_profi_decode(int port, int dosen, int wr) {
+	ataAddr res;
+	if (wr) port ^= 0x20;	// wr: eb -> cb; wr 0eb<->0cb; now rd/wr 0EB is data high
+	res.iorq = (((port & 0x00ff) == 0x00cb) || ((port & 0x7ff) == 0xeb)) ? 1 : 0;
+	if (port == 0x06ab) {
+		res.hdd = 0;
+		res.iorq = 1;
+	} else {
+		res.hdd = 1;
+	}
+	res.port = (port & 0x700) >> 8;
+	res.high = ((port & 0x7ff) == 0xeb) ? 1 : 0;
+	return res;
+}
+
+// smk
+
+ataAddr ide_smk_decode(int port, int dosen, int wr) {
+	ataAddr res;
+	res.iorq = ((port & 0xfff0) == 0xffe0) ? 1 : 0;
+	res.hdd = 1;
+	res.port = ((port >> 1) & 7) ^ 7;
+	res.high = 0;
+	if (port & 1) res.port |= 0x10;	// 0x16, 0x17
+	if (res.port == 0x10) {
+		res.high = 1;
+		res.port = HDD_DATA;
+	}
+	return res;
+}
+
+void ide_smk_wr(IDE* ide, ataAddr adr, int val) {
+	if (adr.hdd) {
+		if (adr.port == HDD_DATA) {
+			if (adr.high) {
+				ide->bus &= 0x00ff;
+				ide->bus |= ((val << 8) & 0xff);
+				ataWr(ide->curDev, adr.port, ide->bus);
+			} else {
+				ide->bus &= 0xff00;
+				ide->bus |= (val & 0xff);
+			}
+		} else {
+			ide->bus &= 0xff00;
+			ide->bus |= (val & 0xff);
+			ataWr(ide->curDev, adr.port, ide->bus);
+		}
+	}
+}
+
+// others
 
 ataAddr ideDecoder(IDE* ide, int port, int dosen, int wr) {
+#if 1
+	ataAddr res;
+	res.port = 0xff;
+	res.iorq = 0;
+	res.hdd = 0;
+	res.high = 0;
+	if (ide->core) {
+		if (ide->core->decode) {
+			res = ide->core->decode(port, dosen, wr);
+			if (!res.hdd) res.port = port;
+		}
+	}
+	return res;
+#else
 	ataAddr res;
 	res.port = 0xff;
 	res.iorq = 0;
@@ -695,11 +901,20 @@ ataAddr ideDecoder(IDE* ide, int port, int dosen, int wr) {
 			break;
 	}
 	return res;
+#endif
 }
 
 int ideIn(IDE* ide, int port, int* val, int dosen) {
-	ataAddr adr = ideDecoder(ide,port,dosen,0);
+	ataAddr adr = ideDecoder(ide, port, dosen, 0);
 	if (!adr.iorq) return 0;
+#if 1
+	int res = 0xff;
+	if (ide->core) {
+		if (ide->core->read)
+			res = ide->core->read(ide, adr);
+	}
+	*val = res;
+#else
 	if (adr.hdd) {
 		if (ide->type == IDE_NEMO_EVO) {
 			if (adr.port == 0) {
@@ -745,6 +960,7 @@ int ideIn(IDE* ide, int port, int* val, int dosen) {
 			}
 		}
 	}
+#endif
 	return 1;
 }
 
@@ -752,6 +968,14 @@ int ideIn(IDE* ide, int port, int* val, int dosen) {
 int ideOut(IDE* ide, int port, int val,int dosen) {
 	ataAddr adr = ideDecoder(ide,port,dosen,1);
 	if (!adr.iorq) return 0;
+#if 1
+	if (adr.hdd && (adr.port == HDD_HEAD))
+		ide->curDev = (val & HDF_DRV) ? ide->slave : ide->master;	// write to head reg: select MASTER/SLAVE
+	if (ide->core) {
+		if (ide->core->write)
+			ide->core->write(ide, adr, val);
+	}
+#else
 	if (adr.hdd) {
 		if (adr.port == HDD_HEAD)
 			ide->curDev = (val & HDF_DRV) ? ide->slave : ide->master;	// write to head reg: select MASTER/SLAVE
@@ -830,6 +1054,7 @@ int ideOut(IDE* ide, int port, int val,int dosen) {
 			}
 		}
 	}
+#endif
 	return 1;
 }
 
@@ -839,13 +1064,38 @@ void ideReset(IDE* ide) {
 	ide->curDev = ide->master;
 }
 
+IDECore ide_core_tab[] = {
+	{IDE_NEMO,	ide_nemo_decode,	ide_common_rd,	ide_common_wr},
+	{IDE_NEMOA8,	ide_nemoa8_decode,	ide_common_rd,	ide_common_wr},
+	{IDE_SMUC,	ide_smuc_decode,	ide_smuc_rd,	ide_smuc_wr},
+	{IDE_ATM,	ide_atm_decode,		ide_common_rd,	ide_common_wr},
+	{IDE_NEMO_EVO,	ide_nemoevo_decode,	ide_nemoevo_rd,	ide_nemoevo_wr},
+	{IDE_PROFI,	ide_profi_decode,	ide_common_rd,	ide_common_wr},
+	{IDE_SMK,	ide_smk_decode,		ide_common_rd,	ide_smk_wr},
+	{IDE_NONE,	NULL,			NULL,		NULL}
+};
+
+IDECore* find_ide_core(int id) {
+	IDECore* itm = ide_core_tab;
+	while ((itm->id != id) && (itm->id != IDE_NONE))
+		itm++;
+	return (itm->id == IDE_NONE) ? NULL : itm;
+}
+
+void ide_set_type(IDE* ide, int id) {
+	IDECore* core = find_ide_core(id);
+	if (core) {
+		ide->type = id;
+		ide->core = core;
+	}
+}
+
 void ideOpenFiles(IDE* ide) {
 	if (ide->master->image) ide->master->file = fopen(ide->master->image,"rb+");		// NULL when file doesn't exist
 	if (ide->slave->image) ide->slave->file = fopen(ide->slave->image,"rb+");
 }
 
 void ideCloseFiles(IDE* ide) {
-
 	if (ide->master->file) fclose(ide->master->file);
 	ide->master->file = NULL;
 	if (ide->slave->file) fclose(ide->slave->file);

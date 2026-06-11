@@ -905,7 +905,8 @@ void SetupWin::apply() {
 	flp->protect = ui.dwpbox->isChecked() ? 1 : 0;
 
 // hdd
-	comp->ide->type = getRFIData(ui.hiface);
+	//comp->ide->type = getRFIData(ui.hiface);
+	ide_set_type(comp->ide, getRFIData(ui.hiface));
 
 	comp->ide->master->type = getRFIData(ui.hm_type);
 	ideSetImage(comp->ide,IDE_MASTER,ui.hm_path->text().toLocal8Bit().data());

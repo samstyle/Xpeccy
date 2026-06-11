@@ -12,8 +12,8 @@ extern "C" {
 
 // IDE interface type
 enum {
-	IDE_DEFAULT = -1,
-	IDE_NEMO = 1,
+	IDE_NONE = 0,
+	IDE_NEMO,
 	IDE_NEMOA8,
 	IDE_SMUC,
 	IDE_ATM,
@@ -21,12 +21,12 @@ enum {
 	IDE_PROFI,
 	IDE_SMK		// for BK
 };
-// device select
+// device select (+ IDE_NONE)
 enum {
-	IDE_NONE = 0,
-	IDE_MASTER,
+	IDE_MASTER = 1,
 	IDE_SLAVE
 };
+
 // device type (+ IDE_NONE)
 enum {
 	IDE_ATA = 1,
@@ -131,10 +131,27 @@ typedef struct {
 } ATADev;
 
 typedef struct {
+	unsigned iorq:1;
+	unsigned high:1;
+	unsigned hdd:1;
+	int port;
+} ataAddr;
+
+typedef struct IDE IDE;
+
+typedef struct {
+	int id;
+	ataAddr(*decode)(int, int, int);
+	int(*read)(IDE*, ataAddr);
+	void(*write)(IDE*, ataAddr, int);
+} IDECore;
+
+struct IDE {
 	int type;
 	ATADev* master;
 	ATADev* slave;
 	ATADev* curDev;
+	IDECore* core;
 	unsigned short bus;
 	int hiTrig;
 	struct {
@@ -143,7 +160,7 @@ typedef struct {
 		CMOS* cmos;		// pointer to ZXComp::CMOS
 		nvRam* nv;		// NVRAM
 	} smuc;
-} IDE;
+};
 
 IDE* ideCreate(int, cbirq, void*);
 void ideDestroy(IDE*);
@@ -153,6 +170,7 @@ void ideReset(IDE*);
 void ideOpenFiles(IDE*);
 void ideCloseFiles(IDE*);
 
+void ide_set_type(IDE*, int);
 void ideSetImage(IDE*,int,const char*);
 ATAPassport ideGetPassport(IDE*,int);
 
