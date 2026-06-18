@@ -159,6 +159,7 @@ enum {
 	CPU_I8080,
 	CPU_I8086,		// *PC98xx
 	CPU_I80186,
+	CPU_V30,
 	CPU_I80286,		// IBM
 	CPU_LR35902,		// GB, GBC
 	CPU_6502,		// NES, Commodore

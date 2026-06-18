@@ -4,9 +4,6 @@
 
 extern void aymResetChan(aymChan* ch);
 static const int ay_val_mask[16] = {0xff,0x0f,0xff,0x0f,0xff,0x0f,0x1f,0xff,0x1f,0x1f,0x1f,0xff,0xff,0x0f,0xff,0xff};
-// extern int ayDACvol[32];
-
-// TODO: external rd/wr for regs E,F
 
 static int ayDACvol[32] = {0x0000,0x0000,0x00D0,0x00D0,0x0130,0x0130,0x01BC,0x01BC,
                     0x0291,0x0291,0x03C4,0x03C4,0x0544,0x0544,0x089F,0x089F,
@@ -232,6 +229,13 @@ sndPair ay_mix_stereo(int volA, int volB, int volC, int id) {
 int ay_chan_vol(aymChip* ay, aymChan* ch) {
 	int vol = 0;
 #if 1
+	vol = ayDACvol[(ch->een ? ay->chanE.vol : ch->vol) & 0x1f];
+        if (ch->per < 0x60 && !ch->tdis)
+                vol >>= 1; // half
+        else
+                if (!(ch->tdis || ch->lev)) vol = 0;
+        if (!(ch->ndis || ay->chanN.lev)) vol = 0;
+#elif 0
 	int mixlev = (ch->tdis || ch->lev) && (ch->ndis || ay->chanN.lev);
 	if (ch->een) {
 		if (mixlev) {
@@ -243,7 +247,7 @@ int ay_chan_vol(aymChip* ay, aymChan* ch) {
 			vol = ayDACvol[ch->vol & 0x1f];
 		}
 	}
-#else
+#elif 0
 	int lev = (ch->per < 0x60) ? 1 : ch->lev;
 	if ((ch->tdis || /*ch->*/lev) && (ch->ndis || ay->chanN.lev)) {
 		vol = ch->een ? ay->chanE.vol : (ch->ndis && !ch->tdis && !lev/* && (ch->per < 0x60)*/) ? 0 : ch->vol;

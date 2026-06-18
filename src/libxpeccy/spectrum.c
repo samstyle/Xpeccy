@@ -387,6 +387,7 @@ Computer* compCreate() {
 	comp->joyb = joyCreate();
 	comp->mouse = mouseCreate(comp_irq, comp);
 	comp->ppi = ppi_create();
+	comp->ppib = ppi_create();
 	// comp->ps2c = ps2c_create(comp->keyb, comp->mouse, comp_irq, comp);
 	comp->ps2c = ps2c_create(comp_irq, comp);
 // storage
@@ -455,6 +456,7 @@ void compDestroy(Computer* comp) {
 	apuDestroy(comp->nesapu);
 	sltDestroy(comp->slot);
 	ppi_destroy(comp->ppi);
+	ppi_destroy(comp->ppib);
 	ps2c_destroy(comp->ps2c);
 	dma_destroy(comp->dma1);
 	dma_destroy(comp->dma2);

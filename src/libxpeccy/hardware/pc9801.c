@@ -50,10 +50,12 @@ int pc98xx_vid_rd(int adr, void* p) {
 	switch (adr) {
 		case 0x03fe2:
 		case 0x03fe6:
-		case 0x03fea:
 		case 0x03ff2:
 		case 0x03ff6:
 			printf("%X : rd SWx: %X = %.2X\n", comp->cpu->cs.base + comp->cpu->oldpc, adr, r);
+			break;
+		case 0x03fea:
+			r = 0x4c;	// b6:initial screen black, b3:x86, b0..2:640Kb
 			break;
 		case 0x03fee:
 			r = 0x00;
@@ -192,7 +194,7 @@ void pc98xx_reset(Computer* comp) {
 	cpu_reset(comp->cpu);
 	comp->DIPSW1 = 0x81;
 	comp->DIPSW2 = 0x03;
-	comp->DIPSW3 = 0xa0;
+	comp->DIPSW3 = 0x81;
 	comp->portB = 0x00;	// b3:1=highres
 	comp->portC = 0xff;
 	comp->flgKBDm = 0;
@@ -205,6 +207,7 @@ void pc98xx_reset(Computer* comp) {
 	vid_set_mode(comp->vid, VID_PC98XX);
 	vid_set_resolution(comp->vid, 640, 400);
 	comp->vid->linedbl = !(comp->portB & 8);
+	comp->vid->vga.cpl = (comp->DIPSW2 & 4) ? 80 : 40;
 	dma_reset(comp->dma1);
 	pit_reset(comp->pit);
 	pic_reset(comp->mpic);
@@ -702,28 +705,46 @@ void pc98xx_fnt_wr(Computer* comp, int adr, int val) {
 }
 
 // uPD765 - FDC x 2
-// 80,82: 5" flop
+// 80,82: 5" flop (internal hdd?)
 // 90,92,94,96: 1MB flop
 
 int pc98xx_fdc_rd(Computer* comp, int adr) {
+	printf("PC98: %X: rd %.4X\n", cpu_get_pc(comp->cpu), adr);
 	int res = -1;
 	difIn(comp->dif, (adr >> 1) & 3, &res, 0);
 	return res;
 }
 
 void pc98xx_fdc_wr(Computer* comp, int adr, int val) {
+	printf("PC98: %X: wr %.4X, %.2X\n", cpu_get_pc(comp->cpu), adr, val);
 	difOut(comp->dif, (adr >> 1) & 3, val, 0);
 }
 
-// uPD8251 - RS232
-
 // 51,53,55,57 - 320KB FDD on 8255
+// CHECK: portA not connected, portB - com/status, portC - data
+
+void ppi_fdc_wrb(int val, void* comp) {difOut(((Computer*)comp)->dif, 0, val, 0);}
+void ppi_fdc_wrc(int val, void* comp) {difOut(((Computer*)comp)->dif, 1, val, 0);}
+int ppi_fdc_rdb(void* comp) {
+	int res;
+	int r = difIn(((Computer*)comp)->dif, 0, &res, 0);
+	return r ? res : -1;
+}
+int ppi_fdc_rdc(void* comp) {
+	int res;
+	int r = difIn(((Computer*)comp)->dif, 1, &res, 0);
+	return r ? res : -1;
+}
+
 int pc98xx_f55_rd(Computer* comp, int adr) {
+//	printf("PC98: %X: rd %.4X\n", cpu_get_pc(comp->cpu), adr);
+//	return ppi_rd(comp->ppib, (adr >> 1) & 3);
 	return -1;
 }
 
 void pc98xx_f55_wr(Computer* comp, int adr, int val) {
-
+//	printf("PC98: %X: wr %.4X, %.2X\n", cpu_get_pc(comp->cpu), adr, val);
+//	ppi_wr(comp->ppib, (adr >> 1) & 3, val);
 }
 
 // uPD8255: mouse
@@ -805,13 +826,27 @@ void pc98xx_c0_wr(Computer* comp, int adr, int val) {
 
 }
 
-// uPD7261 - HDD controller
+// uPD7261 (?) - HDD controller
+// cpu.a1 = ctrl.a0
+// a0 = 0: rd/wr hdd data
+// a0 = 1:
+// wr	b0: interrupt enable
+//	b1: dma enable
+//	b3: rst
+//	b5: sel
+//	b6: 0:read switch, 1:read status
+//	b7: chen (data bus out enable)
+// rd:	if (ctrl.b6 == 0) read sw1..sw8
+//	if (ctrl.b6 == 1) int9.-.i/o.c/d.msg.bsy.ack.req
 
 void pc98xx_hdd_wr(Computer* comp, int adr, int val) {
-
+	adr = (adr >> 1) & 1;
+	printf("ide wr %i,%.2X\n",adr,val);
 }
 
 int pc98xx_hdd_rd(Computer* comp, int adr) {
+	adr = (adr >> 1) & 1;
+	printf("ide rd %i\n", adr);
 	return -1;
 }
 
@@ -944,6 +979,9 @@ void pc98xx_sync(Computer* comp, int ns) {
 void pc98xx_init(Computer* comp) {
 	// 8255, system ports
 	ppi_set_cb(comp->ppi, comp, pc98xx_ppia_rd, pc98xx_ppia_wr, pc98xx_ppib_rd, pc98xx_ppib_wr, pc98xx_ppic_rd, pc98xx_ppich_wr, pc98xx_ppic_rd, pc98xx_ppicl_wr);
+	// 8255, fdc
+	ppi_set_cb(comp->ppib, comp, NULL, NULL, ppi_fdc_rdb, ppi_fdc_wrb, ppi_fdc_rdc, ppi_fdc_wrc, ppi_fdc_rdc, ppi_fdc_wrc);
+
 	// keyboard uart
 	uart_set_type(comp->uart, UPD_8251);
 	uart_set_rate(comp->uart, 100);

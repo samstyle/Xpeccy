@@ -21,16 +21,22 @@ void ppi_destroy(PPI* ppi) {
 		free(ppi);
 }
 
+void ppi_set_port(ppiChan* ch, cbppird r, cbppiwr w) {
+	ch->rd = r;
+	ch->wr = w;
+}
+
+void ppi_set_porta(PPI* ppi, cbppird r, cbppiwr w) {ppi_set_port(&ppi->a, r, w);}
+void ppi_set_portb(PPI* ppi, cbppird r, cbppiwr w) {ppi_set_port(&ppi->b, r, w);}
+void ppi_set_portch(PPI* ppi, cbppird r, cbppiwr w) {ppi_set_port(&ppi->ch, r, w);}
+void ppi_set_portcl(PPI* ppi, cbppird r, cbppiwr w) {ppi_set_port(&ppi->cl, r, w);}
+
 void ppi_set_cb(PPI* ppi, void* p, cbppird ar, cbppiwr aw, cbppird br, cbppiwr bw, cbppird chr, cbppiwr chw, cbppird clr, cbppiwr clw) {
 	ppi->ptr = p;
-	ppi->a.rd = ar;
-	ppi->a.wr = aw;
-	ppi->b.rd = br;
-	ppi->b.wr = bw;
-	ppi->ch.rd = chr;
-	ppi->ch.wr = chw;
-	ppi->cl.rd = clr;
-	ppi->cl.wr = clw;
+	ppi_set_porta(ppi, ar, aw);
+	ppi_set_portb(ppi, br, bw);
+	ppi_set_portcl(ppi, clr, clw);
+	ppi_set_portch(ppi, chr, chw);
 }
 
 void ppi_chan_reset(ppiChan* ch) {

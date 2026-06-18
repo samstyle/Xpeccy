@@ -134,6 +134,7 @@ typedef struct {
 	nesAPU* nesapu;
 // misc
 	PPI* ppi;			// i8255-like chip
+	PPI* ppib;
 	CMOS cmos;
 // c64
 	CIA* cia1;		// mos6526

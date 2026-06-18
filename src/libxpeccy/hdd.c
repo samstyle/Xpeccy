@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "hdd.h"
+#include "filetypes/filetypes.h"
 
 /* ABOUNT INTRQ:
 On PIO transfers, INTRQ is asserted at the beginning of each data block to be
@@ -500,6 +501,42 @@ void ideDestroy(IDE* ide) {
 	free(ide);
 }
 
+// TODO: check extension
+
+void ata_load_raw(ATADev* dev) {
+	fseek(dev->file, 0, SEEK_END);
+	long fsz = ftell(dev->file);
+	long rsz = 16*63*512;			// 1 cylinder size (16 heads, 63 sectors, 512 bytes/sec)
+	dev->maxlba = (fsz / rsz) + ((fsz % rsz) ? rsz : 0);		// in 512byte units
+	dev->pass.hds = 16;
+	dev->pass.spt = 63;
+	dev->pass.cyls = (dev->maxlba / 16 / 63);
+	rewind(dev->file);
+	dev->offset = 0;
+}
+
+void ata_load_hdi(ATADev* dev) {
+	fseek(dev->file, 8, SEEK_SET);
+	dev->offset = fgeti(dev->file);		// header size = data offset
+	fgeti(dev->file);			// data size
+	dev->pass.bps = fgeti(dev->file);	// sector size
+	dev->pass.spt = fgeti(dev->file);	// sectors/track
+	dev->pass.hds = fgeti(dev->file);	// heads
+	dev->pass.cyls = fgeti(dev->file);	// cylinders
+	dev->maxlba = dev->pass.spt * dev->pass.hds * dev->pass.cyls;
+	fseek(dev->file, dev->offset, SEEK_SET);
+}
+
+typedef struct {
+	const char* ext;
+	void(*load)(ATADev*);
+} HDDImageDsc;
+
+HDDImageDsc hdd_file_tab[] = {
+	{"hdi", ata_load_hdi},
+	{NULL, ata_load_raw}
+};
+
 void ideSetImage(IDE *ide, int wut, const char *name) {
 	ATADev* dev = NULL;
 	if (wut == IDE_MASTER)
@@ -517,15 +554,16 @@ void ideSetImage(IDE *ide, int wut, const char *name) {
 		strcpy(dev->image,name);
 		dev->file = fopen(dev->image,"rb+");
 		if (dev->file) {
-			fseek(dev->file, 0, SEEK_END);
-			long fsz = ftell(dev->file);
-			long rsz = 16*63*512;			// 1 cylinder size (16 heads, 63 sectors, 512 bytes/sec)
-			dev->maxlba = (fsz / rsz) + ((fsz % rsz) ? rsz : 0);		// in 512byte units
-			dev->pass.hds = 16;
-			dev->pass.spt = 63;
-			dev->pass.cyls = (dev->maxlba / 16 / 63);
-			rewind(dev->file);
-			dev->offset = 0;
+			const char* ptr = strrchr(dev->image, '.');
+			if (ptr) {
+				ptr++;
+				HDDImageDsc* itm = hdd_file_tab;
+				while((itm->ext != NULL) && strcmp(itm->ext, ptr))
+					itm++;
+				itm->load(dev);
+			} else {
+				ata_load_raw(dev);
+			}
 		} else {
 			free(dev->image);
 			dev->image = NULL;
@@ -545,31 +583,6 @@ ATAPassport ideGetPassport(IDE* ide, int iface) {
 	}
 	return res;
 }
-
-/*
-void ideSetPassport(IDE* ide, int iface, ATAPassport pass) {
-//	pass.hds = 16;
-//	pass.spt = 64;
-	pass.vol = 1;
-	pass.bps = 512 * pass.vol;
-	pass.bpt = pass.bps * pass.spt;
-	pass.type = 1;
-	memset(pass.mcver,' ',8);
-//	pass.mcver = "";
-	switch(iface) {
-		case IDE_MASTER:
-			pass.cyls = ide->master->pass.cyls;
-			ide->master->pass = pass;
-			ataRefresh(ide->master);
-			break;
-		case IDE_SLAVE:
-			pass.cyls = ide->slave->pass.cyls;
-			ide->slave->pass = pass;
-			ataRefresh(ide->slave);
-			break;
-	}
-}
-*/
 
 // IDE controller
 

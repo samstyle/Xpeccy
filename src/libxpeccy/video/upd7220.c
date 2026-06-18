@@ -287,7 +287,7 @@ void upd7220_wr(Video* vid, upd7220* upd, int adr, int val) {
 		}
 		if (gdc_com_tab[adr].mask) {	// valid
 			upd->inbuf.cnt = gdc_com_tab[adr].pcnt;
-			printf("7220: com %.2X waiting %i params\n", upd->inbuf.data[0], upd->inbuf.cnt);
+//			printf("7220: com %.2X waiting %i params\n", upd->inbuf.data[0], upd->inbuf.cnt);
 			if (upd->inbuf.cnt == 0) {	// no params
 				upd7220_exec(vid, upd);
 			}
@@ -297,7 +297,7 @@ void upd7220_wr(Video* vid, upd7220* upd, int adr, int val) {
 	} else {
 		// fifo wr:param
 		if (upd->inbuf.cnt > 0) {
-			printf("par %i = %.2X\n", upd->inbuf.pos, val);
+//			printf("par %i = %.2X\n", upd->inbuf.pos, val);
 			upd->inbuf.data[upd->inbuf.pos] = val & 0xff;
 			upd->inbuf.cnt--;
 			upd->inbuf.pos++;
@@ -351,6 +351,9 @@ void upd7220_dot(Video* vid) {
 // higres = DIPSW1-1 (1:highres, 0:normal). read - pc98xx port33.bit3
 // lowres = double dots, double lines
 // font: 00xx - ank (8x8)
+
+int brg_to_grb[8] = {0,4,2,6,1,5,3,7};
+
 void upd7220_line(Video* vid) {
 	if (vid->txt7220->inbuf.queue > 0) vid->txt7220->inbuf.queue--;
 	if (vid->grf7220->inbuf.queue > 0) vid->grf7220->inbuf.queue--;
@@ -368,10 +371,10 @@ void upd7220_line(Video* vid) {
 		memset(vid->line, 0x00, 0x500);
 	} else {
 		// vid->vga.cpl = 40/80 - chars in line
-		for (i = 0; i < 80; i++) {
+		for (i = 0; i < vid->vga.cpl; i++) {
 			chr = (vid->ram[adr] & 0xff) | (vid->ram[adr + 1] << 8);
 			atr = (vid->ram[adr | 0x2000] & 0xff) | (vid->ram[adr | 0x2001] << 8);	// char attribute
-			c = 7; // (atr >> 5) & 7;				// color
+			c = brg_to_grb[(atr >> 5) & 7];				// color (brg ? )
 			chr = (chr << 3) + clin;			// for 8x8 chars
 			chr = (vid_fnt_rd(vid, chr) << 8) | (vid_fnt_rd(vid, chr | 1) & 0xff);		// 16 bit of pixels, do something with 283K kanjirom
 			if (atr & 4) chr ^= 0xffff;			// invert
@@ -389,6 +392,10 @@ void upd7220_line(Video* vid) {
 				// TODO: lowres mode
 				vid->line[pos++] = (chr & 0x8000) ? c : 0;
 				vid->line[pos++] = (chr & 0x8000) ? c : 0;
+				if (vid->vga.cpl == 40) {
+					vid->line[pos++] = (chr & 0x8000) ? c : 0;
+					vid->line[pos++] = (chr & 0x8000) ? c : 0;
+				}
 				chr <<= 1;
 			}
 			adr += 2;								// next char
