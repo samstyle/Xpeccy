@@ -928,7 +928,7 @@ void iop_f2(CPU* cpu) {
 	cpu->t += 3;
 	cpu->ltw = cpu->mrd(cpu->regPC++, 0, cpu->xptr) & 0xff;
 	cpu->t += 3;
-	cpu->htw = cpu->mrd(cpu->regPC, 0, cpu->xptr) & 0xff;
+	cpu->htw = cpu->mrd(cpu->regPC++, 0, cpu->xptr) & 0xff;
 	if (!cpu->flgS) {
 		cpu->regPC = cpu->tmpw;
 	}

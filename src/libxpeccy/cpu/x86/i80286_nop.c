@@ -3265,7 +3265,7 @@ opCode i80286_tab[256] = {
 	{OF_MODRM | OF_WORD, 1, i286_op8D, 0, "lea :r,:e"},
 	{OF_MODRM | OF_WORD, 1, i286_op8E, 0, "mov :s,:e"},
 	{OF_MODRM | OF_WORD, 1, i286_op8F, 0, "pop :e"},	// !!! /0 push, /1../7 nodef
-	{0, 1, i286_op90, 0, "xchg ax,ax"},
+	{0, 1, i286_op90, 0, "nop"},				// xchg ax,ax
 	{0, 1, i286_op91, 0, "xchg ax,cx"},
 	{0, 1, i286_op92, 0, "xchg ax,dx"},
 	{0, 1, i286_op93, 0, "xchg ax,bx"},

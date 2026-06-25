@@ -5,6 +5,7 @@ extern "C" {
 #endif
 
 #include <stdio.h>
+#include <stdbool.h>
 
 #include "defines.h"
 #include "nvram.h"
@@ -19,7 +20,8 @@ enum {
 	IDE_ATM,
 	IDE_NEMO_EVO,	// with hi/low trigger
 	IDE_PROFI,
-	IDE_SMK		// for BK
+	IDE_SMK,	// for BK
+	IDE_UPD7261	// pc9801
 };
 // device select (+ IDE_NONE)
 enum {
@@ -160,6 +162,8 @@ struct IDE {
 		CMOS* cmos;		// pointer to ZXComp::CMOS
 		nvRam* nv;		// NVRAM
 	} smuc;
+	bool flag[16];
+	int reg[16];
 };
 
 IDE* ideCreate(int, cbirq, void*);

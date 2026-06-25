@@ -84,9 +84,9 @@ void upd7220_master(Video* vid, upd7220* upd) {
 	upd->master = !!(upd->inbuf.data[0] & 1);
 }
 
-// set CRT geometry
+// 0E/0F:set CRT geometry;
 // b0,com	DE		display enabled
-// b5..0,p1	CHR.F.I.G.D.S	CHR.G = 00:mix txt/grf, 01:grf, 10:txt, 11:undef, F:!flash, I.S = 00:nointerlace, 01:undef?, 10:interlace, 11:interlace+repeat field, D:refresh enabled
+// b5..0,p1	00.C.F.I.G.D.S	C.G = 00:mix txt/grf, 01:grf, 10:txt, 11:undef, F:!flash, I.S = 00:nointerlace, 01:undef?, 10:interlace, 11:interlace+repeat field, D:refresh enabled
 // p2		C/R		characters/row - 2 (80:4Eh, 40:26h)
 // b4..0,p3	HS		HSync width - 1 (symbols)
 // b7..5,p3	VSL		VSync width - 1 (symbol rows)
@@ -94,8 +94,8 @@ void upd7220_master(Video* vid, upd7220* upd) {
 // b7..2,p4	HFP		Horizontal front porch width
 // b5..0,p5	HBP		Horizontal back porch width
 // b5..0,p6	VFP		Vertical front porch width
-// p7		LFL		lines/frame (0=1024, normal 400)
-// b1..0,p8	LFH		^^
+// p7		LFL		lines/frame low 8 bits (0=1024, normal 400)
+// b1..0,p8	LFH		^^, high 2 bits
 // b7..2,p8	VBP		Vertical back porch width
 void upd7220_sync(Video* vid, upd7220* upd) {
 

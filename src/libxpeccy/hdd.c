@@ -837,6 +837,133 @@ void ide_smk_wr(IDE* ide, ataAddr adr, int val) {
 	}
 }
 
+// upd7261 (nec pc98xx)
+// expected: wr 1,08; wr 1,40; rd 1, bit5 must be 0
+//		wr 1,00; rd 1, b6,7 must be 0		// invalid com ?
+
+#define flgBSY	flag[0]		// 0 when waiting command
+#define flgCOM	flag[1]		// if (bsy==1): 1:command written, waiting for regPCNT param, 0:execution phase
+#define flgDRQ	flag[2]
+
+#define regERR	reg[4]		// command execution result (b5,6 of status reg)
+#define regCNT	reg[5]		// 1 to regPCNT = param number
+#define regPCNT reg[6]		// waited params count for given command
+#define regCOM	reg[7]
+#define regPAR(_n) reg[7+(_n)]
+
+ataAddr ide_pc98_decode(int port, int dosen, int wr) {
+	ataAddr res;
+	res.iorq = ((port & 0x00fd) == 0x80);
+	res.port = (port >> 1) & 1;
+	res.hdd = 0;
+	res.high = 0;
+	return res;
+}
+
+typedef struct {
+	int mask;
+	int val;
+	int pcnt;
+	void(*exec)(IDE*);
+} ideCallItem;
+ideCallItem pc98_ide_tab[] = {
+	{0x1e, 0x08, 0, NULL},		// detect error
+	{0x1e, 0x0a, 0, NULL},		// recalibrate
+	{0x1e, 0x0c, 2, NULL},		// seek
+	{0x1e, 0x0e, 6, NULL},		// format
+	{0x1e, 0x10, 3, NULL},		// verify id
+	{0x1e, 0x12, 3, NULL},		// read id
+	{0x1e, 0x14, 2, NULL},		// diagnostic
+	{0x1e, 0x16, 7, NULL},		// read data
+	{0x1e, 0x18, 7, NULL},		// check
+	{0x1e, 0x1a, 7, NULL},		// scan
+	{0x1e, 0x1c, 7, NULL},		// verify
+	{0x1e, 0x1e, 7, NULL},		// write data
+	{0x1e, 0x02, 1, NULL},		// sense interrupt status
+	{0x1e, 0x04, 8, NULL},		// specify
+	{0x1e, 0x06, 0, NULL},		// sense unit status
+	{0, 0, 0, NULL}
+};
+
+ideCallItem* ide_pc98_getcom(int val) {
+	ideCallItem* itm = pc98_ide_tab;
+	while((itm->mask != 0) && ((itm->val ^ val) & itm->mask)) {
+		itm++;
+	}
+	return itm;
+}
+
+// exec ide->regCOM, fifo is ide->regPAR[]
+void ide_pc98_exec(IDE* ide) {
+	ide->flgCOM = 0;
+	ideCallItem* itm = ide_pc98_getcom(ide->regCOM);
+	if (itm->mask == 0) {
+		ide->flgBSY = 0;
+		ide->regERR = 3;			// 11:invalid command
+	} else {
+		if (itm->exec) {
+			ide->flgBSY = 1;
+			ide->regERR = 0;		// 00:in progress
+			itm->exec(ide);
+		} else {
+			ide->flgBSY = 0;
+			ide->regERR = 2;		// 10:succes
+			printf("pc9801 ide exec com (NULL): %.2X\n", ide->regCOM);
+		}
+	}
+}
+
+// adr.port = 0/1 (data/command-status)
+void ide_pc98_wr(IDE* ide, ataAddr adr, int val) {
+	if (adr.port & 1) {		// command
+		if (ide->flgBSY) {
+			if (ide->flgCOM) {	// write params
+				ide->regPAR(ide->regCNT) = val;
+				ide->regCNT++;
+				if (ide->regCNT > ide->regPCNT) {
+					ide_pc98_exec(ide);
+				}
+			} else {
+					// no effect?
+			}
+		} else {		// write command
+			ide->regCOM = val;
+			ideCallItem* itm = ide_pc98_getcom(val);
+			if (itm->mask == 0x00) {
+				ide->flgBSY = 0;
+				ide->regERR = 3;	// 11:invalid command
+			} else {
+				if (itm->pcnt) {		// params needed
+					ide->regCNT = 1;
+					ide->regPCNT = itm->pcnt;
+					ide->flgCOM = 1;
+				} else {			// no params, execute
+					ide_pc98_exec(ide);
+				}
+			}
+		}
+	} else {			// data
+
+	}
+}
+
+int ide_pc98_rd(IDE* ide, ataAddr adr) {
+	int res = 0;
+	if (adr.port & 1) {		// status
+		// b7:busy (flgBSY)
+		// b5,6:execution status:00-in process,01-error,10-success,11-invalid command
+		// b4:sense interrupt status (IS comamnds must be called)
+		// b3:address mark not found (0)
+		// b2:ID crc error (0)
+		// b1:sector not found
+		// b0:DRQ (flgDRQ)
+		res = (ide->flgBSY << 7) | ((ide->regERR & 3) << 5) | (ide->flgDRQ);
+	} else {			// data
+
+	}
+	return res;
+}
+
 // others
 
 ataAddr ideDecoder(IDE* ide, int port, int dosen, int wr) {
@@ -1085,6 +1212,7 @@ IDECore ide_core_tab[] = {
 	{IDE_NEMO_EVO,	ide_nemoevo_decode,	ide_nemoevo_rd,	ide_nemoevo_wr},
 	{IDE_PROFI,	ide_profi_decode,	ide_common_rd,	ide_common_wr},
 	{IDE_SMK,	ide_smk_decode,		ide_common_rd,	ide_smk_wr},
+	{IDE_UPD7261,	ide_pc98_decode,	ide_pc98_rd,	ide_pc98_wr},
 	{IDE_NONE,	NULL,			NULL,		NULL}
 };
 

@@ -8,6 +8,7 @@
 // TODO: cpu headers must be included cuz of callbacks, but flgX redefinition occurs
 // buuuuuuuuut it doesn't matter from here  (no flgX macros used)
 // undef redefined flgX after including
+#include "NEC V30/v30.h"
 #include "1801vm1/1801vm1.h"
 #undef flgZ
 #include "i8080/i8080.h"
@@ -54,7 +55,7 @@ void cpu_irq(CPU* cpu, int id) {cpu->xirq(id, cpu->xptr);}
 const char nomnem[] = "undef";
 
 xRegDsc nil_reg_tab[] = {
-	{REG_EOT, "", 0, 0}
+	{REG_EOT, "", 0, 0, NULL, NULL}
 };
 
 void nil_reset(CPU* cpu) {}
@@ -88,6 +89,7 @@ extern xRegDsc i8080RegTab[];
 extern xRegDsc i086RegTab[];
 extern xRegDsc i286RegTab[];
 extern xRegDsc pdp11RegTab[];
+extern xRegDsc v30_regtab[];
 
 cpuCore cpuTab[] = {
 	{CPU_Z80, CPUG_X80, 0,"Z80", z80RegTab, 16, 8, NULL, z80_reset, z80_exec, z80_asm, z80_mnem},
@@ -99,7 +101,7 @@ cpuCore cpuTab[] = {
 	{CPU_I8086, CPUG_X86, 0,"i8086", i086RegTab, 20, 16, NULL, i286_reset, i286_exec, i286_asm, i286_mnem},
 	{CPU_I80186, CPUG_X86, 1,"i80186", i086RegTab, 20, 16, NULL, i286_reset, i286_exec, i286_asm, i286_mnem},
 	{CPU_I80286, CPUG_X86, 2,"i80286", i286RegTab, 24, 16, NULL, i286_reset, i286_exec, i286_asm, i286_mnem},
-//	{CPU_V30, CPUG_X86, 0, "NEC-V30", v30_regtab, 20, 16, NULL, v30_reset, v30_exec, v30_asm, v30_mnem},
+	{CPU_V30, CPUG_X86, 0, "NEC V30 (test)", v30_regtab, 20, 16, NULL, v30_reset, v30_exec, v30_asm, v30_mnem},
 	{CPU_NONE, CPUG_NONE, 0, "none", nil_reg_tab, 8, 8, NULL, nil_reset, nil_exec, nil_asm, nil_mnem}
 };
 

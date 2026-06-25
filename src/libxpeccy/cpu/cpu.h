@@ -255,10 +255,6 @@ struct cpuCore {
 	int (*exec)(CPU*);			// exec opcode, return T
 	xAsmScan (*asmbl)(int,const char*, char*);	// compile mnemonic (adr,src.text,result.buf)
 	xMnem (*mnem)(CPU*, int, cbdmr, void*);
-//	void (*rm_getregs)(CPU*,xRegBunch*);	// get cpu registers: name,id,value
-//	void (*rm_setregs)(CPU*,xRegBunch);	// set cpu registers
-//	int (*rm_getflag)(CPU*);			// get flag value
-//	void (*rm_setflag)(CPU*,int);		// set flags from value
 };
 typedef struct cpuCore cpuCore;
 

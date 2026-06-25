@@ -16,6 +16,8 @@
 #define fntSH	reg[56]
 #define fntLN	reg[57]
 
+#define regHDDCtrl reg[60]
+
 #define portB	reg[65]
 #define portC	reg[66]
 #define DIPSW1	reg[71]
@@ -195,6 +197,7 @@ void pc98xx_reset(Computer* comp) {
 	comp->DIPSW1 = 0x81;
 	comp->DIPSW2 = 0x03;
 	comp->DIPSW3 = 0x81;
+	if (comp->cpu->core->type == CPU_V30) comp->DIPSW3 &= ~0x80;
 	comp->portB = 0x00;	// b3:1=highres
 	comp->portC = 0xff;
 	comp->flgKBDm = 0;
@@ -522,12 +525,12 @@ void pc98xx_gdc_wr(Computer* comp, int adr, int val) {
 		// 68: mode flip-flop 1
 		case 4: switch((val >> 1) & 7) {
 				case 0: break;						// atr sel
-				case 1: break;						// graphic mode
-				case 2: break;						// column width
-				case 3: break;						// font sel
-				case 4: printf("40/80 chars: %i\n", val & 1);
+				case 1: break;						// graphic mode (mono/color)
+				case 2: printf("40/80 chars: %i\n", val & 1);
 					comp->vid->vga.cpl = (val & 1) ? 40 : 80;
-					break;// grp mode (chars / line)
+					break;
+				case 3: break;						// font sel
+				case 4: break;						// line count (200/crt)
 				case 5: break;						// kac mode
 				case 6: break;						// nvmw permit
 				case 7: comp->vid->nogfx = !(val & 1); break;		// enable display
@@ -705,7 +708,6 @@ void pc98xx_fnt_wr(Computer* comp, int adr, int val) {
 }
 
 // uPD765 - FDC x 2
-// 80,82: 5" flop (internal hdd?)
 // 90,92,94,96: 1MB flop
 
 int pc98xx_fdc_rd(Computer* comp, int adr) {
@@ -748,6 +750,7 @@ void pc98xx_f55_wr(Computer* comp, int adr, int val) {
 }
 
 // uPD8255: mouse
+// mouse model - PC9872L
 // 7fe9 rd: mouse data: left.x.right.x.md3..0
 // 7fed wr: control flags: hc.sxy.shl.!int.x.x.x.x;
 // 7fef wr:	1xxxxxxx: wr mode	rd:93?
@@ -826,31 +829,53 @@ void pc98xx_c0_wr(Computer* comp, int adr, int val) {
 
 }
 
-// uPD7261 (?) - HDD controller
+// 80,82 - HDD controller (uPD7261 ?)
 // cpu.a1 = ctrl.a0
 // a0 = 0: rd/wr hdd data
 // a0 = 1:
 // wr	b0: interrupt enable
 //	b1: dma enable
-//	b3: rst
-//	b5: sel
+//	b3: reset
+//	b5: select
 //	b6: 0:read switch, 1:read status
 //	b7: chen (data bus out enable)
 // rd:	if (ctrl.b6 == 0) read sw1..sw8
 //	if (ctrl.b6 == 1) int9.-.i/o.c/d.msg.bsy.ack.req
 
 void pc98xx_hdd_wr(Computer* comp, int adr, int val) {
-	adr = (adr >> 1) & 1;
-	printf("ide wr %i,%.2X\n",adr,val);
+	if (adr & 2) {
+		// int last = comp->regHDDCtrl;
+		comp->regHDDCtrl = val;
+		// if ((last & 8) && !(val & 8)) {}	// reset
+	} else {
+		// wr data. TODO: to scsi controller
+	}
+	printf("ide wr %i,%.2X\n",(adr >> 1) & 1,val);
+//	comp_irq(IRQ_BRK, comp);
 }
 
 int pc98xx_hdd_rd(Computer* comp, int adr) {
-	adr = (adr >> 1) & 1;
-	printf("ide rd %i\n", adr);
+	if (adr & 2) {
+		if (comp->regHDDCtrl & 0x40) {
+			// status
+			// b0: int9
+			// b2: i/o
+			// b3: c/d
+			// b4: msg
+			// b5: bsy
+			// b6: ack
+			// b7: req
+		} else {
+			// switches
+		}
+	} else {
+		// rd data from scsi controller
+	}
+	printf("ide rd %i\n", (adr >> 1) & 1);
 	return -1;
 }
 
-// fm sound (Yamaha 2203 ?)
+// fm sound (Yamaha 2203)
 
 // nmi flipflop (A1):
 void pc98xx_nmi_wr(Computer* comp, int adr, int val) {

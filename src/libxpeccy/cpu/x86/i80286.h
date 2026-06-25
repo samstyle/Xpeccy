@@ -37,27 +37,6 @@
 #define regX87sr regs[17].w	// x87 status register
 #define regX87tw regs[17].ih	// x87 tag word
 
-// TODO: (?) segment registers:
-//	regs[n].i = base addr
-//	regs[n+1].i = limit
-//	regs[n+2].ih = index
-//	regs[n+2].w = flags
-
-// flag
-/*
-#define I286_FC	0x0001	// carry
-#define I286_FP 0x0004	// parity
-#define I286_FA 0x0010	// half-carry
-#define I286_FZ 0x0040	// zero
-#define I286_FS 0x0080	// sign
-#define I286_FT 0x0100	// trap
-#define I286_FI 0x0200	// interrupt
-#define I286_FD	0x0400	// direction
-#define I286_FO 0x0800	// overflow
-#define I286_FIP 0x3000	// 2bits: IOPL
-#define I286_FN	0x4000	// nested flag
-*/
-
 #define flgC	flags[0]
 #define flgP	flags[2]
 #define flgA	flags[4]
