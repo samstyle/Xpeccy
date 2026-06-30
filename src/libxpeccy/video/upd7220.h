@@ -6,6 +6,9 @@
 #define regCrsStart	reg[3]
 #define regCrsEnd	reg[4]
 
+#define regCharLine	reg[5]	// 0 at frame start, inc every line, reset to 0 every regCharHeight lines
+#define regLineNum	reg[6]	// 0 at frame start, inc every regCharHeight lines
+
 #define flgShowCrs	flag[0]
 #define flgCrsBlink	flag[1]
 
@@ -21,9 +24,8 @@ typedef struct {
 	unsigned master:1;	// is master
 	x7220buf inbuf;		// command [0]=com, [1+]=params
 	x7220buf outbuf;	// answer
-	unsigned char par[16];
+	unsigned char par[16];	// parameter/window ram
 	int ead;
-	unsigned dpos:4;
 } upd7220;
 
 upd7220* upd7220_create();

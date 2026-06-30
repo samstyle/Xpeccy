@@ -117,6 +117,7 @@ void cpuSetCore(CPU* cpu, cpuCore* core) {
 	cpu->core = core;
 	cpu->type = core->type;
 	cpu->gen = core->gen;
+	cpu->busmask = (1 << core->adrbus) - 1;
 	if (core->init) {
 		core->init(cpu);
 	}

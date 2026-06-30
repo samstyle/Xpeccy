@@ -3,9 +3,6 @@
 
 #include "upd7220.h"
 
-// WHATIF: upd7220 writes up to 16 params into fifo and reading it internally 1 byte in *some time*.
-//	'fifo full' and 'fifo empty' status bits will indicate correct state in this case (maybe)
-
 upd7220* upd7220_create() {
 	upd7220* upd = (upd7220*)malloc(sizeof(upd7220));
 	if (upd) {
@@ -67,6 +64,7 @@ void upd7220_reset(Video* vid, upd7220* upd) {
 	upd7220_reset_buf(&upd->inbuf);
 	upd7220_reset_buf(&upd->outbuf);
 	upd->off = 1;
+	vid->flgShowCrs = 0;
 	vid->regCharBegin = 0;
 	vid->regCharEnd = 15;
 	vid->regCharHeight = 16;
@@ -98,7 +96,7 @@ void upd7220_master(Video* vid, upd7220* upd) {
 // b1..0,p8	LFH		^^, high 2 bits
 // b7..2,p8	VBP		Vertical back porch width
 void upd7220_sync(Video* vid, upd7220* upd) {
-
+//	vid->vga.cpl = upd->inbuf.data[2] + 2;		// symbols/row
 }
 
 // com = 4B
@@ -111,12 +109,11 @@ void upd7220_sync(Video* vid, upd7220* upd) {
 // p3:7-3	cursor bottom line
 void upd7220_cchar(Video* vid, upd7220* upd) {
 	vid->regCharHeight = upd->inbuf.data[1] & 0x1f;
-	vid->flgShowCrs = !!(upd->inbuf.data[1] & 0x80);
+	vid->flgShowCrs = !(upd->inbuf.data[1] & 0x80);
 	vid->regCrsStart = upd->inbuf.data[2] & 0x1f;
 	vid->flgCrsBlink = !!(upd->inbuf.data[2] & 0x20);
 	// TODO: blink rate
 	vid->regCrsEnd = (upd->inbuf.data[3] >> 3) & 0x1f;
-
 }
 
 // com = 47	pitch
@@ -152,8 +149,9 @@ void upd7220_pram(Video* vid, upd7220* upd) {
 // p3:7-4		dot address in word
 // NOTE: EAD is word number, real address is (EAD*2)
 void upd7220_curs(Video* vid, upd7220* upd) {
-	upd->ead = (upd->inbuf.data[1] | (upd->inbuf.data[2] << 8)) << 1; // | ((upd->inbuf.data[3] & 3) << 16);
-	// upd->dpos = (upd->inbuf.data[3] >> 4) & 15;
+	upd->ead = (upd->inbuf.data[1] | (upd->inbuf.data[2] << 8)); // | ((upd->inbuf.data[3] & 3) << 16);
+	upd->ead <<= 1;
+	vid->regCrsStart = (upd->inbuf.data[3] >> 4) & 15;
 }
 
 // 001.type:2.0.mod:2		write
@@ -202,12 +200,14 @@ void upd7220_wdat(Video* vid, upd7220* upd) {
 	}
 }
 
-struct upd7220com {
+typedef struct {
 	int mask;
 	int com;
 	int pcnt;
 	void(*exec)(Video*, upd7220*);
-} gdc_com_tab[] = {
+} upd7220com;
+
+upd7220com gdc_com_tab[] = {
 	{0xff, 0x00, 0, upd7220_reset},		// reset
 	{0xfe, 0x0e, 8, upd7220_sync},		// sync (set geometry)
 	{0xfe, 0x6e, 0, upd7220_master},	// (b0 = 1:master/0:slave) - sync mode
@@ -216,7 +216,7 @@ struct upd7220com {
 	{0xff, 0x0c, 0, upd7220_stop},		// stop - disable output
 	{0xff, 0x46, 1, upd7220_zoom},		// zoom
 	{0xf0, 0x70, 1, upd7220_pram},		// scroll (pram?)
-	{0xff, 0x4b, 4, upd7220_cchar},	// csrform - cursor params
+	{0xff, 0x4b, 3, upd7220_cchar},	// csrform - cursor params
 	{0xff, 0x47, 1, upd7220_pitch},	// pitch
 	{0xff, 0xc0, 3, NULL},	// lpen
 	{0xff, 0x4c, 11, NULL},	// vectw	drawing
@@ -234,14 +234,14 @@ struct upd7220com {
 };
 
 void upd7220_exec(Video* vid, upd7220* upd) {
-	int adr = 0;
+	upd7220com* itm = gdc_com_tab;
 	upd7220_reset_buf(&upd->inbuf);
-	while (gdc_com_tab[adr].mask && ((upd->inbuf.data[0] ^ gdc_com_tab[adr].com) & gdc_com_tab[adr].mask)) {
-		adr++;
+	while (itm->mask && ((upd->inbuf.data[0] ^ itm->com) & itm->mask)) {
+		itm++;
 	}
-	if (gdc_com_tab[adr].exec != NULL) {
-		gdc_com_tab[adr].exec(vid, upd);	// execute command
-	} else if (gdc_com_tab[adr].com != 0) {
+	if (itm->exec != NULL) {
+		itm->exec(vid, upd);	// execute command
+	} else if (itm->com != 0) {
 		printf("upd7220 command %.2X not implemented\n", upd->inbuf.data[0]);
 		vid_irq(vid, IRQ_BRK);
 	}
@@ -281,12 +281,12 @@ void upd7220_wr(Video* vid, upd7220* upd, int adr, int val) {
 		upd->inbuf.cnt = 0;
 		upd->inbuf.pos = 1;
 		upd->inbuf.queue = 1;
-		adr = 0;
-		while (gdc_com_tab[adr].mask && ((val ^ gdc_com_tab[adr].com) & gdc_com_tab[adr].mask)) {
-			adr++;
+		upd7220com* itm = gdc_com_tab;
+		while (itm->mask && ((val ^ itm->com) & itm->mask)) {
+			itm++;
 		}
-		if (gdc_com_tab[adr].mask) {	// valid
-			upd->inbuf.cnt = gdc_com_tab[adr].pcnt;
+		if (itm->mask) {	// valid
+			upd->inbuf.cnt = itm->pcnt;
 //			printf("7220: com %.2X waiting %i params\n", upd->inbuf.data[0], upd->inbuf.cnt);
 			if (upd->inbuf.cnt == 0) {	// no params
 				upd7220_exec(vid, upd);
@@ -358,10 +358,10 @@ void upd7220_line(Video* vid) {
 	if (vid->txt7220->inbuf.queue > 0) vid->txt7220->inbuf.queue--;
 	if (vid->grf7220->inbuf.queue > 0) vid->grf7220->inbuf.queue--;
 // form text line (vid->line)
-	int line = vid->ray.ys / vid->regCharHeight;
-	int clin = vid->ray.ys % vid->regCharHeight;
+//	int line = vid->ray.ys / vid->regCharHeight;
+//	int clin = vid->ray.ys % vid->regCharHeight;
 	int c = 7;
-	int adr = line * 160;		// adr of line start (160 bytes / line)
+	int adr = vid->regLineNum * 160;		// adr of line start (160 bytes / line)
 	int pos = 0;
 //	int clin = vid->ray.ys & 0x07;			// line inside char
 	int i, j;
@@ -375,13 +375,13 @@ void upd7220_line(Video* vid) {
 			chr = (vid->ram[adr] & 0xff) | (vid->ram[adr + 1] << 8);
 			atr = (vid->ram[adr | 0x2000] & 0xff) | (vid->ram[adr | 0x2001] << 8);	// char attribute
 			c = brg_to_grb[(atr >> 5) & 7];				// color (brg ? )
-			chr = (chr << 3) + clin;			// for 8x8 chars
+			chr = (chr << 3) + vid->regCharLine;			// for 8x8 chars
 			chr = (vid_fnt_rd(vid, chr) << 8) | (vid_fnt_rd(vid, chr | 1) & 0xff);		// 16 bit of pixels, do something with 283K kanjirom
 			if (atr & 4) chr ^= 0xffff;			// invert
 			if ((atr & 2) && vid->flash) chr ^= 0xffff;	// blink TODO:blink rate
 
-			if (/*vid->flgShowCrs && */(adr == vid->txt7220->ead)) {
-				if (((vid->ray.ys & 7) == 7)) { // >= vid->regCrsStart) && ((vid->ray.ys & 7) < vid->regCrsEnd)) {
+			if (vid->flgShowCrs && ((adr & 0xffff) == vid->txt7220->ead)) {
+				if ((vid->regCharLine >= vid->regCrsStart) && ((vid->ray.ys & 7) < vid->regCrsEnd)) {
 					chr = 0xffff;
 				}
 			}
@@ -427,8 +427,15 @@ void upd7220_line(Video* vid) {
 			adr++;
 		}
 	}
+	// move to next char line
+	vid->regCharLine++;
+	if (vid->regCharLine >= 8) { // vid->regCharHeight) {		// somewhy charHeight doesn't work properly (allways 16, but font char height is 8)
+		vid->regCharLine = 0;
+		vid->regLineNum++;
+	}
 }
 
 void upd7220_frame(Video* vid) {
-
+	vid->regLineNum = 0;
+	vid->regCharLine = 0;
 }

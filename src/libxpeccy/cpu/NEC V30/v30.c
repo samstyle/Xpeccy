@@ -11,13 +11,14 @@ void v30_push(CPU*, unsigned short);
 int v30_mrdb(CPU*, unsigned short, unsigned short);
 int v30_mrdw(CPU*, unsigned short, unsigned short);
 
+void v30_set_ps(CPU*, int);
 
 void v30_reset(CPU* cpu) {
 	cpu->regPC = 0;
 	cpu->regSS = 0;
 	cpu->regDS0 = 0;
 	cpu->regDS1 = 0;
-	cpu->regPS = 0xffff; cpu->cs.base = 0xffff0;
+	v30_set_ps(cpu, 0xffff);
 	cpu->flgMD = 1;
 	cpu->flgDIR = 0;
 	cpu->flgIE = 0;
@@ -25,6 +26,12 @@ void v30_reset(CPU* cpu) {
 	cpu->flgSOVR = 0;
 	cpu->flgBNMI = 0;
 	cpu->flgBLKM = 1;	// MD can be changed only between BRKEM and RETEM, only by RETI/POP PSW
+}
+
+void v30_exception(CPU* cpu, int n, int ec) {
+	cpu->flgEXC = 1;
+	cpu->regExcCode = n;
+	cpu->errcod = ec;
 }
 
 // TODO: INT switched native mode on (MD = 1)
@@ -37,10 +44,11 @@ void v30_int(CPU* cpu, int vec) {
 	v30_push(cpu, cpu->regPS);
 	v30_push(cpu, cpu->regPC);
 	cpu->flgIE = 0;
-	cpu->flgMD = 1;
+	cpu->flgMD = 1;			// allways native
 	cpu->tmpi = (vec & 0xff) << 2;
 	cpu->regPC = v30_mrdw(cpu, 0, cpu->tmpi);
-	cpu->regPS = v30_mrdw(cpu, 0, cpu->tmpi+2);
+	v30_set_ps(cpu, v30_mrdw(cpu, 0, cpu->tmpi+2));
+	cpu->t = 1;	// check
 }
 
 // external INT (NMI have higher priority) = ask vector
@@ -49,11 +57,16 @@ void v30_ext_int(CPU* cpu) {
 		cpu->flgBNMI = 1;				// NMI is blocking until RETI, but next NMI will be remembered until then
 		cpu->intrq &= ~V30_NMI;
 		v30_int(cpu, V30_INT_NMI);
-	} else 	if (cpu->flgIE) {
+	} else if ((cpu->intrq & V30_INT) && cpu->flgIE) {
 		cpu->intrq &= ~V30_INT;
 		cpu->intvec = cpu->xack(cpu->xptr);
 		v30_int(cpu, cpu->intvec);
 	}
+}
+
+// need to catch fetch breakpoints properly
+int v30_fetch(CPU* cpu) {
+	return cpu->mrd((cpu->regPS << 4) + cpu->regPC++, 1, cpu->xptr);
 }
 
 extern opCode v30_tab[256];
@@ -68,23 +81,22 @@ int v30_exec(CPU* cpu) {
 	cpu->regREP = V30_REP_NONE;
 	cpu->oldpc = cpu->regPC;
 
-	int val = setjmp(cpu->jbuf);	// set THROW return point (val = err.code)
-	if (!val) {
-		if (cpu->intrq)
-			v30_ext_int(cpu);
-		if (cpu->t == 0) {
+	cpu->flgEXC = 0;
+	if (cpu->intrq)
+		v30_ext_int(cpu);
+	if (cpu->t == 0) {
+		cpu->t++;
+		do {
 			cpu->t++;
-			do {
-				cpu->t++;
-				cpu->com = v30_mrdb(cpu, cpu->regPS, cpu->regPC++);
-				cpu->op = &cpu->opTab[cpu->com & 0xff];
-				cpu->op->exec(cpu);
-			} while (cpu->op->flag & OF_PREFIX);
-		}
-	} else {
-		if (val < 0) val = 0;
+			cpu->com = v30_fetch(cpu);
+			cpu->op = &cpu->opTab[cpu->com & 0xff];
+			cpu->op->exec(cpu);
+		} while (cpu->op->flag & OF_PREFIX);
+	}
+	if (cpu->flgEXC) {
+		printf("v30 exception (%i) @ %.4X:%.4X\n", cpu->regExcCode, cpu->regPS, cpu->oldpc);
 		cpu->regPC = cpu->oldpc;
-		v30_int(cpu, val);
+		v30_int(cpu, cpu->regExcCode);
 	}
 	return cpu->t;
 }
@@ -138,13 +150,13 @@ xMnem v30_mnem(CPU* cpu, int sadr, cbdmr mrd, void* data) {
 		}
 		if (tab == v30_tab) {
 			switch (com) {
-				case 0x0f:
-					tab = v30_0f_tab;
-					break;
-				case 0x26: rseg = 0; break;		// es
-				case 0x2e: rseg = 1; break;		// cs
+				case 0x0f: tab = v30_0f_tab; break;	// 0f prefix
+				case 0x26: rseg = 0; break;		// ds1
+				case 0x2e: rseg = 1; break;		// ps
 				case 0x36: rseg = 2; break;		// ss
-				case 0x3e: rseg = 3; break;		// ds
+				case 0x3e: rseg = 3; break;		// ds0
+				case 0x64: rep = V30_REPNC; break;
+				case 0x65: rep = V30_REPC; break;
 				case 0xf2: rep = V30_REPNZ; break;
 				case 0xf3: rep = V30_REPZ; break;
 			}
@@ -176,11 +188,6 @@ xMnem v30_mnem(CPU* cpu, int sadr, cbdmr mrd, void* data) {
 				}
 				break;
 		}
-#if 0
-		if ((op->flag & OF_COMEXT) && op->tab) {		// mod r/m b3-5 contains opcode extension, op->tab is tab[8] of ext opcodes
-			op = &op->tab[(mb >> 3) & 7];
-		}
-#endif
 	}
 	strcpy(strbuf, op->mnem);
 
@@ -254,6 +261,10 @@ xMnem v30_mnem(CPU* cpu, int sadr, cbdmr mrd, void* data) {
 					dptr += sprintf(dptr, "%s", str_regs[(mb >> 3) & 3]);
 					break;
 				case 'z':				// skip EA & disp
+					switch(mb & 0xc0) {
+						case 0x40: adr += 1; break;
+						case 0x80: adr += 2; break;
+					}
 					break;
 				case 'e':
 					if ((mb & 0xc0) == 0xc0) {		// reg
@@ -292,11 +303,12 @@ xMnem v30_mnem(CPU* cpu, int sadr, cbdmr mrd, void* data) {
 					dptr += sprintf(dptr, "%s", str_regs[rseg & 3]);
 					break;
 				case 'L':
-					if ((com & 0xf6) == 0xa6) {		// a6/a7/ae/af
-						if (rep == V30_REPZ) {
-							dptr += sprintf(dptr, "REPZ ");
-						} else if (rep == V30_REPNZ) {
-							dptr += sprintf(dptr, "REPNZ ");
+					if ((com & 0xf6) == 0xa6) {		// a6/a7/ae/af (cmps / scas)
+						switch (rep) {
+							case V30_REPZ: dptr += sprintf(dptr, "REPZ "); break;
+							case V30_REPNZ: dptr += sprintf(dptr, "REPNZ "); break;
+							case V30_REPC: dptr += sprintf(dptr, "REPC "); break;
+							case V30_REPNC: dptr += sprintf(dptr, "REPNC "); break;
 						}
 					} else if (rep != V30_REP_NONE) {
 						dptr += sprintf(dptr, "REP ");

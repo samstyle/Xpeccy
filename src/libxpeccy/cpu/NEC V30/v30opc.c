@@ -5,10 +5,12 @@
 
 extern opCode v30_0f_tab[256];
 
+void v30_exception(CPU*, int, int);
+
 // get/set reg8 or r16 by index in mod byte
 size_t v30_off_r8[8] = {
-	offsetof(CPU, regAL), offsetof(CPU, regCL), offsetof(CPU, regDL), offsetof(CPU, regDL),
-	offsetof(CPU, regAH), offsetof(CPU, regCH), offsetof(CPU, regDH), offsetof(CPU, regDH)
+	offsetof(CPU, regAL), offsetof(CPU, regCL), offsetof(CPU, regDL), offsetof(CPU, regBL),
+	offsetof(CPU, regAH), offsetof(CPU, regCH), offsetof(CPU, regDH), offsetof(CPU, regBH)
 };
 
 size_t v30_off_r16[8] = {
@@ -70,7 +72,7 @@ void v30_mwrw(CPU* cpu, int seg, int adr, int val) {
 	r.w = val & 0xffff;
 	cpu_mwr(cpu, (seg << 4) + adr, r.l);
 	adr++;
-	cpu_mwr(cpu, adr, r.h);
+	cpu_mwr(cpu, (seg << 4) + adr, r.h);
 }
 
 // mrd imm byte or word
@@ -89,21 +91,15 @@ int v30_immw(CPU* cpu) {
 
 // push/pop word
 int v30_pop(CPU* cpu) {
-	xreg16 r;
-	r.l = cpu_mrd(cpu, (cpu->regSS << 4) + cpu->regSP);
-	cpu->regSP++;
-	r.h = cpu_mrd(cpu, (cpu->regSS << 4) + cpu->regSP);
-	cpu->regSP++;
-	return r.w;
+	xword rw;
+	rw = v30_mrdw(cpu, cpu->regSS, cpu->regSP);
+	cpu->regSP += 2;
+	return rw;
 }
 
 void v30_push(CPU* cpu, int d) {
-	xreg16 r;
-	r.w = d & 0xffff;
-	cpu->regSP--;
-	cpu_mwr(cpu, (cpu->regSS << 4) + cpu->regSP, r.h);
-	cpu->regSP--;
-	cpu_mwr(cpu, (cpu->regSS << 4) + cpu->regSP, r.l);
+	cpu->regSP -= 2;
+	v30_mwrw(cpu, cpu->regSS, cpu->regSP, d & 0xffff);
 }
 
 // read mod byte and calculate ea or reg
@@ -157,13 +153,14 @@ void v30_get_ea(CPU* cpu, int w) {
 					cpu->ea.adr = cpu->regBP + disp.w;
 				} else {
 					cpu->ea.seg.idx = cpu->regDS0;
-					cpu->ea.adr = disp.w;
+					cpu->ea.adr = v30_immw(cpu);
 				}
 				break;
 			case 7: cpu->ea.seg.idx = cpu->regDS0;
 				cpu->ea.adr = cpu->regBW + disp.w;
 				break;
 		}
+		if (cpu->flgSOVR) cpu->ea.seg.idx = cpu->regSEG;	// if segment overwrite prefix
 	}
 }
 
@@ -198,9 +195,9 @@ void v30_wr_ea(CPU* cpu, int v, int w) {
 }
 
 void v30_undef(CPU* cpu) {
-	printf("v30: undef opcode @ %X:%X : %.2X\n", cpu->regPS, cpu->regPC, cpu->com);
+	printf("v30: undef opcode @ %X:%X\n", cpu->regPS, cpu->oldpc);
 	cpu_irq(cpu, IRQ_PANIC);
-	THROW(V30_INT_UD);
+//	THROW(V30_INT_UD);		// no #UD exception before 286
 }
 
 // alu
@@ -561,7 +558,7 @@ void v30_op0E(CPU* cpu) {
 
 // 0f: prefix
 void v30_op0F(CPU* cpu) {
-//	cpu->opTab = v30_0f_tab;
+	cpu->opTab = v30_0f_tab;
 }
 
 // 10,mod: addc eb,rb
@@ -708,9 +705,9 @@ void v30_op25(CPU* cpu) {
 	cpu->regAW = v30_and16(cpu, cpu->regAW, cpu->twrd);
 }
 
-// 26: ES segment override prefix
+// 26: ES (DS1) segment override prefix
 void v30_op26(CPU* cpu) {
-	cpu->regSEG = cpu->regDS0;
+	cpu->regSEG = cpu->regDS1;
 	cpu->flgSOVR = 1;
 }
 
@@ -895,13 +892,13 @@ void v30_op3D(CPU* cpu) {
 	cpu->tmpw = v30_sub16(cpu, cpu->regAW, cpu->tmpw, 0);
 }
 
-// 3e: DS segment override prefix
+// 3e: DS0 segment override prefix
 void v30_op3E(CPU* cpu) {
 	cpu->regSEG = cpu->regDS0;
 	cpu->flgSOVR = 1;
 }
 
-// 3f: aas
+// 3f: adjbs
 void v30_op3F(CPU* cpu) {
 	if (((cpu->regAL & 15) > 9) | cpu->flgAC) {
 		cpu->regAL -= 6;
@@ -1148,16 +1145,16 @@ void v30_op61(CPU* cpu) {
 void v30_op62(CPU* cpu) {
 	v30_rd_ea(cpu, 1);	// twrd=rw, tmpw=min
 	if (cpu->ea.reg) {	// interrupts. TODO: fix for protected mode
-		THROW(V30_INT_UD);		// bad mod
+		v30_undef(cpu);
 	} else if ((signed short)cpu->twrd < (signed short)cpu->tmpw) {	// not in bounds: INT5
-		THROW(V30_INT_BR);
+		v30_exception(cpu, V30_INT_BR, 0);
 	} else {
 		int seg = cpu->ea.seg.idx;
 		if (cpu->flgSOVR) seg = cpu->regSEG;
 		cpu->tmpw = v30_mrdw(cpu, seg, cpu->ea.adr + 2);
 		// cpu->htw = v30_mrdb(cpu, seg, cpu->ea.adr + 3);
 		if ((signed short)cpu->twrd > (signed short)cpu->tmpw) {
-			THROW(V30_INT_BR);
+			v30_exception(cpu, V30_INT_BR, 0);
 		}
 	}
 }
@@ -1167,7 +1164,7 @@ void v30_op62(CPU* cpu) {
 
 // 63,mod: arpl ew,rw		adjust RPL of EW not less than RPL of RW
 void i286_op63(CPU* cpu) {
-	THROW(V30_INT_UD);	// real mode
+	v30_exception(cpu, V30_INT_UD, 0);	// real mode
 	// TODO: protected mode
 }
 #endif
@@ -1278,7 +1275,7 @@ void v30_6f_cb(CPU* cpu) {
 void v30_op6F(CPU* cpu) {
 	if (cpu->regIX == 0xffff) {
 		v30_push(cpu, 0);
-		THROW(V30_INT_GP);
+		v30_exception(cpu, V30_INT_GP, 0);
 	} else {
 		v30_rep(cpu, v30_6f_cb);
 	}
@@ -1448,11 +1445,11 @@ void v30_op8C(CPU* cpu) {
 	v30_wr_ea(cpu, cpu->twrd, 1);
 }
 
-// 8d: lea rw,ea	rw = ea.offset
+// 8d : lea rw,ea	rw = ea.offset
 void v30_op8D(CPU* cpu) {
 	v30_get_ea(cpu, 0);
 	if (cpu->ea.reg) {	// 2nd operand is register
-		THROW(V30_INT_UD);
+		v30_undef(cpu);
 	} else {
 		V30SETREG16(cpu->ea.adr);
 	}
@@ -1463,13 +1460,14 @@ void v30_op8E(CPU* cpu) {
 	v30_rd_ea(cpu, 1);
 	switch((cpu->regMOD & 0x38) >> 3) {
 		case 0:	cpu->regDS1 = cpu->tmpw; break;
-		case 1: break;
+		case 1: cpu->regPS = cpu->tmpw; break;		// valid for V30
 		case 2: cpu->regSS = cpu->tmpw; break;
 		case 3: cpu->regDS0 = cpu->tmpw; break;
 	}
 }
 
 // 8f,mod: pop ew
+// not supported by V30
 void v30_op8F(CPU* cpu) {
 	v30_get_ea(cpu, 0);
 	cpu->tmpw = v30_pop(cpu);
@@ -1602,7 +1600,7 @@ void v30_opA1(CPU* cpu) {
 	cpu->tmpw = v30_immw(cpu);
 	if (cpu->tmpw == 0xffff) {
 		v30_push(cpu, 0);
-		THROW(V30_INT_GP);
+		v30_exception(cpu, V30_INT_GP, 0);
 	} else {
 		int seg = cpu->flgSOVR ? cpu->regSEG : cpu->regDS0;
 		cpu->regAW = v30_mrdw(cpu, seg, cpu->tmpw);
@@ -1621,7 +1619,7 @@ void v30_opA3(CPU* cpu) {
 	cpu->tmpw = v30_immw(cpu);
 	if (cpu->tmpw == 0xffff) {
 		v30_push(cpu, 0);
-		THROW(V30_INT_GP);
+		v30_exception(cpu, V30_INT_GP, 0);
 	} else {
 		int seg = cpu->flgSOVR ? cpu->regSEG : cpu->regDS0;
 		v30_mwrw(cpu, seg, cpu->tmpw, cpu->regAL);
@@ -1659,7 +1657,7 @@ void v30_a5_cb(CPU* cpu) {
 void v30_opA5(CPU* cpu) {
 	if ((cpu->regIX == 0xffff) || (cpu->regIY == 0xffff)) {
 		v30_push(cpu, 0);
-		THROW(V30_INT_GP);
+		v30_exception(cpu, V30_INT_GP, 0);
 	} else {
 		v30_rep(cpu, v30_a5_cb);
 	}
@@ -1720,7 +1718,7 @@ void v30_a7_cb(CPU* cpu) {
 void v30_opA7(CPU* cpu) {
 	if ((cpu->regIX == 0xffff) || (cpu->regIY == 0xffff)) {
 		v30_push(cpu, 0);
-		THROW(V30_INT_GP);
+		v30_exception(cpu, V30_INT_GP, 0);
 	} else {
 		v30_rep_fz(cpu, v30_a7_cb);
 	}
@@ -1753,7 +1751,7 @@ void v30_ab_cb(CPU* cpu) {
 void v30_opAB(CPU* cpu) {
 	if (cpu->regIY == 0xffff) {
 		v30_push(cpu, 0);
-		THROW(V30_INT_GP);
+		v30_exception(cpu, V30_INT_GP, 0);
 	} else {
 		v30_rep(cpu, v30_ab_cb);
 	}
@@ -1770,7 +1768,7 @@ void v30_opAC(CPU* cpu) {
 void v30_opAD(CPU* cpu) {
 	if (cpu->regIX == 0xffff) {
 		v30_push(cpu, 0);
-		THROW(V30_INT_GP);
+		v30_exception(cpu, V30_INT_GP, 0);
 	} else {
 		int seg = cpu->flgSOVR ? cpu->regSEG : cpu->regDS0;
 		cpu->regAW = v30_mrdw(cpu, seg, cpu->regIX);
@@ -1778,11 +1776,11 @@ void v30_opAD(CPU* cpu) {
 	}
 }
 
-// ae: scasb	cmp al,[es:di]
+// ae: scasb	cmp al,[ds1:iy]
 void v30_ae_cb(CPU* cpu) {
-	cpu->ltw = v30_mrdb(cpu, cpu->regDS1, cpu->regIX);
+	cpu->ltw = v30_mrdb(cpu, cpu->regDS1, cpu->regIY);
 	cpu->lwr = v30_sub8(cpu, cpu->regAL, cpu->ltw, 0);
-	cpu->regIX += cpu->flgDIR ? -1 : 1;
+	cpu->regIY += cpu->flgDIR ? -1 : 1;
 }
 void v30_opAE(CPU* cpu) {
 	v30_rep_fz(cpu, v30_ae_cb);
@@ -1795,9 +1793,9 @@ void v30_af_cb(CPU* cpu) {
 	cpu->regIX += cpu->flgDIR ? -2 : 2;
 }
 void v30_opAF(CPU* cpu) {
-	if (cpu->regIX == 0xffff) {
+	if (cpu->regIY == 0xffff) {
 		v30_push(cpu, 0);
-		THROW(V30_INT_GP);
+		v30_exception(cpu, V30_INT_GP, 0);
 	} else {
 		v30_rep_fz(cpu, v30_af_cb);
 	}
@@ -1914,12 +1912,12 @@ void v30_opC5(CPU* cpu) {
 // c6,mod,ib: mov ea,ib
 // TODO:c6/0 only
 void v30_opC6(CPU* cpu) {
-	v30_rd_ea(cpu, 0);
+	v30_get_ea(cpu, 0);
 	if (cpu->regMOD & 0x38) {
 		v30_undef(cpu);
 	} else {
-		cpu->lwr = v30_immb(cpu);
-		v30_wr_ea(cpu, cpu->lwr, 0);
+		cpu->tmp = v30_immb(cpu);
+		v30_wr_ea(cpu, cpu->tmp, 0);
 	}
 }
 
@@ -1995,9 +1993,9 @@ void v30_opCE(CPU* cpu) {
 		v30_int(cpu, 4); // I286_INT_OF);
 }
 
-// cf: reti	pop ip,cs,flag
+// cf: reti	pop pc,ps,psw (MD flag optionaly)
 void v30_opCF(CPU* cpu) {
-	cpu->regPC = v30_pop(cpu);
+	cpu->regPC = v30_pop(cpu);	// pc
 	v30_set_ps(cpu, v30_pop(cpu));
 	v30_setflag(cpu, v30_pop(cpu));
 	cpu->flgBNMI = 0;
@@ -2035,7 +2033,7 @@ void v30_opD3(CPU* cpu) {
 void v30_opD4(CPU* cpu) {
 	cpu->tmpb = v30_immb(cpu);
 	if (cpu->tmpb == 0) {
-		THROW(-1);	// I286_INT_DE = 0
+		v30_exception(cpu, V30_INT_DE, 0);
 	} else {
 		cpu->regAH = cpu->regAL / cpu->tmpb;
 		cpu->regAL = cpu->regAL % cpu->tmpb;
@@ -2068,27 +2066,18 @@ void v30_opD7(CPU* cpu) {
 	cpu->regAL = v30_mrdb(cpu, seg, cpu->tmpw);
 }
 
-#if 0
-
 // 80287 template
 // opcodes: D8-DF (11011xxx),mod,[data,[data]]
 
-extern void x87_exec(CPU*);
-
-void i286_fpu(CPU* cpu) {
-	i286_get_ea(cpu, 1);
-	if (cpu->regMSW & I286_FEM) {
-		THROW(I286_INT_NM);
-	} else if (cpu->regX87sr & 0x80) {		// x87 exception
-		THROW(I286_INT_MF);
-	} else {
-//		printf("%.8X : x87 : %.2X %.2X\n", cpu->cs.base + cpu->oldpc, cpu->com, cpu->mod);
-//		THROW(I286_INT_NM);
-		x87_exec(cpu);
-	}
+void v30_fpo1(CPU* cpu) {
+	v30_get_ea(cpu, 1);
+	v30_exception(cpu, V30_INT_NM, 0);
 }
 
-#endif
+void v30_fpo2(CPU* cpu) {
+	v30_get_ea(cpu, 1);
+	v30_exception(cpu, V30_INT_NM, 0);
+}
 
 // e0,cb: loopnz cb:	cw--,jump short if (cw!=0)&&(fz=0)
 void v30_opE0(CPU* cpu) {
@@ -2252,10 +2241,10 @@ void v30_opF65(CPU* cpu) {		// /5:imul eb
 
 void v30_opF66(CPU* cpu) {		// /6:div eb
 	if (cpu->ltw == 0) {				// div by zero
-		THROW(-1);	// I286_INT_DE
+		v30_exception(cpu, V30_INT_DE, 0);
 	} else {
 		if (cpu->regAW / cpu->ltw > 0xff) {	// cpu->ah >= cpu->ltw ?
-			THROW(-1);	// I286_INT_DE
+			v30_exception(cpu, V30_INT_DE, 0);
 		} else {
 			cpu->twrd = cpu->regAW % cpu->ltw;
 			cpu->tmpw = cpu->regAW / cpu->ltw;
@@ -2267,11 +2256,11 @@ void v30_opF66(CPU* cpu) {		// /6:div eb
 
 void v30_opF67(CPU* cpu) {		// /7:idiv eb
 	if (cpu->ltw == 0) {
-		THROW(-1); //	I286_INT_DE
+		v30_exception(cpu, V30_INT_DE, 0);
 	} else {
 		// TODO: int0 if quo>0xff
 		if (cpu->regAW / cpu->ltw > 0xff) {	// cpu->ah >= cpu->ltw
-			THROW(-1);	// I286_INT_DE);
+			v30_exception(cpu, V30_INT_DE, 0);
 		} else {
 			cpu->twrd = (signed short)cpu->regAW % (signed char)cpu->ltw;
 			cpu->tmpw = (signed short)cpu->regAW / (signed char)cpu->ltw;
@@ -2325,11 +2314,11 @@ void v30_opF75(CPU* cpu) {		// /5:mul ew
 
 void v30_opF76(CPU* cpu) {		// /6:div ew
 	if (cpu->tmpw == 0) {				// div by zero
-		THROW(-1); // I286_INT_DE
+		v30_exception(cpu, V30_INT_DE, 0);
 	} else {
 		cpu->tmpi = (cpu->regDW << 16) | cpu->regAW;
 		if (cpu->tmpi / cpu->tmpw > 0xffff) {		// cpu->dw >= cpu->tmpw
-			THROW(-1);	// I286_INT_DE
+			v30_exception(cpu, V30_INT_DE, 0);
 		} else {
 			cpu->regAW = cpu->tmpi / cpu->tmpw;
 			cpu->regDW = cpu->tmpi % cpu->tmpw;
@@ -2339,11 +2328,11 @@ void v30_opF76(CPU* cpu) {		// /6:div ew
 
 void v30_opF77(CPU* cpu) {		// /7:idiv ew
 	if (cpu->tmpw == 0) {
-		THROW(-1);	// I286_INT_DE
+		v30_exception(cpu, V30_INT_DE, 0);
 	} else {
 		cpu->tmpi = (cpu->regDW << 16) | cpu->regAW;
 		if ((signed int)cpu->tmpi / (signed short)cpu->tmpw > 0xffff) {		// cpu->dw >= cpu->tmpw ?
-			THROW(-1);	// I286_INT_DE
+			v30_exception(cpu, V30_INT_DE, 0);
 		} else {
 			cpu->regAW = (signed int)cpu->tmpi / (signed short)cpu->tmpw;
 			cpu->regDW = (signed int)cpu->tmpi % (signed short)cpu->tmpw;
@@ -2446,6 +2435,7 @@ opCode v30_tab[256] = {
 	{0, 1, v30_op05, 0, "add aw,:2"},
 	{0, 1, v30_op06, 0, "push es"},
 	{0, 1, v30_op07, 0, "pop es"},
+	// 08
 	{OF_MODRM, 1, v30_op08, 0, "or :e,:r"},
 	{OF_MODRM | OF_WORD, 1, v30_op09, 0, "or :e,:r"},
 	{OF_MODRM, 1, v30_op0A, 0, "or :r,:e"},
@@ -2454,6 +2444,7 @@ opCode v30_tab[256] = {
 	{0, 1, v30_op0D, 0, "or aw,:2"},
 	{0, 1, v30_op0E, 0, "push cs"},
 	{OF_PREFIX, 1, v30_op0F, NULL, "prefix 0F"},		// v30: 0F prefix (80186 doesn't have it)
+	// 10
 	{OF_MODRM, 1, v30_op10, 0, "addc :e,:r"},
 	{OF_MODRM | OF_WORD, 1, v30_op11, 0, "addc :e,:r"},
 	{OF_MODRM, 1, v30_op12, 0, "addc :r,:e"},
@@ -2462,6 +2453,7 @@ opCode v30_tab[256] = {
 	{0, 1, v30_op15, 0, "addc aw,:2"},
 	{0, 1, v30_op16, 0, "push ss"},
 	{0, 1, v30_op17, 0, "pop ss"},
+	// 18
 	{OF_MODRM, 1, v30_op18, 0, "subc :e,:r"},
 	{OF_MODRM | OF_WORD, 1, v30_op19, 0, "subc :e,:r"},
 	{OF_MODRM, 1, v30_op1A, 0, "subc :r,:e"},
@@ -2470,6 +2462,7 @@ opCode v30_tab[256] = {
 	{0, 1, v30_op1D, 0, "subc aw,:2"},
 	{0, 1, v30_op1E, 0, "push ds"},
 	{0, 1, v30_op1F, 0, "pop ds"},
+	// 20
 	{OF_MODRM, 1, v30_op20, 0, "and :e,:r"},
 	{OF_MODRM | OF_WORD, 1, v30_op21, 0, "and :e,:r"},
 	{OF_MODRM, 1, v30_op22, 0, "and :r,:e"},
@@ -2478,6 +2471,7 @@ opCode v30_tab[256] = {
 	{0, 1, v30_op25, 0, "and aw,:2"},
 	{OF_PREFIX, 1, v30_op26, 0, "segment DS1"},
 	{0, 1, v30_op27, 0, "adj4a"},
+	// 28
 	{OF_MODRM, 1, v30_op28, 0, "sub :e,:r"},
 	{OF_MODRM | OF_WORD, 1, v30_op29, 0, "sub :e,:r"},
 	{OF_MODRM, 1, v30_op2A, 0, "sub :r,:e"},
@@ -2486,6 +2480,7 @@ opCode v30_tab[256] = {
 	{0, 1, v30_op2D, 0, "sub aw,:2"},
 	{OF_PREFIX, 1, v30_op2E, 0, "segment PS"},
 	{0, 1, v30_op2F, 0, "adj4s"},
+	// 30
 	{OF_MODRM, 1, v30_op30, 0, "xor :e,:r"},
 	{OF_MODRM | OF_WORD, 1, v30_op31, 0, "xor :e,:r"},
 	{OF_MODRM, 1, v30_op32, 0, "xor :r,:e"},
@@ -2494,6 +2489,7 @@ opCode v30_tab[256] = {
 	{0, 1, v30_op35, 0, "xor aw,:2"},
 	{OF_PREFIX, 1, v30_op36, 0, "segment SS"},
 	{0, 1, v30_op37, 0, "adjba"},
+	// 38
 	{OF_MODRM, 1, v30_op38, 0, "cmp :e,:r"},
 	{OF_MODRM | OF_WORD, 1, v30_op39, 0, "cmp :e,:r"},
 	{OF_MODRM, 1, v30_op3A, 0, "cmp :r,:e"},
@@ -2502,6 +2498,7 @@ opCode v30_tab[256] = {
 	{0, 1, v30_op3D, 0, "cmp aw,:2"},
 	{OF_PREFIX, 1, v30_op3E, 0, "segment DS0"},
 	{0, 1, v30_op3F, 0, "adjbs"},
+	// 40
 	{0, 1, v30_op40, 0, "inc aw"},
 	{0, 1, v30_op41, 0, "inc cw"},
 	{0, 1, v30_op42, 0, "inc dw"},
@@ -2510,6 +2507,7 @@ opCode v30_tab[256] = {
 	{0, 1, v30_op45, 0, "inc bp"},
 	{0, 1, v30_op46, 0, "inc ix"},
 	{0, 1, v30_op47, 0, "inc iy"},
+	// 48
 	{0, 1, v30_op48, 0, "dec aw"},
 	{0, 1, v30_op49, 0, "dec cw"},
 	{0, 1, v30_op4A, 0, "dec dw"},
@@ -2518,6 +2516,7 @@ opCode v30_tab[256] = {
 	{0, 1, v30_op4D, 0, "dec bp"},
 	{0, 1, v30_op4E, 0, "dec ix"},
 	{0, 1, v30_op4F, 0, "dec iy"},
+	// 50
 	{0, 1, v30_op50, 0, "push aw"},
 	{0, 1, v30_op51, 0, "push cw"},
 	{0, 1, v30_op52, 0, "push dw"},
@@ -2526,6 +2525,7 @@ opCode v30_tab[256] = {
 	{0, 1, v30_op55, 0, "push bp"},
 	{0, 1, v30_op56, 0, "push ix"},
 	{0, 1, v30_op57, 0, "push iy"},
+	// 58
 	{0, 1, v30_op58, 0, "pop aw"},
 	{0, 1, v30_op59, 0, "pop cw"},
 	{0, 1, v30_op5A, 0, "pop dw"},
@@ -2534,14 +2534,16 @@ opCode v30_tab[256] = {
 	{0, 1, v30_op5D, 0, "pop bp"},
 	{0, 1, v30_op5E, 0, "pop ix"},
 	{0, 1, v30_op5F, 0, "pop iy"},
+	// 60
 	{0, 1, v30_op60, NULL, "pusha"},			// 1+
 	{0, 1, v30_op61, NULL, "pop r"},			// 1+
 	{OF_MODRM | OF_WORD, 1, v30_op62, NULL, "chkind :r,:e"},	// 1+
 	{OF_MODRM | OF_WORD, 1, v30_undef, NULL, "undef"},
 	{OF_PREFIX, 1, v30_op64, 0, "repnc"},		// repnc
 	{OF_PREFIX, 1, v30_op65, 0, "repc"},		// repc
-	{0, 1, v30_undef, 0, "undef"},		// 3+ op.size override
-	{0, 1, v30_undef, 0, "undef"},		// 4+ adr.size override
+	{OF_MODRM, 1, v30_fpo2, 0, "FPO2 * :z"},		// v30: 66,67: FPO2 commands (extension of x87 commands, uPD72191)
+	{OF_MODRM, 1, v30_fpo2, 0, "FPO2 * :z"},
+	// 68
 	{0, 1, v30_op68, NULL, "push :2"},			// 1+
 	{OF_MODRM | OF_WORD, 1, v30_op69, NULL, "mul :r,:e,:2"},	// 1+
 	{0, 1, v30_op6A, NULL, "push :1"},			// 1+
@@ -2550,6 +2552,7 @@ opCode v30_tab[256] = {
 	{OF_SKIPABLE, 1, v30_op6D, NULL, ":Linmw [ds1::iy]"},	// 1+
 	{OF_SKIPABLE, 1, v30_op6E, NULL, ":Loutmb [:D::ix]"},	// 1+
 	{OF_SKIPABLE, 1, v30_op6F, NULL, ":Loutmw [:D::ix]"},	// 1+
+	// 70
 	{0, 1, v30_op70, 0, "bv :3"},
 	{0, 1, v30_op71, 0, "bnv :3"},
 	{0, 1, v30_op72, 0, "bc :3"},		// jb, jnae
@@ -2558,6 +2561,7 @@ opCode v30_tab[256] = {
 	{0, 1, v30_op75, 0, "bnz :3"},
 	{0, 1, v30_op76, 0, "bnh :3"},		// jna
 	{0, 1, v30_op77, 0, "bh :3"},	// ja
+	// 78
 	{0, 1, v30_op78, 0, "bn :3"},
 	{0, 1, v30_op79, 0, "bp :3"},
 	{0, 1, v30_op7A, 0, "bpe :3"},
@@ -2566,6 +2570,7 @@ opCode v30_tab[256] = {
 	{0, 1, v30_op7D, 0, "bge :3"},
 	{0, 1, v30_op7E, 0, "ble :3"},		// jng
 	{0, 1, v30_op7F, 0, "bgt :3"},	// jg
+	// 80
 	{OF_MODRM, 1, v30_op80, 0, ":A :e,:1"},	// :A = mod:N (add,or,addc,sbb,and,sub,xor,cmp)
 	{OF_MODRM | OF_WORD, 1, v30_op81, 0, ":A :e,:2"},
 	{OF_MODRM, 1, v30_op82, 0, ":A :e,:1"},
@@ -2574,14 +2579,16 @@ opCode v30_tab[256] = {
 	{OF_MODRM | OF_WORD, 1, v30_op85, 0, "test :e,:r"},
 	{OF_MODRM, 1, v30_op86, 0, "xch :e,:r"},
 	{OF_MODRM | OF_WORD, 1, v30_op87, 0, "xch :e,:r"},
+	// 88
 	{OF_MODRM, 1, v30_op88, 0, "mov :e,:r"},
 	{OF_MODRM | OF_WORD, 1, v30_op89, 0, "mov :e,:r"},
 	{OF_MODRM, 2, v30_op8A, 0, "mov :r,:e"},
-	{OF_MODRM | OF_WORD, 9, v30_op8B, 0, "mov :r,:e"},		// v20:13T, v30:9T[+4T if odd address]
+	{OF_MODRM | OF_WORD, 9, v30_op8B, 0, "mov :r,:e"},	// v20:13T, v30:9T[+4T if odd address]
 	{OF_MODRM | OF_WORD, 1, v30_op8C, 0, "mov :e,:s"},	// :s segment register from mod:N
 	{OF_MODRM | OF_WORD, 1, v30_op8D, 0, "ldea :r,:e"},
 	{OF_MODRM | OF_WORD, 1, v30_op8E, 0, "mov :s,:e"},
-	{OF_MODRM | OF_WORD, 1, v30_op8F, 0, "pop :e"},	// !!! /0 push, /1../7 nodef
+	{OF_MODRM | OF_WORD, 1, v30_undef, 0, "undef"}, // "pop :e"},	// !!! /0 push, /1../7 nodef
+	// 90
 	{0, 1, v30_op90, 0, "nop"},	// xch aw,aw
 	{0, 1, v30_op91, 0, "xch aw,cw"},
 	{0, 1, v30_op92, 0, "xch aw,dw"},
@@ -2590,6 +2597,7 @@ opCode v30_tab[256] = {
 	{0, 1, v30_op95, 0, "xch aw,bp"},
 	{0, 1, v30_op96, 0, "xch aw,ix"},
 	{0, 1, v30_op97, 0, "xch aw,iy"},
+	// 98
 	{0, 1, v30_op98, 0, "cvtbw"},
 	{0, 1, v30_op99, 0, "cvtwl"},
 	{OF_SKIPABLE, 1, v30_op9A, 0, "callf :p"},
@@ -2598,22 +2606,25 @@ opCode v30_tab[256] = {
 	{0, 1, v30_op9D, 0, "popf"},
 	{0, 1, v30_op9E, 0, "mov psw,ah"},
 	{0, 1, v30_op9F, 0, "mov ah,psw"},
+	// a0
 	{0, 1, v30_opA0, 0, "mov al,[:D:::2]"},
-	{0, 1, v30_opA1, 0, "mov aw,[:D:::2]"},
+	{OF_WORD, 1, v30_opA1, 0, "mov aw,[:D:::2]"},
 	{0, 1, v30_opA2, 0, "mov [:D:::2],al"},
-	{0, 1, v30_opA3, 0, "mov [:D:::2],aw"},
+	{OF_WORD, 1, v30_opA3, 0, "mov [:D:::2],aw"},
 	{OF_SKIPABLE, 1, v30_opA4, 0, ":Lmovbkb [:D::ix],[ds1::iy]"},
-	{OF_SKIPABLE, 1, v30_opA5, 0, ":Lmovbkw [:D::ix],[ds1::iy]"},
+	{OF_SKIPABLE | OF_WORD, 1, v30_opA5, 0, ":Lmovbkw [:D::ix],[ds1::iy]"},
 	{OF_SKIPABLE, 1, v30_opA6, 0, ":Lcmpbkb [:D::ix],[ds1::iy]"},
-	{OF_SKIPABLE, 1, v30_opA7, 0, ":Lcmpbkw [:D::ix],[ds1::iy]"},
+	{OF_SKIPABLE | OF_WORD, 1, v30_opA7, 0, ":Lcmpbkw [:D::ix],[ds1::iy]"},
+	// a8
 	{0, 1, v30_opA8, 0, "test al,:1"},
-	{0, 1, v30_opA9, 0, "test aw,:2"},
+	{OF_WORD, 1, v30_opA9, 0, "test aw,:2"},
 	{OF_SKIPABLE, 1, v30_opAA, 0, ":Lstmb [ds1::iy],al"},
-	{OF_SKIPABLE, 1, v30_opAB, 0, ":Lstmw [ds1::iy],aw"},
+	{OF_SKIPABLE | OF_WORD, 1, v30_opAB, 0, ":Lstmw [ds1::iy],aw"},
 	{0, 1, v30_opAC, 0, ":Lldmb al,[:D::ix]"},
-	{0, 1, v30_opAD, 0, ":Lldmw aw,[:D::ix]"},
+	{OF_WORD, 1, v30_opAD, 0, ":Lldmw aw,[:D::ix]"},
 	{OF_SKIPABLE, 1, v30_opAE, 0, ":Lcmpmb al,[ds1::iy]"},
-	{OF_SKIPABLE, 1, v30_opAF, 0, ":Lcmpmw aw,[ds1::iy]"},
+	{OF_SKIPABLE | OF_WORD, 1, v30_opAF, 0, ":Lcmpmw aw,[ds1::iy]"},
+	// b0
 	{0, 1, v30_opB0, 0, "mov al,:1"},
 	{0, 1, v30_opB1, 0, "mov cl,:1"},
 	{0, 1, v30_opB2, 0, "mov dl,:1"},
@@ -2622,14 +2633,16 @@ opCode v30_tab[256] = {
 	{0, 1, v30_opB5, 0, "mov ch,:1"},
 	{0, 1, v30_opB6, 0, "mov dh,:1"},
 	{0, 1, v30_opB7, 0, "mov bh,:1"},
-	{0, 1, v30_opB8, 0, "mov aw,:2"},
-	{0, 1, v30_opB9, 0, "mov cw,:2"},
-	{0, 1, v30_opBA, 0, "mov dw,:2"},
-	{0, 1, v30_opBB, 0, "mov bw,:2"},
-	{0, 1, v30_opBC, 0, "mov sp,:2"},
-	{0, 1, v30_opBD, 0, "mov bp,:2"},
-	{0, 1, v30_opBE, 0, "mov ix,:2"},
-	{0, 1, v30_opBF, 0, "mov iy,:2"},
+	// b8
+	{OF_WORD, 1, v30_opB8, 0, "mov aw,:2"},
+	{OF_WORD, 1, v30_opB9, 0, "mov cw,:2"},
+	{OF_WORD, 1, v30_opBA, 0, "mov dw,:2"},
+	{OF_WORD, 1, v30_opBB, 0, "mov bw,:2"},
+	{OF_WORD, 1, v30_opBC, 0, "mov sp,:2"},
+	{OF_WORD, 1, v30_opBD, 0, "mov bp,:2"},
+	{OF_WORD, 1, v30_opBE, 0, "mov ix,:2"},
+	{OF_WORD, 1, v30_opBF, 0, "mov iy,:2"},
+	// c0
 	{OF_MODRM, 1, v30_opC0, NULL, ":R :e,:1"},		// 1+ :R rotate group (rol,ror,rcl,rcr,sal,shr,*rot6,sar)
 	{OF_MODRM | OF_WORD, 1, v30_opC1, NULL, ":R :e,:1"},	// 1+
 	{0, 1, v30_opC2, 0, "ret :2"},
@@ -2638,6 +2651,7 @@ opCode v30_tab[256] = {
 	{OF_MODRM | OF_WORD, 1, v30_opC5, 0, "mov ds0,:r,:e"},
 	{OF_MODRM, 1, v30_opC6, 0, "mov :e,:1"},			// /0 mov, /1../7 undef !!!
 	{OF_MODRM | OF_WORD, 1, v30_opC7, 0, "mov :e,:2"},		// /0 mov, /1../7 undef
+	// c8
 	{0, 1, v30_opC8, NULL, "prepare :2,:1"},				// 1+
 	{0, 1, v30_opC9, NULL, "dispose"},					// 1+
 	{0, 1, v30_opCA, 0, "retf :2"},
@@ -2646,22 +2660,25 @@ opCode v30_tab[256] = {
 	{OF_SKIPABLE, 1, v30_opCD, 0, "brk :1"},
 	{OF_SKIPABLE, 1, v30_opCE, 0, "brkv"},
 	{0, 1, v30_opCF, 0, "reti"},
+	// d0
 	{OF_MODCOM, 1, v30_opD0, NULL, ":R :e,1"},
 	{OF_MODCOM | OF_WORD, 1, v30_opD1, NULL, ":R :e,1"},
 	{OF_MODCOM, 1, v30_opD2, NULL, ":R :e,cl"},
 	{OF_MODCOM | OF_WORD, 1, v30_opD3, NULL, ":R :e,cl"},
 	{0, 1, v30_opD4, 0, "cvtbd :1"},
 	{0, 1, v30_opD5, 0, "cvtdb :1"},
-	{0, 1, v30_undef, 0, "? salc"},
+	{0, 1, v30_opD6, 0, "transb*"},					// V30 D6=D7 (transb)
 	{0, 1, v30_opD7, 0, "transb"}, // xlatb al,[:D::bw+al]"},
-	{OF_MODRM, 1, v30_undef, 0, "* x87 :z"},				// ESC external x87
-	{OF_MODRM, 1, v30_undef, 0, "* x87 :z"},
-	{OF_MODRM, 1, v30_undef, 0, "* x87 :z"},
-	{OF_MODRM, 1, v30_undef, 0, "* x87 :z"},
-	{OF_MODRM, 1, v30_undef, 0, "* x87 :z"},
-	{OF_MODRM, 1, v30_undef, 0, "* x87 :z"},
-	{OF_MODRM, 1, v30_undef, 0, "* x87 :z"},
-	{OF_MODRM, 1, v30_undef, 0, "* x87 :z"},
+	// d8
+	{OF_MODRM, 1, v30_fpo1, 0, "fpo1 * :z"},				// D8..DF = FPO1, ESC external x87
+	{OF_MODRM, 1, v30_fpo1, 0, "fpo1 * :z"},
+	{OF_MODRM, 1, v30_fpo1, 0, "fpo1 * :z"},
+	{OF_MODRM, 1, v30_fpo1, 0, "fpo1 * :z"},
+	{OF_MODRM, 1, v30_fpo1, 0, "fpo1 * :z"},
+	{OF_MODRM, 1, v30_fpo1, 0, "fpo1 * :z"},
+	{OF_MODRM, 1, v30_fpo1, 0, "fpo1 * :z"},
+	{OF_MODRM, 1, v30_fpo1, 0, "fpo1 * :z"},
+	// e0
 	{0, 1, v30_opE0, 0, "dbnzne :3"},
 	{0, 1, v30_opE1, 0, "dbnze :3"},
 	{0, 1, v30_opE2, 0, "dbnz :3"},
@@ -2670,6 +2687,7 @@ opCode v30_tab[256] = {
 	{0, 1, v30_opE5, 0, "in aw,:1"},
 	{0, 1, v30_opE6, 0, "out :1,al"},
 	{0, 1, v30_opE7, 0, "out :1,aw"},
+	// e8
 	{OF_SKIPABLE, 1, v30_opE8, 0, "call :n"},		// :n = near, 2byte offset
 	{0, 1, v30_opE9, 0, "br :n"},			// jmp near
 	{0, 1, v30_opEA, 0, "br :p"},			// jmp far
@@ -2678,6 +2696,7 @@ opCode v30_tab[256] = {
 	{0, 1, v30_opED, 0, "in aw,dw"},
 	{0, 1, v30_opEE, 0, "out dw,al"},
 	{0, 1, v30_opEF, 0, "out dw,aw"},
+	// f0
 	{OF_PREFIX, 1, v30_opF0, 0, "buslock"},
 	{0, 1, v30_opF1, 0, "undef"},
 	{OF_PREFIX, 1, v30_opF2, 0, "repnz"},
@@ -2686,6 +2705,7 @@ opCode v30_tab[256] = {
 	{0, 1, v30_opF5, 0, "not1 cy"},
 	{OF_MODCOM, 1, v30_opF6, NULL, ":X :e"},		// test,test,not,neg,mul,imul,div,idiv
 	{OF_MODCOM | OF_WORD, 1, v30_opF7, NULL, ":Y :e"},
+	// f8
 	{0, 1, v30_opF8, 0, "clr1 cy"},
 	{0, 1, v30_opF9, 0, "set1 cy"},
 	{0, 1, v30_opFA, 0, "di"},

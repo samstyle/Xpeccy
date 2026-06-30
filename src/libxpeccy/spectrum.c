@@ -66,6 +66,7 @@ int vid_mrd_cb(int adr, void* ptr) {
 
 int memrd(int adr, int m1, void* ptr) {
 	Computer* comp = (Computer*)ptr;
+	adr &= comp->cpu->busmask;
 #ifdef HAVEZLIB
 	if (m1 && comp->rzx.play && (comp->rzx.frm.fetches > 0)) {
 		comp->rzx.frm.fetches--;
@@ -75,7 +76,7 @@ int memrd(int adr, int m1, void* ptr) {
 	if (fptr) {
 		unsigned char flag = *fptr;
 		if (comp->flgMAP) {
-			if ((comp->cpu->regPC-1+comp->cpu->cs.base) == adr) {
+			if ((cpu_get_pc(comp->cpu)-1+comp->cpu->cs.base) == adr) {
 				flag &= 0x0f;
 				flag |= DBG_VIEW_EXEC;
 				*fptr = flag;
@@ -96,6 +97,7 @@ int memrd(int adr, int m1, void* ptr) {
 
 void memwr(int adr, int val, void* ptr) {
 	Computer* comp = (Computer*)ptr;
+	adr &= comp->cpu->busmask;
 	unsigned char* fptr = comp_get_memcell_flag_ptr(comp, adr);
 	if (fptr) {
 		unsigned char flag = *fptr;
@@ -112,18 +114,6 @@ void memwr(int adr, int val, void* ptr) {
 			comp->brka = ch.a;
 		}
 	}
-/*
-	if (flag & MEM_BRK_WR) {
-		comp->brk = 1;
-	} if (comp->mem->busmask < 0x10000) {
-		flag |= comp->brkAdrMap[adr & 0xffff];
-		if (flag & MEM_BRK_WR) {
-			comp->brk = 1;
-			comp->brkt = BRK_CPUADR;
-			comp->brka = adr;
-		}
-	}
-*/
 	comp->hw->mwr(comp,adr,val);
 }
 
@@ -283,7 +273,7 @@ void comp_irq(int t, void* ptr) {
 			comp_brk(comp, -2);
 			break;
 		case IRQ_PANIC:
-			if (compflags & CFLG_PANIC) comp_irq(IRQ_STOP, comp);
+			comp_irq((compflags & CFLG_PANIC) ? IRQ_STOP : IRQ_BRK, comp);		// if --panic, stop, else brk
 			break;
 		case IRQ_CPU_HALT:
 			comp->hCount = comp->frmtCount;			// fix T counter from INT to start of HALT
@@ -563,7 +553,7 @@ int compExec(Computer* comp) {
 	comp->vid->time = 0;
 // breakpoints
 	if (!comp->flgDBG) {
-		bpChecker ch = comp_check_bp(comp, comp->cpu->regPC + comp->cpu->cs.base, MEM_BRK_FETCH | MEM_BRK_TFETCH);
+		bpChecker ch = comp_check_bp(comp, cpu_get_pc(comp->cpu) + comp->cpu->cs.base, MEM_BRK_FETCH | MEM_BRK_TFETCH);
 		if (ch.t >= 0) {
 			comp->flgBRK = 1;
 			comp->brkt = ch.t;

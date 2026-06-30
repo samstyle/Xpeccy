@@ -54,6 +54,7 @@ UART* uart_create(int, int, cbirq, void*);
 void uart_destroy(UART*);
 void uart_set_irq(UART*, int);
 void uart_set_dev(UART*, xurdcb, xuwrcb, void*);
+void uart_reset(UART*);
 void uart_ready(UART*);
 
 void uart_set_type(UART*, int);

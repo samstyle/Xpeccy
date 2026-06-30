@@ -2,7 +2,12 @@
 // CPU: 8086
 // Hardware: almost IBM PC
 
-#include "../cpu/x86/i80286.h"
+// BIOS map for emulator:
+// 32KB @ +0 is ITF, bootloader - from start
+// 96KB @ +32KB is IPL, bios + basic n88
+// sound.rom in SND
+// font.rom in Font
+
 #include "../video/upd7220.h"
 
 #define regCol	reg[49]		// current color (16bit mode)
@@ -17,18 +22,21 @@
 #define fntLN	reg[57]
 
 #define regHDDCtrl reg[60]
-
+// system ports
 #define portB	reg[65]
 #define portC	reg[66]
+// dipswitches
 #define DIPSW1	reg[71]
 #define DIPSW2	reg[72]
 #define DIPSW3	reg[73]
+// memswitches
 #define MEMSW(_n) reg[73+(_n)]	// 73-78, 6 switches
 
 #define flgNMI	flag[0]
-#define flgKBDm flag[1]		// upd8251 mode (0:mode, 1:command)
-#define flgVSync flag[2]	// VSync flip-flop: set @ vsync, reset on port 64 write. 0 means vsync interrupt allowed
-#define flg16col flag[3]	// video: 16 colors mode
+#define flgVSync flag[1]	// VSync flip-flop: set @ vsync, reset on port 64 write. 0 means vsync interrupt allowed
+#define flg16col flag[2]	// video: 16 colors mode
+#define flgA20	flag[3]		// A20 mask on
+#define flgRomIPL flag[4]	// 1:IPL(bios) on E8000..FFFFF, 0:ITF(bootloader)
 
 #include "../spectrum.h"
 
@@ -96,7 +104,8 @@ void pc98xx_vex_wr(int adr, int val, void* p) {
 // bios
 int pc98xx_bios_rd(int adr, void* p) {
 	Computer* comp = (Computer*)p;
-	adr -= 0xe8000;			// rom size is 96K (rounded to 128K), without this e8000 will be at 8000 in rom
+	adr = mem_get_phys_adr(comp->mem, adr);		// full rom address
+//	adr -= 0xe8000;			// rom size is 96K (rounded to 128K), without this e8000 will be at 8000 in rom
 	return comp->mem->romData[adr & comp->mem->romMask];
 }
 
@@ -116,6 +125,7 @@ int pc98xx_snd_rd(int adr, void* p) {
 // cc000-cffff	sound board rom
 
 // TODO:memory switches (see 'pc98 programmers bible')
+
 // A3FE2/E3FE2:default 0x48
 // b6,7	: stop bits (01:1, 10:1.5, 11:2)
 // b5	: parity value
@@ -188,20 +198,29 @@ void pc98xx_mem_map(Computer* comp) {
 	memSetBank(comp->mem, 0xcc, MEM_ROM, 1, MEM_16K, pc98xx_snd_rd, NULL, comp);		// sound.rom (16K)
 
 	memSetBank(comp->mem, 0xe0, MEM_EXT, 0, MEM_32K, pc98xx_vex_rd, pc98xx_vex_wr, comp);	// video ram (32K)
-	memSetBank(comp->mem, 0xe8, MEM_ROM, 0, MEM_64K, pc98xx_bios_rd, NULL, comp);		// bios (96K)
-	memSetBank(comp->mem, 0xf8, MEM_ROM, 2, MEM_32K, pc98xx_bios_rd, NULL, comp);
+	if (comp->flgRomIPL) {
+		memSetBank(comp->mem, 0xe8, MEM_ROM, 1, MEM_32K, pc98xx_bios_rd, NULL, comp);		// bios (96K)
+		memSetBank(comp->mem, 0xf0, MEM_ROM, 2, MEM_32K, pc98xx_bios_rd, NULL, comp);
+		memSetBank(comp->mem, 0xf8, MEM_ROM, 3, MEM_32K, pc98xx_bios_rd, NULL, comp);
+	} else {
+		memSetBank(comp->mem, 0xe8, MEM_ROM, 0, MEM_32K, pc98xx_bios_rd, NULL, comp);		// itf (32K) in every page
+		memSetBank(comp->mem, 0xf0, MEM_ROM, 0, MEM_32K, pc98xx_bios_rd, NULL, comp);
+		memSetBank(comp->mem, 0xf8, MEM_ROM, 0, MEM_32K, pc98xx_bios_rd, NULL, comp);
+	}
 }
 
 void pc98xx_reset(Computer* comp) {
-	cpu_reset(comp->cpu);
+	printf("pc98xx reset\n");
+//	cpu_reset(comp->cpu);
 	comp->DIPSW1 = 0x81;
 	comp->DIPSW2 = 0x03;
 	comp->DIPSW3 = 0x81;
-	if (comp->cpu->core->type == CPU_V30) comp->DIPSW3 &= ~0x80;
+	if (comp->cpu->core->type == CPU_V30) comp->DIPSW3 &= ~0x80;	// b7=0
 	comp->portB = 0x00;	// b3:1=highres
 	comp->portC = 0xff;
-	comp->flgKBDm = 0;
 	comp->flgVSync = 1;	// disabled
+	comp->flgA20 = 1;
+	comp->flgRomIPL = 0;
 	comp->regKBDs = 0;
 	pc98xx_mem_map(comp);
 	kbd_set_type(comp->keyb, KBD_NEC98XX);
@@ -215,6 +234,7 @@ void pc98xx_reset(Computer* comp) {
 	pit_reset(comp->pit);
 	pic_reset(comp->mpic);
 	pic_reset(comp->spic);
+	uart_reset(comp->uart);
 }
 
 // DIPSW1
@@ -247,8 +267,8 @@ void pc98xx_reset(Computer* comp) {
 // b7	cpu 1:x86, 0:v30 (printer port)
 
 // uPD8255 - misc data (rs232,soft reset,misc flags) (31,33,35,37)
-// portA - system switch, DIPSW2 full (ro) - see above
-// portB (ro)	b0:CDAT (upd4990 data out)
+// portA (31)	system switch, DIPSW2 full (ro) - see above
+// portB (33r)	b0:CDAT (upd4990 data out)
 //		b1:EMCK (ext.ram parity error)
 //		b2:IMCK (int.ram parity error)
 //		b3:CRTT (1:24KHz, 0:15KHz) - display hires, DIPSW1-0
@@ -256,12 +276,12 @@ void pc98xx_reset(Computer* comp) {
 //		b5:CD - RS232
 //		b6:CS - RS232
 //		b7:CI - RS232
-// portC (r)	b0:RXRE - RS232
+// portC (35r)	b0:RXRE - RS232
 //		b1:TXEE - RS232
 //		b2:TXRE - RS232
 //		b3:BUZ (1:speaker off, 0:on)
 //		b4:MCKEN enable memory check, portB EMCK/IMCK
-//		b5:SHUT1 (0x:continue execution after reset; 10:shutdown? 11:hard.reset)
+//		b5:SHUT1 (0x:continue execution after reset; 10:soft.reset 11:hard.reset)
 //		b6:PSTBM (printer)
 //		b7:SHUT0
 // portC (35w)	see portC rd
@@ -273,14 +293,27 @@ int pc98xx_ppia_rd(void* comp) {return ((Computer*)comp)->DIPSW2;}
 int pc98xx_ppib_rd(void* ptr) {
 	Computer* comp = (Computer*)ptr;
 	int res = comp->portB & 0xfe;
+	res &= ~0x08;
+	if (comp->DIPSW1 & 1) res |= 8;
 	if (comp->rtc->data) res |= 1;
 	return res;
 }
-int pc98xx_ppic_rd(void* comp) {return ((Computer*)comp)->portC;}
-void pc98xx_ppia_wr(int val, void* comp) {}
-void pc98xx_ppib_wr(int val, void* comp) {}
-void pc98xx_ppich_wr(int val, void* comp) {((Computer*)comp)->portC &= 0x0f; ((Computer*)comp)->portC |= (val & 0xf0);}
-void pc98xx_ppicl_wr(int val, void* comp) {((Computer*)comp)->portC &= 0xf0; ((Computer*)comp)->portC |= (val & 0x0f);}
+int pc98xx_ppic_rd(void* p) {
+	Computer* comp = p;
+	return comp->portC | 0x20;			// force set bit 5 for debugging (avoid soft reset)
+}
+void pc98xx_ppia_wr(int val, void* p) {}
+void pc98xx_ppib_wr(int val, void* p) {}
+void pc98xx_ppich_wr(int val, void* p) {
+	Computer* comp = p;
+	comp->portC &= 0x0f;
+	comp->portC |= (val & 0xf0);
+}
+void pc98xx_ppicl_wr(int val, void* p) {
+	Computer* comp = p;
+	comp->portC &= 0xf0;
+	comp->portC |= (val & 0x0f);
+}
 
 int pc98xx_sys_rd(Computer* comp, int adr) {
 	return ppi_rd(comp->ppi, (adr >> 1) & 3);
@@ -370,8 +403,6 @@ void pc98xx_dma_wr(Computer* comp, int adr, int val) {
 		dma_wr(comp->dma1, (adr & 2) ? DMA_CH_BAR : DMA_CH_BWCR, ch, val);
 	}
 }
-
-// TODO: add uart type UPD_8251 and move to uart*.c on comp->uart
 
 // uPD8251 - usart, keyboard controller (rw:41,rw:43)
 // 41 - data
@@ -529,7 +560,7 @@ void pc98xx_gdc_wr(Computer* comp, int adr, int val) {
 				case 2: printf("40/80 chars: %i\n", val & 1);
 					comp->vid->vga.cpl = (val & 1) ? 40 : 80;
 					break;
-				case 3: break;						// font sel
+				case 3: break;						// font size
 				case 4: break;						// line count (200/crt)
 				case 5: break;						// kac mode
 				case 6: break;						// nvmw permit
@@ -583,9 +614,9 @@ int pc98xx_crt_rd(Computer* comp, int adr) {
 void pc98xx_crt_wr(Computer* comp, int adr, int val) {
 	adr = (adr >> 1) & 7;
 	switch (adr) {
-		case 0: comp->vid->regCharBegin = val & 0xff; break;
-		case 1: comp->vid->regCharEnd = val & 0xff; break;
-		case 2: comp->vid->regCharHeight = val & 0xff; break;
+		case 0: comp->vid->regCharBegin = val & 0xff; break; // 0
+		case 1: comp->vid->regCharEnd = val & 0xff; break; // 15
+		case 2: comp->vid->regCharHeight = val & 0xff; break; // 16
 		case 3: break;
 		case 4: break;
 		case 5: break;
@@ -711,49 +742,42 @@ void pc98xx_fnt_wr(Computer* comp, int adr, int val) {
 // 90,92,94,96: 1MB flop
 
 int pc98xx_fdc_rd(Computer* comp, int adr) {
-	printf("PC98: %X: rd %.4X\n", cpu_get_pc(comp->cpu), adr);
+//	printf("PC98: %X: rd %.4X\n", cpu_get_pc(comp->cpu), adr);
 	int res = -1;
 	difIn(comp->dif, (adr >> 1) & 3, &res, 0);
 	return res;
 }
 
 void pc98xx_fdc_wr(Computer* comp, int adr, int val) {
-	printf("PC98: %X: wr %.4X, %.2X\n", cpu_get_pc(comp->cpu), adr, val);
+//	printf("PC98: %X: wr %.4X, %.2X\n", cpu_get_pc(comp->cpu), adr, val);
 	difOut(comp->dif, (adr >> 1) & 3, val, 0);
 }
 
-// 51,53,55,57 - 320KB FDD on 8255
-// CHECK: portA not connected, portB - com/status, portC - data
+int pc98xx_fdc2_rd(Computer* comp, int adr) {return -1;}
+void pc98xx_fdc2_wr(Computer* comp, int adr, int dat) {}
 
-void ppi_fdc_wrb(int val, void* comp) {difOut(((Computer*)comp)->dif, 0, val, 0);}
-void ppi_fdc_wrc(int val, void* comp) {difOut(((Computer*)comp)->dif, 1, val, 0);}
-int ppi_fdc_rdb(void* comp) {
-	int res;
-	int r = difIn(((Computer*)comp)->dif, 0, &res, 0);
-	return r ? res : -1;
-}
-int ppi_fdc_rdc(void* comp) {
-	int res;
-	int r = difIn(((Computer*)comp)->dif, 1, &res, 0);
-	return r ? res : -1;
-}
+// 51,53,55,57 - 320KB FDD on 8255
+
+void ppi_fdc_wrb(int val, void* comp) {}
+void ppi_fdc_wrc(int val, void* comp) {}
+int ppi_fdc_rdb(void* comp) {return -1;}
+int ppi_fdc_rdc(void* comp) {return -1;}
 
 int pc98xx_f55_rd(Computer* comp, int adr) {
-//	printf("PC98: %X: rd %.4X\n", cpu_get_pc(comp->cpu), adr);
-//	return ppi_rd(comp->ppib, (adr >> 1) & 3);
 	return -1;
 }
 
 void pc98xx_f55_wr(Computer* comp, int adr, int val) {
-//	printf("PC98: %X: wr %.4X, %.2X\n", cpu_get_pc(comp->cpu), adr, val);
-//	ppi_wr(comp->ppib, (adr >> 1) & 3, val);
+
 }
 
 // uPD8255: mouse
 // mouse model - PC9872L
-// 7fe9 rd: mouse data: left.x.right.x.md3..0
-// 7fed wr: control flags: hc.sxy.shl.!int.x.x.x.x;
-// 7fef wr:	1xxxxxxx: wr mode	rd:93?
+// 7fd9 portA,rd: mouse data: left.x.right.x.md3..0
+// 7fdb portB,rd: b2:???
+//		b1:cpu clk (1:10MHz, 0:12MHz)
+// 7fdd wr: control flags: hc.sxy.shl.!int.x.x.x.x;f
+// 7fdf wr:	1xxxxxxx: wr mode	rd:93?
 //		0xxxnnnd: wr flag (111:hc, 100:!int)
 int pc98xx_mou_rd(Computer* comp, int adr) {
 	int res = 0;
@@ -783,7 +807,7 @@ void pc98xx_rs_wr(Computer* comp, int adr, int val) {
 // uPD8255 - printer
 // 40 wr data
 // 42 rd 1.0.mod.sw1-3.sw1-8.!bsy.sw3-7.0
-//	mod: system clock 0:10MHz, 1:8MHz - how?
+//	mod: system clock 0:10MHz, 1:8MHz
 //	sw1-3: printer display on/off
 //	sw1-8: color depth. 1:16col, 0:8col
 //	sw3-7: 1 for V30, 0 for others
@@ -819,7 +843,7 @@ void pc98xx_prn_wr(Computer* comp, int adr, int val) {
 	}
 }
 
-// c0,c2,c4,c6
+// c0,c2,c4,c6 - ODA printer interface board
 
 int pc98xx_c0_rd(Computer* comp, int adr) {
 	return -1;
@@ -844,17 +868,15 @@ void pc98xx_c0_wr(Computer* comp, int adr, int val) {
 
 void pc98xx_hdd_wr(Computer* comp, int adr, int val) {
 	if (adr & 2) {
-		// int last = comp->regHDDCtrl;
 		comp->regHDDCtrl = val;
-		// if ((last & 8) && !(val & 8)) {}	// reset
 	} else {
 		// wr data. TODO: to scsi controller
 	}
 	printf("ide wr %i,%.2X\n",(adr >> 1) & 1,val);
-//	comp_irq(IRQ_BRK, comp);
 }
 
 int pc98xx_hdd_rd(Computer* comp, int adr) {
+	int res = -1;
 	if (adr & 2) {
 		if (comp->regHDDCtrl & 0x40) {
 			// status
@@ -872,34 +894,76 @@ int pc98xx_hdd_rd(Computer* comp, int adr) {
 		// rd data from scsi controller
 	}
 	printf("ide rd %i\n", (adr >> 1) & 1);
-	return -1;
+	return res;
 }
 
 // fm sound (Yamaha 2203)
+
+// cpu control
+
+void pc98xx_cpu_wr(Computer* comp, int adr, int val) {
+	adr = (adr >> 1) & 3;
+	switch (adr) {
+		// f0: set current cpu (if multiple present) and reset. b0:1-v30, 0-x86
+		case 0: cpu_reset(comp->cpu);
+			comp_brk(comp, -1);
+			break;
+		// 286+: off A20 mask
+		case 1: comp->flgA20 = 0; break;
+		case 2: // pc9801DA only (DMA control)
+			break;
+		case 3: // 386+ A20 control
+			break;
+	}
+}
+
+int pc98xx_cpu_rd(Computer* comp, int adr) {
+	int r = -1;
+	adr = (adr >> 1) & 3;
+	switch (adr) {
+		case 0: break;
+		case 1: r = comp->flgA20; break;	// A20 line state
+		case 2: break;
+		case 3: break;
+	}
+
+	return r;
+}
 
 // nmi flipflop (A1):
 void pc98xx_nmi_wr(Computer* comp, int adr, int val) {
 	comp->flgNMI = !!(adr & 2);
 }
 
+// rompage switcher
+// 43D	bit1: 1-IPL(bios), 2-ITL(bootloader)
+void pc98xx_43d_wr(Computer* comp, int adr, int val) {
+	comp->flgRomIPL = !!(val & 2);
+	pc98xx_mem_map(comp);
+}
+
 // deBUG
 int pc98xx_dbg_rd(Computer* comp, int adr) {
 	printf("pc98xx: ird %X\n", adr);
-	comp_irq(IRQ_BRK, comp);
+#if ISDEBUG
+	comp_irq(IRQ_PANIC, comp);
+#endif
 	return 0x00;
 }
 
 void pc98xx_dbg_wr(Computer* comp, int adr, int val) {
 	printf("pc98xx: iwr %X, %X\n", adr, val);
-	comp_irq(IRQ_BRK, comp);
+#if ISDEBUG
+	comp_irq(IRQ_PANIC, comp);
+#endif
 }
 
 // TODO: fill this table
 // ports from 'pc9801 programmers bible'
 // NOTE: run with --panic argument to exit on unknown i/o address
 // 439 - DMA access [PC98XA on i80286]
-// 43d - switch rom pages ???
-// 43f - misc memory managment
+// 43d - switch rom pages (12 - IPL,bios; 10 - ITF,bootloader)
+// 43f - switch VMem pages (9801VM+)
 // 461 - ram window maping. [0x80000-0x9ffff - address bits 23-17 replaced with value bits 7-1]
 // 467 wr: b1 = highres mode [undocumented]
 // NOTE: check this:
@@ -917,7 +981,7 @@ xPort pc98xx_io_map[] = {
 	{0xcf1, 0x041, 2, 2, 2, pc98xx_kbd_rd,	pc98xx_kbd_wr},		// 41,43: keyboard on upd8251
 	{0xcf1, 0x050, 2, 2, 2, NULL,		pc98xx_nmi_wr},		// 50,52: NMI controller: wr:A1 = nmi on/off
 	{0xcf1, 0x051, 2, 2, 2, pc98xx_f55_rd,	pc98xx_f55_wr},		// 51,53,55,57: 320KB FDD controller on 8255
-	{0xcf1, 0x060, 2, 2, 2, pc98xx_gdc_rd,	pc98xx_gdc_wr},		// 60,62:text gdc, 64,66,68,6a,6c,6e: crtc
+	{0xcf1, 0x060, 2, 2, 2, pc98xx_gdc_rd,	pc98xx_gdc_wr},		// 60,62:text 7220, 64,66,68,6a,6c,6e: crtc
 	{0xcf1, 0x070, 2, 2, 2, pc98xx_crt_rd,	pc98xx_crt_wr},		// 70,72,74,76,78,7a,7c,7e: crtc, grcg
 	{0xcf1, 0x071, 2, 2, 2, pc98xx_pit_rd,	pc98xx_pit_wr},		// 71,73,75,77: PIT on upd8253
 	{0x0fd, 0x080, 2, 2, 2, pc98xx_hdd_rd,	pc98xx_hdd_wr},		// 80,82: hard disk inerface
@@ -932,14 +996,15 @@ xPort pc98xx_io_map[] = {
 //	{0xff1, 0x9a0, 2, 2, 2, NULL,		NULL},			// graphic control
 	{0xcf1, 0x0a1, 2, 2, 2, pc98xx_fnt_rd,	pc98xx_fnt_wr},		// a1,a3,a5,a9:kanjirom
 //	{0x0f0, 0x0b0, 2, 2, 2, NULL,		NULL},			// b0..bf: communication controller / rs232 expansion interface; 0xbe: fdd switcher
-	{0x0f9, 0x0c0, 2, 2, 2, pc98xx_c0_rd,	pc98xx_c0_wr},		// c0,c2,c4,c6,c8: oda printer board on 8255 [reserved]
-//	{0x0f9, 0x0c8, 2, 2, 2, NULL,		NULL},			// c8,ca,cc,ce: dd fdd on upd765
+	{0x0f9, 0x0c0, 2, 2, 2, pc98xx_c0_rd,	pc98xx_c0_wr},		// c0,c2,c4,c6: oda printer board on 8255 [reserved]
+	{0x0f9, 0x0c8, 2, 2, 2, pc98xx_fdc2_rd,	pc98xx_fdc2_wr},	// c8,ca,cc,ce: dd fdd on upd765
 //	{0x0f1, 0x0c1, 2, 2, 2, NULL,		NULL},			// gp-ib on upd7210
 	{0xfff9,0x7fd9,2, 2, 2, pc98xx_mou_rd,	pc98xx_mou_wr},		// 7fd9/b/d/f: mouse controller on upd8255
 //	{0xfffb,0x3fdb,2, 2, 2, NULL,		NULL},			// 3fdb/f: upd8253 (timer for beeper)
 //	{0xffff,0xbfdb,2, 2, 2, NULL,		NULL},			// bfdb: mouse interrupt ?
-//	{0xcf9, 0x0f0, 2, 2, 2, NULL,		NULL},			// f0,f2,f4,f6: cpu ?
+	{0xcf9, 0x0f0, 2, 2, 2, pc98xx_cpu_rd,	pc98xx_cpu_wr},		// f0,f2,f4,f6: cpu ?
 //	{0xcf8, 0x0f8, 2, 2, 2, NULL,		NULL},			// f8..ff: ndp (x87)
+	{0xcff, 0x43d, 2, 2, 2, NULL,		pc98xx_43d_wr},		// 43d - switch rom pages
 	{0x000, 0x000, 2, 2, 2, pc98xx_dbg_rd,	pc98xx_dbg_wr}
 };
 
@@ -952,10 +1017,12 @@ void pc98xx_iowr(Computer* comp, int adr, int val) {
 }
 
 int pc98xx_mrd(Computer* comp, int adr, int m1) {
+	if (comp->flgA20) adr &= ~(1 << 20);
 	return memRd(comp->mem, adr);
 }
 
 void pc98xx_mwr(Computer* comp, int adr, int val) {
+	if (comp->flgA20) adr &= ~(1 << 20);
 	memWr(comp->mem, adr, val);
 }
 
@@ -974,7 +1041,7 @@ void pc98xx_irq(Computer* comp, int id) {
 		case IRQ_PIT_CH1: break;	// ch1: speaker NOTE:9801/E/F/M for memory refresh
 		case IRQ_PIT_CH2: break;	// ch2: rs232 timer
 		case IRQ_MASTER_PIC:
-			comp->cpu->intrq |= I286_INT; break;
+			comp->cpu->intrq |= 1; break;		// V30_INT | I286_INT
 			break;
 		case IRQ_SLAVE_PIC:		// slave pic is connected to int7 of master pic
 			pic_int(comp->mpic, 7);
@@ -991,6 +1058,10 @@ void pc98xx_irq(Computer* comp, int id) {
 			break;
 		case IRQ_UART_0:
 			pic_int(comp->mpic, 1);
+			break;
+		case IRQ_FDC:
+			// slave.2 for 2DD, slave.3 for 2HD fdc
+			pic_int(comp->spic, 2);
 			break;
 	}
 }

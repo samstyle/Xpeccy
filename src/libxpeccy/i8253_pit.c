@@ -214,6 +214,7 @@ void pit_ch_reset(pitChan* ch) {
 }
 
 void pit_reset(PIT* pit) {
+	pit->ns = 838;
 	pit_ch_reset(&pit->ch0);
 	pit_ch_reset(&pit->ch1);
 	pit_ch_reset(&pit->ch2);
@@ -265,7 +266,7 @@ void pit_wr(PIT* pit, int adr, int val) {
 			if (ch != NULL) {
 				ch->state = val & 0x3f;
 				if (val & 0x30) {	// 01,10,11:write mode
-					ch->acmod = (val & 0x30) >> 4;
+					ch->acmod = (val >> 4) & 3;
 				} else {		// 00:latch counter
 					pch_fix(ch, 0x10);
 				}

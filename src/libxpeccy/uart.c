@@ -245,7 +245,7 @@ void u8251_sync(UART* uart, int ns) {
 		uart->nscnt -= ns;
 		if (uart->nscnt < 0) {
 			uart->nscnt += uart->nsrate;
-			uart->datar = uart->devrd ? uart->devrd(uart->devptr) : -1;
+			uart->datar = (uart->lcr & F_RXEN) ? (uart->devrd ? uart->devrd(uart->devptr) : -1) : -1;
 			if (uart->datar < 0) {					// no data from device
 				uart->ready = 0;
 				uart->nscnt = 0;
@@ -253,7 +253,7 @@ void u8251_sync(UART* uart, int ns) {
 				uart->lsr |= F_ERR_OE;
 			} else {
 				uart->drqr = 1;
-				uart->xirq(uart->irqn, uart->xptr);		// TODO: set UART irq id
+				uart->xirq(uart->irqn, uart->xptr);
 			}
 		}
 	}

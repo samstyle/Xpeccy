@@ -449,6 +449,8 @@ static xShortcut short_tab[] = {
 	{SCG_DEBUGA, XCUT_TRACE, "key.dbg.trace", "DeBUGa: Trace", QKeySequence(), QKeySequence(Qt::CTRL | Qt::Key_T)},
 	{SCG_DEBUGA, XCUT_OPEN_DUMP, "key.dbg.opendump", "DeBUGa: Load dump", QKeySequence(), QKeySequence(Qt::CTRL | Qt::Key_O)},
 	{SCG_DEBUGA, XCUT_SAVE_DUMP, "key.dbg.savedump", "DeBUGa: Save dump", QKeySequence(), QKeySequence(Qt::CTRL | Qt::Key_S)},
+	{SCG_DEBUGA, XCUT_OPEN_XMAP, "key.dbg.openxmap", "DeBUGa: Load xmap", QKeySequence(), QKeySequence()},
+	{SCG_DEBUGA, XCUT_SAVE_XMAP, "key.dbg.savexmap", "DeBUGa: Save xmap", QKeySequence(), QKeySequence()},
 	{SCG_DEBUGA, XCUT_FINDER, "key.dbg.finder", "DeBUGa: Find pattern", QKeySequence(), QKeySequence(Qt::CTRL | Qt::Key_F)},
 	{SCG_DEBUGA, XCUT_LABELS, "key.dbg.labels", "DeBUGa: Switch labels", QKeySequence(), QKeySequence(Qt::CTRL | Qt::Key_L)},
 	{SCG_DEBUGA, XCUT_LABLIST, "key.dbg.lablist", "DeBUGa: Show labels list", QKeySequence(), QKeySequence()},

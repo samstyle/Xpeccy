@@ -607,7 +607,6 @@ int asmAddr(Computer* comp, QVariant val, xAdr xadr) {
 	if (adr < 0) {
 		if ((str.at(0).isLetter() || (str.at(0) == '_')) && !str.contains('$') && !str.contains(' ')) {
 			lab = find_label(xadr);
-			// lab = findLabel(xadr.adr, xadr.type, xadr.bank);		// current address label
 			if (!lab.isEmpty()) {						// remove current label
 				del_label(lab);
 			}
@@ -631,9 +630,7 @@ bool xDisasmModel::setData(const QModelIndex& cidx, const QVariant& val, int rol
 	int idx = -1;
 	int oadr = asmadr;	// disasmAdr;
 	int len;
-//	int seg,off;
 	QString str;
-//	QStringList lst;
 	int adr = dasm[row].adr;
 	Computer* comp = conf.prof.cur->zx;
 	xAdr xadr = mem_get_xadr(comp->mem, adr);

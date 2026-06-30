@@ -813,6 +813,12 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 			//doSaveDump();
 			dumpwin->show();
 			break;
+		case XCUT_OPEN_XMAP:
+			loadMap();
+			break;
+		case XCUT_SAVE_XMAP:
+			saveMap();
+			break;
 		case XCUT_FINDER:
 			doFind();
 			break;
@@ -1236,17 +1242,18 @@ void DebugWin::loadMap() {
 	QString path = QFileDialog::getOpenFileName(this, "Open the universe", "", "Xpeccy memory map (*.xmap)",nullptr,QFileDialog::DontUseNativeDialog);
 	if (path.isEmpty()) return;
 	load_xmap(path);
+	xmap_path = path;
 	brkInstallAll();
 	fillAll();
 }
 
 void DebugWin::saveMap() {
-	QString path = QFileDialog::getSaveFileName(this, "Save the universe", "", "Xpeccy memory map (*.xmap)",nullptr,QFileDialog::DontUseNativeDialog);
+	QString path = QFileDialog::getSaveFileName(this, "Save the universe", xmap_path, "Xpeccy memory map (*.xmap)",nullptr,QFileDialog::DontUseNativeDialog);
 	if (path.isEmpty()) return;
 	if (!path.endsWith(".xmap",Qt::CaseInsensitive))
 		path.append(".xmap");
 	save_xmap(path);
-
+	xmap_path = path;
 }
 
 // labels

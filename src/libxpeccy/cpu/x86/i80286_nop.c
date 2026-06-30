@@ -62,6 +62,8 @@
 
 // NOTE: x86 parity counts on LSB
 
+void x86_exception(CPU*, int, int);
+
 int i286_check_segment_limit(CPU* cpu, xSegPtr* seg, unsigned short adr) {
 	if (!(cpu->regMSW & I286_FPE)) return 1;	// real mode
 	if (seg->data && seg->ext) {			// data segment from limit to FFFF
@@ -151,7 +153,7 @@ void i286_mwr_real(CPU* cpu, xSegPtr seg, int rpl, unsigned short adr, int val) 
 
 void i286_push(CPU* cpu, unsigned short w) {
 	if ((cpu->regMSW & I286_FPE) && (cpu->regSP < 2)) {
-		THROW(I286_INT_SS);
+		x86_exception(cpu, I286_INT_SS, 0);
 	}
 	cpu->regSP -= 2;
 	i286_mwr(cpu, cpu->ss, 0, cpu->regSP, w & 0xff);
@@ -160,9 +162,9 @@ void i286_push(CPU* cpu, unsigned short w) {
 
 unsigned short i286_pop(CPU* cpu) {
 	if ((cpu->regMSW & I286_FPE) && (cpu->regSP + 2 > cpu->ss.limit)) {
-		THROW(I286_INT_SS);
+		x86_exception(cpu, I286_INT_SS, 0);
 	}
-	PAIR(w,h,l) rx;
+	xreg16 rx;
 	rx.l = i286_mrd(cpu, cpu->ss, 0, cpu->regSP);
 	rx.h = i286_mrd(cpu, cpu->ss, 0, cpu->regSP + 1);
 	cpu->regSP += 2;
@@ -173,17 +175,12 @@ unsigned short i286_pop(CPU* cpu) {
 
 unsigned char i286_fetch_prt(CPU* cpu) {
 	unsigned char res = 0xff;
-//	if (i286_check_segment_exec(cpu, &cpu->cs)) {		// check it when CS changed
-		if (i286_check_segment_limit(cpu, &cpu->cs, cpu->regIP)) {
-			res = cpu_fetch(cpu, cpu->cs.base + cpu->regIP) & 0xff;
-			cpu->regIP++;
-		} else {
-			THROW(I286_INT_SL);
-		}
-//	} else {
-//		i286_push(cpu, cpu->cs.idx & 0xffff);
-//		THROW(I286_INT_GP);
-//	}
+	if (i286_check_segment_limit(cpu, &cpu->cs, cpu->regIP)) {
+		res = cpu_fetch(cpu, cpu->cs.base + cpu->regIP) & 0xff;
+		cpu->regIP++;
+	} else {
+		x86_exception(cpu, I286_INT_SL, 0);
+	}
 	return res;
 }
 
@@ -194,10 +191,10 @@ unsigned char i286_mrd_prt(CPU* cpu, xSegPtr seg, int rpl, unsigned short adr) {
 		if (i286_check_segment_limit(cpu, &seg, adr)) {
 			res = cpu_fetch(cpu, seg.base + adr) & 0xff;
 		} else {
-			THROW(I286_INT_SL);
+			x86_exception(cpu, I286_INT_SL, 0);
 		}
 	} else {
-		THROW_EC(I286_INT_GP, seg.idx);
+		x86_exception(cpu, I286_INT_GP, seg.idx);
 	}
 	return res;
 }
@@ -209,10 +206,10 @@ void i286_mwr_prt(CPU* cpu, xSegPtr seg, int rpl, unsigned short adr, int val) {
 			cpu_mwr(cpu, seg.base + adr, val);
 		} else {
 			cpu->regIP = cpu->oldpc;
-			THROW(I286_INT_SL);
+			x86_exception(cpu, I286_INT_SL, 0);
 		}
 	} else {
-		THROW_EC(I286_INT_GP, seg.idx);
+		x86_exception(cpu, I286_INT_GP, seg.idx);
 	}
 }
 
@@ -313,7 +310,7 @@ xSegPtr i286_cash_seg(CPU* cpu, unsigned short val) {
 		}
 		val &= 0xfff8;					// offset in a table
 		if (val > lim) {				// check gdt/ldt segment limit
-			THROW_EC(I286_INT_GP, val);
+			x86_exception(cpu, I286_INT_GP, val);
 		} else {
 			adr += val;
 			p = i286_cash_seg_a(cpu, adr);
@@ -333,9 +330,9 @@ xSegPtr i286_cash_seg(CPU* cpu, unsigned short val) {
 
 void i286_switch_task(CPU* cpu, int tsss, int nest, int iret) {
 	if (!(tsss & 0xfff8)) {		// segment 0
-		THROW_EC(I286_INT_GP, 0);
+		x86_exception(cpu, I286_INT_GP, 0);
 	} else if (tsss & 4) {		// LDT
-		THROW_EC(I286_INT_GP, tsss);
+		x86_exception(cpu, I286_INT_GP, tsss);
 	} else {
 		xSegPtr seg = i286_cash_seg(cpu, tsss);
 		if (seg.pr) {		// present
@@ -344,9 +341,9 @@ void i286_switch_task(CPU* cpu, int tsss, int nest, int iret) {
 			int cpl = cpu->cs.pl;
 			int f = 0;
 			if (!iret && ((dpl < cpl) || (rpl < cpl))) {	// privelegies (skip if IRET)
-				THROW_EC(I286_INT_GP, tsss);
+				x86_exception(cpu, I286_INT_GP, tsss);
 			} else if (!iret && (seg.ar != 1)) {	// TSS busy (skip if IRET)
-				THROW_EC(I286_INT_GP, tsss);
+				x86_exception(cpu, I286_INT_GP, tsss);
 			} else {
 				// set new TSS busy
 				int adr = cpu->gdtr.base + (tsss & 0xfff8);
@@ -391,7 +388,7 @@ void i286_switch_task(CPU* cpu, int tsss, int nest, int iret) {
 				cpu->cs = i286_cash_seg(cpu, i286_sys_mrdw(cpu, cpu->tsdr, 36));
 				cpu->ds = i286_cash_seg(cpu, i286_sys_mrdw(cpu, cpu->tsdr, 40));
 				if (cpu->regIP > cpu->cs.limit) {
-					THROW_EC(I286_INT_GP, 0);
+					x86_exception(cpu, I286_INT_GP, 0);
 				}
 				// TODO: check it
 				if (dpl < cpl) {		// switch stack
@@ -405,7 +402,7 @@ void i286_switch_task(CPU* cpu, int tsss, int nest, int iret) {
 				cpu->cs.pl = cpu->cs.idx & 3;
 			}
 		} else {			// not present
-			THROW_EC(I286_INT_NP, tsss);
+			x86_exception(cpu, I286_INT_NP, tsss);
 		}
 	}
 }
@@ -425,68 +422,68 @@ void i286_check_gate(CPU* cpu, int ip, int sn) {
 	int cpl = cpu->cs.pl;
 	if (cpu->regMSW & I286_FPE) {			// protected mode
 		if ((sn & 0xfff8) == 0) {		// segment 0 -> #GP(0)
-			THROW_EC(I286_INT_GP, 0);
+			x86_exception(cpu, I286_INT_GP, 0);
 		} else if (cpu->ea.seg.ar & 0x10) {	// segment is code/data
 			if (cpu->ea.seg.ar & 8) {	// code
 				if (cpu->ea.seg.ar & 4) {	// conforming
 					if (dpl > cpl) {	// DPL <= CPL
-						THROW_EC(I286_INT_GP, sn);
+						x86_exception(cpu, I286_INT_GP, sn);
 					}
 				} else {			// non-conforming
 					if (rpl > cpl) {		// RPL <= CPL
-						THROW_EC(I286_INT_GP, sn);
+						x86_exception(cpu, I286_INT_GP, sn);
 					} else if (dpl != cpl) {	// DPL = CPL
-						THROW_EC(I286_INT_GP, sn);
+						x86_exception(cpu, I286_INT_GP, sn);
 					}
 					cpu->ea.seg.pl = cpu->cs.pl;		// save CPL
 				}
 				if (!cpu->ea.seg.pr) {			// present
-					THROW_EC(I286_INT_NP, sn);
+					x86_exception(cpu, I286_INT_NP, sn);
 				} else if (cpu->ea.adr > cpu->ea.seg.limit) {		// limit
-					THROW_EC(I286_INT_GP, 0);
+					x86_exception(cpu, I286_INT_GP, 0);
 				}
 				// result: code segment is valid
 			} else {			// data -> #GP(sn)
-				THROW_EC(I286_INT_GP, sn);
+				x86_exception(cpu, I286_INT_GP, sn);
 			}
 		} else {				// segment is system (trap/gates)
 			cpu->gate = cpu->ea.seg;
 			switch (cpu->ea.seg.ar) {		// type
 				case 1:			// TSS (available)
 					if ((dpl < cpl) || (dpl < rpl)) {		// privelegies
-						THROW_EC(I286_INT_GP, sn);
+						x86_exception(cpu, I286_INT_GP, sn);
 					} else if (!cpu->ea.seg.pr) {	// present
-						THROW_EC(I286_INT_NP, sn);
+						x86_exception(cpu, I286_INT_NP, sn);
 					} else {
 						i286_switch_task(cpu, sn, 1, 0);		// switch to this TSS
 					}
 					break;
 				case 3:			// TSS (busy)
-					THROW_EC(I286_INT_GP, 0);
+					x86_exception(cpu, I286_INT_GP, 0);
 					break;
 				case 4:			// call gate
 					if ((dpl < cpl) || (dpl < cpl)) {
-						THROW_EC(I286_INT_GP, sn);
+						x86_exception(cpu, I286_INT_GP, sn);
 					} else if (!cpu->ea.seg.pr) {
-						THROW_EC(I286_INT_NP, sn);
+						x86_exception(cpu, I286_INT_NP, sn);
 					} else {		// get call gate params
 						cpu->ea.adr = cpu->ea.seg.base & 0xffff;	// offset (bytes 0,1)
 						sn = cpu->ea.seg.limit;				// segment selector (bytes 2,3)
 						cpu->ea.cnt = (cpu->ea.seg.base >> 16) & 0x1f;	// count of words transported from old stack to new stack (byte 4, bits 0..4)
 						if (sn == 0) {
-							THROW_EC(I286_INT_GP, 0);
+							x86_exception(cpu, I286_INT_GP, 0);
 						} else {
 							cpu->seg = i286_cash_seg(cpu, sn);	// new code segment
 							if ((cpu->seg.ar & 0x18) != 0x18) {	// is code segment?
-								THROW_EC(I286_INT_GP, cpu->cs.idx);
+								x86_exception(cpu, I286_INT_GP, cpu->cs.idx);
 							} else if ((cpu->seg.ar & 4) && (cpu->seg.pl > cpl)) {			// conforming
-								THROW_EC(I286_INT_GP, cpu->cs.idx);
+								x86_exception(cpu, I286_INT_GP, cpu->cs.idx);
 							} else if (!(cpu->seg.ar & 4) && (cpu->seg.pl != cpl)) {		// non-conforming
-								THROW_EC(I286_INT_GP, cpu->cs.idx);
+								x86_exception(cpu, I286_INT_GP, cpu->cs.idx);
 							} else if (!cpu->seg.pr) {
-								THROW_EC(I286_INT_NP, cpu->cs.idx);
+								x86_exception(cpu, I286_INT_NP, cpu->cs.idx);
 							} else if (cpu->ea.adr > cpu->seg.limit) {
-								THROW_EC(I286_INT_GP, 0);
+								x86_exception(cpu, I286_INT_GP, 0);
 							} else {
 								cpu->ea.seg = cpu->seg;
 								cpu->ea.reg = 1;
@@ -496,9 +493,9 @@ void i286_check_gate(CPU* cpu, int ip, int sn) {
 					break;
 				case 5:			// task gate
 					if ((dpl < cpl) || (dpl < rpl)) {		// privs
-						THROW_EC(I286_INT_GP, sn);
+						x86_exception(cpu, I286_INT_GP, sn);
 					} else if (!cpu->ea.seg.pr) {	// present
-						THROW_EC(I286_INT_NP, sn);
+						x86_exception(cpu, I286_INT_NP, sn);
 					} else {
 						sn = cpu->ea.seg.base & 0xffff;		// TSS selector (bytes 2,3) // i286_sys_mrdw(cpu, cpu->ea.seg, 2);)
 						i286_switch_task(cpu, sn, 0, 0);
@@ -507,25 +504,25 @@ void i286_check_gate(CPU* cpu, int ip, int sn) {
 				case 6:			// interrupt gate - get tss selector and switch. = trap gate with disable interrupts
 				case 7:			// trap gate
 					if ((dpl < cpl) || (cpl < rpl)) {		// privs
-						THROW_EC(I286_INT_GP, sn);
+						x86_exception(cpu, I286_INT_GP, sn);
 					} else if (!cpu->ea.seg.pr) {	// present
-						THROW_EC(I286_INT_NP, sn);
+						x86_exception(cpu, I286_INT_NP, sn);
 					} else {
 						cpu->ea.adr = cpu->ea.seg.base & 0xffff;		// offset (0,1)
 						cpu->ea.seg = i286_cash_seg(cpu, cpu->ea.seg.limit);	// selector (2,3)
 						if (!cpu->ea.seg.code) {				// not code segment
-							THROW_EC(I286_INT_GP, cpu->ea.seg.idx);
+							x86_exception(cpu, I286_INT_GP, cpu->ea.seg.idx);
 						}
 					}
 					break;
 				default:		// not recognized
-					THROW_EC(I286_INT_GP, sn);
+					x86_exception(cpu, I286_INT_GP, sn);
 					break;
 			}
 		}
 	} else {			// real mode: check limits only
 		if (cpu->ea.adr > cpu->ea.seg.limit) {
-			THROW_EC(I286_INT_GP, 0);
+			x86_exception(cpu, I286_INT_GP, 0);
 		}
 	}
 }
@@ -719,7 +716,9 @@ void i286_wr_ea(CPU* cpu, int val, int wrd) {
 void i8086_nodef(CPU* cpu) {
 	printf("undef opcode @ %X : %.2X\n", cpu->cs.base + cpu->regIP, cpu->com);
 	cpu_irq(cpu, IRQ_PANIC);
-	THROW(I286_INT_UD);
+	if (cpu->gen > 1) {		// #UD only 286+
+		x86_exception(cpu, I286_INT_UD, 0);
+	}
 }
 
 // add/adc
@@ -1420,21 +1419,21 @@ void i286_op61(CPU* cpu) {
 void i286_op62(CPU* cpu) {
 	i286_rd_ea(cpu, 1);	// twrd=rw, tmpw=min
 	if (cpu->ea.reg) {	// interrupts. TODO: fix for protected mode
-		THROW(I286_INT_UD);		// bad mod
+		x86_exception(cpu, I286_INT_UD, 0);		// bad mod
 	} else if ((signed short)cpu->twrd < (signed short)cpu->tmpw) {	// not in bounds: INT5
-		THROW(I286_INT_BR);
+		x86_exception(cpu, I286_INT_BR, 0);
 	} else {
 		cpu->ltw = i286_mrd(cpu, cpu->ea.seg, 1, cpu->ea.adr + 2);
 		cpu->htw = i286_mrd(cpu, cpu->ea.seg, 1, cpu->ea.adr + 3);
 		if ((signed short)cpu->twrd > (signed short)cpu->tmpw) {
-			THROW(I286_INT_BR);
+			x86_exception(cpu, I286_INT_BR, 0);
 		}
 	}
 }
 
 // 63,mod: arpl ew,rw		adjust RPL of EW not less than RPL of RW
 void i286_op63(CPU* cpu) {
-	THROW(I286_INT_UD);	// real mode
+	x86_exception(cpu, I286_INT_UD, 0);	// real mode
 	// TODO: protected mode
 }
 
@@ -1514,7 +1513,7 @@ void i286_6d_cb(CPU* cpu) {
 void i286_op6D(CPU* cpu) {
 	if (cpu->regDI == 0xffff) {
 		i286_push(cpu, 0);
-		THROW(I286_INT_GP);
+		x86_exception(cpu, I286_INT_GP, 0);
 	} else {
 		i286_rep(cpu, i286_6d_cb);
 	}
@@ -1538,7 +1537,7 @@ void i286_6f_cb(CPU* cpu) {
 void i286_op6F(CPU* cpu) {
 	if (cpu->regSI == 0xffff) {
 		i286_push(cpu, 0);
-		THROW(I286_INT_GP);
+		x86_exception(cpu, I286_INT_GP, 0);
 	} else {
 		i286_rep(cpu, i286_6f_cb);
 	}
@@ -1712,7 +1711,7 @@ void i286_op8C(CPU* cpu) {
 void i286_op8D(CPU* cpu) {
 	i286_get_ea(cpu, 0);
 	if (cpu->ea.reg) {	// 2nd operand is register
-		THROW(I286_INT_UD);
+		x86_exception(cpu, I286_INT_UD, 0);
 	} else {
 		i286_set_reg(cpu, cpu->ea.adr, 1);
 	}
@@ -1857,11 +1856,11 @@ void i286_op9A(CPU* cpu) {
 void i286_op9B(CPU* cpu) {
 	// wait for busy=0
 	if (cpu->regMSW & I286_FMP) {
-		THROW(I286_INT_NM);		// int 7
+		x86_exception(cpu, I286_INT_NM, 0);		// int 7
 	} else if ((cpu->regMSW & I286_FTS) && (cpu->regMSW & I286_FMP)) {
-		THROW(I286_INT_NM);		// int 7
+		x86_exception(cpu, I286_INT_NM, 0);		// int 7
 	} else if (cpu->regX87sr & 0x80) {
-		THROW(I286_INT_MF);		// int 16
+		x86_exception(cpu, I286_INT_MF, 0);		// int 16
 	}
 }
 
@@ -1936,7 +1935,7 @@ void i286_opA1(CPU* cpu) {
 	cpu->tmpw = i286_rd_immw(cpu);
 	if (cpu->tmpw == 0xffff) {
 		i286_push(cpu, 0);
-		THROW(I286_INT_GP);
+		x86_exception(cpu, I286_INT_GP, 0);
 	} else {
 		cpu->regAL = i286_mrd(cpu, cpu->ds, 1, cpu->tmpw);
 		cpu->regAH = i286_mrd(cpu, cpu->ds, 1, cpu->tmpw + 1);
@@ -1954,7 +1953,7 @@ void i286_opA3(CPU* cpu) {
 	cpu->tmpw = i286_rd_immw(cpu);
 	if (cpu->tmpw == 0xffff) {
 		i286_push(cpu, 0);
-		THROW(I286_INT_GP);
+		x86_exception(cpu, I286_INT_GP, 0);
 	} else {
 		i286_mwr(cpu, cpu->ds, 1, cpu->tmpw, cpu->regAL);
 		i286_mwr(cpu, cpu->ds, 1, cpu->tmpw + 1, cpu->regAH);
@@ -1992,7 +1991,7 @@ void i286_a5_cb(CPU* cpu) {
 void i286_opA5(CPU* cpu) {
 	if ((cpu->regSI == 0xffff) || (cpu->regDI == 0xffff)) {
 		i286_push(cpu, 0);
-		THROW(I286_INT_GP);
+		x86_exception(cpu, I286_INT_GP, 0);
 	} else {
 		i286_rep(cpu, i286_a5_cb);
 	}
@@ -2048,7 +2047,7 @@ void i286_a7_cb(CPU* cpu) {
 void i286_opA7(CPU* cpu) {
 	if ((cpu->regSI == 0xffff) || (cpu->regDI == 0xffff)) {
 		i286_push(cpu, 0);
-		THROW(I286_INT_GP);
+		x86_exception(cpu, I286_INT_GP, 0);
 	} else {
 		i286_rep_fz(cpu, i286_a7_cb);
 	}
@@ -2082,7 +2081,7 @@ void i286_ab_cb(CPU* cpu) {
 void i286_opAB(CPU* cpu) {
 	if (cpu->regDI == 0xffff) {
 		i286_push(cpu, 0);
-		THROW(I286_INT_GP);
+		x86_exception(cpu, I286_INT_GP, 0);
 	} else {
 		i286_rep(cpu, i286_ab_cb);
 	}
@@ -2098,7 +2097,7 @@ void i286_opAC(CPU* cpu) {
 void i286_opAD(CPU* cpu) {
 	if (cpu->regSI == 0xffff) {
 		i286_push(cpu, 0);
-		THROW(I286_INT_GP);
+		x86_exception(cpu, I286_INT_GP, 0);
 	} else {
 		cpu->regAL = i286_mrd(cpu, cpu->ds, 1, cpu->regSI);
 		cpu->regAH = i286_mrd(cpu, cpu->ds, 1, cpu->regSI + 1);
@@ -2126,7 +2125,7 @@ void i286_af_cb(CPU* cpu) {
 void i286_opAF(CPU* cpu) {
 	if (cpu->regDI == 0xffff) {
 		i286_push(cpu, 0);
-		THROW(I286_INT_GP);
+		x86_exception(cpu, I286_INT_GP, 0);
 	} else {
 		i286_rep_fz(cpu, i286_af_cb);
 	}
@@ -2328,15 +2327,15 @@ void i286_opCF(CPU* cpu) {
 		if (cpu->flgN) {
 			int tss = i286_sys_mrdw(cpu, cpu->tsdr, 0);	// back link
 			if (tss & 4) {		// must be in GDT
-				THROW_EC(I286_INT_TS, tss);
+				x86_exception(cpu, I286_INT_TS, tss);
 			} else if ((tss & 0xfff8) > cpu->gdtr.limit) {
-				THROW_EC(I286_INT_TS, tss);
+				x86_exception(cpu, I286_INT_TS, tss);
 			} else {
 				seg = i286_cash_seg(cpu, tss);	// new tss
 				if ((seg.ar & 0x0f) != 3) {	// busy TSS
-					THROW_EC(I286_INT_TS, tss);
+					x86_exception(cpu, I286_INT_TS, tss);
 				} else if (!seg.pr) {	// present
-					THROW_EC(I286_INT_NP, tss);
+					x86_exception(cpu, I286_INT_NP, tss);
 				}
 				seg = cpu->tsdr;			// current TS
 				i286_switch_task(cpu, tss, 0, 1);	// switch to new task
@@ -2344,7 +2343,7 @@ void i286_opCF(CPU* cpu) {
 				tf &= ~2;
 				cpu_mwr(cpu, seg.base + 5, tf);
 				if (cpu->regIP > cpu->cs.limit) {
-					THROW_EC(I286_INT_GP, 0);
+					x86_exception(cpu, I286_INT_GP, 0);
 				}
 			}
 		} else {
@@ -2353,19 +2352,19 @@ void i286_opCF(CPU* cpu) {
 			seg = i286_cash_seg(cpu, ncs);
 			if (((ncs >> 3) & 0x60) == cpu->cs.pl) {		// rpl = cpl: return at same PL
 				if ((ncs & 0xfff8) == 0) {
-					THROW_EC(I286_INT_GP, 0);
+					x86_exception(cpu, I286_INT_GP, 0);
 				} else if ((ncs & 3) < cpu->cs.pl) {
-					THROW_EC(I286_INT_GP, ncs);
+					x86_exception(cpu, I286_INT_GP, ncs);
 				} else if ((seg.ar & 0x18) != 0x18) {
-					THROW_EC(I286_INT_GP, ncs);
+					x86_exception(cpu, I286_INT_GP, ncs);
 				} else if ((seg.ar & 4) && (seg.pl > cpu->cs.pl)) {	// conforming and DPL > CPL
-					THROW_EC(I286_INT_GP, ncs);
+					x86_exception(cpu, I286_INT_GP, ncs);
 				} else if (!(seg.ar & 4) && (seg.pl != cpu->cs.pl)) {	// non-conforming and DPL != CPL
-					THROW_EC(I286_INT_GP, ncs);
+					x86_exception(cpu, I286_INT_GP, ncs);
 				} else if (!seg.pr) {		// present
-					THROW_EC(I286_INT_NP, ncs);
+					x86_exception(cpu, I286_INT_NP, ncs);
 				} else if (nip > seg.limit) {
-					THROW_EC(I286_INT_GP, 0);
+					x86_exception(cpu, I286_INT_GP, 0);
 				} else {
 					cpu->regIP = i286_pop(cpu);
 					cpu->cs = i286_cash_seg(cpu, i286_pop(cpu));
@@ -2373,15 +2372,15 @@ void i286_opCF(CPU* cpu) {
 				}
 			} else {					// return at lower PL
 				if ((ncs & 0xfff8) == 0) {
-					THROW_EC(I286_INT_GP, 0);
+					x86_exception(cpu, I286_INT_GP, 0);
 				} else if ((seg.ar & 0x18) != 0x18) {
-					THROW_EC(I286_INT_GP, ncs);
+					x86_exception(cpu, I286_INT_GP, ncs);
 				} else if ((seg.ar & 4) && (seg.pl <= cpu->cs.pl)) {
-					THROW_EC(I286_INT_GP, ncs);
+					x86_exception(cpu, I286_INT_GP, ncs);
 				} else if (!(seg.ar & 4) && (seg.pl != (ncs & 3))) {
-					THROW_EC(I286_INT_GP, ncs);
+					x86_exception(cpu, I286_INT_GP, ncs);
 				} else if (!seg.pr) {
-					THROW_EC(I286_INT_NP, ncs);
+					x86_exception(cpu, I286_INT_NP, ncs);
 				} else {
 					cpu->regIP = i286_pop(cpu);
 					cpu->cs = i286_cash_seg(cpu, i286_pop(cpu));
@@ -2435,7 +2434,7 @@ void i286_opD3(CPU* cpu) {
 void i286_opD4(CPU* cpu) {
 	cpu->tmpb = i286_rd_imm(cpu);
 	if (cpu->tmpb == 0) {
-		THROW(-1);	// I286_INT_DE = 0
+		x86_exception(cpu, I286_INT_DE, 0);
 	} else {
 		cpu->regAH = cpu->regAL / cpu->tmpb;
 		cpu->regAL = cpu->regAL % cpu->tmpb;
@@ -2476,12 +2475,12 @@ extern void x87_exec(CPU*);
 void i286_fpu(CPU* cpu) {
 	i286_get_ea(cpu, 1);
 	if (cpu->regMSW & I286_FEM) {
-		THROW(I286_INT_NM);
+		x86_exception(cpu, I286_INT_NM, 0);
 	} else if (cpu->regX87sr & 0x80) {		// x87 exception
-		THROW(I286_INT_MF);
+		x86_exception(cpu, I286_INT_MF, 0);
 	} else {
 //		printf("%.8X : x87 : %.2X %.2X\n", cpu->cs.base + cpu->oldpc, cpu->com, cpu->mod);
-//		THROW(I286_INT_NM);
+//		x86_exception(cpu, I286_INT_NM, 0);
 		x87_exec(cpu);
 	}
 }
@@ -2657,10 +2656,10 @@ void i286_opF65(CPU* cpu) {		// imul eb
 
 void i286_opF66(CPU* cpu) {		// div eb
 	if (cpu->ltw == 0) {				// div by zero
-		THROW(-1);	// I286_INT_DE
+		x86_exception(cpu, I286_INT_DE, 0);
 	} else {
 		if (cpu->regAX / cpu->ltw > 0xff) {	// cpu->ah >= cpu->ltw ?
-			THROW(-1);	// I286_INT_DE
+			x86_exception(cpu, I286_INT_DE, 0);
 		} else {
 			cpu->twrd = cpu->regAX % cpu->ltw;
 			cpu->tmpw = cpu->regAX / cpu->ltw;
@@ -2672,11 +2671,11 @@ void i286_opF66(CPU* cpu) {		// div eb
 
 void i286_opF67(CPU* cpu) {		// idiv eb
 	if (cpu->ltw == 0) {
-		THROW(-1); //	I286_INT_DE
+		x86_exception(cpu, I286_INT_DE, 0);
 	} else {
 		// TODO: int0 if quo>0xff
 		if (cpu->regAX / cpu->ltw > 0xff) {	// cpu->ah >= cpu->ltw
-			THROW(-1);	// I286_INT_DE);
+			x86_exception(cpu, I286_INT_DE, 0);
 		} else {
 			cpu->twrd = (signed short)cpu->regAX % (signed char)cpu->ltw;
 			cpu->tmpw = (signed short)cpu->regAX / (signed char)cpu->ltw;
@@ -2732,11 +2731,11 @@ void i286_opF75(CPU* cpu) {		// imul ew
 
 void i286_opF76(CPU* cpu) {		// div ew
 	if (cpu->tmpw == 0) {				// div by zero
-		THROW(-1); // I286_INT_DE
+		x86_exception(cpu, I286_INT_DE, 0);
 	} else {
 		cpu->tmpi = (cpu->regDX << 16) | cpu->regAX;
 		if (cpu->tmpi / cpu->tmpw > 0xffff) {		// cpu->dx >= cpu->tmpw
-			THROW(-1);	// I286_INT_DE
+			x86_exception(cpu, I286_INT_DE, 0);
 		} else {
 			cpu->regAX = cpu->tmpi / cpu->tmpw;
 			cpu->regDX = cpu->tmpi % cpu->tmpw;
@@ -2746,10 +2745,10 @@ void i286_opF76(CPU* cpu) {		// div ew
 
 void i286_opF77(CPU* cpu) {		// idiv ew
 	if (cpu->tmpw == 0) {
-		THROW(-1);	// I286_INT_DE
+		x86_exception(cpu, I286_INT_DE, 0);
 	} else {
 		if ((signed int)cpu->tmpi / (signed short)cpu->tmpw > 0xffff) {		// cpu->dx >= cpu->tmpw ?
-			THROW(-1);	// I286_INT_DE
+			x86_exception(cpu, I286_INT_DE, 0);
 		} else {
 			cpu->tmpi = (cpu->regDX << 16) | cpu->regAX;
 			cpu->regAX = (signed int)cpu->tmpi / (signed short)cpu->tmpw;
@@ -2784,7 +2783,7 @@ void i286_opFA(CPU* cpu) {
 		cpu->flgI = 0;
 	} else {
 		i286_push(cpu, 0);
-		THROW(I286_INT_GP);
+		x86_exception(cpu, I286_INT_GP, 0);
 	}
 }
 
@@ -2794,7 +2793,7 @@ void i286_opFB(CPU* cpu) {
 		cpu->flgI = 1;
 	} else {
 		i286_push(cpu, 0);
-		THROW(I286_INT_GP);
+		x86_exception(cpu, I286_INT_GP, 0);
 	}
 }
 

@@ -57,14 +57,18 @@ int ppi_rd(PPI* ppi, int adr) {
 	int tmp;
 	switch(adr & 3) {
 		case 0:
-			res = (ppi->a.dir == PPI_IN) ? (ppi->a.rd ? ppi->a.rd(ppi->ptr) : 0xff) : ppi->a.val;
+			//res = (ppi->a.dir == PPI_IN) ? (ppi->a.rd ? ppi->a.rd(ppi->ptr) : 0xff) : ppi->a.val;
+			res = ppi->a.rd ? ppi->a.rd(ppi->ptr) : ppi->a.val;
 			break;
 		case 1:
-			res = (ppi->b.dir == PPI_IN) ? (ppi->b.rd ? ppi->b.rd(ppi->ptr) : 0xff) : ppi->b.val;
+			//res = (ppi->b.dir == PPI_IN) ? (ppi->b.rd ? ppi->b.rd(ppi->ptr) : 0xff) : ppi->b.val;
+			res = ppi->b.rd ? ppi->b.rd(ppi->ptr) : ppi->b.val;
 			break;
 		case 2:
-			res = ((ppi->ch.dir == PPI_IN) ? (ppi->ch.rd ? ppi->ch.rd(ppi->ptr) : 0xff) : ppi->ch.val) & 0xf0;
-			tmp = ((ppi->cl.dir == PPI_IN) ? (ppi->cl.rd ? ppi->cl.rd(ppi->ptr) : 0xff) : ppi->cl.val) & 0x0f;
+			//res = ((ppi->ch.dir == PPI_IN) ? (ppi->ch.rd ? ppi->ch.rd(ppi->ptr) : 0xff) : ppi->ch.val) & 0xf0;
+			//tmp = ((ppi->cl.dir == PPI_IN) ? (ppi->cl.rd ? ppi->cl.rd(ppi->ptr) : 0xff) : ppi->cl.val) & 0x0f;
+			res = ppi->ch.rd ? ppi->ch.rd(ppi->ptr) : ppi->ch.val;
+			tmp = ppi->cl.rd ? ppi->cl.rd(ppi->ptr) : ppi->cl.val;
 			res |= tmp;
 			break;
 	}

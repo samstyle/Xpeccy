@@ -8,8 +8,8 @@ extern "C" {
 #include <stdbool.h>
 
 #include <setjmp.h>		// to implement try-catch
-#define THROW(__N) longjmp(cpu->jbuf, __N)
-#define THROW_EC(__N,__C) cpu->errcod = __C; longjmp(cpu->jbuf, __N)
+//#define THROW(__N) longjmp(cpu->jbuf, __N)
+//#define THROW_EC(__N,__C) cpu->errcod = __C; longjmp(cpu->jbuf, __N)
 
 #include "../defines.h"
 
@@ -169,7 +169,7 @@ enum {
 
 #define flgTMP flags[63]
 #define flgHALT	flags[62]		// cpu halted, undo on interrput
-//#define flgResPV flags[61]		// Z80: reset PV flag on INT
+#define flgEXC	flags[61]		// exception occured
 #define flgNOINT flags[60]		// Z80: don't handle INT after EI
 #define flgWAIT	flags[59]		// ALL: WAIT signal (dummy 1T)
 #define flgACK	flags[58]		// Z80: acknowledge INT after execution (prevent last-1T INT)
@@ -177,6 +177,7 @@ enum {
 #define flgRetBRK flags[56]
 
 #define regCallCnt regs[63].ih
+#define regExcCode regs[63].l		// exception code if flgEXC
 
 struct CPU {
 	// common part
@@ -184,10 +185,10 @@ struct CPU {
 	int gen;			// cpu generation (for x86: 0-8086, 1-80186, 2-80286 etc)
 	unsigned short intrq;		// interrupts request. each bit for each INT type, 1 = requested
 	unsigned short inten;		// interrupts enabled mask
-	//unsigned short intoc;		// occured interrupts (for lr35902)
 	int intvec;			// interrupt vector (internal/external)
 	int errcod;			// error code (-1 if not present)
 	int adr;			// address bus for using from outside
+	int busmask;			// mask for address bus
 	int t;				// ticks counter
 	unsigned short oldpc;		// address of current instruction
 	// if cpu is from external lib
@@ -218,7 +219,7 @@ struct CPU {
 	reg16(tmpw,htw,ltw);
 	reg16(twrd,hwr,lwr);
 	int tmpi;
-	jmp_buf jbuf;			// for throws
+//	jmp_buf jbuf;			// for throws
 // internal timer (for vm1/2)
 	xTimer timer;
 // x86/87

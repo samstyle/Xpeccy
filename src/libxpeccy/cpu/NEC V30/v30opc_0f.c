@@ -135,22 +135,25 @@ void v30_op0f1f(CPU* cpu) {
 
 // rol4 :e
 void v30_op0f28(CPU* cpu) {
-	cpu->tmpb = v30_rd_ea(cpu, 0);
-	cpu->tmpi = (cpu->regAL << 16) | (cpu->tmpb << 8) | cpu->regAL;		// AL-EA-AL
-	cpu->tmpi <<= 4;		// shift left by 4 bits
-	cpu->regAL = (cpu->tmpi >> 16) & 0xff;		// get AL,EA back
-	cpu->tmpb = (cpu->tmpi >> 8) & 0xff;
-	v30_wr_ea(cpu, cpu->tmpb, 0);
+	cpu->tmp = v30_rd_ea(cpu, 0);		// 1:2
+	cpu->tmpb = cpu->regAL & 0x0f;		// 0:4
+	cpu->regAL &= 0xf0;			// 3:0
+	cpu->regAL |= (cpu->tmp >> 4) & 0x0f;	// 3:1		al
+	cpu->tmp <<= 4;				// 2:0
+	cpu->tmp |= cpu->tmpb;			// 2:4		ea
+	v30_wr_ea(cpu, cpu->tmp, 0);
 }
 
 // ror4 :e
 void v30_op0f2a(CPU* cpu) {
-	cpu->tmpb = v30_rd_ea(cpu, 0);
-	cpu->tmpi = (cpu->regAL << 16) | (cpu->tmpb << 8) | cpu->regAL;
-	cpu->tmpi >>= 4;
-	cpu->regAL = cpu->tmpi & 0xff;
-	cpu->tmpb = (cpu->tmpi >> 8) & 0xff;
-	v30_wr_ea(cpu, cpu->tmpb, 0);
+	cpu->tmp = v30_rd_ea(cpu, 0);		// 1:2
+	cpu->tmpb = cpu->regAL & 0x0f;		// 0:4
+	cpu->regAL &= 0xf0;			// 3:0
+	cpu->regAL |= (cpu->tmp & 0x0f);	// 3:2		al
+	cpu->tmp >>= 4;				// 0:1
+	cpu->tmp &= 0x0f;
+	cpu->tmp |= (cpu->tmpb << 4);		// 4:1		ea
+	v30_wr_ea(cpu, cpu->tmp, 0);
 }
 
 // ins : move lower r1 bits from AW to [ds1:iy]+(r2.bits)
@@ -230,11 +233,12 @@ void v30_op0fff(CPU* cpu) {
 	cpu->flgBLKM = 0;	// enable MD change by RETI
 	v30_set_ps(cpu, v30_mrdw(cpu, 0, (cpu->tmp * 4) + 2));
 	cpu->regPC = v30_mrdw(cpu, 0, cpu->tmp * 4);
-
 }
 
+// NOTE: if opcode.t==0, take opcode from main table
 opCode v30_0f_tab[256] = {
-	{0, 1, v30_undef, NULL, "undef"},	// 00
+	// CHECK: 00..0F = 10..1F ???
+	{0, 1, v30_undef, NULL, "undef"},
 	{0, 1, v30_undef, NULL, "undef"},
 	{0, 1, v30_undef, NULL, "undef"},
 	{0, 1, v30_undef, NULL, "undef"},
@@ -243,7 +247,7 @@ opCode v30_0f_tab[256] = {
 	{0, 1, v30_undef, NULL, "undef"},
 	{0, 1, v30_undef, NULL, "undef"},
 
-	{0, 1, v30_undef, NULL, "undef"},	// 08
+	{0, 1, v30_undef, NULL, "undef"},
 	{0, 1, v30_undef, NULL, "undef"},
 	{0, 1, v30_undef, NULL, "undef"},
 	{0, 1, v30_undef, NULL, "undef"},

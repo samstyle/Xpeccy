@@ -232,9 +232,6 @@ void xThread::emuCycle(Computer* comp) {
 
 void xThread::run() {
 	Computer* comp;
-#if LOG_OUTPUT
-	file = fopen("/home/sam/cpu.log","wb");
-#endif
 	do {
 #if !USEMUTEX
 		sleepy = 1;
@@ -264,8 +261,5 @@ void xThread::run() {
 			usleep(10);
 #endif
 	} while (!finish);
-#if LOG_OUTPUT
-	fclose(file);
-#endif
 	exit(0);
 }

@@ -77,8 +77,8 @@ class DebugWin : public QMainWindow {
 		QImage scrImg;
 		QMap<int, QList<tabDSC> > tablist;
 
-		// Ui::Debuger ui;
 		QWidget* cw;
+		QString xmap_path;
 		// widgets
 		Ui::CPUWidget ui_cpu;
 		Ui::DisasmWidget ui_asm;
@@ -149,7 +149,6 @@ class DebugWin : public QMainWindow {
 		void fillPorts();
 		void reFormCPU(xRegBunch*);
 
-		// void setFlagNames(const char*);
 		void chLayout();
 
 	private slots:

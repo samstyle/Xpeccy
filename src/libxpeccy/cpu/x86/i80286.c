@@ -67,6 +67,12 @@ void i286_reset(CPU* cpu) {
 	cpu->regX87top = 0;
 }
 
+void x86_exception(CPU* cpu, int n, int ec) {
+	cpu->flgEXC = 1;
+	cpu->regExcCode = n;
+	cpu->errcod = ec;
+}
+
 // REAL mode:
 
 
@@ -99,7 +105,7 @@ void i286_int_real(CPU* cpu, int vec) {
 
 void i286_int_prt(CPU* cpu, int vec) {
 	if (cpu->idtr.limit < (vec & 0xfff8)) {		// check idtr limit
-		THROW_EC(I286_INT_GP, cpu->idtr.idx);
+		x86_exception(cpu, I286_INT_GP, cpu->idtr.idx);
 	} else if (cpu->flgI) {
 		if (cpu->flgHALT) {
 			cpu->flgHALT = 0;
@@ -123,7 +129,7 @@ void i286_int_prt(CPU* cpu, int vec) {
 			case 6:		// interrupt gate
 			case 7:		// trap gate
 				if (!cpu->gate.pr) {
-					THROW_EC(I286_INT_GP, (vec << 3));
+					x86_exception(cpu, I286_INT_GP, (vec << 3));
 				} else {
 					if (cpu->cs.pl > cpu->gate.pl) {	// priv.transitions
 						off.w = cpu->regSP;
@@ -146,50 +152,25 @@ void i286_int_prt(CPU* cpu, int vec) {
 					seg.h = cpu_mrd(cpu, adr + 3);
 					cpu->tmpdr = i286_cash_seg(cpu, seg.w);
 					if (!cpu->tmpdr.code) {
-						THROW_EC(I286_INT_GP, (vec << 3));
+						x86_exception(cpu, I286_INT_GP, (vec << 3));
 					} else if (!cpu->tmpdr.pr) {
-						THROW_EC(I286_INT_NP, seg.w);
+						x86_exception(cpu, I286_INT_NP, seg.w);
 					} else if (cpu->regIP > cpu->tmpdr.limit) {
-						THROW_EC(I286_INT_GP, 0);
-					}
-					cpu->regIP = off.w;
-					cpu->cs = cpu->tmpdr;
-					cpu->flgN = 0;			// clear N flag
-					if (!(cpu->gate.ar & 1)) {	// disable interrupts on int.gate / don't change on trap gate
-						cpu->flgI = 0;
+						x86_exception(cpu, I286_INT_GP, 0);
+					} else {
+						cpu->regIP = off.w;
+						cpu->cs = cpu->tmpdr;
+						cpu->flgN = 0;			// clear N flag
+						if (!(cpu->gate.ar & 1)) {	// disable interrupts on int.gate / don't change on trap gate
+							cpu->flgI = 0;
+						}
 					}
 				}
 				break;
 			default:
-				THROW_EC(I286_INT_GP, vec);
+				x86_exception(cpu, I286_INT_GP, vec);
 				break;
 		}
-		/*
-		off.l = cpu_mrd(cpu, adr);	// offset
-		off.h = cpu_mrd(cpu, adr+1);
-		seg.l = cpu_mrd(cpu, adr+2);	// segment
-		seg.h = cpu_mrd(cpu, adr+3);
-		unsigned char fl = cpu_mrd(cpu, adr+5);	// flags
-		cpu->tmpdr = i286_cash_seg(cpu, seg.w);		// [code] segment: TODO if this is tss gate
-		if ((cpu->tmpdr.pl) < ((fl >> 5) & 3)) {	// check priv
-			THROW_EC(I286_INT_GP, 0);
-		} else {					// do interrupt
-			if (cpu->halt) {
-				cpu->halt = 0;
-				cpu->pc++;
-			}
-			// i286_check_gate(cpu, off.w, seg.w);	// check [&execute] traps/gates, destination is cpu->ea.seg:cpu->ea.adr
-			i286_push(cpu, cpu->f);
-			if (!(fl & 1)) cpu->f &= ~I286_FI;
-			i286_push(cpu, cpu->cs.idx);
-			i286_push(cpu, cpu->pc);
-			i286_push(cpu, cpu->errcod & 0xffff);
-			cpu->cs = cpu->tmpdr;
-			cpu->pc = off.w;
-			//cpu->cs = i286_cash_seg(cpu, seg.w);
-			//cpu->pc = off.w;
-		}
-		*/
 	}
 	cpu->t = 1;
 }
@@ -224,26 +205,24 @@ int i286_exec(CPU* cpu) {
 	cpu->regREP = I286_REP_NONE;
 	cpu->oldpc = cpu->regIP;
 
-	int val = setjmp(cpu->jbuf);	// set THROW return point (val = err.code)
-	if (!val) {
-		if (cpu->intrq)
-			i286_ext_int(cpu);
-		if (cpu->t == 0) {
+	cpu->flgEXC = 0;
+	if (cpu->intrq)
+		i286_ext_int(cpu);
+	if (cpu->t == 0) {
+		cpu->t++;
+		do {
 			cpu->t++;
-			do {
-				cpu->t++;
-				cpu->com = cpu->x86fetch(cpu);
-				cpu->op = &cpu->opTab[cpu->com & 0xff];
-				while (cpu->op->flag & OF_GEN) {
-					cpu->op = &cpu->op->tab[cpu->gen];
-				}
-				cpu->op->exec(cpu);
-			} while (cpu->op->flag & OF_PREFIX);
-		}
-	} else {
-		if (val < 0) val = I286_INT_DE;		// cuz INT_DE has code 0 (success for setjmp)
+			cpu->com = cpu->x86fetch(cpu);
+			cpu->op = &cpu->opTab[cpu->com & 0xff];
+			while (cpu->op->flag & OF_GEN) {
+				cpu->op = &cpu->op->tab[cpu->gen];
+			}
+			cpu->op->exec(cpu);
+		} while (cpu->op->flag & OF_PREFIX);
+	}
+	if (cpu->flgEXC) {
 		cpu->regIP = cpu->oldpc;
-		i286_interrupt(cpu, val);
+		i286_interrupt(cpu, cpu->regExcCode);
 	}
 	return cpu->t;
 }

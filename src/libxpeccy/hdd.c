@@ -1220,7 +1220,7 @@ IDECore* find_ide_core(int id) {
 	IDECore* itm = ide_core_tab;
 	while ((itm->id != id) && (itm->id != IDE_NONE))
 		itm++;
-	return (itm->id == IDE_NONE) ? NULL : itm;
+	return itm;
 }
 
 void ide_set_type(IDE* ide, int id) {
@@ -1228,6 +1228,9 @@ void ide_set_type(IDE* ide, int id) {
 	if (core) {
 		ide->type = id;
 		ide->core = core;
+	} else {
+		ide->type = IDE_NONE;
+		ide->core = NULL;
 	}
 }
 
