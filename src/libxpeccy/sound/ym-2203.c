@@ -1,5 +1,7 @@
 #include "ayym.h"
 
+// YM2203 = YM2149 + FM
+
 void ym2203_reset(aymChip* ym) {
 
 }

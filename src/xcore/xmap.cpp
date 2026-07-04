@@ -27,6 +27,8 @@ int xadr_type_by_name(QString str, int t = -1) {
 		t = MEM_SLOT;
 	} else if (str == "IO") {
 		t = MEM_IO;
+	} else if (str == "NAME") {
+		t = -2;
 	}
 	return t;
 }
@@ -39,6 +41,7 @@ void load_xmap(QString path) {
 	QBuffer qb;
 	char line[1024];
 	QString str;
+	QString sname;
 	QStringList lst;
 	xAdr xadr;
 	Computer* comp = conf.prof.cur->zx;
@@ -95,9 +98,12 @@ void load_xmap(QString path) {
 								xadr.adr = xadr.abs & 0xffff;
 								xadr.bank = xadr.abs >> 8;
 								add_label(xadr, lst.at(2), set);
+							} else if (xadr.type == -2) {
+								set->name = lst.at(2);
 							}
 						}
 					}
+					if (sname.isEmpty()) sname = set->name;
 					qb.close();
 				} else if (!memcmp(buf, "comments", 8)) {
 					clear_comments();
@@ -127,6 +133,8 @@ void load_xmap(QString path) {
 				}
 			}
 			brkInstallAll();
+			if (!sname.isEmpty())
+				setLabelSet(sname);
 		}
 	} else {
 		shitHappens("Can't open this file for reading");
@@ -186,6 +194,10 @@ void save_xmap(QString path) {
 			// labels
 			foreach(xLabelSet* set, conf.prof.cur->labsets) {
 				file.write("labels  ", 8);
+				str = "NAME:_:";
+				str.append(set->name);
+				arr.append(str.toUtf8());
+				arr.append((char)0x0a);
 				foreach(lab, set->list.keys()) {
 					xadr = set->list.value(lab);
 					switch(xadr.type) {

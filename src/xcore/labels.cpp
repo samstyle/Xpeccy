@@ -27,6 +27,20 @@ xLabelSet* findLabelSet(QString name) {
 	return res;
 }
 
+// create conf.prof.cur->labmap from current labset
+void map_labels() {
+	xLabelSet* set = conf.prof.cur->curlabset;
+	conf.prof.cur->labmap.clear();
+	if (set) {
+		xAdr xadr;
+		QString nm;
+		foreach(nm, set->list.keys()) {
+			xadr = set->list[nm];
+			conf.prof.cur->labmap[xadr.type][xadr.abs] = nm;
+		}
+	}
+}
+
 int delLabelSet(QString name) {
 	int res = 0;
 	xLabelSet* cur = conf.prof.cur->curlabset;
@@ -42,6 +56,7 @@ int delLabelSet(QString name) {
 			res++;
 		}
 	}
+	map_labels();
 	return res;
 }
 
@@ -52,20 +67,6 @@ xLabelSet* newLabelSet(QString name) {
 		res = createLabelSet(name);
 	}
 	return res;
-}
-
-// create conf.prof.cur->labmap from current labset
-void map_labels() {
-	xLabelSet* set = conf.prof.cur->curlabset;
-	conf.prof.cur->labmap.clear();
-	if (set) {
-		xAdr xadr;
-		QString nm;
-		foreach(nm, set->list.keys()) {
-			xadr = set->list[nm];
-			conf.prof.cur->labmap[xadr.type][xadr.abs] = nm;
-		}
-	}
 }
 
 void setLabelSet(xLabelSet* set) {

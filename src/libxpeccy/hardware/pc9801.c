@@ -212,7 +212,7 @@ void pc98xx_mem_map(Computer* comp) {
 void pc98xx_reset(Computer* comp) {
 	printf("pc98xx reset\n");
 //	cpu_reset(comp->cpu);
-	comp->DIPSW1 = 0x81;
+	comp->DIPSW1 = 0x80;	// b0=0:15MHz dots, 50Hz frame in current layout
 	comp->DIPSW2 = 0x03;
 	comp->DIPSW3 = 0x81;
 	if (comp->cpu->core->type == CPU_V30) comp->DIPSW3 &= ~0x80;	// b7=0
@@ -228,6 +228,11 @@ void pc98xx_reset(Computer* comp) {
 	upd7220_reset(comp->vid, comp->vid->grf7220);
 	vid_set_mode(comp->vid, VID_PC98XX);
 	vid_set_resolution(comp->vid, 640, 400);
+	if (comp->DIPSW1 & 1) {
+		vid_upd_timings(comp->vid, 1000/24);
+	} else {
+		vid_upd_timings(comp->vid, 1000/15);
+	}
 	comp->vid->linedbl = !(comp->portB & 8);
 	comp->vid->vga.cpl = (comp->DIPSW2 & 4) ? 80 : 40;
 	dma_reset(comp->dma1);
@@ -739,22 +744,32 @@ void pc98xx_fnt_wr(Computer* comp, int adr, int val) {
 }
 
 // uPD765 - FDC x 2
-// 90,92,94,96: 1MB flop
+// 90,92,94,96: 1MB flop (2HD)
+// c8,ca,cc,ce: 640MB flop (2DD)
 
 int pc98xx_fdc_rd(Computer* comp, int adr) {
-//	printf("PC98: %X: rd %.4X\n", cpu_get_pc(comp->cpu), adr);
+//	printf("PC98: %X: rd %.4X\n", comp->cpu->oldpc + comp->cpu->cs.base, adr);
 	int res = -1;
 	difIn(comp->dif, (adr >> 1) & 3, &res, 0);
 	return res;
 }
 
 void pc98xx_fdc_wr(Computer* comp, int adr, int val) {
-//	printf("PC98: %X: wr %.4X, %.2X\n", cpu_get_pc(comp->cpu), adr, val);
+//	printf("PC98: %X: wr %.4X, %.2X\n", comp->cpu->oldpc + comp->cpu->cs.base, adr, val);
 	difOut(comp->dif, (adr >> 1) & 3, val, 0);
 }
 
-int pc98xx_fdc2_rd(Computer* comp, int adr) {return -1;}
-void pc98xx_fdc2_wr(Computer* comp, int adr, int dat) {}
+int pc98xx_fdc2_rd(Computer* comp, int adr) {
+//	printf("PC98: %X: rd %.4X\n", comp->cpu->oldpc + comp->cpu->cs.base, adr);
+	int res = -1;
+	difIn(comp->dif, ((adr >> 1) & 3) | 4, &res, 0);
+	return res;
+}
+
+void pc98xx_fdc2_wr(Computer* comp, int adr, int val) {
+//	printf("PC98: %X: wr %.4X, %.2X\n", comp->cpu->oldpc + comp->cpu->cs.base, adr, val);
+	difOut(comp->dif, ((adr >> 1) & 3) | 4, val, 0);
+}
 
 // 51,53,55,57 - 320KB FDD on 8255
 
@@ -906,7 +921,7 @@ void pc98xx_cpu_wr(Computer* comp, int adr, int val) {
 	switch (adr) {
 		// f0: set current cpu (if multiple present) and reset. b0:1-v30, 0-x86
 		case 0: cpu_reset(comp->cpu);
-			comp_brk(comp, -1);
+			// comp_brk(comp, -1);
 			break;
 		// 286+: off A20 mask
 		case 1: comp->flgA20 = 0; break;
@@ -1002,7 +1017,7 @@ xPort pc98xx_io_map[] = {
 	{0xfff9,0x7fd9,2, 2, 2, pc98xx_mou_rd,	pc98xx_mou_wr},		// 7fd9/b/d/f: mouse controller on upd8255
 //	{0xfffb,0x3fdb,2, 2, 2, NULL,		NULL},			// 3fdb/f: upd8253 (timer for beeper)
 //	{0xffff,0xbfdb,2, 2, 2, NULL,		NULL},			// bfdb: mouse interrupt ?
-	{0xcf9, 0x0f0, 2, 2, 2, pc98xx_cpu_rd,	pc98xx_cpu_wr},		// f0,f2,f4,f6: cpu ?
+	{0xcf9, 0x0f0, 2, 2, 2, pc98xx_cpu_rd,	pc98xx_cpu_wr},		// f0,f2,f4,f6: cpu control
 //	{0xcf8, 0x0f8, 2, 2, 2, NULL,		NULL},			// f8..ff: ndp (x87)
 	{0xcff, 0x43d, 2, 2, 2, NULL,		pc98xx_43d_wr},		// 43d - switch rom pages
 	{0x000, 0x000, 2, 2, 2, pc98xx_dbg_rd,	pc98xx_dbg_wr}
@@ -1067,6 +1082,7 @@ void pc98xx_irq(Computer* comp, int id) {
 }
 
 void pc98xx_sync(Computer* comp, int ns) {
+	difSync(comp->dif, ns);			// fdc
 	pit_sync(comp->pit, ns);		// timers
 	uart_sync(comp->uart, ns);		// kbd
 }

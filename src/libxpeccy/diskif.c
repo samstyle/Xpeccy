@@ -3,16 +3,6 @@
 
 #include "fdc.h"
 
-struct DiskHW {
-	const int id;
-	void(*reset)(struct DiskIF*);
-	int(*in)(struct DiskIF*,int,int*,int);
-	int(*out)(struct DiskIF*,int,int,int);
-	void(*sync)(struct DiskIF*,int);
-	void(*irq)(struct DiskIF*,int);
-	void(*term)(struct DiskIF*);
-};
-
 int fdcFlag = 0;
 
 // dummy (none)
@@ -278,6 +268,8 @@ void dpc_term(DiskIF* dif) {
 
 // pc98xx (upD765)
 
+// TODO: b2,port = fdc select
+// b0,1 = port number
 int p98in(DiskIF* dif, int port, int* rptr, int dos) {
 	int res = -1;
 	switch(port & 3) {
@@ -291,8 +283,8 @@ int p98in(DiskIF* dif, int port, int* rptr, int dos) {
 
 int p98out(DiskIF* dif, int port, int val, int dos) {
 	switch(port & 3) {
-		case 1: uWrite(dif->fdc, 1, val); break;
-		case 2:						// control register: b7:rst, b6:rdy, b4:1
+		case 1: uWrite(dif->fdc, 1, val); break;	// com/param/data
+		case 2:	if (!(val & 0x80)) uReset(dif->fdc);					// control register: b7:rst, b6:rdy, b4:1
 			break;
 	}
 	return 1;
@@ -326,22 +318,16 @@ static DiskHW dhwTab[] = {
 	{DIF_BDI,bdiReset,bdiIn,bdiOut,dhwSync,NULL,NULL},
 	{DIF_P3DOS,pdosReset,pdosIn,pdosOut,pdosSync,NULL,NULL},		// upd765 (+3dos)
 	{DIF_PC,pdosReset,dpcIn,dpcOut,pdosSync,dpc_irq,dpc_term},		// i8275 = upd765
-	{DIF_PC98,pdosReset,p98in,p98out,pdosSync,NULL,NULL},
+	{DIF_PC98,pdosReset,p98in,p98out,pdosSync,NULL,NULL},			// upd765 (pc98)
 	{DIF_SMK512,bkdReset,bkdIn,bkdOut,dhwSync,NULL,NULL},
 	{DIF_END,NULL,NULL,NULL,NULL,NULL,NULL}
 };
 
 DiskHW* findDHW(int id) {
-	DiskHW* dif = NULL;
-	int idx = 0;
-	while (dhwTab[idx].id != DIF_END) {
-		if (dhwTab[idx].id == id) {
-			dif = &dhwTab[idx];
-			break;
-		}
-		idx++;
-	}
-	return dif;
+	DiskHW* itm = dhwTab;
+	while ((itm->id != id) && (itm->id != DIF_END))
+		itm++;
+	return (itm->id == DIF_END) ? NULL : itm;
 }
 
 void difSetHW(DiskIF* dif, int type) {

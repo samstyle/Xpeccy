@@ -111,7 +111,17 @@ struct FDC {
 
 void fdc_set_hd(FDC*, int);
 
-typedef struct DiskHW DiskHW;
+typedef struct DiskIF DiskIF;
+
+typedef struct {
+	const int id;
+	void(*reset)(struct DiskIF*);
+	int(*in)(struct DiskIF*,int,int*,int);
+	int(*out)(struct DiskIF*,int,int,int);
+	void(*sync)(struct DiskIF*,int);
+	void(*irq)(struct DiskIF*,int);
+	void(*term)(struct DiskIF*);
+} DiskHW;
 
 struct DiskIF {
 	unsigned flpch:1;	// flp changed (ibm)
@@ -120,8 +130,6 @@ struct DiskIF {
 	DiskHW* hw;
 	FDC* fdc;
 };
-
-typedef struct DiskIF DiskIF;
 
 extern int fdcFlag;
 

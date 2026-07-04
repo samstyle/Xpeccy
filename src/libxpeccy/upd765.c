@@ -130,6 +130,7 @@ void uspcf00(FDC* fdc) {
 	fdc->hut = (((fdc->comBuf[0] & 0x0f) + 1) << 4) * 1000;
 	fdc->hlt = ((fdc->comBuf[1] & 0xfe) + 2) * 1000;
 	fdc->dma = (fdc->comBuf[1] & 1) ? 0 : 1;
+	fdc->resCnt = 0;			// no answer
 	fdc->pos++;
 }
 
@@ -903,15 +904,11 @@ void uWrite(FDC* fdc, int adr, unsigned char val) {
 	fdc->intr = 0;				// reset interrupt
 	if (fdc->idle) {			// 1st byte, command
 		// printf("updCom %.2X\n",val);
-		if (fdc->seekend) {		// 'sense interrupt status' after seek/recalibrate only
-			uExec(fdc, (val == 0x08) ? val : 0xff);
-		} else {			// TODO: 'sense interrupt status' here is illegal
-			uExec(fdc, val);
-			if (val != 0x08) {
-				fdc->sr0 = fdc->flp->id & 3;
-				fdc->sr1 = 0x00;
-				fdc->sr2 = 0x00;
-			}
+		uExec(fdc, val);
+		if (val != 0x08) {		// sense interupt status doesn't change status flags
+			fdc->sr0 = fdc->flp->id & 3;
+			fdc->sr1 = 0x00;
+			fdc->sr2 = 0x00;
 		}
 	} else if (fdc->comCnt > 0) {		// arguments
 		// printf("arg %.2X\n",val);

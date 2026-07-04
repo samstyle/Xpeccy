@@ -2069,9 +2069,11 @@ void v30_opD7(CPU* cpu) {
 // 80287 template
 // opcodes: D8-DF (11011xxx),mod,[data,[data]]
 
+void x87_exec(CPU*);
 void v30_fpo1(CPU* cpu) {
 	v30_get_ea(cpu, 1);
-	v30_exception(cpu, V30_INT_NM, 0);
+	x87_exec(cpu);
+//	v30_exception(cpu, V30_INT_NM, 0);
 }
 
 void v30_fpo2(CPU* cpu) {

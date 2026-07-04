@@ -131,6 +131,73 @@ void v30_op0f1f(CPU* cpu) {
 	v30_wr_ea(cpu, cpu->tmpw, 1);
 }
 
+// bcd
+
+// 0f,20	add4s		 [ds1:iy] += [ds0:ix], cl 4-bit digits
+void v30_op0f20(CPU* cpu) {
+	cpu->flgCY = 0;
+	cpu->flgZ = 1;
+	int sadr = cpu->regIX;
+	int dadr = cpu->regIY;
+	while ((cpu->regCL < 0xff) && (cpu->regCL > 0)) {
+		cpu->tmp = v30_mrdb(cpu, cpu->regDS1, dadr);
+		cpu->tmpb = v30_mrdb(cpu, cpu->regDS0, sadr);
+		cpu->ltw = (cpu->tmp & 0x0f) + (cpu->tmpb & 0x0f) + cpu->flgCY;
+		cpu->flgCY = (cpu->ltw > 0x0f);
+		if (cpu->flgCY) cpu->ltw -= 10;
+		cpu->htw = ((cpu->tmp >> 4) & 0x0f) + ((cpu->tmpb >> 4) & 0x0f) + cpu->flgCY;
+		cpu->flgCY = (cpu->htw > 0x0f);
+		if (cpu->flgCY) cpu->htw -= 10;
+		if (cpu->ltw || cpu->htw) cpu->flgZ = 0;
+		cpu->ltw = (cpu->ltw & 0x0f) | (cpu->htw << 4);
+		v30_mwrb(cpu, cpu->regDS1, dadr, cpu->ltw);
+		dadr++;
+		cpu->regCL -= 2;
+	}
+}
+
+// 0f,22	sub4s
+void v30_op0f22(CPU* cpu) {
+	cpu->flgCY = 0;
+	cpu->flgZ = 1;
+	int sadr = cpu->regIX;
+	int dadr = cpu->regIY;
+	while ((cpu->regCL < 0xff) && (cpu->regCL > 0)) {
+		cpu->tmp = v30_mrdb(cpu, cpu->regDS1, dadr);
+		cpu->tmpb = v30_mrdb(cpu, cpu->regDS0, sadr);
+		cpu->ltw = (cpu->tmp & 0x0f) - (cpu->tmpb & 0x0f) - cpu->flgCY;
+		cpu->flgCY = (cpu->ltw > 0x0f);
+		if (cpu->flgCY) cpu->ltw += 10;
+		cpu->htw = ((cpu->tmp >> 4) & 0x0f) - ((cpu->tmpb >> 4) & 0x0f) - cpu->flgCY;
+		cpu->flgCY = (cpu->htw > 0x0f);
+		if (cpu->flgCY) cpu->htw += 10;
+		if (cpu->ltw || cpu->htw) cpu->flgZ = 0;
+		cpu->ltw = (cpu->ltw & 0x0f) | (cpu->htw << 4);
+		v30_mwrb(cpu, cpu->regDS1, dadr, cpu->ltw);
+		dadr++;
+		cpu->regCL -= 2;
+	}
+}
+
+// 0f,26	cmp4s = sub4s w/o writing back
+void v30_op0f26(CPU* cpu) {
+	cpu->flgCY = 0;
+	cpu->flgZ = 1;
+	int sadr = cpu->regIX;
+	int dadr = cpu->regIY;
+	while ((cpu->regCL < 0xff) && (cpu->regCL > 0)) {
+		cpu->tmp = v30_mrdb(cpu, cpu->regDS1, dadr);
+		cpu->tmpb = v30_mrdb(cpu, cpu->regDS0, sadr);
+		if (cpu->tmp != cpu->tmpb) {
+			cpu->flgZ = 0;					// reset till the end
+		} else {
+			cpu->flgCY = !!(cpu->tmp < cpu->tmpb);		// count only last pair
+		}
+		dadr++;
+		cpu->regCL -= 2;
+	}
+}
+
 // rotate
 
 // rol4 :e
@@ -274,13 +341,13 @@ opCode v30_0f_tab[256] = {
 	{OF_MODRM, 4, v30_op0f1e, NULL, "not1 :e,:1"},			// 1e /0 invert bit (imm3) in [EA]
 	{OF_MODRM | OF_WORD, 4, v30_op0f1f, NULL, "not1 :e,:1"},	// 1f /0 ... (imm4)
 
-	{0, 1, v30_undef, NULL, "*add4s"},	// 20: bcd add: [ds1:iy] += [ds0:ix], cl 4-bit digits
+	{0, 1, v30_op0f20, NULL, "*add4s"},	// 20: bcd add: [ds1:iy] += [ds0:ix], cl 4-bit digits
 	{0, 1, v30_undef, NULL, "undef"},
-	{0, 1, v30_undef, NULL, "*sub4s"},	// 22: bcd sub
+	{0, 1, v30_op0f22, NULL, "*sub4s"},	// 22: bcd sub
 	{0, 1, v30_undef, NULL, "undef"},
 	{0, 1, v30_undef, NULL, "undef"},
 	{0, 1, v30_undef, NULL, "undef"},
-	{0, 1, v30_undef, NULL, "*cmp4s"},	// 26: bcd compare
+	{0, 1, v30_op0f26, NULL, "*cmp4s"},	// 26: bcd compare
 	{0, 1, v30_undef, NULL, "undef"},
 
 	{OF_MODRM, 25, v30_op0f28, NULL, "rol4 :e"},	// 28: cyclic rotate left al<-EA by 4 bits

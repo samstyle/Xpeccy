@@ -151,6 +151,8 @@ void xLabeList::delGroup() {
 	if (!areSure("Do you want to delete this labelset?")) return;
 	delLabelSet(set->name);
 	fillSetList();
+	mod->reset(ui.name->text());
+	emit labSetChanged();		// to refill disasm
 }
 
 void xLabeList::fillSetList() {
