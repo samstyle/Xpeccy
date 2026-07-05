@@ -533,9 +533,6 @@ int x86_get_gdtr(CPU* cpu) {return cpu->gdtr.base;}
 int x86_get_idtr(CPU* cpu) {return cpu->idtr.base;}
 int x86_get_tsdr(CPU* cpu) {return cpu->tsdr.base;}
 
-//static char* i286_flags = "-N**ODITSZ-A-P-C";
-//static char* i086_flags = "----ODITSZ-A-P-C";
-
 xRegDsc i286RegTab[] = {
 	{I286_IP, "IP", REG_WORD, REG_RDMP | REG_PC, x86_get_ip, x86_set_ip},
 	{I286_SP, "SP", REG_WORD, REG_RDMP | REG_SP, x86_get_sp, x86_set_sp},
@@ -550,7 +547,7 @@ xRegDsc i286RegTab[] = {
 	{I286_SS, "SS", REG_WORD, REG_SEG, x86_get_ss, x86_set_ss},
 	{I286_DS, "DS", REG_WORD, REG_SEG, x86_get_ds, x86_set_ds},
 	{I286_ES, "ES", REG_WORD, REG_SEG, x86_get_es, x86_set_es},
-	{I286_MSW, "MSW", REG_32, REG_RO, x86_get_msw, x86_set_msw},
+	{I286_MSW, "MSW", REG_WORD, REG_RO, x86_get_msw, x86_set_msw},
 	{I286_LDT, "LDT", REG_24, REG_RO, x86_get_ldtr, NULL},
 	{I286_GDT, "GDT", REG_24, REG_RO, x86_get_gdtr, NULL},
 	{I286_IDT, "IDT", REG_24, REG_RO, x86_get_idtr, NULL},
@@ -576,68 +573,3 @@ xRegDsc i086RegTab[] = {
 	{REG_EMPTY, "F", REG_WORD, REG_FLG, x86_get_flag, x86_set_flag},
 	{REG_EOT, "----ODITSZ-A-P-C", 0, 0}
 };
-
-/*
-void i286_get_regs(CPU* cpu, xRegBunch* bnch) {
-	int idx = 0;
-	int val, bas;
-	xRegDsc* tab = cpu->core->rdsctab;
-	while (tab[idx].id != REG_EOT) {
-		bnch->regs[idx].id = tab[idx].id;
-		bnch->regs[idx].name = tab[idx].name;
-		bnch->regs[idx].type = tab[idx].size;
-		bnch->regs[idx].flag = tab[idx].flag;
-		val = -1;
-		bas = 0;
-		switch (tab[idx].id) {
-			case I286_IP: val = cpu->regIP; bas = cpu->cs.base; break;
-			case I286_SP: val = cpu->regSP; bas = cpu->ss.base; break;
-			case I286_BP: val = cpu->regBP; bas = cpu->ss.base; break;
-			case I286_SI: val = cpu->regSI; bas = cpu->ds.base; break;
-			case I286_DI: val = cpu->regDI; bas = cpu->ds.base; break;
-			case I286_AX: val = cpu->regAX; bas = cpu->ds.base; break;
-			case I286_CX: val = cpu->regCX; bas = cpu->ds.base; break;
-			case I286_DX: val = cpu->regDX; bas = cpu->ds.base; break;
-			case I286_BX: val = cpu->regBX; bas = cpu->ds.base; break;
-			case I286_CS: val = cpu->cs.idx; bas = cpu->cs.base; break;
-			case I286_SS: val = cpu->ss.idx; bas = cpu->ss.base; break;
-			case I286_DS: val = cpu->ds.idx; bas = cpu->ds.base; break;
-			case I286_ES: val = cpu->es.idx; bas = cpu->es.base; break;
-			case I286_MSW: val = cpu->regMSW; break;
-			case I286_GDT: val = cpu->gdtr.base; break;
-			case I286_LDT: val = cpu->ldtr.base; break;
-			case I286_IDT: val = cpu->idtr.base; break;
-			case I286_TSS: val = cpu->tsdr.base; break;
-		}
-		bnch->regs[idx].value = val;
-		bnch->regs[idx].base = bas;
-		idx++;
-	}
-	bnch->regs[idx].id = REG_EOT;
-	bnch->flags = (cpu->core->gen > 1) ? i286_flags : i086_flags;
-}
-
-void i286_set_regs(CPU* cpu, xRegBunch bnch) {
-	int idx = 0;
-	int val;
-	while (bnch.regs[idx].id != REG_EOT) {
-		val = bnch.regs[idx].value;
-		switch(bnch.regs[idx].id) {
-			case I286_IP: cpu->regIP = val; break;
-			case I286_SP: cpu->regSP = val; break;
-			case I286_BP: cpu->regBP = val; break;
-			case I286_SI: cpu->regSI = val; break;
-			case I286_DI: cpu->regDI = val; break;
-			case I286_AX: cpu->regAX = val; break;
-			case I286_CX: cpu->regCX = val; break;
-			case I286_DX: cpu->regDX = val; break;
-			case I286_BX: cpu->regBX = val; break;
-			case I286_CS: cpu->cs = i286_cash_seg(cpu, val); break;
-			case I286_SS: cpu->ss = i286_cash_seg(cpu, val); break;
-			case I286_DS: cpu->ds = i286_cash_seg(cpu, val); break;
-			case I286_ES: cpu->es = i286_cash_seg(cpu, val); break;
-		}
-		idx++;
-	}
-}
-*/

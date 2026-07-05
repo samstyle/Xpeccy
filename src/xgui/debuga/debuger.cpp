@@ -1200,7 +1200,7 @@ void DebugWin::setCPU() {
 		if (xlb->isVisible()) {
 			bunch.regs[i].id = xlb->property("regid").toInt();
 			if (xlb->property("isbit").toBool()) {
-				bunch.regs[i].value = dbgRegBits[i]->isChecked();
+				bunch.regs[i].value = dbgRegBits[i]->isChecked() ? 1 : 0;
 			} else {
 				bunch.regs[i].value = dbgRegEdit[i]->getValue();
 			}

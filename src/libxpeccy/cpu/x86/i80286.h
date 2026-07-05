@@ -28,7 +28,7 @@
 #define regIP regs[7].w
 #define regBP regs[8].w
 #define regIOPL regs[9].l
-#define regMSW	regs[10].i
+#define regMSW	regs[10].ih
 #define regREP	regs[11].l	// repeat condition
 #define regMOD	regs[11].h	// mod byte (EA/reg)
 // x87 registers

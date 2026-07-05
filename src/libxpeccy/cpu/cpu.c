@@ -605,21 +605,18 @@ int cpu_set_reg(CPU* cpu, const char* name, int val) {
 }
 
 void cpuSetRegs(CPU* cpu, xRegBunch bunch) {
-#if 1
 	xRegister* reg = bunch.regs;
 	xRegDsc* rd;
 	while (reg->id != REG_EOT) {
 		rd = find_reg_id(cpu, reg->id);
 		if (rd) {
-			if (rd->set) rd->set(cpu, reg->value);
+			if (rd->set) {
+				rd->set(cpu, reg->value);
+			}
+			printf("%s = %X\n", rd->name, rd->get(cpu));
 		}
 		reg++;
 	}
-#else
-	if (cpu->core->setregs) {
-		cpu->core->setregs(cpu, bunch);
-	}
-#endif
 }
 
 int cpu_get_regtype(CPU* cpu, int type) {

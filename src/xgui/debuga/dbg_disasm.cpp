@@ -854,17 +854,13 @@ int xDisasmTable::updContent() {
 		} else if (model->dasm[i].icon.isEmpty() && model->dasm[i].info.isEmpty()) {
 			setSpan(i, 2, 1, model->columnCount() - 2);
 		}
-		//idx = model->index(i, 0);
-		//itemDelegate(idx)->setProperty("pc", model->dasm[i].ispc);
 	}
 	// prevent case if current cell is invisible (eated by span)
 	idx = currentIndex();
 	int r = idx.row();
 	if (idx.isValid()) {
 		if (model->dasm[r].islab) {
-			// if ((r == 0) || (r == rows() - 1)) {
-				setCurrentIndex(model->index(r, 0));
-			//}
+			setCurrentIndex(model->index(r, 0));
 		}
 	}
 	return res;

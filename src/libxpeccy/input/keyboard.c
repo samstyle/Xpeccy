@@ -908,10 +908,8 @@ void kbd_set_core(Keyboard* kbd, xKbdCore* core) {
 
 void kbd_set_type(Keyboard* kbd, int t) {
 	xKbdCore* itm = kbdTypeTab;
-	while(itm->id >= 0) {
-		if (itm->id == t) {
-			kbd->core = itm;
-		}
+	while((itm->id >= 0) && (itm->id != t))
 		itm++;
-	}
+	if (itm->id >= 0)
+		kbd_set_core(kbd, itm);
 }

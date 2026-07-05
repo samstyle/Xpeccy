@@ -762,13 +762,13 @@ void pc98xx_fdc_wr(Computer* comp, int adr, int val) {
 int pc98xx_fdc2_rd(Computer* comp, int adr) {
 //	printf("PC98: %X: rd %.4X\n", comp->cpu->oldpc + comp->cpu->cs.base, adr);
 	int res = -1;
-	difIn(comp->dif, ((adr >> 1) & 3) | 4, &res, 0);
+//	difIn(comp->dif, ((adr >> 1) & 3) | 4, &res, 0);
 	return res;
 }
 
 void pc98xx_fdc2_wr(Computer* comp, int adr, int val) {
 //	printf("PC98: %X: wr %.4X, %.2X\n", comp->cpu->oldpc + comp->cpu->cs.base, adr, val);
-	difOut(comp->dif, ((adr >> 1) & 3) | 4, val, 0);
+//	difOut(comp->dif, ((adr >> 1) & 3) | 4, val, 0);
 }
 
 // 51,53,55,57 - 320KB FDD on 8255
