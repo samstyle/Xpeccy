@@ -73,7 +73,7 @@ struct FDC {
 	unsigned short tdata;
 	int bytedelay;
 
-	Floppy* flop[4];
+	Floppy* flop[4];	// all floppies belongs to disk interface, here is pointers
 	Floppy* flp;		// current floppy ptr
 
 	unsigned short crc;	// calculated crc
@@ -127,8 +127,10 @@ struct DiskIF {
 	unsigned flpch:1;	// flp changed (ibm)
 	unsigned inten:1;	// uPD765 interrupt enabled
 	int type;
+	Floppy* flp[4];
 	DiskHW* hw;
 	FDC* fdc;
+	FDC* fdc2;
 };
 
 extern int fdcFlag;
@@ -143,5 +145,6 @@ int difOut(DiskIF*, int, int, int);
 int difIn(DiskIF*, int, int*, int);
 
 void difSetHW(DiskIF*, int);
+void dif_align_flps(DiskIF*, FDC*, int, int, int, int);
 
 void add_crc_16(FDC*, unsigned char);

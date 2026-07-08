@@ -39,7 +39,7 @@ void flp_set_path(Floppy* flp, const char* path) {
 }
 
 void flp_set_hd(Floppy* flp, int hd) {
-	flp->trklen = hd ? TRKLEN_HD : TRKLEN_DD;
+	if (flp) flp->trklen = hd ? TRKLEN_HD : TRKLEN_DD;
 }
 
 void flp_set_interleave(int iv) {

@@ -86,7 +86,6 @@ int bdiIn(DiskIF* dif, int port, int* res, int dos) {
 int bdiOut(DiskIF* dif, int port, int val, int dos) {
 	if (!dos) return 0;
 	port = bdiGetPort(port);
-//	printf("out BDI port %.2X,%.2X\n",port,val);
 	if (port == 0) {
 		return 0;
 	} else if (port == BDI_SYS) {
@@ -281,13 +280,21 @@ int p98in(DiskIF* dif, int port, int* rptr, int dos) {
 	return 1;
 }
 
+// b0,1 = port
+// b2 = select 2nd fdc
 int p98out(DiskIF* dif, int port, int val, int dos) {
+	FDC* fdc = (port & 4) ? dif->fdc2 : dif->fdc;
 	switch(port & 3) {
-		case 1: uWrite(dif->fdc, 1, val); break;	// com/param/data
-		case 2:	if (!(val & 0x80)) uReset(dif->fdc);					// control register: b7:rst, b6:rdy, b4:1
+		case 1: uWrite(fdc, 1, val); break;			// com/param/data
+		case 2:	if (!(val & 0x80)) uReset(fdc);			// control register: b7:rst, b6:rdy, b4:1
 			break;
 	}
 	return 1;
+}
+
+void p98sync(DiskIF* dif, int ns) {
+	fdcSync(dif->fdc, ns);
+	fdcSync(dif->fdc2, ns);
 }
 
 // bk
@@ -318,7 +325,7 @@ static DiskHW dhwTab[] = {
 	{DIF_BDI,bdiReset,bdiIn,bdiOut,dhwSync,NULL,NULL},
 	{DIF_P3DOS,pdosReset,pdosIn,pdosOut,pdosSync,NULL,NULL},		// upd765 (+3dos)
 	{DIF_PC,pdosReset,dpcIn,dpcOut,pdosSync,dpc_irq,dpc_term},		// i8275 = upd765
-	{DIF_PC98,pdosReset,p98in,p98out,pdosSync,NULL,NULL},			// upd765 (pc98)
+	{DIF_PC98,pdosReset,p98in,p98out,p98sync,NULL,NULL},			// upd765 (pc98)
 	{DIF_SMK512,bkdReset,bkdIn,bkdOut,dhwSync,NULL,NULL},
 	{DIF_END,NULL,NULL,NULL,NULL,NULL,NULL}
 };
@@ -338,32 +345,59 @@ void difSetHW(DiskIF* dif, int type) {
 	dif->fdc->upd = (dif->hw->id == DIF_P3DOS) ? 1 : 0;	// difference between upd765 & i8275
 }
 
+FDC* fdc_create(cbirq cb, void* p) {
+	FDC* fdc = malloc(sizeof(FDC));
+	memset(fdc, 0x00, sizeof(FDC));
+	fdc->wait = -1;
+	fdc->plan = NULL;
+	fdc->xptr = p;
+	fdc->xirq = cb;
+	fdc->debug = 0;
+	fdc_set_hd(fdc, 0);
+	return fdc;
+}
+
+void fdc_destroy(FDC* fdc) {
+	fdc->flp = NULL;
+	free(fdc);
+}
+
+void fdc_set_flps(FDC* fdc, Floppy* fa, Floppy* fb, Floppy* fc, Floppy* fd) {
+	fdc->flop[0] = fa;
+	fdc->flop[1] = fb;
+	fdc->flop[2] = fc;
+	fdc->flop[3] = fd;
+}
+
+void dif_align_flps(DiskIF* dif, FDC* fdc, int n0, int n1, int n2, int n3) {
+	fdc->flop[0] = dif->flp[n0 & 3];
+	fdc->flop[1] = dif->flp[n1 & 3];
+	fdc->flop[2] = dif->flp[n2 & 3];
+	fdc->flop[3] = dif->flp[n3 & 3];
+	fdc->flp = fdc->flop[0];
+}
+
 DiskIF* difCreate(int type, cbirq cb, void* p) {
 	DiskIF* dif = (DiskIF*)malloc(sizeof(DiskIF));
-	dif->fdc = (FDC*)malloc(sizeof(FDC));
-	memset(dif->fdc,0x00,sizeof(FDC));
-	dif->fdc->wait = -1;
-	dif->fdc->plan = NULL;
-	dif->fdc->flop[0] = flpCreate(0, dhw_irq, dif);
-	dif->fdc->flop[1] = flpCreate(1, dhw_irq, dif);
-	dif->fdc->flop[2] = flpCreate(2, dhw_irq, dif);
-	dif->fdc->flop[3] = flpCreate(3, dhw_irq, dif);
+	dif->fdc = fdc_create(cb, p);
+	dif->fdc2 = fdc_create(cb, p);
+	for (int i = 0; i < 4; i++) {
+		dif->flp[i] = flpCreate(i, dhw_irq, dif);
+		dif->fdc->flop[i] = dif->flp[i];
+		dif->fdc2->flop[i] = dif->flp[i];
+	}
 	dif->fdc->flp = dif->fdc->flop[0];
-	dif->fdc->xptr = p;
-	dif->fdc->xirq = cb;
-	dif->fdc->debug = 0;
-	fdc_set_hd(dif->fdc, 0);
 	difSetHW(dif, type);
 	return dif;
 }
 
 void difDestroy(DiskIF* dif) {
-	flpDestroy(dif->fdc->flop[0]);
-	flpDestroy(dif->fdc->flop[1]);
-	flpDestroy(dif->fdc->flop[2]);
-	flpDestroy(dif->fdc->flop[3]);
-	dif->fdc->flp = NULL;
-	free(dif->fdc);
+	flpDestroy(dif->flp[0]);
+	flpDestroy(dif->flp[1]);
+	flpDestroy(dif->flp[2]);
+	flpDestroy(dif->flp[3]);
+	fdc_destroy(dif->fdc);
+	fdc_destroy(dif->fdc2);
 	free(dif);
 }
 

@@ -586,6 +586,7 @@ void ibm_reset(Computer* comp) {
 void ibm_init(Computer* comp) {
 	comp->vid->nsPerDot = 1e9/60/comp->vid->full.x/comp->vid->full.y;
 	fdc_set_hd(comp->dif->fdc, 1);
+	dif_align_flps(comp->dif, comp->dif->fdc, 0, 1, 2, 3);
 	dma_set_cb(comp->dma1, ibm_dma_mrd, ibm_dma_mwr);		// mrd/mwr callbacks
 	dma_set_chan(comp->dma1, 2, ibm_dma_flp_rd, ibm_dma_flp_wr, ibm_dma_flp_tc);	// ch2: fdc
 	dma_set_chan(comp->dma1, 3, ibm_dma_hdd_rd, ibm_dma_hdd_wr, NULL);	// ch3: hdd

@@ -449,9 +449,7 @@ void loadConfig() {
 						if (noflicGamma > 3) noflicGamma = 3;
 					}
 					if (pnam=="greyscale") vid_set_grey(arg.b);
-//					if (pnam=="scanlines") scanlines = arg.b;
 					if (pnam=="shader") conf.vid.shader = pval;
-					// if (pnam=="palette") conf.vid.palette = pval;
 					break;
 				case SECT_ROMSETS:
 					pos = pval.find_last_of(":");
@@ -569,11 +567,8 @@ void loadConfig() {
 	}
 	conf.gpctrl->gpada->open();
 	conf.gpctrl->gpadb->open();
-	vid_set_zoom(conf.vid.scale);
-	vid_set_fullscreen(conf.vid.fullScreen);
-	vid_set_ratio(conf.vid.keepRatio);
 	foreach(xRomset rs, rsListist) addRomset(rs);
-	prfLoadAll();
+//	prfLoadAll();
 	setOutput(soutnam.c_str());
 	if (conf.defProfile) {
 		if (!prfSetCurrent("default")) {
@@ -589,4 +584,8 @@ void loadConfig() {
 			}
 		}
 	}
+	// this must be after setCurrentProfile
+	vid_set_zoom(conf.vid.scale);
+	vid_set_fullscreen(conf.vid.fullScreen);
+	vid_set_ratio(conf.vid.keepRatio);
 }

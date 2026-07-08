@@ -232,11 +232,12 @@ int dasmByte(Computer* comp, int adr, dasmData& drow) {
 	adr++;
 	unsigned char fl = getBrk(comp, adr);
 	xAdr xadr = mem_get_xadr(comp->mem, adr);
-	while ((len < conf.dbg.dbsize) && (fl == DBG_VIEW_BYTE) /*&& findLabel(adr,-1,-1).isEmpty()*/ && find_label(xadr).isEmpty()) {
+	while ((len < conf.dbg.dbsize) && (fl == DBG_VIEW_BYTE) && find_label(xadr).isEmpty()) {
 		drow.command.append(QString(",#%0").arg(gethexbyte(dasmrd(adr, comp))));
 		len++;
 		adr++;
 		fl = getBrk(comp, adr);
+		xadr = mem_get_xadr(comp->mem, adr);
 	}
 	return len;
 }
@@ -248,13 +249,15 @@ int dasmWord(Computer* comp, int adr, dasmData& drow) {
 	drow.command = QString("DW #%0").arg(gethexword(word));
 	adr += 2;
 	unsigned char fl = getBrk(comp, adr);
-	while ((len < conf.dbg.dwsize * 2) && (fl == DBG_VIEW_WORD)) {
+	xAdr xadr = mem_get_xadr(comp->mem, adr);
+	while ((len < conf.dbg.dwsize * 2) && (fl == DBG_VIEW_WORD) && find_label(xadr).isEmpty()) {
 		word = dasmrd(adr, comp);
 		word |= (dasmrd(adr + 1, comp) << 8);
 		drow.command.append(QString(",#%0").arg(gethexword(word)));
 		adr += 2;
 		len += 2;
 		fl = getBrk(comp, adr);
+		xadr = mem_get_xadr(comp->mem, adr);
 	}
 	return len;
 }
@@ -263,18 +266,6 @@ int dasmAddr(Computer* comp, int adr, dasmData& drow) {
 	int len = 2;
 	int word = dasmrd(adr, comp);
 	word |= (dasmrd(adr + 1, comp) << 8);
-/*
-	xAdr xadr;
-	if (comp->cpu->core->group == CPUG_X86) {
-		xadr = mem_get_xadr(comp->mem, word + comp->cpu->cs.base);
-	} else {
-		xadr = mem_get_xadr(comp->mem, word);
-	}
-	QString lab = find_label(xadr);
-	if (lab.isEmpty()) {
-		lab = gethexword(word).prepend("#");
-	}
-*/
 	drow.oadr = word;
 	drow.command = QString("DW #%0").arg(gethexword(word));
 	placeLabel(comp, drow);
@@ -424,7 +415,13 @@ QList<dasmData> getDisasm(Computer* comp, int& adr) {
 		if ((offset < 0) || (offset > comp->cpu->cs.limit)) {
 			drow.aname = QString::number(adr, comp->hw->base).toUpper().rightJustified(6, '0');
 		} else {
-			drow.aname = QString("CS:%0").arg(gethexword(offset));
+			// TODO: Code segment name
+			xRegDsc* rd = find_reg_type(comp->cpu, REG_CS);
+			if (rd) {
+				drow.aname = QString("%0:%1").arg(rd->name).arg(gethexword(offset));
+			} else {
+				drow.aname = gethexword(offset);
+			}
 		}
 	} else if (conf.dbg.segment || (mode != XVIEW_CPU)) {
 		switch(xadr.type) {
@@ -952,11 +949,6 @@ void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 	Computer* comp = conf.prof.cur->zx;
 	int pc = cpu_get_pc(comp->cpu);
 	switch (key) {
-		case Qt::Key_1: jumpMarked(0, mod); break;
-		case Qt::Key_2: jumpMarked(1, mod); break;
-		case Qt::Key_3: jumpMarked(2, mod); break;
-		case Qt::Key_4: jumpMarked(3, mod); break;
-		case Qt::Key_5: jumpMarked(4, mod); break;
 		case Qt::Key_Up:
 			if ((mod & Qt::ControlModifier) || (idx.row() == 0)) {
 				scrolUp(mod);
@@ -1055,12 +1047,29 @@ void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 			if (state() == QAbstractItemView::EditingState) break;
 			edit(currentIndex());
 			break;
-		case Qt::Key_C:
-			if (mod & Qt::ControlModifier)
-				copyToCbrd();
-			break;
 		default:
-			QTableView::keyPressEvent(ev);
+			if (mod & Qt::ControlModifier) {
+				switch(ev->key()) {
+					case Qt::Key_C: copyToCbrd(); break;
+					case Qt::Key_1: jumpMarked(0, mod); break;
+					case Qt::Key_2: jumpMarked(1, mod); break;
+					case Qt::Key_3: jumpMarked(2, mod); break;
+					case Qt::Key_4: jumpMarked(3, mod); break;
+					case Qt::Key_5: jumpMarked(4, mod); break;
+					default: QTableView::keyPressEvent(ev); break;
+				}
+			} else if (mod & Qt::AltModifier) {
+				switch(ev->key()) {
+					case Qt::Key_1: jumpMarked(0, mod); break;
+					case Qt::Key_2: jumpMarked(1, mod); break;
+					case Qt::Key_3: jumpMarked(2, mod); break;
+					case Qt::Key_4: jumpMarked(3, mod); break;
+					case Qt::Key_5: jumpMarked(4, mod); break;
+					default: QTableView::keyPressEvent(ev); break;
+				}
+			} else {
+				QTableView::keyPressEvent(ev);
+			}
 			break;
 	}
 }

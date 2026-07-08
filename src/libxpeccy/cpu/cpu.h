@@ -37,7 +37,6 @@ typedef struct {
 #define REG_WORD	16
 #define REG_24		24
 #define REG_32		32
-//#define REG_TMASK	0xff
 // register flags (bit 0-7)
 #define REG_RO		1	// protect from changes in deBUGa
 #define REG_SEG		(1<<1)	// register is segment
@@ -276,6 +275,7 @@ xAsmScan scanAsmTab(const char*, opCode*);
 xRegBunch cpuGetRegs(CPU*);
 xRegister cpuGetReg(CPU*, int);
 void cpuSetRegs(CPU*, xRegBunch);
+xRegDsc* find_reg_type(CPU*, int);
 int cpu_get_reg(CPU*, const char*, bool*);
 int cpu_get_pc(CPU*);
 void cpu_set_pc(CPU*, int);

@@ -1159,7 +1159,6 @@ void v30_op62(CPU* cpu) {
 	}
 }
 
-// 63-67 is 286+
 #if 0
 
 // 63,mod: arpl ew,rw		adjust RPL of EW not less than RPL of RW
@@ -1179,14 +1178,9 @@ void v30_op65(CPU* cpu) {
 	cpu->regREP = V30_REPC;
 }
 
-#if 0
-// 66: operand size override prefix
-void i286_op66(CPU* cpu) {}
-
-// 67: address size override prefix
-void i286_op67(CPU* cpu) {}
-
-#endif
+// 66, 67: fpo2 commands (v40+ ?)
+void v30_op66(CPU* cpu) {}
+void v30_op67(CPU* cpu) {}
 
 // 68: push wrd
 void v30_op68(CPU* cpu) {

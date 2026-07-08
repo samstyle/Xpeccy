@@ -115,6 +115,9 @@ void load_xmap(QString path) {
 						qb.readLine(line, 1024);
 						str = QString::fromUtf8(line).trimmed();
 						lst = str.split(":", X_SkipEmptyParts);
+						while(lst.size() > 3) {
+							lst[2].append(":").append(lst[3]);		// concat comment if there was :
+						}
 						if (lst.size() > 2) {
 							str = lst.at(0);
 							xadr.type = xadr_type_by_name(str, MEM_EXT);

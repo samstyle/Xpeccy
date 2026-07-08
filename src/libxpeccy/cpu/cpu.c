@@ -613,7 +613,7 @@ void cpuSetRegs(CPU* cpu, xRegBunch bunch) {
 			if (rd->set) {
 				rd->set(cpu, reg->value);
 			}
-			printf("%s = %X\n", rd->name, rd->get(cpu));
+//			printf("%s = %X\n", rd->name, rd->get(cpu));
 		}
 		reg++;
 	}

@@ -59,10 +59,11 @@ xProfile* addProfile(std::string nm, std::string fp) {
 //	printf("add Profile: %s : %s\n",nm.c_str(),fp.c_str());
 	if (findProfile(nm) != NULL) return NULL;
 	xProfile* nprof = new xProfile;
+	nprof->initrq = 1;
 	nprof->name = nm;
 	nprof->file = fp;
 	nprof->layName = std::string("default");
-	nprof->zx = compCreate();
+//	nprof->zx = compCreate();			// TODO: delayed
 	nprof->curlabset = nullptr;
 	std::string fname;
 	fname = conf.path.prfDir + SLASH + nprof->name;
@@ -71,9 +72,9 @@ xProfile* addProfile(std::string nm, std::string fp) {
 #elif defined(__WIN32)
 	mkdir(fname.c_str());
 #endif
-	prf_load_cmos(nprof, conf.path.prfDir + SLASH + nprof->name + SLASH + nprof->name + ".cmos");
-	prf_load_nvram(nprof, conf.path.prfDir + SLASH + nprof->name + SLASH + nprof->name + ".nvram");
-	prfSetHardware(nprof,"Dummy");
+//	prf_load_cmos(nprof, conf.path.prfDir + SLASH + nprof->name + SLASH + nprof->name + ".cmos");	// TODO: delayed
+//	prf_load_nvram(nprof, conf.path.prfDir + SLASH + nprof->name + SLASH + nprof->name + ".nvram");	// TODO: delayed
+//	prfSetHardware(nprof,"Dummy");			// TODO: delayed
 	conf.prof.list.push_back(nprof);
 	return nprof;
 }
@@ -137,11 +138,21 @@ int delProfile(std::string nm) {
 	return res;
 }
 
+int prf_load_conf(xProfile*, std::string, int);
 bool prfSetCurrent(std::string nm) {
 	xProfile* nprf = findProfile(nm);
 	if (nprf == NULL) return false;
 	prfClose();
 	conf.prof.cur = nprf;
+	if (nprf->initrq) {
+		nprf->initrq = 0;
+		nprf->zx = compCreate();
+		compSetHardware(nprf->zx, "Dummy");
+		prfLoad(nprf->name);
+//		prf_load_conf(nprf, nprf->file, 1);
+//		prf_load_cmos(nprf, conf.path.prfDir + SLASH + nprf->name + SLASH + nprf->name + ".cmos");
+//		prf_load_nvram(nprf, conf.path.prfDir + SLASH + nprf->name + SLASH + nprf->name + ".nvram");
+	}
 	ideOpenFiles(nprf->zx->ide);
 	sdcOpenFile(nprf->zx->sdc);
 	prfSetLayout(nprf, nprf->layName);
@@ -156,6 +167,7 @@ bool prfSetCurrent(std::string nm) {
 }
 
 void clearProfiles() {
+	if (conf.prof.list.size() < 2) return;
 	while (conf.prof.list.size() > 1) {
 		conf.prof.list.pop_back();
 	}
@@ -309,6 +321,8 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 			fpath = conf.path.romDir + SLASH + rset->sBiosFile;
 			tsLoadRom(prf->zx->ts, fpath.c_str());
 		}
+	} else {
+		printf("Can't find romset %s\n", rnm.c_str());
 	}
 }
 

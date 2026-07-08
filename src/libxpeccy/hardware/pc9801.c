@@ -759,6 +759,7 @@ void pc98xx_fdc_wr(Computer* comp, int adr, int val) {
 	difOut(comp->dif, (adr >> 1) & 3, val, 0);
 }
 
+// TODO: fdc2 irq, or 9801ux bios will stop
 int pc98xx_fdc2_rd(Computer* comp, int adr) {
 //	printf("PC98: %X: rd %.4X\n", comp->cpu->oldpc + comp->cpu->cs.base, adr);
 	int res = -1;
@@ -1093,7 +1094,6 @@ void pc98xx_init(Computer* comp) {
 	ppi_set_cb(comp->ppi, comp, pc98xx_ppia_rd, pc98xx_ppia_wr, pc98xx_ppib_rd, pc98xx_ppib_wr, pc98xx_ppic_rd, pc98xx_ppich_wr, pc98xx_ppic_rd, pc98xx_ppicl_wr);
 	// 8255, fdc
 	ppi_set_cb(comp->ppib, comp, NULL, NULL, ppi_fdc_rdb, ppi_fdc_wrb, ppi_fdc_rdc, ppi_fdc_wrc, ppi_fdc_rdc, ppi_fdc_wrc);
-
 	// keyboard uart
 	uart_set_type(comp->uart, UPD_8251);
 	uart_set_rate(comp->uart, 100);
@@ -1101,6 +1101,9 @@ void pc98xx_init(Computer* comp) {
 	uart_set_dev(comp->uart, uart_kbd_rd, uart_kbd_wr, comp->keyb);
 	// keyboard
 	kbd_set_type(comp->keyb, KBD_NEC98XX);
+	// fdc
+	dif_align_flps(comp->dif, comp->dif->fdc, 0, 1, 0, 1);
+	dif_align_flps(comp->dif, comp->dif->fdc2, 2, 3, 2, 3);
 }
 
 sndPair pc98xx_vol(Computer* comp, sndVolume* vol) {

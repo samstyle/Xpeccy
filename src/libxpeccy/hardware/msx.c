@@ -158,6 +158,7 @@ void msx_init(Computer* comp) {
 //	comp->fps = 60;
 	vid_upd_timings(comp->vid, comp->nsPerTick * 2 / 3);
 	fdc_set_hd(comp->dif->fdc, 0);
+	dif_align_flps(comp->dif, comp->dif->fdc, 0, 1, 2, 3);
 	ppi_set_cb(comp->ppi, comp, NULL, msx_ppi_a_wr,\
 				msx_ppi_b_rd, NULL,\
 				NULL, msx_ppi_ch_wr, \

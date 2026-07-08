@@ -106,18 +106,20 @@ bool MainWin::saveChanged() {
 	QString str;
 	Floppy* flp;
 	foreach(prf, conf.prof.list) {
-		for(i = 0; (i < 4) && yep; i++) {
-			flp = prf->zx->dif->fdc->flop[i];
-			if (flp->changed) {
-				str = QString("Disk %0 of profile '%1' was changed<br>Save it?").arg(QChar('A' + i)).arg(prf->name.c_str());
-				res = askYNC(str.toLocal8Bit().data());
-				switch(res) {
-					case QMessageBox::Yes:
-						yep &= save_file(prf->zx, flp->path, FG_DISK, i);
-						break;
-					case QMessageBox::Cancel:
-						yep = false;
-						break;
+		if (!prf->initrq) {
+			for(i = 0; (i < 4) && yep; i++) {
+				flp = prf->zx->dif->fdc->flop[i];
+				if (flp->changed) {
+					str = QString("Disk %0 of profile '%1' was changed<br>Save it?").arg(QChar('A' + i)).arg(prf->name.c_str());
+					res = askYNC(str.toLocal8Bit().data());
+					switch(res) {
+						case QMessageBox::Yes:
+							yep &= save_file(prf->zx, flp->path, FG_DISK, i);
+							break;
+						case QMessageBox::Cancel:
+							yep = false;
+							break;
+					}
 				}
 			}
 		}
@@ -831,7 +833,9 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 	}
 //	std::string fname;
 	foreach(xProfile* prf, conf.prof.list) {
-		prfSave(prf->name);
+		if (!prf->initrq) {
+			prfSave(prf->name);
+		}
 	}
 	if (saveChanged()) {
 		snd_wav_close();

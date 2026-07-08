@@ -138,6 +138,7 @@ int zx_ack(Computer* comp) {
 void zx_init(Computer* comp) {
 	comp->nsPerTick &= ~1;		// make even
 //	comp->fps = 50;
+	dif_align_flps(comp->dif, comp->dif->fdc, 0, 1, 2, 3);
 	vid_upd_timings(comp->vid, comp->nsPerTick >> 1);
 	fdc_set_hd(comp->dif->fdc, 0);
 	chip_set_xdev(comp->ts->chipA, NULL, NULL, NULL);

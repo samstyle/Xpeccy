@@ -429,7 +429,7 @@ xRegDsc v30_regtab[] = {
 	{V30_REG_IY, "IY", REG_WORD, REG_RDMP, v30_get_iy, v30_set_iy},
 	{V30_REG_SP, "SP", REG_WORD, REG_RDMP | REG_SP, v30_get_sp, v30_set_sp},
 	{V30_REG_BP, "BP", REG_WORD, REG_RDMP, v30_get_bp, v30_set_bp},
-	{V30_SEG_PS, "PS", REG_WORD, REG_SEG, v30_get_ps, v30_set_ps},
+	{V30_SEG_PS, "PS", REG_WORD, REG_SEG | REG_CS, v30_get_ps, v30_set_ps},
 	{V30_SEG_SS, "SS", REG_WORD, REG_SEG, v30_get_ss, v30_set_ss},
 	{V30_SEG_DS0, "DS0", REG_WORD, REG_SEG, v30_get_ds0, v30_set_ds0},
 	{V30_SEG_DS1, "DS1", REG_WORD, REG_SEG, v30_get_ds1, v30_set_ds1},

@@ -193,6 +193,7 @@ xBrkPoint* brk_find(int, int);
 // profiles
 
 typedef struct {
+	unsigned initrq:1;		// must be initialized
 	std::string name;
  	std::string file;		// config file
 	std::string layName;		// screen layout

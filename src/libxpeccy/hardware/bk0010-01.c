@@ -515,6 +515,7 @@ void bk_init(Computer* comp) {
 	fdc_set_hd(comp->dif->fdc, 0);
 	vid_upd_timings(comp->vid, 200);	// 302
 	kbd_set_type(comp->keyb, KBD_BK);
+	dif_align_flps(comp->dif, comp->dif->fdc, 0, 1, 2, 3);
 }
 
 // keys
