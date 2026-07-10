@@ -275,6 +275,7 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 			}
 		}
 		memSetSize(prf->zx->mem, -1, romsz);
+		comp_heat_sync(prf->zx);
 // load GS ROM
 		if (!rset->gsFile.empty()) {
 			fpath = conf.path.romDir + SLASH + rset->gsFile;

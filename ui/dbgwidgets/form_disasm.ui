@@ -528,6 +528,27 @@
     <string>Clear maping</string>
    </property>
   </action>
+  <action name="actHeatEnable">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Collect memory heat-map</string>
+   </property>
+   <property name="toolTip">
+    <string>Collect read/write/exec usage counters per memory cell</string>
+   </property>
+  </action>
+  <action name="actHeatReset">
+   <property name="text">
+    <string>Reset heat-map counters</string>
+   </property>
+  </action>
+  <action name="actHeatExport">
+   <property name="text">
+    <string>Export heat-map...</string>
+   </property>
+  </action>
   <action name="actWutcha">
    <property name="icon">
     <iconset resource="../../xpeccy.qrc">

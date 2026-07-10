@@ -7,6 +7,7 @@ extern "C" {
 #include "cpu/cpu.h"
 #include "video/video.h"
 #include "memory.h"
+#include "heatmap.h"
 
 #include "input/input.h"
 #include "tape.h"
@@ -84,8 +85,9 @@ typedef struct {
 #define flgCPM	sysflag[13]
 #define flgEXT	sysflag[14]
 #define flgBDI	sysflag[15]
+#define flgHEAT	sysflag[16]		// collect memory read/write/exec usage stats
 
-typedef struct {
+typedef struct Computer {
 	struct HardWare *hw;	// computer core - misc params, callbacks
 
 	double cpuFrq;
@@ -174,6 +176,8 @@ typedef struct {
 	unsigned char brkRomMap[MEM_512K];	// rom brk/type : b0..3:brk flags, b4..7:type
 	unsigned char brkAdrMap[MEM_64K];	// adr brk
 	unsigned char brkIOMap[MEM_64K];	// io brk
+	xHeatBank heatRam;			// ram read/write/exec hit counters, sized to mem->ramMask+1
+	xHeatBank heatRom;			// rom read/write/exec hit counters, sized to mem->romMask+1
 	// TODO: try to move this somewhere
 	struct {
 		unsigned char Page0;
