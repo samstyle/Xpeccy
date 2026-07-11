@@ -178,11 +178,7 @@ Uint32 sdl_timer_callback(Uint32 iv, void* ptr) {
 int null_open() {
 	printf("NULL device opening...\n");
 	tid = SDL_AddTimer(20, sdl_timer_callback, NULL);
-#ifdef HAVESDL1
-	if (tid == NULL) {
-#else
 	if (tid < 0) {
-#endif
 		printf("Can't create SDL_Timer, syncronisation unavailable\n");
 		throw(0);
 	}
@@ -285,9 +281,7 @@ void sdlclose() {
 
 OutSys sndTab[] = {
 	{xOutputNone,"NULL",&null_open,/*&null_play,*/&null_close},
-#if defined(HAVESDL1) || defined(HAVESDL2)
 	{xOutputSDL,"SDL",&sdlopen,/*&sdlplay,*/&sdlclose},
-#endif
 	{0,NULL,NULL,/*NULL,*/NULL}
 };
 

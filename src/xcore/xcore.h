@@ -39,16 +39,12 @@
 	#define xEventY position().y()
 	#define xGlobalX globalPosition().x()
 	#define xGlobalY globalPosition().y()
-#elif QT_VERSION >= QT_VERSION_CHECK(5,0,0)
+#else
 	#define yDelta angleDelta().y()
 	#define xEventX x()
 	#define xEventY y()
 	#define xGlobalX globalX()
 	#define xGlobalY globalY()
-#else
-	#define yDelta delta()
-	#define xEventX x()
-	#define xEventY y()
 #endif
 
 #if QT_VERSION >= QT_VERSION_CHECK(5,14,0)
@@ -68,8 +64,6 @@
 	#include <QSurfaceFormat>
 	#define X_BackgroundRole Qt::BackgroundRole
 	#define X_MidButton Qt::MiddleButton
-	typedef QSurfaceFormat QGLFormat;
-	typedef QOpenGLContext QGLContext;
 #else
 	#include <QRegExp>
 	#define X_BackgroundRole Qt::BackgroundColorRole

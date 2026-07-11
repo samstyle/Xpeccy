@@ -56,7 +56,7 @@ int vid_visible(Video* vid) {
 
 static int32_t outcol;
 
-inline void vid_dot_full(Video* vid, unsigned char idx) {
+void vid_dot_full(Video* vid, unsigned char idx) {
 	if (vid->hvis && vid->vvis) {
 		outcol = greyScale ? vid->gpal[idx] : vid->pal[idx];
 #if defined(USEOPENGL)
@@ -75,7 +75,7 @@ inline void vid_dot_full(Video* vid, unsigned char idx) {
 	}
 }
 
-inline void vid_dot_half(Video* vid, unsigned char idx) {
+void vid_dot_half(Video* vid, unsigned char idx) {
 	if (vid->hvis && vid->vvis) {
 		outcol = greyScale ? vid->gpal[idx] : vid->pal[idx];
 #if defined(USEOPENGL)
