@@ -25,6 +25,7 @@
 // system ports
 #define portB	reg[65]
 #define portC	reg[66]
+#define regBE	reg[67]		// port be
 // dipswitches
 #define DIPSW1	reg[71]
 #define DIPSW2	reg[72]
@@ -761,15 +762,15 @@ void pc98xx_fdc_wr(Computer* comp, int adr, int val) {
 
 // TODO: fdc2 irq, or 9801ux bios will stop
 int pc98xx_fdc2_rd(Computer* comp, int adr) {
-//	printf("PC98: %X: rd %.4X\n", comp->cpu->oldpc + comp->cpu->cs.base, adr);
 	int res = -1;
-//	difIn(comp->dif, ((adr >> 1) & 3) | 4, &res, 0);
+	difIn(comp->dif, ((adr >> 1) & 3) | 4, &res, 0);
+	printf("PC98: %X: rd %.4X = %.2X\n", comp->cpu->oldpc + comp->cpu->cs.base, adr, res);
 	return res;
 }
 
 void pc98xx_fdc2_wr(Computer* comp, int adr, int val) {
-//	printf("PC98: %X: wr %.4X, %.2X\n", comp->cpu->oldpc + comp->cpu->cs.base, adr, val);
-//	difOut(comp->dif, ((adr >> 1) & 3) | 4, val, 0);
+	printf("PC98: %X: wr %.4X, %.2X\n", comp->cpu->oldpc + comp->cpu->cs.base, adr, val);
+	difOut(comp->dif, ((adr >> 1) & 3) | 4, val, 0);
 }
 
 // 51,53,55,57 - 320KB FDD on 8255
@@ -785,6 +786,20 @@ int pc98xx_f55_rd(Computer* comp, int adr) {
 
 void pc98xx_f55_wr(Computer* comp, int adr, int val) {
 
+}
+
+// be: flp flags
+// b0: switch floppies (0-1 x 3-4)
+// b1: flop capacity (1MB/640KB)
+void pc98xx_be_wr(Computer* comp, int adr, int val) {
+	comp->regBE = val & 3;
+}
+
+int pc98xx_be_rd(Computer* comp, int adr) {
+	int r = comp->regBE & 3;
+	if (comp->DIPSW3 & 1) r |= 4;		// auto detect fdd capacity
+	if (comp->DIPSW3 & 2) r |= 8;		// 1MB/640KB
+	return r;
 }
 
 // uPD8255: mouse
@@ -1011,6 +1026,7 @@ xPort pc98xx_io_map[] = {
 //	{0xcf1, 0x1a0, 2, 2, 2, NULL,		NULL},			// ecg
 //	{0xff1, 0x9a0, 2, 2, 2, NULL,		NULL},			// graphic control
 	{0xcf1, 0x0a1, 2, 2, 2, pc98xx_fnt_rd,	pc98xx_fnt_wr},		// a1,a3,a5,a9:kanjirom
+	{0x0ff, 0x0be, 2, 2, 2, pc98xx_be_rd,	pc98xx_be_wr},		// be: fdd capacity, sw3-0, sw3-1 read
 //	{0x0f0, 0x0b0, 2, 2, 2, NULL,		NULL},			// b0..bf: communication controller / rs232 expansion interface; 0xbe: fdd switcher
 	{0x0f9, 0x0c0, 2, 2, 2, pc98xx_c0_rd,	pc98xx_c0_wr},		// c0,c2,c4,c6: oda printer board on 8255 [reserved]
 	{0x0f9, 0x0c8, 2, 2, 2, pc98xx_fdc2_rd,	pc98xx_fdc2_wr},	// c8,ca,cc,ce: dd fdd on upd765
@@ -1065,20 +1081,17 @@ void pc98xx_irq(Computer* comp, int id) {
 		case IRQ_VID_VBLANK:		// VBlank: if !flgVSync, master PIC interrupt #2
 			if (!comp->flgVSync) {
 				pic_int(comp->mpic, 2);
-				comp->flgVSync = 1;
 			}
+			comp->flgVSync = 1;
 			break;
 		case IRQ_KBD_DATA:
 		case IRQ_KBD_ACK:		// kbd data is ready
 			uart_ready(comp->uart);
 			break;
-		case IRQ_UART_0:
-			pic_int(comp->mpic, 1);
-			break;
-		case IRQ_FDC:
+		case IRQ_UART_0: pic_int(comp->mpic, 1); break;
 			// slave.2 for 2DD, slave.3 for 2HD fdc
-			pic_int(comp->spic, 2);
-			break;
+		case IRQ_FDC: pic_int(comp->spic, 2); break;
+		// case IRQ_FDC2: pic_int(comp->spic, 3); break;	slave pic int -> master pic 7
 	}
 }
 

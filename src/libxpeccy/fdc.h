@@ -88,6 +88,10 @@ struct FDC {
 	fdcCall* plan;		// current task
 	int pos;		// pos in plan
 
+	int irqn;		// upd765 irq_fdc_int nr
+	int irqwn;		// upd765 irq_fdc_wr
+	int irqrn;		// upd765 irq_fdc_rd
+
 	cbirq xirq;
 	void* xptr;
 

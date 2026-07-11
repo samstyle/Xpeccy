@@ -121,7 +121,7 @@ void DebugWin::updateStyle() {
 	foreach(xHexSpin* xhs, dbgRegEdit) {
 		xhs->updatePal();
 	}
-	ui_asm.dasmTable->update();
+	fillDisasm();
 	wid_dump->draw();
 	//ui.dumpTable->update();
 	wid_disk_dump->draw();
@@ -1686,7 +1686,7 @@ void DebugWin::saveDumpToDisk(int idx) {
 	int len = dui.leLen->getValue();
 	QString name = dui.leStart->text();
 	// name.append(".").append(dui.leBank->text());
-	Floppy* flp = conf.prof.cur->zx->dif->fdc->flop[idx & 3];
+	Floppy* flp = conf.prof.cur->zx->dif->flp[idx & 3];
 	if (!flp->insert) {
 		flp_insert(flp, NULL);
 		trd_format(flp);

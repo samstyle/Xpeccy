@@ -1,7 +1,7 @@
 #include "filetypes.h"
 
 int loadTRD(Computer* comp, const char* name, int drv) {
-	Floppy* flp = comp->dif->fdc->flop[drv & 3];
+	Floppy* flp = comp->dif->flp[drv & 3];
 	FILE* file = fopen(name, "rb");
 	if (!file) return ERR_CANT_OPEN;
 	int err = ERR_OK;
@@ -30,7 +30,7 @@ int loadTRD(Computer* comp, const char* name, int drv) {
 }
 
 int saveTRD(Computer* comp, const char* name, int drv) {
-	Floppy* flp = comp->dif->fdc->flop[drv & 3];
+	Floppy* flp = comp->dif->flp[drv & 3];
 	unsigned char img[0xa8000];
 	unsigned char* dptr = img;
 	for (int i = 0; i < 160; i++) {

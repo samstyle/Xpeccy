@@ -108,7 +108,7 @@ bool MainWin::saveChanged() {
 	foreach(prf, conf.prof.list) {
 		if (!prf->initrq) {
 			for(i = 0; (i < 4) && yep; i++) {
-				flp = prf->zx->dif->fdc->flop[i];
+				flp = prf->zx->dif->flp[i];
 				if (flp->changed) {
 					str = QString("Disk %0 of profile '%1' was changed<br>Save it?").arg(QChar('A' + i)).arg(prf->name.c_str());
 					res = askYNC(str.toLocal8Bit().data());

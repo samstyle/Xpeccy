@@ -645,22 +645,22 @@ void SetupWin::start() {
 	ui.mempaths->setChecked(conf.storePaths);
 	ui.cbAddBoot->setChecked(conf.boot);
 	setRFIndex(ui.cbFlpInterleave, flp_get_interleave());
-	Floppy* flp = comp->dif->fdc->flop[0];
+	Floppy* flp = comp->dif->flp[0];
 	ui.apathle->setText(QString::fromLocal8Bit(flp->path));
 		ui.a80box->setChecked(flp->trk80);
 		ui.adsbox->setChecked(flp->doubleSide);
 		ui.awpbox->setChecked(flp->protect);
-	flp = comp->dif->fdc->flop[1];
+	flp = comp->dif->flp[1];
 	ui.bpathle->setText(QString::fromLocal8Bit(flp->path));
 		ui.b80box->setChecked(flp->trk80);
 		ui.bdsbox->setChecked(flp->doubleSide);
 		ui.bwpbox->setChecked(flp->protect);
-	flp = comp->dif->fdc->flop[2];
+	flp = comp->dif->flp[2];
 	ui.cpathle->setText(QString::fromLocal8Bit(flp->path));
 		ui.c80box->setChecked(flp->trk80);
 		ui.cdsbox->setChecked(flp->doubleSide);
 		ui.cwpbox->setChecked(flp->protect);
-	flp = comp->dif->fdc->flop[3];
+	flp = comp->dif->flp[3];
 	ui.dpathle->setText(QString::fromLocal8Bit(flp->path));
 		ui.d80box->setChecked(flp->trk80);
 		ui.ddsbox->setChecked(flp->doubleSide);
@@ -884,22 +884,22 @@ void SetupWin::apply() {
 	conf.storePaths = ui.mempaths->isChecked() ? 1 : 0;
 	flp_set_interleave(getRFIData(ui.cbFlpInterleave));
 
-	Floppy* flp = comp->dif->fdc->flop[0];
+	Floppy* flp = comp->dif->flp[0];
 	flp->trk80 = ui.a80box->isChecked() ? 1 : 0;
 	flp->doubleSide = ui.adsbox->isChecked() ? 1 : 0;
 	flp->protect = ui.awpbox->isChecked() ? 1 : 0;
 
-	flp = comp->dif->fdc->flop[1];
+	flp = comp->dif->flp[1];
 	flp->trk80 = ui.b80box->isChecked() ? 1 : 0;
 	flp->doubleSide = ui.bdsbox->isChecked() ? 1 : 0;
 	flp->protect = ui.bwpbox->isChecked() ? 1 : 0;
 
-	flp = comp->dif->fdc->flop[2];
+	flp = comp->dif->flp[2];
 	flp->trk80 = ui.c80box->isChecked() ? 1 : 0;
 	flp->doubleSide = ui.cdsbox->isChecked() ? 1 : 0;
 	flp->protect = ui.cwpbox->isChecked() ? 1 : 0;
 
-	flp = comp->dif->fdc->flop[3];
+	flp = comp->dif->flp[3];
 	flp->trk80 = ui.d80box->isChecked() ? 1 : 0;
 	flp->doubleSide = ui.ddsbox->isChecked() ? 1 : 0;
 	flp->protect = ui.dwpbox->isChecked() ? 1 : 0;
@@ -1359,7 +1359,7 @@ void SetupWin::copyToTape() {
 	if (idx.size() == 0) return;
 	Computer* comp = conf.prof.cur->zx;
 	TRFile cat[128];
-	diskGetTRCatalog(comp->dif->fdc->flop[dsk],cat);
+	diskGetTRCatalog(comp->dif->flp[dsk],cat);
 	int row;
 	unsigned char* buf = new unsigned char[0xffff];
 	unsigned short line,start,len;
@@ -1367,7 +1367,7 @@ void SetupWin::copyToTape() {
 	int savedFiles = 0;
 	for (int i=0; i<idx.size(); i++) {
 		row = idx[i].row();
-		if (diskGetSectorsData(comp->dif->fdc->flop[dsk],cat[row].trk, cat[row].sec+1, buf, cat[row].slen)) {
+		if (diskGetSectorsData(comp->dif->flp[dsk],cat[row].trk, cat[row].sec+1, buf, cat[row].slen)) {
 			if (cat[row].slen == (cat[row].hlen + ((cat[row].llen == 0) ? 0 : 1))) {
 				start = ((cat[row].hst << 8) + cat[row].lst) & 0xffff;
 				len = ((cat[row].hlen << 8) + cat[row].llen) & 0xffff;
@@ -1397,7 +1397,7 @@ void SetupWin::diskToHobeta() {
 	if (dir == "") return;
 	Computer* comp = conf.prof.cur->zx;
 	std::string sdir = std::string(dir.toLocal8Bit().data()) + SLASH;
-	Floppy* flp = comp->dif->fdc->flop[ui.disktabs->currentIndex()];		// selected floppy
+	Floppy* flp = comp->dif->flp[ui.disktabs->currentIndex()];		// selected floppy
 	int savedFiles = 0;
 	for (int i=0; i<idx.size(); i++) {
 		if (saveHobetaFile(flp,idx[i].row(),sdir.c_str()) == ERR_OK) savedFiles++;
@@ -1413,7 +1413,7 @@ void SetupWin::diskToRaw() {
 	if (dir == "") return;
 	Computer* comp = conf.prof.cur->zx;
 	std::string sdir = std::string(dir.toLocal8Bit().data()) + SLASH;
-	Floppy* flp = comp->dif->fdc->flop[ui.disktabs->currentIndex()];
+	Floppy* flp = comp->dif->flp[ui.disktabs->currentIndex()];
 	int savedFiles = 0;
 	for (int i=0; i<idx.size(); i++) {
 		if (saveRawFile(flp,idx[i].row(),sdir.c_str()) == ERR_OK) savedFiles++;
@@ -1512,7 +1512,7 @@ void SetupWin::copyToDisk() {
 			return;
 		}
 	}
-	Floppy* flp = comp->dif->fdc->flop[dsk];
+	Floppy* flp = comp->dif->flp[dsk];
 	if (!flp->insert) {
 		newdisk(dsk, 0);
 		trd_format(flp);
@@ -1557,7 +1557,7 @@ void SetupWin::copyToDisk() {
 void SetupWin::fillDiskCat() {
 	int dsk = ui.disktabs->currentIndex();
 	Computer* comp = conf.prof.cur->zx;
-	Floppy* flp = comp->dif->fdc->flop[dsk];
+	Floppy* flp = comp->dif->flp[dsk];
 	TRFile ct[128];
 	QList<TRFile> cat;
 	int catSize = 0;
@@ -1618,7 +1618,7 @@ void SetupWin::palstore() {
 
 void SetupWin::newdisk(int idx, int ask) {
 	Computer* comp = conf.prof.cur->zx;
-	Floppy *flp = comp->dif->fdc->flop[idx];
+	Floppy *flp = comp->dif->flp[idx];
 	if (saveChangedDisk(comp,idx & 3) != ERR_OK) return;
 	flp_insert(flp, NULL);
 	// diskClear(flp);
@@ -1639,22 +1639,22 @@ void SetupWin::loadb() {load_file(conf.prof.cur->zx, NULL, FH_DRIVE_B, 1); updat
 void SetupWin::loadc() {load_file(conf.prof.cur->zx, NULL, FH_DRIVE_C, 2); updatedisknams();}
 void SetupWin::loadd() {load_file(conf.prof.cur->zx, NULL, FH_DRIVE_D, 3); updatedisknams();}
 
-void SetupWin::savea() {Computer* comp = conf.prof.cur->zx; Floppy* flp = comp->dif->fdc->flop[0]; if (flp->insert) save_file(comp, flp->path, FG_DISK_A, 0); updatedisknams();}
-void SetupWin::saveb() {Computer* comp = conf.prof.cur->zx; Floppy* flp = comp->dif->fdc->flop[1]; if (flp->insert) save_file(comp, flp->path, FG_DISK_B, 1); updatedisknams();}
-void SetupWin::savec() {Computer* comp = conf.prof.cur->zx; Floppy* flp = comp->dif->fdc->flop[2]; if (flp->insert) save_file(comp, flp->path, FG_DISK_C, 2); updatedisknams();}
-void SetupWin::saved() {Computer* comp = conf.prof.cur->zx; Floppy* flp = comp->dif->fdc->flop[3]; if (flp->insert) save_file(comp, flp->path, FG_DISK_D, 3); updatedisknams();}
+void SetupWin::savea() {Computer* comp = conf.prof.cur->zx; Floppy* flp = comp->dif->flp[0]; if (flp->insert) save_file(comp, flp->path, FG_DISK_A, 0); updatedisknams();}
+void SetupWin::saveb() {Computer* comp = conf.prof.cur->zx; Floppy* flp = comp->dif->flp[1]; if (flp->insert) save_file(comp, flp->path, FG_DISK_B, 1); updatedisknams();}
+void SetupWin::savec() {Computer* comp = conf.prof.cur->zx; Floppy* flp = comp->dif->flp[2]; if (flp->insert) save_file(comp, flp->path, FG_DISK_C, 2); updatedisknams();}
+void SetupWin::saved() {Computer* comp = conf.prof.cur->zx; Floppy* flp = comp->dif->flp[3]; if (flp->insert) save_file(comp, flp->path, FG_DISK_D, 3); updatedisknams();}
 
-void SetupWin::ejcta() {Computer* comp = conf.prof.cur->zx; saveChangedDisk(comp,0); flp_eject(comp->dif->fdc->flop[0]); updatedisknams();}
-void SetupWin::ejctb() {Computer* comp = conf.prof.cur->zx; saveChangedDisk(comp,1); flp_eject(comp->dif->fdc->flop[1]); updatedisknams();}
-void SetupWin::ejctc() {Computer* comp = conf.prof.cur->zx; saveChangedDisk(comp,2); flp_eject(comp->dif->fdc->flop[2]); updatedisknams();}
-void SetupWin::ejctd() {Computer* comp = conf.prof.cur->zx; saveChangedDisk(comp,3); flp_eject(comp->dif->fdc->flop[3]); updatedisknams();}
+void SetupWin::ejcta() {Computer* comp = conf.prof.cur->zx; saveChangedDisk(comp,0); flp_eject(comp->dif->flp[0]); updatedisknams();}
+void SetupWin::ejctb() {Computer* comp = conf.prof.cur->zx; saveChangedDisk(comp,1); flp_eject(comp->dif->flp[1]); updatedisknams();}
+void SetupWin::ejctc() {Computer* comp = conf.prof.cur->zx; saveChangedDisk(comp,2); flp_eject(comp->dif->flp[2]); updatedisknams();}
+void SetupWin::ejctd() {Computer* comp = conf.prof.cur->zx; saveChangedDisk(comp,3); flp_eject(comp->dif->flp[3]); updatedisknams();}
 
 void SetupWin::updatedisknams() {
 	Computer* comp = conf.prof.cur->zx;
-	ui.apathle->setText(QString::fromLocal8Bit(comp->dif->fdc->flop[0]->path));
-	ui.bpathle->setText(QString::fromLocal8Bit(comp->dif->fdc->flop[1]->path));
-	ui.cpathle->setText(QString::fromLocal8Bit(comp->dif->fdc->flop[2]->path));
-	ui.dpathle->setText(QString::fromLocal8Bit(comp->dif->fdc->flop[3]->path));
+	ui.apathle->setText(QString::fromLocal8Bit(comp->dif->flp[0]->path));
+	ui.bpathle->setText(QString::fromLocal8Bit(comp->dif->flp[1]->path));
+	ui.cpathle->setText(QString::fromLocal8Bit(comp->dif->flp[2]->path));
+	ui.dpathle->setText(QString::fromLocal8Bit(comp->dif->flp[3]->path));
 	fillDiskCat();
 }
 

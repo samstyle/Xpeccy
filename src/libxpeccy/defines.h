@@ -34,10 +34,13 @@ enum {
 	IRQ_CPU_SYNC,	// sync cpu ticks
 	IRQ_CPU_HALT,	// enter halt cycle
 	IRQ_CPU_ACK,	// = sync + set flgACK if interrupt (Z80)
-	IRQ_FDC,	// ibm
+	IRQ_FDC,	// ibm, pc98
 	IRQ_FDC_RD,
 	IRQ_FDC_WR,
-	IRQ_FDD_RDY,
+	IRQ_FDC2,	// pc98 (2nd fdc)
+	IRQ_FDC2_RD,
+	IRQ_FDC2_WR,
+	IRQ_FDD_RDY,	// fdd rdy signal changed
 	IRQ_HDD_PRI,
 	IRQ_SLAVE_PIC,
 	IRQ_MASTER_PIC,

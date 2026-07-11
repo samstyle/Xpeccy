@@ -26,8 +26,6 @@ void pic_reset(PIC* pic) {
 	pic->irr = 0;
 	pic->imr = 0xff;
 	pic->isr = 0;
-	pic->irr = 0;
-//	pic->oint = 0;
 }
 
 int pic_check_irr(PIC* pic) {
@@ -79,9 +77,9 @@ void pic_eoi(PIC* pic, int num) {
 
 // TODO: return vector for int with hightst priority and isr=1
 int pic_ack(PIC* pic) {
-	if (pic->icw4 & 2) {		// automatic eoi
+//	if (pic->icw4 & 2) {		// automatic eoi
 		pic_eoi(pic, pic->num);
-	}
+//	}
 	return pic->vec;
 }
 
@@ -120,10 +118,12 @@ void pic_wr(PIC* pic, int adr, int data) {
 			if (data & 0x40) {
 				pic->smm = (data & 0x20) ? 1 : 0;
 			}
+#if 0
 			if (data & 2) {				// read isr/irr on next rd pulse
 				pic->srd = 1;
 				pic->sdt = (data & 1) ? pic->isr : pic->irr;
 			}
+#endif
 		} else {			// ocw2 (example: 20)
 			pic->ocw2 = data & 0xff;
 			if (data & 0x20) {			// eoi

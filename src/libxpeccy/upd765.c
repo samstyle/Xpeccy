@@ -55,7 +55,7 @@ void ustp(FDC* fdc) {
 
 void uInt(FDC* fdc) {
 	if (!fdc->intr) {
-		fdc->xirq(IRQ_FDC, fdc->xptr);
+		fdc->xirq(fdc->irqn, fdc->xptr);
 		fdc->intr = 1;
 	}
 }
@@ -370,7 +370,7 @@ void uread04(FDC* fdc) {
 		fdc->data = fdc->tmp;
 		fdc->drq = 1;
 		if (fdc->dma) {
-			fdc->xirq(IRQ_FDC_RD, fdc->xptr);
+			fdc->xirq(fdc->irqrn, fdc->xptr);
 		} else {
 			uInt(fdc);
 		}
@@ -675,11 +675,9 @@ void uwrdat03(FDC* fdc) {
 	} else {
 		fdc->drq = 1;		// request next byte
 		if (fdc->dma) {
-			fdc->xirq(IRQ_FDC_WR, fdc->xptr);
+			fdc->xirq(fdc->irqwn, fdc->xptr);
 		} else {
 			uInt(fdc);
-//			fdc->intr = 1;
-//			if (fdc->inten) fdc->xirq(IRQ_FDC, fdc->xptr);
 		}
 	}
 }
@@ -748,17 +746,14 @@ void utrkfrm01(FDC* fdc) {		// wait for index
 	flpNext(fdc->flp, fdc->side);
 	fdc->wait += fdc->bytedelay; // turbo ? TRBBYTE : fdc->bytedelay;
 	if (fdc->flp->index) {
-		DBGOUT("index\n");
 		fdc->cnt = 0;
 		fdc->scnt = 0;
 		fdc->dir = 0;
 		fdc->drq = 1;		// waiting for 1st C
 		if (fdc->dma) {
-			fdc->xirq(IRQ_FDC_WR, fdc->xptr);
+			fdc->xirq(fdc->irqwn, fdc->xptr);
 		} else {
 			uInt(fdc);
-//			fdc->intr = 1;	// generate interrupt
-//			if (fdc->inten) fdc->xirq(IRQ_FDC, fdc->xptr);
 		}
 		fdc->pos++;
 	}
@@ -788,21 +783,17 @@ void utrkfrm02(FDC* fdc) {		// recieve cnt (4 * spt) bytes from cpu = sectors he
 			} else {
 				fdc->drq = 1;
 				if (fdc->dma) {
-					fdc->xirq(IRQ_FDC_WR, fdc->xptr);
+					fdc->xirq(fdc->irqwn, fdc->xptr);
 				} else {
 					uInt(fdc);
-					//fdc->intr = 1;
-					//if (fdc->inten) fdc->xirq(IRQ_FDC, fdc->xptr);
 				}
 			}
 		} else {
 			fdc->drq = 1;		// else request new byte
 			if (fdc->dma) {
-				fdc->xirq(IRQ_FDC_WR, fdc->xptr);
+				fdc->xirq(fdc->irqwn, fdc->xptr);
 			} else {
 				uInt(fdc);
-				//fdc->intr = 1;
-				//if (fdc->inten) fdc->xirq(IRQ_FDC, fdc->xptr);
 			}
 		}
 	}
@@ -900,10 +891,8 @@ void uExec(FDC* fdc, unsigned char val) {
 
 void uWrite(FDC* fdc, int adr, unsigned char val) {
 	if (!(adr & 1)) return;			// wr data only
-	// printf("wr : %.2X\n", val);
 	fdc->intr = 0;				// reset interrupt
 	if (fdc->idle) {			// 1st byte, command
-		// printf("updCom %.2X\n",val);
 		uExec(fdc, val);
 		if (val != 0x08) {		// sense interupt status doesn't change status flags
 			fdc->sr0 = fdc->flp->id & 3;
@@ -911,17 +900,14 @@ void uWrite(FDC* fdc, int adr, unsigned char val) {
 			fdc->sr2 = 0x00;
 		}
 	} else if (fdc->comCnt > 0) {		// arguments
-		// printf("arg %.2X\n",val);
 		fdc->comBuf[fdc->comPos] = val;
 		fdc->comPos++;
 		fdc->comCnt--;
 		if (fdc->comCnt == 0) {
 			fdc->irq = 1;		// exec
 			fdc->drq = 0;
-			// printf("FDC com: %.2X ",fdc->com); for (int i = 0; i < fdc->comPos; i++) {printf("%.2X ", fdc->comBuf[i]);} printf("\n");	// print command buf
 		}
 	} else if (fdc->drq && !fdc->dir) {	// data cpu->fdc
-		// printf("data %.2X\n",val);
 		fdc->data = val;
 		fdc->drq = 0;
 	} else if (val == 0x04) {
@@ -986,6 +972,5 @@ void uReset(FDC* fdc) {
 	// TODO:check this
 	fdc->intr = 0;		// ibm bios want interrupt after reset
 	uInt(fdc);
-	//fdc->xirq(IRQ_FDC, fdc->xptr);
 	fdc->sr0 = 0xc0;	// and b7,6=11 in sr0
 }

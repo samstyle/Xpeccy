@@ -51,7 +51,7 @@ static const char edsksgn[] =	"EXTENDED";
 static const char dsksgn[] =	"MV - CPC";
 
 int loadDSK(Computer* comp, const char *name, int drv) {
-	Floppy* flp = comp->dif->fdc->flop[drv & 3];
+	Floppy* flp = comp->dif->flp[drv & 3];
 	FILE* file = fopen(name, "rb");
 	if (!file) return ERR_CANT_OPEN;
 	int err = ERR_OK;
@@ -200,7 +200,7 @@ int saveDSK(Computer* comp, const char* name, int drv) {
 	int err = ERR_OK;
 	FILE* file = fopen(name, "wb");
 	if (file) {
-		Floppy* flp = comp->dif->fdc->flop[drv & 3];
+		Floppy* flp = comp->dif->flp[drv & 3];
 		unsigned char buf[256];
 		memset(buf, 0, 0x100);
 		memcpy(buf, sign, 0x22 + 0x0e);

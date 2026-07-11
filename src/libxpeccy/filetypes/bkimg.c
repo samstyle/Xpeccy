@@ -10,7 +10,7 @@ int loadBkIMG(Computer* comp, const char* fname, int drv) {
 	if (!file) {
 		err = ERR_CANT_OPEN;
 	} else {
-		flp = comp->dif->fdc->flop[drv & 3];
+		flp = comp->dif->flp[drv & 3];
 		trk = 0;
 		while (!feof(file) && (trk < 160)) {
 			fread(buf, 5120, 1, file);

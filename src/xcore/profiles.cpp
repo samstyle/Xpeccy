@@ -149,16 +149,12 @@ bool prfSetCurrent(std::string nm) {
 		nprf->zx = compCreate();
 		compSetHardware(nprf->zx, "Dummy");
 		prfLoad(nprf->name);
-//		prf_load_conf(nprf, nprf->file, 1);
-//		prf_load_cmos(nprf, conf.path.prfDir + SLASH + nprf->name + SLASH + nprf->name + ".cmos");
-//		prf_load_nvram(nprf, conf.path.prfDir + SLASH + nprf->name + SLASH + nprf->name + ".nvram");
 	}
 	ideOpenFiles(nprf->zx->ide);
 	sdcOpenFile(nprf->zx->sdc);
 	prfSetLayout(nprf, nprf->layName);
 	comp_kbd_release(nprf->zx);
 	mouseReleaseAll(nprf->zx->mouse);
-	//padLoadConfig(nprf->jmapName);
 	conf.gpctrl->gpada->loadMap(nprf->jmapNameA);
 	conf.gpctrl->gpadb->loadMap(nprf->jmapNameB);
 	loadKeys();
@@ -434,10 +430,10 @@ int prf_load_conf(xProfile* prf, std::string cfname, int flag) {
 					if ((pnam == "speed") && (arg.i > 94) && (arg.i < 106)) comp->tape->speed = arg.i;
 					break;
 				case PS_DISK:
-					if (pnam == "A") setDiskString(comp,comp->dif->fdc->flop[0],pval);
-					if (pnam == "B") setDiskString(comp,comp->dif->fdc->flop[1],pval);
-					if (pnam == "C") setDiskString(comp,comp->dif->fdc->flop[2],pval);
-					if (pnam == "D") setDiskString(comp,comp->dif->fdc->flop[3],pval);
+					if (pnam == "A") setDiskString(comp,comp->dif->flp[0],pval);
+					if (pnam == "B") setDiskString(comp,comp->dif->flp[1],pval);
+					if (pnam == "C") setDiskString(comp,comp->dif->flp[2],pval);
+					if (pnam == "D") setDiskString(comp,comp->dif->flp[3],pval);
 					if (pnam == "type") difSetHW(comp->dif, arg.i);
 					break;
 				case PS_MACHINE:
@@ -542,7 +538,7 @@ int prf_load_conf(xProfile* prf, std::string cfname, int flag) {
 			load_file(comp, comp->slot->path, FH_SLOTS, 0);
 		}
 		for (i = 0; i < 4; i++) {
-			flp = comp->dif->fdc->flop[i];
+			flp = comp->dif->flp[i];
 			if (flp->path)
 				load_file(comp, flp->path, FG_DISK, flp->id);
 		}
@@ -719,10 +715,10 @@ int prfSave(std::string nm) {
 
 	fprintf(file, "\n[DISK]\n\n");
 	fprintf(file, "type = %i\n", comp->dif->type);
-	fprintf(file, "A = %s\n", getDiskString(comp->dif->fdc->flop[0]).c_str());
-	fprintf(file, "B = %s\n", getDiskString(comp->dif->fdc->flop[1]).c_str());
-	fprintf(file, "C = %s\n", getDiskString(comp->dif->fdc->flop[2]).c_str());
-	fprintf(file, "D = %s\n", getDiskString(comp->dif->fdc->flop[3]).c_str());
+	fprintf(file, "A = %s\n", getDiskString(comp->dif->flp[0]).c_str());
+	fprintf(file, "B = %s\n", getDiskString(comp->dif->flp[1]).c_str());
+	fprintf(file, "C = %s\n", getDiskString(comp->dif->flp[2]).c_str());
+	fprintf(file, "D = %s\n", getDiskString(comp->dif->flp[3]).c_str());
 
 	fprintf(file, "\n[IDE]\n\n");
 	fprintf(file, "iface = %i\n", comp->ide->type);

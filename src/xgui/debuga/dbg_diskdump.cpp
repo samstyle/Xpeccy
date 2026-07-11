@@ -44,7 +44,7 @@ xDiskDumpModel::xDiskDumpModel(QObject* p):xTableModel(p) {
 
 void xDiskDumpModel::setDrive(int dr) {
 	drv = dr & 3;
-	Floppy* flp = conf.prof.cur->zx->dif->fdc->flop[drv];
+	Floppy* flp = conf.prof.cur->zx->dif->flp[drv];
 	int new_rcnt = (flp->trklen / 8) + ((flp->trklen & 7) ? 1 : 0);
 #if 1
 	setRows(new_rcnt);
@@ -78,7 +78,7 @@ QVariant xDiskDumpModel::data(const QModelIndex& idx, int role) const {
 	unsigned char ch;
 	int pos;
 	char buf[256];
-	Floppy* flp = conf.prof.cur->zx->dif->fdc->flop[drv];
+	Floppy* flp = conf.prof.cur->zx->dif->flp[drv];
 	QFont fnt;
 	switch (role) {
 		case X_BackgroundRole:

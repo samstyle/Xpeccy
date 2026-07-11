@@ -12,7 +12,7 @@ int stdAccumulate(unsigned char* ptr, int size, int res) {
 }
 
 int loadHobeta(Computer* comp, const char* name, int drv) {
-	Floppy* flp = comp->dif->fdc->flop[drv & 3];
+	Floppy* flp = comp->dif->flp[drv & 3];
 	FILE* file = fopen(name, "rb");
 	if (!file) return ERR_CANT_OPEN;
 	int err = ERR_OK;

@@ -266,7 +266,7 @@ QString file_get_group_filter(Computer* comp, int id, int sv) {
 	int i;
 	xFileGroupInfo* inf = file_find_group(id);
 	if (inf->id > 0) {
-		if (!sv || (inf->drv < 0) || (sv && !(inf->drv & ~3) && comp->dif->fdc->flop[inf->drv & 3]->insert) || ((inf->drv == 4) && comp->tape->blkCount > 0)) {
+		if (!sv || (inf->drv < 0) || (sv && !(inf->drv & ~3) && comp->dif->flp[inf->drv & 3]->insert) || ((inf->drv == 4) && comp->tape->blkCount > 0)) {
 			i = 0;
 			while(inf->child[i] > 0) {
 				ofl = file_get_type_filter(inf->child[i], sv);
@@ -520,7 +520,7 @@ void initFileDialog(QWidget* par) {
 int saveChangedDisk(Computer* comp,int id) {
 	int res = ERR_OK;
 	id &= 3;
-	Floppy* flp = comp->dif->fdc->flop[id];
+	Floppy* flp = comp->dif->flp[id];
 	if (flp->changed) {
 		QMessageBox mbox;
 		mbox.setText(QString("<b>Disk %0: has been changed</b>").arg(QChar('A'+id)));

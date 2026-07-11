@@ -252,10 +252,10 @@ int dpcOut(DiskIF* dif, int port, int val, int dos) {
 
 void dpc_irq(DiskIF* dif, int id) {
 	switch(id) {
-		case IRQ_FDD_RDY:
+		case IRQ_FDD_RDY:			// NOTE: for 1st fdc only ?
 			dif->fdc->sr0 &= 0x1f;
 			dif->fdc->sr0 |= 0xc0;		// 110xxxxx: ready changed
-			dif->fdc->xirq(IRQ_FDC, dif->fdc->xptr);
+			dif->fdc->xirq(dif->fdc->irqn, dif->fdc->xptr);
 			dif->flpch = 1;
 			break;
 	}
@@ -267,21 +267,20 @@ void dpc_term(DiskIF* dif) {
 
 // pc98xx (upD765)
 
-// TODO: b2,port = fdc select
-// b0,1 = port number
+// b0,1 = port
+// b2 = select 2nd fdc
 int p98in(DiskIF* dif, int port, int* rptr, int dos) {
 	int res = -1;
+	FDC* fdc = (port & 4) ? dif->fdc2 : dif->fdc;
 	switch(port & 3) {
-		case 0: res = uRead(dif->fdc, 0); break;	// status
-		case 1: res = uRead(dif->fdc, 1); break;	// data
+		case 0: res = uRead(fdc, 0); break;		// status
+		case 1: res = uRead(fdc, 1); break;		// data
 		case 2: res = 0x40; break;			// b6=1, b3=fdd2/3type(0:1mb,1:640kb),b2=fdd0/1type
 	}
 	*rptr = res;
 	return 1;
 }
 
-// b0,1 = port
-// b2 = select 2nd fdc
 int p98out(DiskIF* dif, int port, int val, int dos) {
 	FDC* fdc = (port & 4) ? dif->fdc2 : dif->fdc;
 	switch(port & 3) {
@@ -362,6 +361,12 @@ void fdc_destroy(FDC* fdc) {
 	free(fdc);
 }
 
+void fdc_set_irqn(FDC* fdc, int in, int irn, int iwn) {
+	fdc->irqn = in;
+	fdc->irqrn = irn;
+	fdc->irqwn = iwn;
+}
+
 void fdc_set_flps(FDC* fdc, Floppy* fa, Floppy* fb, Floppy* fc, Floppy* fd) {
 	fdc->flop[0] = fa;
 	fdc->flop[1] = fb;
@@ -380,7 +385,9 @@ void dif_align_flps(DiskIF* dif, FDC* fdc, int n0, int n1, int n2, int n3) {
 DiskIF* difCreate(int type, cbirq cb, void* p) {
 	DiskIF* dif = (DiskIF*)malloc(sizeof(DiskIF));
 	dif->fdc = fdc_create(cb, p);
+	fdc_set_irqn(dif->fdc, IRQ_FDC, IRQ_FDC_RD, IRQ_FDC_WR);
 	dif->fdc2 = fdc_create(cb, p);
+	fdc_set_irqn(dif->fdc2, IRQ_FDC2, IRQ_FDC2_RD, IRQ_FDC2_WR);
 	for (int i = 0; i < 4; i++) {
 		dif->flp[i] = flpCreate(i, dhw_irq, dif);
 		dif->fdc->flop[i] = dif->flp[i];

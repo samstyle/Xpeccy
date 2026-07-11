@@ -29,7 +29,9 @@ void tzxBlock10(FILE* file, Tape* tape) {
 	int len = fgetw(file);
 	char buf[0x10000];
 	fread(buf, len, 1, file);
+	int brk = tape->tmpBlock.breakPoint;			// to not override previous block20 flag
 	tape->tmpBlock = tapDataToBlock(buf, len, sigLens);
+	tape->tmpBlock.breakPoint = brk;
 	blkAddPause(&tape->tmpBlock, pause);
 	tap_add_block(tape, tape->tmpBlock);
 	blkClear(&tape->tmpBlock);
@@ -46,11 +48,13 @@ void tzxBlock11(FILE* file, Tape* tape) {
 	altLens[6] = fgetw(file);			// pilot pulses
 	int bits = fgetc(file);				// TODO: used bits in last byte
 	// printf("bits:%i\n",bits);
-	int pause = fgetw(file) * 1e6 / TAPTPS;
+	int pause = fgetw(file) * 1e6 / TAPTICKNS;
 	int len = fgett(file);		// freadLen(file, 3);
 	char* buf = (char*)malloc(len);
 	fread(buf, len-1, 1, file);
+	int brk = tape->tmpBlock.breakPoint;
 	tape->tmpBlock = tapDataToBlock(buf, len-1, altLens);
+	tape->tmpBlock.breakPoint = brk;
 	int data = fgetc(file);		// last byte
 	if (bits > 8) bits = 8;
 	if (bits != 8) tape->isData = 0;
@@ -96,7 +100,7 @@ void tzxBlock14(FILE* file, Tape* tape) {
 	int bits = fgetc(file);			// used bits in last byte
 	// printf("%i : %i : last bits %i\n",bit0,bit1,bits);
 	int pausems = fgetw(file);
-	int pause = pausems * 1e6 / TAPTPS;	// ms -> mks
+	int pause = pausems * 1e6 / TAPTICKNS;	// ms -> ticks
 	int len = fgett(file);
 	while (len > 1) {
 		data = fgetc(file);
@@ -160,7 +164,7 @@ void tzxBlock15(FILE* file, Tape* tape) {
 
 // #20,<len:2> : pause or stop tape
 void tzxBlock20(FILE* file, Tape* tape) {
-	int len = fgetw(file) * 1000 / TAPTICKNS;
+	int len = fgetw(file) * 1e6 / TAPTICKNS;
 	if (len) {
 		blkAddPause(&tape->tmpBlock, len);
 	} else {

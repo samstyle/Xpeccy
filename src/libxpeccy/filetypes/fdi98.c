@@ -2,7 +2,7 @@
 
 int loadFDI98(Computer* comp, const char* name, int drv) {
 	int res = ERR_OK;
-	Floppy* flp = comp->dif->fdc->flop[drv & 3];
+	Floppy* flp = comp->dif->flp[drv & 3];
 	FILE* file = fopen(name, "rb");
 	if (!file) {
 		res = ERR_CANT_OPEN;
