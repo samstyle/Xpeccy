@@ -1171,6 +1171,7 @@ void MainWin::bookmarkSelected(QAction* act) {
 
 void MainWin::onPrfChange() {
 	Computer* comp = conf.prof.cur->zx;
+	comp->tape->detectOn = conf.tape.autostart;
 	if (comp->flgFRN) {
 		// loadPalette(conf.prof.cur);		// already loaded for each profile
 		compReset(comp, RES_DEFAULT);

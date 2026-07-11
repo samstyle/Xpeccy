@@ -346,6 +346,7 @@ void tapStop(Tape* tap) {
 		//tap->volPlay = 0x80;
 		// tap->pos = 0;
 	}
+	tap->detectReads = 0;
 }
 
 int tapPlay(Tape* tap) {
@@ -356,7 +357,34 @@ int tapPlay(Tape* tap) {
 		tap->sigLen = TAPTPS / 2;	// .5 sec
 		// tap->volPlay = (tap->volPlay & 0x80) ? 0x7f : 0x81;
 	}
+	tap->detectReads = 0;
 	return tap->on;
+}
+
+// Detect loaders that bypass the ROM (custom in-game loaders): a tight loop reading
+// port 0xFE a fixed number of T-states apart, with B changing by exactly 1 each time,
+// is a strong sign of a bit-timing loop, so treat it as "a loader started" and play the
+// tape. No matching auto-stop: the same pattern is also produced by ordinary DJNZ-timed
+// delay/keyboard-wait loops, and once gameplay is scanning the keyboard port 0xFE never
+// goes quiet either - so neither an irregular-read count nor an idle timeout can tell
+// "loading is over" from "unrelated code is also hitting this port". TZX #20 stop
+// markers and the manual Brk/Stop controls cover stopping instead.
+void tapDetectLoader(Tape* tap, int tick, int regB) {
+	if (!tap->detectOn || tap->on) {
+		tap->detectReads = 0;
+		return;
+	}
+	int tickDiff = tick - tap->detectLastTick;
+	int bDiff = (regB - tap->detectLastB) & 0xff;
+	tap->detectLastTick = tick;
+	tap->detectLastB = regB & 0xff;
+	if ((tickDiff <= 500) && ((bDiff == 1) || (bDiff == 0xff))) {
+		tap->detectReads++;
+		if (tap->detectReads >= 10)
+			tapPlay(tap);
+	} else {
+		tap->detectReads = 0;
+	}
 }
 
 void tapRec(Tape* tap) {

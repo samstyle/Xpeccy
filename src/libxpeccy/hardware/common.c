@@ -233,6 +233,7 @@ int xInFE(Computer* comp, int port) {
 	unsigned char res = kbd_rd(comp->keyb, port) | 0xa0;		// set bits 7,5
 	if (comp->tape->volPlay & 0x80)
 		res |= 0x40;
+	tapDetectLoader(comp->tape, comp->tickCount, comp->cpu->regB);
 	return res;
 }
 
