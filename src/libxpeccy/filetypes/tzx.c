@@ -290,7 +290,7 @@ tzxBCall tzxBlockTab[] = {
 	{0x12, tzxBlock12},
 	{0x13, tzxBlock13},
 	{0x14, tzxBlock14},
-	{0x15, tzxBlockXX},
+	{0x15, tzxBlock15},
 	{0x18, tzxBlockXX},
 	{0x19, tzxBlockXX},
 	{0x20, tzxBlock20},

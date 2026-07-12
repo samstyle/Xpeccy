@@ -11,10 +11,7 @@ class xTapeCatModel : public xTableModel {
 	public:
 		xTapeCatModel(QObject* p = NULL);
 		void fill(Tape*);
-		int rowCount(const QModelIndex& = QModelIndex()) const;
-		int columnCount(const QModelIndex& = QModelIndex()) const;
 	private:
-		int rcnt;
 		int rcur;
 		TapeBlockInfo* inf;
 		QVariant data(const QModelIndex&, int) const;

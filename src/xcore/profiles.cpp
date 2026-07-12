@@ -145,10 +145,13 @@ bool prfSetCurrent(std::string nm) {
 	prfClose();
 	conf.prof.cur = nprf;
 	if (nprf->initrq) {
+		conf.emu.pause |= PR_EXTRA;
 		nprf->initrq = 0;
 		nprf->zx = compCreate();
 		compSetHardware(nprf->zx, "Dummy");
 		prfLoad(nprf->name);
+		compReset(nprf->zx, RES_DEFAULT);
+		conf.emu.pause &= ~PR_EXTRA;
 	}
 	ideOpenFiles(nprf->zx->ide);
 	sdcOpenFile(nprf->zx->sdc);

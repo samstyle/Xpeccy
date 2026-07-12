@@ -2,39 +2,23 @@
 #include "xcore/xcore.h"
 
 #include <QHeaderView>
-//#include <QDebug>
 
 // model
 
 xTapeCatModel::xTapeCatModel(QObject* p):xTableModel(p) {
-	rcnt = 0;
+	setRows(0);
+	setCols(5);
 	inf = NULL;
 }
 
-int xTapeCatModel::rowCount(const QModelIndex&) const {
-	return rcnt;
-}
-
-int xTapeCatModel::columnCount(const QModelIndex&) const {
-	return 5;	// 6
-}
-
 void xTapeCatModel::fill(Tape* tap) {
-	if (rcnt < tap->blkCount) {
-		beginInsertRows(QModelIndex(), 0, tap->blkCount - rcnt - 1);
-		endInsertRows();
-	} else if (rcnt > tap->blkCount) {
-		beginRemoveRows(QModelIndex(), 0, rcnt - tap->blkCount - 1);
-		endRemoveRows();
-	}
-	rcnt = tap->blkCount;
+	setRows(tap->blkCount);
 	rcur = tap->block;
-	// int fsz = rcnt * sizeof(TapeBlockInfo);
 	if (inf) delete(inf);
-	inf = new TapeBlockInfo[rcnt]; // (TapeBlockInfo*)realloc(inf, fsz);
-	if (rcnt == 0) {
+	if (row_count == 0) {
 		inf = NULL;
 	} else {
+		inf = new TapeBlockInfo[row_count]; // (TapeBlockInfo*)realloc(inf, fsz);
 		switch(conf.prof.cur->zx->hw->grp) {
 			case HWG_ZX:
 				tapGetBlocksInfo(tap, inf, TFRM_ZX);
@@ -43,7 +27,7 @@ void xTapeCatModel::fill(Tape* tap) {
 				tapGetBlocksInfo(tap, inf, TFRM_BK);
 				break;
 			default:
-				for (int i = 0; i < rcnt; i++) {
+				for (int i = 0; i < row_count; i++) {
 					inf[i].type = -1;
 					inf[i].name[0] = 0;
 					inf[i].size = 0;

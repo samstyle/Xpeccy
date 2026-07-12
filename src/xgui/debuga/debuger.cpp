@@ -850,7 +850,7 @@ void DebugWin::customEvent(QEvent* ev) {
 				dasmSome(comp, pcadr + comp->cpu->cs.base, tracemnm);
 				tracestr = "\"";			// to avoid numbers conversion, like 3e4->3000
 				if (comp->cpu->core->group == CPUG_X86) {
-					tracestr.append(gethexword(comp->cpu->cs.idx));
+					tracestr.append(cpu_get_regtype(comp->cpu, REG_CS)); //  gethexword(comp->cpu->cs.idx));
 					tracestr.append(":");
 					tracestr.append(gethexword(pcadr));
 				} else {

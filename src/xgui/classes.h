@@ -22,9 +22,6 @@ class xTableModel : public QAbstractTableModel {
 	protected:
 		int row_count;
 		int col_count;
-	private:
-		int mrd(int);
-		void mwr(int, int);
 };
 
 class xDockWidget : public QDockWidget {
