@@ -232,6 +232,7 @@ void xThread::emuCycle(Computer* comp) {
 
 void xThread::run() {
 	Computer* comp;
+	conf.snd.need = 0;		// reset sound buffer
 	do {
 #if !USEMUTEX
 		sleepy = 1;

@@ -19,7 +19,7 @@ static int posp = 0x0004;			// play pos
 
 static int smpCount = 0;
 OutSys *sndOutput = NULL;
-static int sndChunks = 882;
+// static int sndChunks = 882;
 
 #define DISCRATE 32
 int nsPerSample = 22675;
@@ -186,7 +186,7 @@ int null_open() {
 		printf("Can't create SDL_Timer, syncronisation unavailable\n");
 		throw(0);
 	}
-	sndChunks = conf.snd.rate / 50 * DISCRATE;
+//	sndChunks = conf.snd.rate / 50 * DISCRATE;
 	return 1;
 }
 
@@ -256,7 +256,8 @@ int sdlopen() {
 		res = 0;
 	} else {
 		printf("SDL audio device opening...success: %i %i (%i / %i)\n",dsp.freq, dsp.samples,dsp.format,AUDIO_S16LSB);
-		sndChunks = dsp.samples * DISCRATE;
+//		sndChunks = dsp.samples * DISCRATE;
+		conf.snd.need = dsp.samples;
 #if defined(HAVESDL2)
 		SDL_PauseAudioDevice(sdldevid, 0);
 #else
