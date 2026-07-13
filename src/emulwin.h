@@ -180,6 +180,7 @@ typedef struct {
 		void updateHead();
 		void screenShot();
 		void drawIcons(QPainter&);
+		void presentFrame();
 
 #if USE_QT_GAMEPAD
 		QGamepadManager* gpadmgr;

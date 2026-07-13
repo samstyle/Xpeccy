@@ -629,6 +629,16 @@ void MainWin::rzxStateChanged(int state) {
 #endif
 }
 
+// Redraw now. blockSignals/setUpdatesEnabled avoids the QOpenGLWidget
+// repaint recursion (see paintEvent).
+void MainWin::presentFrame() {
+	blockSignals(true);
+	setUpdatesEnabled(true);
+	repaint();
+	setUpdatesEnabled(false);
+	blockSignals(false);
+}
+
 void MainWin::frame_timer() {
 	Computer* comp = conf.prof.cur->zx;
 	if (comp) {
@@ -636,6 +646,12 @@ void MainWin::frame_timer() {
 		frm_tmr.setInterval(frm_ns / 1000000);		// 1e6 ns = 1 ms. next frame shot
 		frm_ns = frm_ns % 1000000;			// remains
 	}
+	// In low latency mode d_frame() shows each frame as soon as it is made,
+	// so this timer does not paint in normal play (a second timer would beat
+	// with frame making and cause a slow frame slip). The timer paints for
+	// fast-forward and pause (no frames at 50Hz), and in buffered mode, where
+	// a steady timer rate looks smoother.
+	if (conf.vid.lowLatency && !conf.emu.fast && !conf.emu.pause) return;
 #if defined(USEOPENGL) && !BLOCKGL
 	if (conf.emu.fast || conf.emu.pause) {
 		glBindTexture(GL_TEXTURE_2D, texids[curtex]);
@@ -644,11 +660,7 @@ void MainWin::frame_timer() {
 		queue.append(texids[curtex]);
 	}
 #endif
-	blockSignals(true);
-	setUpdatesEnabled(true);
-	repaint();				// (?) recursive repaint if signals is on
-	setUpdatesEnabled(false);
-	blockSignals(false);
+	presentFrame();
 }
 
 void MainWin::d_frame() {
@@ -656,12 +668,17 @@ void MainWin::d_frame() {
 #if defined(USEOPENGL) && !BLOCKGL
 	Computer* comp = conf.prof.cur->zx;
 	queue.append(texids[curtex]);
-	if (queue.size() > 3)
+	// Low latency keeps only the newest frame; buffered keeps a couple to
+	// smooth jitter (see paintEvent).
+	if (queue.size() > (conf.vid.lowLatency ? 1 : 2))
 		queue.takeFirst();
 	glBindTexture(GL_TEXTURE_2D, texids[curtex]);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, bytesPerLine / 4, comp->vid->vsze.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, comp->flgDBG ? scrimg : bufimg);
 	curtex++;
 #endif
+	// Low latency: show the frame now. Buffered: let the timer show it.
+	if (conf.vid.lowLatency)
+		presentFrame();
 }
 
 static char numbuf[32];
@@ -685,8 +702,16 @@ void MainWin::paintEvent(QPaintEvent*) {
 	glClearColor(0, 0, 0, 1);
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	if (!queue.isEmpty())
-		curtxid = queue.takeFirst();
+	// Low latency: take the newest frame and drop the rest for the lowest
+	// lag. Buffered: take the oldest (FIFO) so the small buffer smooths jitter.
+	if (!queue.isEmpty()) {
+		if (conf.vid.lowLatency) {
+			curtxid = queue.takeLast();
+			queue.clear();
+		} else {
+			curtxid = queue.takeFirst();
+		}
+	}
 
 	if (prg.isLinked()) {
 		const qreal r = widgetDpr(this);
