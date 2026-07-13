@@ -923,6 +923,7 @@ void SetupWin::apply() {
 // tape
 	conf.tape.autostart = ui.cbTapeAuto->isChecked() ? 1 : 0;
 	conf.tape.fast = ui.cbTapeFast->isChecked() ? 1 : 0;
+	comp->tape->detectOn = conf.tape.autostart;
 // input
 	conf.prof.cur->jmapNameA = gpwid_a->getMapName();
 	conf.prof.cur->jmapNameB = gpwid_b->getMapName();

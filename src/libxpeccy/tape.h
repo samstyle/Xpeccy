@@ -79,6 +79,11 @@ typedef struct {
 	unsigned oldRec:1;	// previous rec signal
 	unsigned char speed;	// 95 to 105
 
+	unsigned detectOn:1;	// auto play by CPU port-0xFE polling pattern (for loaders that bypass the ROM)
+	int detectLastTick;
+	int detectLastB;
+	int detectReads;
+
 	int time;
 	unsigned char volPlay;
 	int block;
@@ -107,6 +112,7 @@ void tapRewind(Tape*,int);
 
 void tapSync(Tape*,int);
 void tapNextBlock(Tape*);
+void tapDetectLoader(Tape*, int tick, int regB);
 
 TapeBlockInfo tapGetBlockInfo(Tape*,int,int);
 int tapGetBlocksInfo(Tape*,TapeBlockInfo*, int);
