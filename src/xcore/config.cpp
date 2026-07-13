@@ -158,6 +158,7 @@ void saveConfig() {
 	fprintf(cfile, "scrNoBord = %s\n", YESNO(conf.scrShot.noBorder));
 	fprintf(cfile, "fullscreen = %s\n", YESNO(conf.vid.fullScreen));
 	fprintf(cfile, "keepratio = %s\n", YESNO(conf.vid.keepRatio));
+	fprintf(cfile, "lowlatency = %s\n", YESNO(conf.vid.lowLatency));
 	fprintf(cfile, "scale = %i\n", conf.vid.scale);
 	fprintf(cfile, "greyscale = %s\n", YESNO(greyScale));
 //	fprintf(cfile, "scanlines = %s\n", YESNO(scanlines));
@@ -433,6 +434,7 @@ void loadConfig() {
 					if (pnam=="scrNoBord") conf.scrShot.noBorder = arg.b;
 					if (pnam=="fullscreen") conf.vid.fullScreen = arg.b;
 					if (pnam=="keepratio") conf.vid.keepRatio = arg.b;
+					if (pnam=="lowlatency") conf.vid.lowLatency = arg.b;
 					if (pnam=="bordersize") conf.brdsize = getRanged(arg.s, 0, 100) / 100.0;
 					if (pnam=="doublesize") conf.vid.scale = arg.b ? 2 : 1;
 					if (pnam=="scale") {

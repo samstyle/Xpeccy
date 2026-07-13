@@ -818,6 +818,16 @@
              </widget>
             </item>
             <item>
+             <widget class="QCheckBox" name="cbLowLat">
+              <property name="toolTip">
+               <string>Show each frame at once for low input lag (best with VRR / high refresh). Off: buffer frames for smoother motion on fixed-refresh displays.</string>
+              </property>
+              <property name="text">
+               <string>Low latency</string>
+              </property>
+             </widget>
+            </item>
+            <item>
              <widget class="QCheckBox" name="grayscale">
               <property name="text">
                <string>Gray scale</string>

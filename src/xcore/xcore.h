@@ -440,6 +440,7 @@ struct xConfig {
 	struct {
 		unsigned fullScreen:1;	// use fullscreen
 		unsigned keepRatio:1;	// keep ratio in fullscreen (add black borders)
+		unsigned lowLatency:1;	// show each frame at once (low input lag), else buffer for smooth motion
 		int scale;		// x1..x4
 		int fcount;		// frames counter (for fps showing) (= fcnt ???)
 		int curfps;

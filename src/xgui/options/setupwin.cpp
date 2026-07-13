@@ -559,6 +559,7 @@ void SetupWin::start() {
 // video
 	ui.cbFullscreen->setChecked(conf.vid.fullScreen);
 	ui.cbKeepRatio->setChecked(conf.vid.keepRatio);
+	ui.cbLowLat->setChecked(conf.vid.lowLatency);
 	ui.sbScale->setValue(conf.vid.scale);
 	ui.sldNoflic->setValue(noflic); chaflc();
 	ui.cbNoflicMode->setCurrentIndex(noflicMode);
@@ -786,6 +787,7 @@ void SetupWin::apply() {
 // video
 	conf.vid.fullScreen = ui.cbFullscreen->isChecked() ? 1 : 0;
 	conf.vid.keepRatio = ui.cbKeepRatio->isChecked() ? 1 : 0;
+	conf.vid.lowLatency = ui.cbLowLat->isChecked() ? 1 : 0;
 	conf.vid.scale = ui.sbScale->value();
 	noflic = ui.sldNoflic->value();
 	noflicMode = ui.cbNoflicMode->currentIndex();
