@@ -153,7 +153,6 @@ std::string sndGetName() {
 // Sound output
 //------------------------
 
-static SDL_TimerID tid;
 #if USEMUTEX
 extern QMutex emutex;
 extern QWaitCondition qwc;
@@ -161,54 +160,38 @@ extern QWaitCondition qwc;
 extern int sleepy;
 #endif
 
-Uint32 sdl_timer_callback(Uint32 iv, void* ptr) {
-#if USEMUTEX
-	qwc.wakeAll();
-#else
-	sleepy = 0;
-	if (!conf.emu.pause) {
-		conf.snd.need += conf.snd.rate / 50;
-	}
-#endif
-	return iv;
-}
-
 // NULL
 
 int null_open() {
 	printf("NULL device opening...\n");
-	tid = SDL_AddTimer(20, sdl_timer_callback, NULL);
-#ifdef HAVESDL1
-	if (tid == NULL) {
-#else
-	if (tid < 0) {
-#endif
-		printf("Can't create SDL_Timer, syncronisation unavailable\n");
-		throw(0);
-	}
 //	sndChunks = conf.snd.rate / 50 * DISCRATE;
 	return 1;
 }
 
 // void null_play() {}
 void null_close() {
-	SDL_RemoveTimer(tid);
 }
 
 // SDL
 
 #include <QDebug>
 
-void sdlPlayAudio(void*, Uint8* stream, int len) {
-//	printf("len = %i\n",len);
-	if (!conf.emu.fast && !conf.emu.pause) {
-		conf.snd.need += len/4;
-	} else {
-		conf.snd.need = 0;
-	}
+// gap in ring-buffer bytes between the write position (posf) and the play
+// position (posp). used here for overfill, and by pacing.cpp to avoid
+// running ahead of real playback.
+int sndGetRingDistance() {
 	int dist = posf - posp;
 	while (dist < 0) dist += 0x4000;
 	while (dist > 0x3fff) dist -= 0x4000;
+	return dist;
+}
+
+void sdlPlayAudio(void*, Uint8* stream, int len) {
+//	printf("len = %i\n",len);
+	// conf.snd.need is no longer filled here - it is filled from a steady
+	// timer in pacing.cpp, so frame making does not run in audio-buffer sized
+	// bursts. See pacing.h for why. This callback only plays the ring buffer.
+	int dist = sndGetRingDistance();
 	if ((dist < len) || conf.emu.fast || conf.emu.pause) {				// overfill : fill with last sample of previous buf
 //		printf("overfill : %i %i\n", posf, posp);
 		while(len > 0) {

@@ -11,6 +11,7 @@
 
 #include "xcore/xcore.h"
 #include "xcore/sound.h"
+#include "xcore/pacing.h"
 #include "xgui/xgui.h"
 #include "libxpeccy/spectrum.h"
 #include "libxpeccy/cpu/Z80/z80.h"
@@ -26,6 +27,7 @@
 
 #if defined(__WIN32)
 #include <windows.h>
+#include <mmsystem.h>
 #include <conio.h>
 #endif
 
@@ -96,6 +98,11 @@ int main(int ac,char** av) {
 // NOTE:SDL_INIT_VIDEO must be here for SDL_Joystick event processing. Joystick doesn't works without video init
 	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK | SDL_INIT_TIMER);
 	atexit(SDL_Quit);
+#if defined(__WIN32)
+	// raise the Windows timer resolution to 1ms for smoother frame timing
+	// (the default step is ~15ms, which makes usleep and timers coarse)
+	timeBeginPeriod(1);
+#endif
 	SDL_version sdlver;
 	SDL_VERSION(&sdlver)
 	printf("Using SDL ver %u.%u.%u\n", sdlver.major, sdlver.minor, sdlver.patch);
@@ -130,6 +137,7 @@ int main(int ac,char** av) {
 	app.addLibraryPath(".\\");
 #endif
 	sndInit();
+	pacingInit();
 	conf_init(av[0], NULL);
 	shortcut_init();
 	loadConfig();
@@ -336,8 +344,10 @@ int main(int ac,char** av) {
 		ethread.wait();
 	}
 	conf.running = 0;
+	pacingClose();
 	sndClose();
 #if defined(__WIN32)
+	timeEndPeriod(1);
 	getch();
 	FreeConsole();
 #endif
