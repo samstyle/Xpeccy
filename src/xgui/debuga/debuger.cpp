@@ -464,11 +464,17 @@ DebugWin::DebugWin(QWidget* par):QMainWindow(par) {
 	ui_asm.tbDbgOpt->addAction(ui_asm.actRomWr);
 	ui_asm.tbDbgOpt->addAction(ui_asm.actMaping);
 	ui_asm.tbDbgOpt->addAction(ui_asm.actMapingClear);
+	ui_asm.tbDbgOpt->addAction(ui_asm.actHeatEnable);
+	ui_asm.tbDbgOpt->addAction(ui_asm.actHeatReset);
+	ui_asm.tbDbgOpt->addAction(ui_asm.actHeatExport);
 
 // connections
 	connect(this, &DebugWin::needStep, this, &DebugWin::doStep);
 	connect(ui_asm.cbAccT, &QCheckBox::toggled, this, &DebugWin::resetTCount);
 	connect(ui_asm.actMapingClear, &QAction::triggered, this, &DebugWin::mapClear);
+	connect(ui_asm.actHeatEnable, &QAction::toggled, this, &DebugWin::heatToggle);
+	connect(ui_asm.actHeatReset, &QAction::triggered, this, &DebugWin::heatReset);
+	connect(ui_asm.actHeatExport, &QAction::triggered, this, &DebugWin::heatExport);
 	connect(ui_asm.dasmTable, &xDisasmTable::customContextMenuRequested, this, &DebugWin::putBreakPoint);
 	//connect(ui_asm.dasmTable, &xDisasmTable::rqRefill, this, &DebugWin::fillDisasm);		// must update internally
 	connect(ui_asm.dasmTable, &xDisasmTable::rqRefill, wid_dump, &xDumpWidget::draw);
@@ -1389,6 +1395,28 @@ void DebugWin::mapClear() {
 
 void DebugWin::mapAuto() {
 
+}
+
+// memory heat-map (read/write/exec usage counters)
+
+void DebugWin::heatToggle(bool on) {
+	Computer* comp = conf.prof.cur->zx;
+	comp->flgHEAT = on;
+	if (on) comp_heat_sync(comp);		// make sure banks are allocated for current hardware
+}
+
+void DebugWin::heatReset() {
+	if (!areSure("Reset memory heat-map counters?")) return;
+	comp_heat_reset(conf.prof.cur->zx);
+}
+
+void DebugWin::heatExport() {
+	QString path = QFileDialog::getSaveFileName(this, "Export memory heat-map", QString(), "Heat-map CSV (*.csv)", nullptr, QFileDialog::DontUseNativeDialog);
+	if (path.isEmpty()) return;
+	if (!path.endsWith(".csv", Qt::CaseInsensitive))
+		path.append(".csv");
+	if (comp_heat_save(conf.prof.cur->zx, path.toLocal8Bit().data()) != 0)
+		shitHappens("Can't write heat-map file");
 }
 
 // stack

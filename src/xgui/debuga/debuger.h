@@ -175,6 +175,10 @@ class DebugWin : public QMainWindow {
 		void mapClear();
 		void mapAuto();
 
+		void heatToggle(bool);
+		void heatReset();
+		void heatExport();
+
 		int fillDisasm();
 		void regClick(QMouseEvent*);
 		void reload();

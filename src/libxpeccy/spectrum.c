@@ -73,10 +73,11 @@ int memrd(int adr, int m1, void* ptr) {
 	}
 #endif
 	unsigned char* fptr = comp_get_memcell_flag_ptr(comp, adr);
+	unsigned isExecByte = (cpu_get_pc(comp->cpu)-1+comp->cpu->cs.base) == adr;
 	if (fptr) {
 		unsigned char flag = *fptr;
 		if (comp->flgMAP) {
-			if ((cpu_get_pc(comp->cpu)-1+comp->cpu->cs.base) == adr) {
+			if (isExecByte) {
 				flag &= 0x0f;
 				flag |= DBG_VIEW_EXEC;
 				*fptr = flag;
@@ -85,6 +86,12 @@ int memrd(int adr, int m1, void* ptr) {
 				*fptr = flag;
 			}
 		}
+	}
+	if (comp->flgHEAT) {
+		// a byte is part of the instruction stream (opcode, prefix, immediate/displacement
+		// operand) whenever it lands right where PC just advanced past it; everything else
+		// is a real data read (memory operand, stack pop, etc)
+		comp_heat_hit(comp, adr, isExecByte ? HEAT_EX : HEAT_RD);
 	}
 	bpChecker ch = comp_check_bp(comp, adr, MEM_BRK_RD);
 	if (ch.t >= 0) {
@@ -98,6 +105,10 @@ int memrd(int adr, int m1, void* ptr) {
 void memwr(int adr, int val, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 	adr &= comp->cpu->busmask;
+	if (comp->flgHEAT) {
+		// writes (incl. stack push/call) are always data traffic, never execution
+		comp_heat_hit(comp, adr, HEAT_WR);
+	}
 	unsigned char* fptr = comp_get_memcell_flag_ptr(comp, adr);
 	if (fptr) {
 		unsigned char flag = *fptr;
@@ -427,6 +438,7 @@ Computer* compCreate() {
 
 void compDestroy(Computer* comp) {
 	rzxStop(comp);
+	comp_heat_free(comp);
 	cpuDestroy(comp->cpu);
 	memDestroy(comp->mem);
 	vidDestroy(comp->vid);
@@ -494,6 +506,7 @@ void compReset(Computer* comp,int res) {
 	comp->cpu->ss.base = 0;
 	comp->cpu->cs.limit = 0xffff;
 	cpu_reset(comp->cpu);
+	comp_heat_sync(comp);		// ram/rom size may have changed with hardware/romset
 }
 
 // cpu freq

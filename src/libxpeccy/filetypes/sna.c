@@ -23,6 +23,7 @@ int loadSNA_f(Computer* comp, FILE* file, size_t fileSize) {
 	char tmpgBuf[0x4000];
 
 	compReset(comp, (fileSize < 49180) ? RES_48 : RES_128);
+	comp_heat_reset(comp);		// snapshot load teleports state; pre-load hit counts are no longer valid
 
 	snaHead hd;
 	fread((char*)&hd, sizeof(snaHead), 1, file);
