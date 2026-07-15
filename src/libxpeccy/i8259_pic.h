@@ -17,7 +17,7 @@ enum {
 
 typedef struct {
 	unsigned master:1;	// 1 on master pic, 0 on slave
-//	unsigned oint:1;	// int output
+	unsigned rot:1;		// priority rotation on/off
 	unsigned smm:1;		// special mask mode
 	unsigned srd:1;		// special rd (ocw3 bit1 = 1)
 	unsigned sdt:1;		// data for special rd from data port
@@ -25,6 +25,7 @@ typedef struct {
 	unsigned char imr;	// mask bits (1 = disabled)
 	unsigned char isr;	// on int send set bit in isr, reset in irr. on eoi reset bit in isr
 	unsigned char num;	// last int input number
+	unsigned char pri;	// top priority line (0 @ reset)
 	int vec;
 	int mode;
 	unsigned char ocw2,ocw3;	// ocw1 = ocwx = imr

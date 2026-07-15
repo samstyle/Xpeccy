@@ -3,7 +3,7 @@
 // widget
 
 xRDumpWidget::xRDumpWidget(QString i, QString t, QWidget* p):xDockWidget(i,t,p) {
-	setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
+//	setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
 	QWidget* wid = new QWidget;
 	setWidget(wid);
 	ui.setupUi(wid);

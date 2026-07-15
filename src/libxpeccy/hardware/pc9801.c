@@ -1091,7 +1091,7 @@ void pc98xx_irq(Computer* comp, int id) {
 		case IRQ_UART_0: pic_int(comp->mpic, 1); break;
 			// slave.2 for 2DD, slave.3 for 2HD fdc
 		case IRQ_FDC: pic_int(comp->spic, 2); break;
-		// case IRQ_FDC2: pic_int(comp->spic, 3); break;	slave pic int -> master pic 7
+		case IRQ_FDC2: pic_int(comp->spic, 3); break;
 	}
 }
 
@@ -1105,7 +1105,7 @@ void pc98xx_sync(Computer* comp, int ns) {
 void pc98xx_init(Computer* comp) {
 	// 8255, system ports
 	ppi_set_cb(comp->ppi, comp, pc98xx_ppia_rd, pc98xx_ppia_wr, pc98xx_ppib_rd, pc98xx_ppib_wr, pc98xx_ppic_rd, pc98xx_ppich_wr, pc98xx_ppic_rd, pc98xx_ppicl_wr);
-	// 8255, fdc
+	// 8255, fdc (old one, do we need this?)
 	ppi_set_cb(comp->ppib, comp, NULL, NULL, ppi_fdc_rdb, ppi_fdc_wrb, ppi_fdc_rdc, ppi_fdc_wrc, ppi_fdc_rdc, ppi_fdc_wrc);
 	// keyboard uart
 	uart_set_type(comp->uart, UPD_8251);
@@ -1125,8 +1125,6 @@ sndPair pc98xx_vol(Computer* comp, sndVolume* vol) {
 	v.right = 0;
 	return v;
 }
-
-// TODO: need to avoid xt_press/xt_release in MainWin::keyPressEvent/keyReleaseEvent
 
 void pc98xx_keyp(Computer* comp, keyEntry* kent) {
 	kbd_press(comp->keyb, kent);

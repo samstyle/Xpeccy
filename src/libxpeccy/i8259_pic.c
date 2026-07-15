@@ -26,27 +26,31 @@ void pic_reset(PIC* pic) {
 	pic->irr = 0;
 	pic->imr = 0xff;
 	pic->isr = 0;
+	pic->rot = 0;
+	pic->pri = 0;
 }
 
 int pic_check_irr(PIC* pic) {
-	if (pic->isr != 0) return 0;
 	int msk;
 	int res = 0;
-	for (int n = 0; n < 8; n++) {
-		msk = 1 << n;
-		if (pic->irr & msk) {
-			pic->num = n;
+	int work = 1;
+	int lin;
+	for (int n = 0; work && (n < 8); n++) {
+		lin = (pic->pri + n) & 7;
+		msk = 1 << lin;
+		if (pic->irr & msk) {			// input signal present
+			pic->num = lin;
 			pic->isr |= msk;
-			if (pic->master && (pic->icw3 & msk)) {
+			if (pic->master && (pic->icw3 & msk)) {		// slave pic on this line
 				pic->vec = -1;
 			} else {
-				pic->vec = (pic->icw2 & 0xf8) | n;
+				pic->vec = (pic->icw2 & 0xf8) | lin;
 			}
 			pic->xirq(pic->master ? IRQ_MASTER_PIC : IRQ_SLAVE_PIC, pic->xptr);
 			res = 1;
-			n = 8;
-		} else if (pic->isr & msk) {
-			n = 8;
+			work = 0;
+		} else if (pic->isr & msk) {		// meet already served line, don't check remained lines with lower priority
+			work = 0;
 		}
 	}
 	return res;
@@ -60,16 +64,27 @@ int pic_int(PIC* pic, int num) {
 	return pic_check_irr(pic);
 }
 
+void pic_rotate(PIC* pic, int n) {
+	pic->pri = (n + 1) & 7;
+}
+
+// It should be noted that an ISR bit that is masked by an
+// IMR bit will not be cleared by a non-specific EOI if
+// the 8259A is in the Special Mask Mode.
 void pic_eoi(PIC* pic, int num) {
-	if (num < 0) {
-		num = 0;
-		while (num < 8) {
-			if (pic->isr & (1 << num)) break;
+	if (num < 0) {			// find served line with top priority
+		num = -1;
+		while ((num < 8) && !(pic->isr & (1 << ((num + pic->pri) & 7)))) {
 			num++;
+		}
+		if (num < 8) {
+			num = (num + pic->pri) & 7;
 		}
 	}
 	if (num < 8) {
-		pic->isr &= ~(1 << num);
+		if (!pic->smm || !(pic->imr & (1 << num))) {	// not in special mask mode or not masked
+			pic->isr &= ~(1 << num);
+		}
 		pic->irr &= ~(1 << num);
 		pic_check_irr(pic);
 	}
@@ -77,9 +92,10 @@ void pic_eoi(PIC* pic, int num) {
 
 // TODO: return vector for int with hightst priority and isr=1
 int pic_ack(PIC* pic) {
-//	if (pic->icw4 & 2) {		// automatic eoi
+	if ((pic->icw4 & 2) && pic->master) {		// automatic eoi
 		pic_eoi(pic, pic->num);
-//	}
+		if (pic->rot) pic_rotate(pic, pic->num);	// rotate priority (set num+1 as top prior)
+	}
 	return pic->vec;
 }
 
@@ -126,12 +142,19 @@ void pic_wr(PIC* pic, int adr, int data) {
 #endif
 		} else {			// ocw2 (example: 20)
 			pic->ocw2 = data & 0xff;
-			if (data & 0x20) {			// eoi
-				if (data & 0x40) {		// specific eoi - reset specific isr bit
-					pic_eoi(pic, data & 7);
-				} else {			// non-specific eoi (TODO: reset isr bit with highest priority)
-					pic_eoi(pic, -1);	// eoi (highest priority int)
-				}
+			switch (data & 0xe0) {
+				case 0x00: pic->rot = 0; break;			// rotate in auto mode (clear)
+				case 0x20: pic_eoi(pic, -1); break;		// non-specific eoi (top priority)
+				case 0x40: break;				// no operation
+				case 0x60: pic_eoi(pic, data & 7); break;	// specific eoi (b0..2 = line)
+				case 0x80: pic->rot = 1; break;			// rotate in auto mode (set)
+				case 0xa0: pic_eoi(pic, -1);			// non-specific eoi + rotate
+					pic_rotate(pic, pic->num);
+					break;
+				case 0xc0: pic->pri = data & 7; break;		// set priority (b0..2 = number)
+				case 0xe0: pic_eoi(pic, data & 7);		// specific eoi + rotate
+					pic_rotate(pic, pic->num);
+					break;
 			}
 		}
 	}
