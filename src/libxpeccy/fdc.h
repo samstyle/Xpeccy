@@ -48,7 +48,7 @@ typedef void(*fdcCall)(FDC*);
 struct FDC {
 	const int id;
 	unsigned brk:1;		// signal for debug
-	unsigned upd:1;		// 1 if uPD765, 0 if i8275
+	unsigned upd:1;		// 1 if uPD765, 0 if i8272
 	unsigned seekend:1;	// uPD765: set at end of seek/recalibrate com
 	unsigned irq:1;		// VG93:irq ; uPD765:exec
 	unsigned drq:1;		// 1:data request

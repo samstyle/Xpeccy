@@ -32,8 +32,8 @@ void dhwSync(DiskIF* dif, int ns) {
 }
 
 void dhw_irq(int id, void* p) {
-	DiskIF* dif = (DiskIF*)p;
-	if (dif->fdc->dma || (dif->hw->irq && dif->inten)) {
+	DiskIF* dif = p; // (DiskIF*)p;
+	if (dif->hw->irq && (dif->fdc->dma || dif->inten)) {
 		dif->hw->irq(dif, id);
 	}
 }
@@ -162,7 +162,7 @@ void pdosSync(DiskIF* dif, int ns) {
 */
 }
 
-// pc (i8275 = upd765)
+// pc (i8272 = upd765)
 
 int dpcIn(DiskIF* dif, int port, int* rptr, int dos) {
 	int res = 0xff;
@@ -212,7 +212,6 @@ int dpcIn(DiskIF* dif, int port, int* rptr, int dos) {
 }
 
 int dpcOut(DiskIF* dif, int port, int val, int dos) {
-	// printf("i8275: out %.3X %.2X\n",port,val);
 	switch (port & 7) {
 		case 2:
 			// b4..7 = motor drive 0..3 (if 1, motor on when drive selected)
@@ -323,8 +322,8 @@ static DiskHW dhwTab[] = {
 	{DIF_NONE,dumReset,dumIn,dumOut,dumSync,NULL,NULL},
 	{DIF_BDI,bdiReset,bdiIn,bdiOut,dhwSync,NULL,NULL},
 	{DIF_P3DOS,pdosReset,pdosIn,pdosOut,pdosSync,NULL,NULL},		// upd765 (+3dos)
-	{DIF_PC,pdosReset,dpcIn,dpcOut,pdosSync,dpc_irq,dpc_term},		// i8275 = upd765
-	{DIF_PC98,pdosReset,p98in,p98out,p98sync,NULL,NULL},			// upd765 (pc98)
+	{DIF_PC,pdosReset,dpcIn,dpcOut,pdosSync,dpc_irq,dpc_term},		// i8272 = upd765
+	{DIF_PC98,pdosReset,p98in,p98out,p98sync,NULL,dpc_term},		// upd765 (pc98)
 	{DIF_SMK512,bkdReset,bkdIn,bkdOut,dhwSync,NULL,NULL},
 	{DIF_END,NULL,NULL,NULL,NULL,NULL,NULL}
 };
@@ -341,7 +340,7 @@ void difSetHW(DiskIF* dif, int type) {
 	if (!dif->hw)
 		dif->hw = findDHW(DIF_NONE);
 	dif->type = dif->hw->id;
-	dif->fdc->upd = (dif->hw->id == DIF_P3DOS) ? 1 : 0;	// difference between upd765 & i8275
+	dif->fdc->upd = (dif->hw->id == DIF_P3DOS) ? 1 : 0;	// difference between upd765 & i8272
 }
 
 FDC* fdc_create(cbirq cb, void* p) {
@@ -394,6 +393,7 @@ DiskIF* difCreate(int type, cbirq cb, void* p) {
 		dif->fdc2->flop[i] = dif->flp[i];
 	}
 	dif->fdc->flp = dif->fdc->flop[0];
+	dif->fdc2->flp = dif->fdc->flop[0];
 	difSetHW(dif, type);
 	return dif;
 }

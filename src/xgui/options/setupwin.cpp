@@ -301,7 +301,7 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	ui.diskTypeBox->addItem("None",DIF_NONE);
 	ui.diskTypeBox->addItem("Beta disk (VG93)",DIF_BDI);
 	ui.diskTypeBox->addItem("+3 DOS (uPD765)",DIF_P3DOS);
-	ui.diskTypeBox->addItem("PC FDC (i8275)", DIF_PC);
+	ui.diskTypeBox->addItem("PC FDC (i8272)", DIF_PC);
 	ui.diskTypeBox->addItem("PC98xx (uPD765)", DIF_PC98);
 	ui.diskTypeBox->addItem("SMK512 (VP1-128)",DIF_SMK512);
 	ui.disklist->addAction(ui.actCopyToTape);

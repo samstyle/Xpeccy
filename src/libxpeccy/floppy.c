@@ -84,7 +84,6 @@ void flp_sync(Floppy* flp, int ns) {
 			if (flp->door != flp->insert) {
 				flp->xirq(IRQ_FDD_RDY, flp->xptr);
 				flp->door = flp->insert;
-//				printf("insert:%i\tdoor:%i\n",dif->fdc->flp->insert,dif->fdc->flp->door);
 			}
 		}
 	}
@@ -344,7 +343,6 @@ void flp_insert(Floppy* flp, const char* path) {
 	flp->changed = 0;
 	if (!path) flpClearDisk(flp);
 	flp_set_path(flp, path);
-//	printf("insert:%i\tdoor:%i\n",flp->insert,flp->door);
 }
 
 void flp_eject(Floppy* flp) {
