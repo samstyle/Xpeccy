@@ -39,17 +39,20 @@ void unothing(FDC* fdc) {
 	fdc->wait += fdc->bytedelay; // turbo ? TRBBYTE : fdc->bytedelay;
 }
 
+void uidle(FDC* fdc) {
+	fdc->idle = 1;
+	fdc->drq = 1;
+	fdc->dir = 0;
+}
+
 void ustp(FDC* fdc) {
-	// fdc->idle = 1;
-	fdc->irq = 0;		// enter result phase (idle=0,irq=0)
+	fdc->irq = 0;		// enter result phase
 	fdc->pos++;
 	if (fdc->resCnt > 0) {
 		fdc->drq = 1;
 		fdc->dir = 1;
 	} else {
-		fdc->dir = 0;
-		fdc->drq = 0;
-		fdc->idle = 1;
+		uidle(fdc);
 	}
 }
 
@@ -64,7 +67,7 @@ void uResp(FDC* fdc, int len, int ie) {
 	fdc->resPos = 0;
 	fdc->resCnt = len;
 	fdc->dir = 1;
-	// printf("FDC resp:"); for(int i = 0; i < len; i++) {printf("%.2X ",fdc->resBuf[i]);} printf("\n");	// print resp
+	fdc->drq = !!len;	// 1 if answer size > 0
 	if (ie) {uInt(fdc);}
 }
 
@@ -928,9 +931,7 @@ unsigned char uRead(FDC* fdc, int adr) {
 				fdc->resPos++;
 				fdc->resCnt--;
 				if (fdc->resCnt == 0) {	// result phase completed
-					fdc->dir = 0;	// cpu->fdc
-					fdc->drq = 1;	// waiting for command
-					fdc->idle = 1;
+					uidle(fdc);
 				}
 			} else {			// other
 				res = 0xff;
@@ -950,9 +951,10 @@ void uTCount(FDC* fdc) {
 }
 
 void uReset(FDC* fdc) {
-	fdc->idle = 1;
-	fdc->drq = 1;
-	fdc->dir = 1;
+//	fdc->idle = 1;
+//	fdc->drq = 1;
+//	fdc->dir = 0;	// cpu->fdc
+	uidle(fdc);
 	fdc->mr = 0;
 	fdc->plan = NULL;
 	fdc->wait = 0;
