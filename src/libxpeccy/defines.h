@@ -42,7 +42,7 @@ enum {
 	IRQ_FDC2_WR,
 	IRQ_FDD_RDY,	// fdd rdy signal changed
 	IRQ_HDD_PRI,
-	IRQ_SLAVE_PIC,
+	IRQ_SLAVE_PIC,	// pic
 	IRQ_MASTER_PIC,
 	IRQ_COM1,	// uart8250 com1 = mouse
 	IRQ_KBD,	// ps/2 controller kbd int || gbc buttons

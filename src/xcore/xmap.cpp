@@ -117,6 +117,7 @@ void load_xmap(QString path) {
 						lst = str.split(":", X_SkipEmptyParts);
 						while(lst.size() > 3) {
 							lst[2].append(":").append(lst[3]);		// concat comment if there was :
+							lst.removeAt(3);
 						}
 						if (lst.size() > 2) {
 							str = lst.at(0);

@@ -907,6 +907,7 @@ void uWrite(FDC* fdc, int adr, unsigned char val) {
 		if (fdc->comCnt == 0) {
 			fdc->irq = 1;		// exec
 			fdc->drq = 0;
+			fdc->wait = 15000;	// insert pause before execution (otherwise some commands executed too fast)
 		}
 	} else if (fdc->drq && !fdc->dir) {	// data cpu->fdc
 		fdc->data = val;
