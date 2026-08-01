@@ -133,51 +133,55 @@ void ay_wr(aymChip* chip, int adr, int val) {
 	}
 }
 
+void ay_tick(aymChip* ay) {
+	if (++ay->chanA.cnt >= ay->chanA.per) {
+		ay->chanA.cnt = 0;
+		ay->chanA.lev ^= 1;
+	}
+	if (++ay->chanB.cnt >= ay->chanB.per) {
+		ay->chanB.cnt = 0;
+		ay->chanB.lev ^= 1;
+	}
+	if (++ay->chanC.cnt >= ay->chanC.per) {
+		ay->chanC.cnt = 0;
+		ay->chanC.lev ^= 1;
+	}
+	if (++ay->chanN.cnt >= ay->chanN.per) {
+		ay->chanN.cnt = 0;
+		ay->chanN.step = (ay->chanN.step << 1) | ((((ay->chanN.step >> 13) ^ (ay->chanN.step >> 16)) & 1) ^ 1);
+		ay->chanN.lev = (ay->chanN.step >> 16) & 1;
+	}
+	if (++ay->chanE.cnt >= ay->chanE.per) {
+		ay->chanE.cnt = 0;
+		ay->chanE.vol += ay->chanE.step;
+		if (ay->chanE.vol & ~31) {				// 32 || -1
+			if (ay->eForm & 8) {				// 1xxx
+				if (ay->eForm & 1) {			// 1xx1 : 9,B,D,F : stop
+					ay->chanE.vol -= ay->chanE.step;
+					ay->chanE.step = 0;
+					if (ay->eForm & 2) {		// 1x11 : B,F : invert volume
+						ay->chanE.vol ^= 0x1f;
+					}
+				} else if (ay->eForm & 2) {		// 1x10 : A,E : change direction (wave)
+					ay->chanE.step = -ay->chanE.step;
+					ay->chanE.vol += ay->chanE.step;
+				} else {				// 1x00 : 8,C : repeat (saw)
+					ay->chanE.vol &= 0x1f;
+				}
+			} else {					// 0xxx : silent, stop
+				ay->chanE.vol = 0;
+				ay->chanE.step = 0;
+			}
+		}
+	}
+}
+
 void ay_sync(aymChip* ay, int ns) {
 	if (ay->per < 1) return;
 	ay->cnt -= ns;
 	while (ay->cnt < 0) {
 		ay->cnt += ay->per;
-		if (++ay->chanA.cnt >= ay->chanA.per) {
-			ay->chanA.cnt = 0;
-			ay->chanA.lev ^= 1;
-		}
-		if (++ay->chanB.cnt >= ay->chanB.per) {
-			ay->chanB.cnt = 0;
-			ay->chanB.lev ^= 1;
-		}
-		if (++ay->chanC.cnt >= ay->chanC.per) {
-			ay->chanC.cnt = 0;
-			ay->chanC.lev ^= 1;
-		}
-		if (++ay->chanN.cnt >= ay->chanN.per) {
-			ay->chanN.cnt = 0;
-			ay->chanN.step = (ay->chanN.step << 1) | ((((ay->chanN.step >> 13) ^ (ay->chanN.step >> 16)) & 1) ^ 1);
-			ay->chanN.lev = (ay->chanN.step >> 16) & 1;
-		}
-		if (++ay->chanE.cnt >= ay->chanE.per) {
-			ay->chanE.cnt = 0;
-			ay->chanE.vol += ay->chanE.step;
-			if (ay->chanE.vol & ~31) {				// 32 || -1
-				if (ay->eForm & 8) {				// 1xxx
-					if (ay->eForm & 1) {			// 1xx1 : 9,B,D,F : stop
-						ay->chanE.vol -= ay->chanE.step;
-						ay->chanE.step = 0;
-						if (ay->eForm & 2) {		// 1x11 : B,F : invert volume
-							ay->chanE.vol ^= 0x1f;
-						}
-					} else if (ay->eForm & 2) {		// 1x10 : A,E : change direction (wave)
-						ay->chanE.step = -ay->chanE.step;
-						ay->chanE.vol += ay->chanE.step;
-					} else {				// 1x00 : 8,C : repeat (saw)
-						ay->chanE.vol &= 0x1f;
-					}
-				} else {					// 0xxx : silent, stop
-					ay->chanE.vol = 0;
-					ay->chanE.step = 0;
-				}
-			}
-		}
+		ay_tick(ay);
 	}
 }
 

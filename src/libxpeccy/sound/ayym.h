@@ -49,6 +49,13 @@ void ym_wr(aymChip*, int, int);
 //void ym_sync(aymChip*, int);
 sndPair ym_vol(aymChip*);
 
+// yamaha-2203
+void ym2203_reset(aymChip*);
+int ym2203_rd(aymChip*, int);
+void ym2203_wr(aymChip*, int, int);
+void ym2203_sync(aymChip*, int);
+sndPair ym2203_vol(aymChip*);
+
 typedef void(*sccbwr)(aymChip*, int, int);
 typedef int(*sccbrd)(aymChip*, int);
 typedef void(*sccbsync)(aymChip*, int);
@@ -81,6 +88,47 @@ typedef struct {
 	int step;		// env:vol change direction (+1 -1); noise:seed
 } aymChan;
 
+enum {
+	OPST_OFF = 0,
+	OPST_ATK,
+	OPST_DEC,
+	OPST_SUS,
+	OPST_REL
+};
+
+typedef struct {
+	unsigned key:1;
+	int state;
+	int feedback;	// op1 only
+	int mult;
+	int detune;
+	int tlev;	// 0:max, 1024:min
+	int ks;		// from reg.value (2bits)
+	int kscale;	// calculated (0-31)
+	int atkrate;
+	int decrate;
+	int susrate;
+	int suslev;	// [0;1024]
+	int relrate;
+	int envflag;
+	int amp;			// 0:max, 1023:min
+	unsigned phase:20;		// 20-bit phase (overflow is counted as 2*pi)
+	int pstep;			// phase step
+	int out;
+} fmOper;
+
+typedef struct {
+	fmOper op[4];		// operators
+	int algo;		// ops connection (algorithm)
+	unsigned freq:11;	// for ch1,2 and not-special ch3
+	unsigned block:3;
+	int step;		// = (frq << blk)
+	int spcfrq[3];		// for chan 3: special frq/blk for op0,1,2
+	int spcblk[3];		// frq/block/step for op3
+	int spcstp[3];
+	int out;		// output (last operator output)
+} fmChan;
+
 struct aymChip {
 	unsigned coarse:1;	// 4-bit DAC volume
 	int stereo;
@@ -97,14 +145,29 @@ struct aymChip {
 	ayxwr xwr;
 	void* xptr;
 
-	aymChan chanA;
+	aymChan chanA;		// psg/ssg channels
 	aymChan chanB;
 	aymChan chanC;
 	aymChan chanN;
 	aymChan chanE;
 	int eForm;		// envelope form
-	int per;		// pariod ns len
+	int per;		// period ns len
 	int cnt;		// ns countdown
+
+	int pscnt;	// pre-scaler: (2,3,6) of master ticks
+	int fmcnt;	// fm: 12 pre-scaled ticks
+	int eg_timer;	// eg: 3 fm ticks
+	int eg_cnt;	// inc each eg tick
+	int sg_cnt;	// ssg divider counter
+
+	fmChan chanFM[3];	// fm channels
+	int fmdiv;		// divider for fm (2/3/6)
+	int sgdiv;		// divider for ssg
+	int divmode:2;		// 2bits
+	int ta_value;		// timerA initial value
+	int ta_cnt;		// timerA: 2 eg ticks
+	int tb_cnt;		// timerB: 32 eg ticks
+
 	unsigned char curReg;
 	unsigned char reg[256];
 } ;
@@ -128,6 +191,7 @@ typedef struct {
 } TSound;
 
 void initNoise();
+void init_sin_tab();
 
 void chip_set_type(aymChip*, int);
 void chip_set_xdev(aymChip*, ayxrd, ayxwr, void*);

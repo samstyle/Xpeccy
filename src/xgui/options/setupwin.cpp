@@ -128,6 +128,7 @@ void dbg_fill_chip_boxes(QComboBox* cbtype, QComboBox* cbstereo) {
 	cbtype->addItem(QIcon(":/images/cancel.png"),"none",SND_NONE);
 	cbtype->addItem(QIcon(":/images/MicrochipLogo.png"),"AY-3-8910",SND_AY);
 	cbtype->addItem(QIcon(":/images/YamahaLogo.png"),"Yamaha 2149",SND_YM);
+	cbtype->addItem(QIcon(":/images/YamahaLogo.png"),"Yamaha 2203",SND_YM2203);
 	cbstereo->clear();
 	cbstereo->addItem("Mono",AY_MONO);
 	cbstereo->addItem("ABC",AY_ABC);

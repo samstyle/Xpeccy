@@ -109,6 +109,8 @@ void conf_init(char* wpath, char* confdir) {
 	conf.emu.fast = 0;
 	conf.gpctrl = new xGamepadController;
 	addProfile("default","xpeccy.conf");
+
+	init_sin_tab();
 }
 
 void saveConfig() {

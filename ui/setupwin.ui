@@ -581,7 +581,7 @@
               <item row="1" column="0">
                <widget class="QLabel" name="antiflickerModeLabel">
                 <property name="toolTip">
-                  <string>Blending method:
+                 <string>Blending method:
 2-frames (Gigascreen)
 3-frames (3Color)</string>
                 </property>
@@ -595,44 +595,44 @@
               </item>
               <item row="1" column="2">
                <widget class="QLabel" name="antiflickerGammaLabel">
-                <property name="alignment">
-                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                </property>
-                <property name="toolTip">
-                  <string>Gamma value for colors blending</string>
-                </property>
                 <property name="minimumSize">
                  <size>
                   <width>30</width>
                   <height>0</height>
                  </size>
                 </property>
+                <property name="toolTip">
+                 <string>Gamma value for colors blending</string>
+                </property>
                 <property name="text">
                  <string>Gamma</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                 </property>
                </widget>
               </item>
               <item row="1" column="3">
-                <widget class="QDoubleSpinBox" name="sbNoflicGamma">
+               <widget class="QDoubleSpinBox" name="sbNoflicGamma">
                 <property name="toolTip">
-                  <string>Typical values: 1.8–2.4 (2.2 ≈ CRT, 1.0 = linear blending)</string>
+                 <string>Typical values: 1.8–2.4 (2.2 ≈ CRT, 1.0 = linear blending)</string>
                 </property>
                 <property name="decimals">
-                  <number>2</number>
+                 <number>2</number>
                 </property>
                 <property name="minimum">
-                  <double>1.0</double>
+                 <double>1.000000000000000</double>
                 </property>
                 <property name="maximum">
-                  <double>3.0</double>
+                 <double>3.000000000000000</double>
                 </property>
                 <property name="singleStep">
-                  <double>0.1</double>
+                 <double>0.100000000000000</double>
                 </property>
                 <property name="value">
-                  <double>2.2</double>
+                 <double>2.200000000000000</double>
                 </property>
-                </widget>
+               </widget>
               </item>
              </layout>
             </widget>
@@ -1288,6 +1288,11 @@
                         <item>
                          <property name="text">
                           <string>1.7744</string>
+                         </property>
+                        </item>
+                        <item>
+                         <property name="text">
+                          <string>3.54</string>
                          </property>
                         </item>
                        </widget>

@@ -1129,6 +1129,17 @@ int pc98xx_ack(Computer* comp) {
 	return t;
 }
 
+// new info:
+// timer: master.irq0 (int 08)
+// keyboard: master.irq1 (int 09)
+// vsync: master.irq2 (int 0a)
+// rs232: master.irq4 (int 0c)
+// slave pic: paster.irq7
+// printer: slave.irq0 (int 10h)
+// fdc1 (internal): slave.irq3 (int 13h)
+// fpu: slave.irq6 (int 16h)
+// GND: slave.irq7
+// external devices: all others (master.3,5,6; slave.1,2,4,5)
 void pc98xx_irq(Computer* comp, int id) {
 	switch(id) {
 		case IRQ_PIT_CH0:		// ch0: interval (master pic int0 -> cpu int8)
@@ -1145,17 +1156,16 @@ void pc98xx_irq(Computer* comp, int id) {
 		case IRQ_VID_VBLANK:		// VBlank: if !flgVSync, master PIC interrupt #2
 			if (!comp->flgVSync) {
 				pic_int(comp->mpic, 2);
+				comp->flgVSync = 1;
 			}
-			comp->flgVSync = 1;
 			break;
 		case IRQ_KBD_DATA:
 		case IRQ_KBD_ACK:		// kbd data is ready
 			uart_ready(comp->uart);
 			break;
 		case IRQ_UART_0: pic_int(comp->mpic, 1); break;
-			// slave.2 for 2DD, slave.3 for 2HD fdc
-		case IRQ_FDC: pic_int(comp->spic, 2); break;
-		case IRQ_FDC2: pic_int(comp->spic, 3); break;
+		case IRQ_FDC: pic_int(comp->spic, 3); break;
+		case IRQ_FDC2: pic_int(comp->spic, 2); break;
 	}
 }
 
