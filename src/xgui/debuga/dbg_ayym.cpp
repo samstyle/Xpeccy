@@ -11,6 +11,14 @@ xAYWidget::xAYWidget(QString i, QString t, QWidget* p):xDockWidget(i,t,p) {
 
 	connect(ui.sbChanNum, SIGNAL(valueChanged(int)), this, SLOT(draw()));
 	connect(ui.sbOpNum, SIGNAL(valueChanged(int)), this, SLOT(draw()));
+	connect(ui.fmChanOff, SIGNAL(stateChanged(int)), this, SLOT(offChan(int)));
+}
+
+void xAYWidget::offChan(int st) {
+	Computer* comp = conf.prof.cur->zx;
+	aymChip* chp = comp->ts->chipA;
+	int chn = ui.sbChanNum->value();
+	chp->chanFM[chn].off = (st == Qt::Checked);
 }
 
 QString getAYmix(aymChan* ch) {
@@ -89,6 +97,7 @@ void xAYWidget::draw() {
 	int opn = ui.sbOpNum->value() & 3;
 	fmChan* ch = &chp->chanFM[chn];
 	fmOper* op = &ch->op[opn];
+	ui.fmChanOff->setChecked(ch->off);
 	ui.leFmChanFrq->setText(gethexword(op->freq));
 	ui.leFmChanBase->setText(gethexbyte(op->block));
 	ui.leFmChanStep->setText(gethexint(op->pstep));

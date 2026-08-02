@@ -31,6 +31,8 @@ class xAYWidget : public xDockWidget {
 		void draw();
 	private:
 		Ui::AYWidget ui;
+	private slots:
+		void offChan(int);
 };
 
 // cia

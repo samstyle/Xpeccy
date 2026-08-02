@@ -122,6 +122,7 @@ typedef struct {
 } fmOper;
 
 typedef struct {
+	unsigned off:1;		// output = 0
 	fmOper op[4];		// operators
 	int algo;		// ops connection (algorithm)
 //	int spcfrq[4];		// for chan 3: special frq/blk for op0,1,2
