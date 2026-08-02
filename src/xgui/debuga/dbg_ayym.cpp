@@ -89,9 +89,9 @@ void xAYWidget::draw() {
 	int opn = ui.sbOpNum->value() & 3;
 	fmChan* ch = &chp->chanFM[chn];
 	fmOper* op = &ch->op[opn];
-	ui.leFmChanFrq->setText(gethexword(ch->freq));
-	ui.leFmChanBase->setText(gethexbyte(ch->block));
-	ui.leFmChanStep->setText(gethexint(ch->freq << ch->block));
+	ui.leFmChanFrq->setText(gethexword(op->freq));
+	ui.leFmChanBase->setText(gethexbyte(op->block));
+	ui.leFmChanStep->setText(gethexint(op->pstep));
 	ui.leFmChanAlg->setText(gethexbyte(ch->algo));
 	ui.leFmChanOut->setText(QString::number(ch->out));
 	ui.leFmOpStatus->setText(getOpStatusName(op->state));

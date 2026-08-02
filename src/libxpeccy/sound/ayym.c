@@ -142,6 +142,7 @@ void tsReset(TSound* ts) {
 	ts->curChip = ts->chipA;
 	ts->mute_l = 0;
 	ts->mute_r = 0;
+	ts->r_stat = 1;
 }
 
 void tsSetRomSize(TSound* ts, int sz) {
@@ -188,7 +189,13 @@ void tsLoadRom(TSound* ts, const char* path) {
 // bffd (a14 = 0)	wr:reg.data	rd:FF
 
 int tsIn(TSound* ts, int port) {
-	return ts->curChip->rd(ts->curChip, (port >> 14) & 1);
+	int res = -1;
+	if (ts->r_stat) {			// read status
+		res = ts->curChip->reg[0xff] & 3;
+	} else {				// read registers
+		res = ts->curChip->rd(ts->curChip, (port >> 14) & 1);
+	}
+	return res;
 }
 
 void tsOut(TSound* ts, int port, int val) {
@@ -198,6 +205,10 @@ void tsOut(TSound* ts, int port, int val) {
 			case TS_NEDOPC:
 				if ((val & 0xf8) == 0xf8) {
 					ts->curChip = (val & 1) ? ts->chipB : ts->chipA;
+					ts->r_stat = !(val & 2);
+					ts->chipA->blk_fm = !!(val & 4);
+					ts->chipB->blk_fm = !!(val & 4);
+					ts->chipC->blk_fm = !!(val & 4);
 				} else {
 					ts->curChip->wr(ts->curChip, port, val);
 				}

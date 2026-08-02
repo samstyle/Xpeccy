@@ -113,6 +113,9 @@ typedef struct {
 	int envflag;
 	int amp;			// 0:max, 1023:min
 	unsigned phase:20;		// 20-bit phase (overflow is counted as 2*pi)
+	int freq;
+	int block;
+//	int note;
 	int pstep;			// phase step
 	int out;
 	int outp;	// previous output for op1 (feedback)
@@ -121,17 +124,15 @@ typedef struct {
 typedef struct {
 	fmOper op[4];		// operators
 	int algo;		// ops connection (algorithm)
-	unsigned freq:11;	// for ch1,2 and not-special ch3
-	unsigned block:3;
-	int step;		// = (frq << blk)
-	int spcfrq[3];		// for chan 3: special frq/blk for op0,1,2
-	int spcblk[3];		// frq/block/step for op3
-	int spcstp[3];
+//	int spcfrq[4];		// for chan 3: special frq/blk for op0,1,2
+//	int spcblk[4];		// [3] is common for all ch0,1 operators and ch3 in non-special mode
+//	int spcstp[4];
 	int out;		// output (last operator output)
 } fmChan;
 
 struct aymChip {
 	unsigned coarse:1;	// 4-bit DAC volume
+	unsigned blk_fm:1;	// 1:block fm output
 	int stereo;
 
 	int type;
@@ -176,6 +177,7 @@ struct aymChip {
 typedef struct {
 	unsigned mute_l:1;
 	unsigned mute_r:1;
+	unsigned r_stat:1;	// read status reg instead of chip regs
 	int type;
 
 	struct {

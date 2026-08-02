@@ -16,6 +16,7 @@ void evoReset(Computer* comp) {
 	comp->regBF = 0;
 	comp->prt2 = 0x03;
 	comp->sdc->on = 1;
+	sdcReset(comp->sdc);
 }
 
 void evoSetVideoMode(Computer* comp) {

@@ -289,7 +289,8 @@ void ym2203_op_swkey(fmOper* op) {
 }
 
 // update phase generator only (mod will be applied later)
-void ym2203_fmop_tick(fmOper* op, int step) {
+void ym2203_fmop_tick(fmOper* op) {
+	int step = op->pstep;
 	step = (step * op->mult) / 2;			// op->mult is scaled x2: 1,2,4,6,8,...
 	step += op->detune;
 	op->phase += step;
@@ -297,19 +298,11 @@ void ym2203_fmop_tick(fmOper* op, int step) {
 
 // update phase generator for all operators
 void ym2203_fmchan_tick(fmChan* ch) {
-	ym2203_fmop_tick(&ch->op[0], ch->step);
-	ym2203_fmop_tick(&ch->op[1], ch->step);
-	ym2203_fmop_tick(&ch->op[2], ch->step);
-	ym2203_fmop_tick(&ch->op[3], ch->step);
+	ym2203_fmop_tick(&ch->op[0]);
+	ym2203_fmop_tick(&ch->op[1]);
+	ym2203_fmop_tick(&ch->op[2]);
+	ym2203_fmop_tick(&ch->op[3]);
 	// not connected yet, connect when ym2203_vol to get output volume
-}
-
-// special ch3 tick
-void ym2203_fmch3_tick(fmChan* ch) {
-	ym2203_fmop_tick(&ch->op[0], ch->spcstp[0]);
-	ym2203_fmop_tick(&ch->op[1], ch->spcstp[1]);
-	ym2203_fmop_tick(&ch->op[2], ch->spcstp[2]);
-	ym2203_fmop_tick(&ch->op[3], ch->step);
 }
 
 // apply modulator and calculate output
@@ -424,11 +417,7 @@ void ym2203_sync(aymChip* chip, int ns) {
 				// update fm channels (op phase generators)
 				ym2203_fmchan_tick(&chip->chanFM[0]);
 				ym2203_fmchan_tick(&chip->chanFM[1]);
-				if (chip->reg[0x27] & 0xc0) {
-					ym2203_fmch3_tick(&chip->chanFM[2]);
-				} else {
-					ym2203_fmchan_tick(&chip->chanFM[2]);
-				}
+				ym2203_fmchan_tick(&chip->chanFM[2]);
 				// eg update each 3 fm ticks
 				chip->eg_timer++;
 				if (chip->eg_timer >= 3) {
@@ -488,12 +477,9 @@ sndPair ym2203_vol(aymChip* chip) {
 
 int ym2203_rd(aymChip* chip, int adr) {
 	int res = -1;
-//	if (chip->curReg < 0x10) {
-//		res = ym_rd(chip, adr);
-//	} else {
-		res = chip->reg[0xff] & 3;
-		chip->reg[0xff] = 0;
-//	}
+	if (chip->curReg < 0x10) {
+		res = ym_rd(chip, adr);
+	}
 	return res;
 }
 
@@ -515,12 +501,38 @@ void ym2203_divmode(aymChip* chip) {
 	}
 }
 
-void ch_calc_kscale(fmChan* ch) {
-	int note = (ch->freq & 0x400) ? 2 : 0;
-	if (((ch->freq & 0x780) == 0x380) || ((ch->freq & 0x400) && (ch->freq & 0x380))) note |= 1;
-	int idx = (note & 3) | ((ch->block & 7) << 2);
-	for (int i = 0; i < 4; i++) {
-		ch->op[i].kscale = idx >> (3 - ch->op[i].ks);
+int calc_kscale(int frq, int blk, int ks) {
+	int nte = (frq & 0x400) ? 2 : 0;
+	if (((frq & 0x780) == 0x380) || ((frq & 0x400) && (frq & 0x380))) nte |= 1;
+	int idx = (nte & 3) | (blk << 2);
+	return idx >> (3 - ks);
+}
+
+void op_update_freq(fmChan* ch, int opn, unsigned char regl, unsigned char regh) {
+	int reg = regl | (regh << 8);
+	int frq = reg & 0x7ff;
+	int blk = (regh >> 3) & 7;
+	int stp = (frq << blk) >> 1;		// F * (2 ^ (B - 1))
+	int all = !!(opn < 0);
+	if (all) opn = 0;
+	do {
+		ch->op[opn].freq = frq;
+		ch->op[opn].block = blk;
+		ch->op[opn].pstep = stp;
+		ch->op[opn].kscale = calc_kscale(frq, blk, ch->op[opn].ks); // idx >> (3 - ch->op[opn].ks);
+		opn++;
+	} while (all && (opn < 4));
+}
+
+void ch_update_ch3_frq(aymChip* chip) {
+	fmChan* ch3 = &chip->chanFM[2];
+	if (chip->reg[0x27] & 0x40) {	// special mode
+		op_update_freq(ch3, 0, chip->reg[0xa9], chip->reg[0xad]);
+		op_update_freq(ch3, 1, chip->reg[0xaa], chip->reg[0xae]);
+		op_update_freq(ch3, 2, chip->reg[0xa8], chip->reg[0xac]);
+		op_update_freq(ch3, 3, chip->reg[0xa2], chip->reg[0xa6]);
+	} else {			// common mode
+		op_update_freq(ch3, -1, chip->reg[0xa2], chip->reg[0xa6]);
 	}
 }
 
@@ -554,8 +566,9 @@ void ym2203_wr(aymChip* chip, int adr, int val) {
 					if (val & 2) {
 						chip->tb_cnt = chip->reg[0x26];
 					}
-					if (val & 0x10) {chip->reg[0x27] &= ~0x15;}	// reset state of timerA
-					if (val & 0x20) {chip->reg[0x27] &= ~0x2a;}	// reset state of timerB
+					if (val & 0x10) {chip->reg[0xff] &= ~2;}	// reset state of timerA
+					if (val & 0x20) {chip->reg[0xff] &= ~1;}	// reset state of timerB
+					ch_update_ch3_frq(chip);
 					break;
 				case 0x28:
 					if ((val & 3) == 3) break;
@@ -596,8 +609,7 @@ void ym2203_wr(aymChip* chip, int adr, int val) {
 					case 0x50:
 						op->atkrate = val & 0x1f;	// b0..4 atk rate (0 - slow, 1f - fast)
 						op->ks = (val >> 6) & 3;	// b6,7 key scale (rate scale)
-						ch_calc_kscale(ch);
-						// kscale = ((block << 2) | (note & 3)) >> (3 - v)
+						op->kscale = calc_kscale(op->freq, op->block, op->ks);
 						break;
 					case 0x60:
 						op->decrate = val & 0x1f;	// b0..4 decay rate
@@ -615,46 +627,15 @@ void ym2203_wr(aymChip* chip, int adr, int val) {
 					case 0xa0:
 						switch (chip->curReg & 0x0c) {
 							case 0x00:			// a0..a3 (ch3 op3 for special mode)
-								ch->freq = (ch->freq & 0x700) | (val & 0xff);
-								ch->step = (ch->freq << (ch->block & 7));
+								op_update_freq(ch, -1, val, chip->reg[chip->curReg + 4]);
+								ch_update_ch3_frq(chip);
 								break;
-							case 0x04:			// a4..a7
-								ch->freq = (ch->freq & 0xff) | ((val << 8) & 0x700);
-								ch->block = (val >> 3) & 0x07;
-								ch->step = (ch->freq << (ch->block & 7));
-								ch_calc_kscale(ch);
+							case 0x04:			// a4..a7 (high byte of a0..a3)
 								break;
-							default:
-								switch (chip->curReg) {
-									case 0xa8:		// ch3 op2
-										chip->chanFM[2].spcfrq[2] = (chip->chanFM[2].spcfrq[2] & 0x700) | (val & 0xff);
-										chip->chanFM[2].spcstp[2] = (chip->chanFM[2].spcfrq[2] << (chip->chanFM[2].spcblk[2] & 7));
-										break;
-									case 0xa9:		// ch3 op0
-										chip->chanFM[2].spcfrq[0] = (chip->chanFM[2].spcfrq[0] & 0x700) | (val & 0xff);
-										chip->chanFM[2].spcstp[0] = (chip->chanFM[2].spcfrq[0] << (chip->chanFM[2].spcblk[0] & 7));
-										break;
-									case 0xaa:		// ch3 op1
-										chip->chanFM[2].spcfrq[1] = (chip->chanFM[2].spcfrq[1] & 0x700) | (val & 0xff);
-										chip->chanFM[2].spcstp[1] = (chip->chanFM[2].spcfrq[1] << (chip->chanFM[2].spcblk[1] & 7));
-										break;
-									case 0xac:		// ch3 op2
-										chip->chanFM[2].spcfrq[2] = (chip->chanFM[2].spcfrq[2] & 0x0ff) | ((val << 8) & 0x700);
-										chip->chanFM[2].spcblk[2] = (val >> 3) & 7;
-										chip->chanFM[2].spcstp[2] = (chip->chanFM[2].spcfrq[2] << (chip->chanFM[2].spcblk[2] & 7));
-										break;
-									case 0xad:		// ch3 op0
-										chip->chanFM[2].spcfrq[0] = (chip->chanFM[2].spcfrq[0] & 0x0ff) | ((val << 8) & 0x700);
-										chip->chanFM[2].spcblk[0] = (val >> 3) & 7;
-										chip->chanFM[2].spcstp[0] = (chip->chanFM[2].spcfrq[0] << (chip->chanFM[2].spcblk[0] & 7));
-										break;
-									case 0xae:		// ch3 op1
-										chip->chanFM[2].spcfrq[1] = (chip->chanFM[2].spcfrq[1] & 0x0ff) | ((val << 8) & 0x700);
-										chip->chanFM[2].spcblk[1] = (val >> 3) & 7;
-										chip->chanFM[2].spcstp[1] = (chip->chanFM[2].spcfrq[1] << (chip->chanFM[2].spcblk[1] & 7));
-										break;
-
-								}
+							case 0x08:
+								ch_update_ch3_frq(chip);
+								break;
+							case 0x0c:
 								break;
 						}
 						break;
@@ -681,4 +662,5 @@ void ym2203_reset(aymChip* chip) {
 	chip->eg_cnt = 0;
 	chip->eg_timer = 0;
 	chip->sg_cnt = 0;
+	chip->blk_fm = 0;
 }
