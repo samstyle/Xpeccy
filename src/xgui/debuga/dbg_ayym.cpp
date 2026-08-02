@@ -112,7 +112,7 @@ void xAYWidget::draw() {
 	ui.leFmOpTL->setText(gethexword(op->tlev));
 	ui.leFmOpKS->setText(gethexbyte(op->ks));
 	ui.leFmOpEGAmp->setText(gethexword(op->amp));
-	ui.leFmOpPhase->setText(gethexint(op->phase));
+	ui.leFmOpPhase->setText(gethexint(op->phase).right(5));
 	ui.leFmOpOut->setText(QString::number(op->out));	// signed
 
 	drawHBar(ui.labBeep, comp->beep->val, 256);

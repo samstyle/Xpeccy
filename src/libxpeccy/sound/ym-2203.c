@@ -101,7 +101,7 @@
 // 1) phase = phase + ((F << block) * multi + detune)
 // 4) output = envelope * sin(phase + mod)
 
-#define SIN_BITS 8
+#define SIN_BITS 10
 #define SIN_LEN (1 << SIN_BITS)
 #define SIN_MASK (SIN_LEN - 1)
 #define SIN_SHIFT (20 - SIN_BITS)
@@ -343,29 +343,29 @@ void ym2203_fmchan_connect(fmChan* ch) {
 			ym2203_fmop_exec(&ch->op[3], ch->op[2].out);
 			ch->out = ch->op[3].out << 1;
 			break;
-		case 1:		// (op0+op1)->op2->op3->out
-			ym2203_fmop_exec(&ch->op[1], 0);
-			ym2203_fmop_exec(&ch->op[2], ch->op[0].out + ch->op[1].out);
+		case 1:		// (op0+op2)->op1->op3->out
+			ym2203_fmop_exec(&ch->op[2], 0);
+			ym2203_fmop_exec(&ch->op[1], ch->op[0].out + ch->op[2].out);
 			ym2203_fmop_exec(&ch->op[3], ch->op[2].out);
 			ch->out = ch->op[3].out << 1;
 			break;
-		case 2:		// (op0+(op1->op2))->op3->out
-			ym2203_fmop_exec(&ch->op[1], 0);
-			ym2203_fmop_exec(&ch->op[2], ch->op[1].out);
-			ym2203_fmop_exec(&ch->op[3], ch->op[0].out + ch->op[2].out);
+		case 2:		// (op0+(op2->op1))->op3->out
+			ym2203_fmop_exec(&ch->op[2], 0);
+			ym2203_fmop_exec(&ch->op[1], ch->op[2].out);
+			ym2203_fmop_exec(&ch->op[3], ch->op[0].out + ch->op[1].out);
 			ch->out = ch->op[3].out << 1;
 			break;
-		case 3:		// (op0->op1)+(op2->op3)->out
-			ym2203_fmop_exec(&ch->op[1], ch->op[0].out);
-			ym2203_fmop_exec(&ch->op[2], 0);
-			ym2203_fmop_exec(&ch->op[3], ch->op[2].out);
-			ch->out = (ch->op[1].out + ch->op[3].out);
+		case 3:		// ((op0->op2)+op1)->op3)->out
+			ym2203_fmop_exec(&ch->op[1], 0);
+			ym2203_fmop_exec(&ch->op[2], ch->op[0].out);
+			ym2203_fmop_exec(&ch->op[3], ch->op[2].out + ch->op[1].out);
+			ch->out = ch->op[3].out << 1;
 			break;
-		case 4:		// op0->op1->out, op2->op3->out
-			ym2203_fmop_exec(&ch->op[1], ch->op[0].out);
-			ym2203_fmop_exec(&ch->op[2], 0);
-			ym2203_fmop_exec(&ch->op[3], ch->op[2].out);
-			ch->out = (ch->op[1].out + ch->op[3].out);
+		case 4:		// op0->op2->out, op1->op3->out
+			ym2203_fmop_exec(&ch->op[1], 0);
+			ym2203_fmop_exec(&ch->op[2], ch->op[0].out);
+			ym2203_fmop_exec(&ch->op[3], ch->op[1].out);
+			ch->out = (ch->op[2].out + ch->op[3].out);
 			break;
 		case 5:		// op0->(op1,op2,op3)->out
 			ym2203_fmop_exec(&ch->op[1], ch->op[0].out);
@@ -373,9 +373,9 @@ void ym2203_fmchan_connect(fmChan* ch) {
 			ym2203_fmop_exec(&ch->op[3], ch->op[0].out);
 			ch->out = (ch->op[1].out + ch->op[2].out + ch->op[3].out) >> 1;
 			break;
-		case 6:		// op0->op1->out, op2->out, op3->out
-			ym2203_fmop_exec(&ch->op[1], ch->op[0].out);
-			ym2203_fmop_exec(&ch->op[2], 0);
+		case 6:		// op0->op2->out, op1->out, op3->out
+			ym2203_fmop_exec(&ch->op[1], 0);
+			ym2203_fmop_exec(&ch->op[2], ch->op[0].out);
 			ym2203_fmop_exec(&ch->op[3], 0);
 			ch->out = ch->op[1].out + ch->op[2].out + ch->op[3].out;
 			break;
