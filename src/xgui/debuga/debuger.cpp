@@ -293,7 +293,7 @@ DebugWin::DebugWin(QWidget* par):QMainWindow(par) {
 	wid_pit = new xPitWidget("","PIT");
 	wid_pic = new xPicWidget("","PIC");
 	wid_vga = new xVgaWidget(":/images/display.png","VGA");
-	wid_ay = new xAYWidget(":/images/note.png","AY");
+	wid_ay = new xAYWidget(":/images/note.png","Sound Chip");
 	wid_tape = new xTapeWidget(":/images/tape.png","Tape");
 	wid_fdd = new xFDDWidget(":/images/floppy.png","FDC");
 	wid_brk = new xBreakWidget(":/images/stop.png","Breakpoints");

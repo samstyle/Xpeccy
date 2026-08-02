@@ -115,6 +115,7 @@ typedef struct {
 	unsigned phase:20;		// 20-bit phase (overflow is counted as 2*pi)
 	int pstep;			// phase step
 	int out;
+	int outp;	// previous output for op1 (feedback)
 } fmOper;
 
 typedef struct {

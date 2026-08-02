@@ -241,7 +241,6 @@ void ym2203_eg_tick(fmOper* op, int ecount) {
 				if (op->amp >= 1023) {
 					op->amp = 1023;
 					op->state = OPST_OFF;
-					op->key = 0;
 				}
 			}
 			break;
@@ -256,7 +255,6 @@ void ym2203_eg_tick(fmOper* op, int ecount) {
 				if (op->amp >= 1023) {
 					op->amp = 1023;
 					op->state = OPST_OFF;
-					op->key = 0;
 				}
 			}
 			break;
@@ -328,7 +326,15 @@ void ym2203_fmop_exec(fmOper* op, int mod) {
 
 // calculate operators output + connect operators
 void ym2203_fmchan_connect(fmChan* ch) {
-	ym2203_fmop_exec(&ch->op[0], 0);
+	if (ch->op[0].feedback & 7) {
+		int shift = 7 - (ch->op[0].feedback & 7);
+		int mod = (ch->op[0].out + ch->op[0].outp) >> shift;	// out is previous, outp is pre-previous
+		ch->op[0].outp = ch->op[0].out;		// previous is pre-previous now
+		ym2203_fmop_exec(&ch->op[0], mod);	// generate new out (will be previous @ next step until new generation)
+	} else {
+		ch->op[0].outp = ch->op[0].out;
+		ym2203_fmop_exec(&ch->op[0], 0);
+	}
 	switch(ch->algo & 7) {
 		case 0:		// op0->op1->op2->op3->out
 			ym2203_fmop_exec(&ch->op[1], ch->op[0].out);
@@ -404,7 +410,7 @@ void ym2203_sync(aymChip* chip, int ns) {
 		chip->cnt += chip->per;
 
 		chip->sg_cnt--;				// psg(ssg) divider control
-		if (chip->sg_cnt < 0) {
+		if (chip->sg_cnt <= 0) {
 			chip->sg_cnt = chip->sgdiv;
 			ay_tick(chip);
 		}
@@ -435,7 +441,7 @@ void ym2203_sync(aymChip* chip, int ns) {
 						if (chip->reg[0x27] & 1) {		// running
 							chip->ta_cnt--;
 							if (chip->ta_cnt <= 0) {	// overflow
-								chip->ta_cnt = chip->ta_value;
+								chip->ta_cnt = (1024 - chip->ta_value);
 								if (chip->reg[0x27] & 4) {	// irq enabled
 									// irq
 									// switch ch3 op keys
@@ -452,8 +458,8 @@ void ym2203_sync(aymChip* chip, int ns) {
 					if (!(chip->eg_cnt & 0x1f)) {			// /32: each 96 fm ticks update timerB (96 * 12 = 1152 psticks)
 						if (chip->reg[0x27] & 2) {		// running
 							chip->tb_cnt--;
-							if (chip->tb_cnt == 0) {	// overflow
-								chip->tb_cnt = chip->reg[0x26];
+							if (chip->tb_cnt <= 0) {	// overflow
+								chip->tb_cnt = (256 - chip->reg[0x26]);
 								if (chip->reg[0x27] & 8) {	// irq enabled
 									// irq
 								}
