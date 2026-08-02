@@ -444,6 +444,7 @@ void ym2203_sync(aymChip* chip, int ns) {
 								chip->ta_cnt = (1024 - chip->ta_value);
 								if (chip->reg[0x27] & 4) {	// irq enabled
 									// irq
+									chip->reg[0xff] |= 2;
 									// switch ch3 op keys
 									if ((chip->reg[0x27] & 0xc0) == 0x40) {		// special mode, change keys state
 										ym2203_op_swkey(&chip->chanFM[2].op[0]);
@@ -462,6 +463,7 @@ void ym2203_sync(aymChip* chip, int ns) {
 								chip->tb_cnt = (256 - chip->reg[0x26]);
 								if (chip->reg[0x27] & 8) {	// irq enabled
 									// irq
+									chip->reg[0xff] |= 1;
 								}
 							}
 						}
@@ -486,9 +488,12 @@ sndPair ym2203_vol(aymChip* chip) {
 
 int ym2203_rd(aymChip* chip, int adr) {
 	int res = -1;
-	if (chip->curReg < 0x10) {
-		res = ym_rd(chip, 1);
-	}
+//	if (chip->curReg < 0x10) {
+//		res = ym_rd(chip, adr);
+//	} else {
+		res = chip->reg[0xff] & 3;
+		chip->reg[0xff] = 0;
+//	}
 	return res;
 }
 

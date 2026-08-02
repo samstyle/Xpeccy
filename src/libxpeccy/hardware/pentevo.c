@@ -169,13 +169,31 @@ int evoIn8F(Computer* comp, int port) {
 
 int evoInBEF7(Computer* comp, int port) {	// dos
 	int res = cmsRd(comp);
-	switch (comp->cmos.adr & 0x7f) {
+	switch (comp->cmos.adr & 0xff) {
 		case 0x0c:
 			res = 0x00;
 			// b2: 0 if sdc write only
 			res |= 4;
 			// b3: 1 if sdc is in slot (image present)
 			if (comp->sdc->image) res |= 8;
+			// b4: rtc cells changed
+			break;
+		case 0x0d:	// pc keys flags
+			res = 0x80;
+			// b0:left ctrl
+			// b1:right ctrl
+			// b2:left alt
+			// b3:right alt
+			// b4:left shift
+			// b5:right shift
+			// b6:f12 (allways controlled by emulator)
+			// b7:=1
+			if (comp->keyb->flag1 & 2) res |= 1;
+			if (comp->keyb->flag2 & 2) res |= 2;
+			if (comp->keyb->flag1 & 4) res |= 4;
+			if (comp->keyb->flag2 & 4) res |= 8;
+			if (comp->keyb->flag1 & 1) res |= 16;
+			if (comp->keyb->flag2 & 1) res |= 32;
 			break;
 	}
 //	printf("cmos rd: %.2X\n", res);
@@ -275,8 +293,6 @@ void evoOutBEF7(Computer* comp, int port, int val) {	// dos
 
 void evoOutDEF7(Computer* comp, int port, int val) {	// dos
 	cmos_wr(&comp->cmos, CMOS_ADR, val);
-//	comp->cmos.adr = val & 0xff;
-//	printf("cmos adr = %.2X\n", comp->cmos.adr);
 }
 
 void evoOutBFF7(Computer* comp, int port, int val) {	// !dos
@@ -287,7 +303,6 @@ void evoOutBFF7(Computer* comp, int port, int val) {	// !dos
 void evoOutDFF7(Computer* comp, int port, int val) {	// !dos
 	if (comp->pEFF7 & 0x80) {
 		cmos_wr(&comp->cmos, CMOS_ADR, val);
-		//comp->cmos.adr = val & 0xff;
 	}
 }
 
@@ -354,6 +369,35 @@ int evoIn(Computer* comp, int port) {
 	return res;
 }
 
+void xt_press(Keyboard*, keyEntry*);
+void xt_release(Keyboard*, keyEntry*);
+
+void evo_keyp(Computer* comp, keyEntry* ent) {
+	switch(ent->key) {
+		case XKEY_LSHIFT: comp->keyb->flag1 |= 1; break;
+		case XKEY_LCTRL: comp->keyb->flag1 |= 2; break;
+		case XKEY_LALT: comp->keyb->flag1 |= 4; break;
+		case XKEY_RSHIFT: comp->keyb->flag2 |= 1; break;
+		case XKEY_RCTRL: comp->keyb->flag2 |= 2; break;
+		case XKEY_RALT: comp->keyb->flag2 |= 4; break;
+	}
+	zx_keyp(comp, ent);
+	xt_press(comp->keyb, ent);
+}
+
+void evo_keyr(Computer* comp, keyEntry* ent) {
+	switch(ent->key) {
+		case XKEY_LSHIFT: comp->keyb->flag1 &= ~1; break;
+		case XKEY_LCTRL: comp->keyb->flag1 &= ~2; break;
+		case XKEY_LALT: comp->keyb->flag1 &= ~4; break;
+		case XKEY_RSHIFT: comp->keyb->flag2 &= ~1; break;
+		case XKEY_RCTRL: comp->keyb->flag2 &= ~2; break;
+		case XKEY_RALT: comp->keyb->flag2 &= ~4; break;
+	}
+	zx_keyr(comp, ent);
+	xt_release(comp->keyb, ent);
+}
+
 xPortDsc evo_port_tab[] = {
 	{0x7ffd, REG_BYTE, offsetof(Computer, p7FFD)},
 	{0xeff7, REG_BYTE, offsetof(Computer, pEFF7)},
@@ -361,4 +405,4 @@ xPortDsc evo_port_tab[] = {
 };
 
 HardWare evo_hw_core = {HW_PENTEVO,HWG_ZX,"PentEvo","Evo Baseconf",16,MEM_4M,1.0,NULL,16,evo_port_tab,
-			zx_init,evoMapMem,evoOut,evoIn,evoMRd,evoMWr,zx_irq,zx_ack,evoReset,zx_sync,zx_keyp,zx_keyr,zx_vol};
+			zx_init,evoMapMem,evoOut,evoIn,evoMRd,evoMWr,zx_irq,zx_ack,evoReset,zx_sync,evo_keyp,evo_keyr,zx_vol};

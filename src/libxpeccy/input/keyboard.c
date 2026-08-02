@@ -295,13 +295,13 @@ int kbd_atm2code_rd(Keyboard* kbd, int adr) {
 
 int kbd_atm2cpm_rd(Keyboard* kbd, int adr) {
 	int res = -1;
-	switch(adr) {
-		case 0: res = kbd->keycode;
+	switch((adr >> 8) & 0xff) {
+		case 0x00: res = kbd->keycode;
 			kbd->keycode = 0;
 			break;
-		case 1: res = kbd->flag2;
+		case 0x40: res = kbd->flag2;
 			break;
-		case 2: res = kbd->flag1;
+		case 0x80: res = kbd->flag1;
 			break;
 	}
 	return res;
@@ -904,6 +904,7 @@ xKbdCore kbdTypeTab[] = {
 
 void kbd_set_core(Keyboard* kbd, xKbdCore* core) {
 	kbd->core = core;
+//	printf("kbd set mode %i\n", core->id);
 }
 
 void kbd_set_type(Keyboard* kbd, int t) {

@@ -15,7 +15,6 @@ void atm2Reset(Computer* comp) {
 	comp->flgDOS = 1;
 	comp->p77hi = 0;
 	kbd_set_type(comp->keyb, KBD_SPECTRUM);
-//	comp->keyb->submode = kbdZX;
 	comp->keyb->wcom = 0;
 	comp->keyb->warg = 0;
 	comp->flgZ_I = 1;
@@ -109,11 +108,8 @@ void atm2OutFF(Computer* comp, int port, int val) {		// dos. bdiOut already done
 
 // in
 
-//static unsigned char kmodTab[4] = {kbdZX, kbdCODE, kbdCPM, kbdDIRECT};
 static int kmodTab2[4] = {KBD_SPECTRUM, KBD_ATM2_CODE, KBD_ATM2_CPM, KBD_ATM2_DIRECT};
-
 static unsigned char kmodVer[4] = {6,0,1,0};
-// extern unsigned char kbdScanZX(Keyboard*, int);
 
 int atm2inFE(Computer* comp, int port) {
 	// int res = kbdRead(comp->keyb, port & 0xffff);
@@ -177,7 +173,6 @@ int atm2inFE(Computer* comp, int port) {
 		comp->keyb->warg = 0;
 		switch (comp->keyb->com) {
 			case 0x08:
-				// comp->keyb->submode = kmodTab[comp->keyb->arg & 3];
 				kbd_set_type(comp->keyb, kmodTab2[comp->keyb->arg & 3]);
 				break;
 		}
@@ -186,9 +181,8 @@ int atm2inFE(Computer* comp, int port) {
 		comp->keyb->warg = 0;
 		res = 0xaa;
 	} else {
-#if 1
-		res = kbd_rd(comp->keyb, hi);
-#else
+		res = kbd_rd(comp->keyb, port);
+#if 0
 		// here is keyboard rd
 		switch(comp->keyb->submode) {
 			case kbdZX:
@@ -210,6 +204,7 @@ int atm2inFE(Computer* comp, int port) {
 				}
 				break;
 			case kbdDIRECT:
+				res = xt_read(comp->keyb);
 				break;
 		}
 #endif
@@ -344,3 +339,5 @@ xPortDsc atm_port_tab[] = {
 
 HardWare atm_hw_core = {HW_ATM2,HWG_ZX,"ATM2","ATM Turbo 2+ (v7.10)",16,MEM_128K | MEM_256K | MEM_512K | MEM_1M,1.0,NULL,16,atm_port_tab,
 			zx_init,atm2MapMem,atm2Out,atm2In,stdMRd,stdMWr,zx_irq,zx_ack,atm2Reset,atm2_sync,atm2_keyp,atm2_keyr,zx_vol};
+
+#undef USE_NEW_KBD
