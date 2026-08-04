@@ -98,21 +98,21 @@ void xAYWidget::draw() {
 	fmChan* ch = &chp->chanFM[chn];
 	fmOper* op = &ch->op[opn];
 	ui.fmChanOff->setChecked(ch->off);
-	ui.leFmChanFrq->setText(gethexword(op->freq));
-	ui.leFmChanBase->setText(gethexbyte(op->block));
-	ui.leFmChanStep->setText(gethexint(op->pstep));
+	ui.leFmChanFrq->setText(gethexword(op->pg.freq));
+	ui.leFmChanBase->setText(gethexbyte(op->pg.block));
+	ui.leFmChanStep->setText(gethexint(op->pg.pstep));
 	ui.leFmChanAlg->setText(gethexbyte(ch->algo));
 	ui.leFmChanOut->setText(QString::number(ch->out));
 	ui.leFmOpStatus->setText(getOpStatusName(op->state));
-	ui.leFmOpAR->setText(gethexbyte(op->atkrate));
-	ui.leFmOpDR->setText(gethexbyte(op->decrate));
-	ui.leFmOpSR->setText(gethexbyte(op->susrate));
-	ui.leFmOpSL->setText(gethexword(op->suslev));
-	ui.leFmOpRR->setText(gethexbyte(op->relrate));
+	ui.leFmOpAR->setText(gethexbyte(op->eg.atkrate));
+	ui.leFmOpDR->setText(gethexbyte(op->eg.decrate));
+	ui.leFmOpSR->setText(gethexbyte(op->eg.susrate));
+	ui.leFmOpSL->setText(gethexword(op->eg.suslev));
+	ui.leFmOpRR->setText(gethexbyte(op->eg.relrate));
 	ui.leFmOpTL->setText(gethexword(op->tlev));
-	ui.leFmOpKS->setText(gethexbyte(op->ks));
-	ui.leFmOpEGAmp->setText(gethexword(op->amp));
-	ui.leFmOpPhase->setText(gethexint(op->phase).right(5));
+	ui.leFmOpKS->setText(gethexbyte(op->eg.ks));
+	ui.leFmOpEGAmp->setText(gethexword(op->eg.att));
+	ui.leFmOpPhase->setText(gethexint(op->pg.phase).right(5));
 	ui.leFmOpOut->setText(QString::number(op->out));	// signed
 
 	drawHBar(ui.labBeep, comp->beep->val, 256);
