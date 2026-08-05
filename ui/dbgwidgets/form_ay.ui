@@ -7,13 +7,16 @@
     <x>0</x>
     <y>0</y>
     <width>438</width>
-    <height>327</height>
+    <height>336</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QComboBox" name="cbChipSelect"/>
+   </item>
    <item>
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">

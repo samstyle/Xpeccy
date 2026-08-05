@@ -109,7 +109,7 @@
 static float sin_tab[SIN_LEN];
 static int att_sin_log_tab[256];
 static int pow2_tab[256];
-static float pow2_m[1024];
+static float pow2_m[2048];
 
 void init_sin_tab() {
 	int idx = 0;
@@ -123,8 +123,8 @@ void init_sin_tab() {
 		att_sin_log_tab[idx] = round((-log2(sin((2 * idx + 1) / 512 * M_PI / 2))) * 256.0);
 		pow2_tab[idx] = round(pow(2, (-(idx + 1) / 256.0)) * 2048.0);		// 0.11 [0]~1 to [255]~.5 NOTE:in fact, pretty linear
 	}
-	for (idx = 0; idx < 1024; idx++) {
-		pow2_m[idx] = pow(2, -1.0*idx/64.0);
+	for (idx = 0; idx < 2048; idx++) {
+		pow2_m[idx] = pow(2, -1.0*idx/64.0);	// 2^(-N) for x.6 values
 	}
 }
 
@@ -177,7 +177,7 @@ void ym2203_eg_tick(fmOper* op, int ecount) {
 	int shift;
 	int rate;
 	int inc;
-	switch(op->state) {
+	switch(op->eg.state) {
 		case OPST_OFF:
 			break;
 		case OPST_ATK:
@@ -189,7 +189,7 @@ void ym2203_eg_tick(fmOper* op, int ecount) {
 				op->eg.att += inc;
 				if (op->eg.att <= 0) {
 					op->eg.att = 0;
-					op->state = OPST_DEC;
+					op->eg.state = OPST_DEC;
 				}
 			}
 			break;
@@ -201,7 +201,7 @@ void ym2203_eg_tick(fmOper* op, int ecount) {
 				inc = att_inc[rate][(ecount >> shift) & 7];
 				op->eg.att += inc;
 				if (op->eg.att >= op->eg.suslev) {
-					op->state = OPST_SUS;
+					op->eg.state = OPST_SUS;
 				}
 			}
 			break;
@@ -214,7 +214,7 @@ void ym2203_eg_tick(fmOper* op, int ecount) {
 				op->eg.att += inc;
 				if (op->eg.att >= 1023) {
 					op->eg.att = 1023;
-					op->state = OPST_OFF;
+					// op->eg.state = OPST_OFF;		// sustain utill keyoff
 				}
 			}
 			break;
@@ -227,7 +227,7 @@ void ym2203_eg_tick(fmOper* op, int ecount) {
 				op->eg.att += inc;
 				if (op->eg.att >= 1023) {
 					op->eg.att = 1023;
-					op->state = OPST_OFF;
+					op->eg.state = OPST_OFF;
 				}
 			}
 			break;
@@ -239,9 +239,8 @@ void ym2203_eg_tick(fmOper* op, int ecount) {
 		//	11 - hold inverted volume at end of 1st loop
 		// b2 - invert volume in the beninging
 	}
-	if (op->state == OPST_OFF) return;
-	op->eg.out = op->eg.att; // + op->tlev;
-	if (op->eg.out > 1023) op->eg.out = 1023;
+	if (op->eg.state == OPST_OFF) return;
+	op->eg.out = op->eg.att; // + op->tlev;	// [0..1023]+[0..1023]		// adding TL making sound too silent
 }
 
 // update eg for all channel operators
@@ -255,12 +254,12 @@ void ym2203_cheg_tick(fmChan* ch, int ecount) {
 // press/release key for operator
 void ym2203_op_key(fmOper* op, int st) {
 	if (st && !op->key) {	// key on
-		op->state = OPST_ATK;
+		op->eg.state = OPST_ATK;
 		op->pg.phase = 0;
 		op->eg.att = 1023;
 		op->key = 1;
 	} else if (!st && op->key) {	// key off
-		op->state = OPST_REL;
+		op->eg.state = OPST_REL;
 		op->key = 0;
 	}
 }
@@ -280,7 +279,7 @@ void ym2203_fmop_tick(fmOper* op) {
 
 // apply modulator and calculate output
 void ym2203_fmop_exec(fmOper* op, int mod) {
-	if (op->state == OPST_OFF) {
+	if (op->eg.state == OPST_OFF) {
 		op->out = 0;
 	} else {
 // op->phase is 20bits(10.10), phase is higher 10 bits of it, modulator applied to this value
@@ -298,19 +297,18 @@ void ym2203_fmop_exec(fmOper* op, int mod) {
 // N = att + (env_att << 2)	<- (5.8) 13-bit, env_att is envelope op->amp (10 bits as 4.6, see above, shifting to make it 4.8 as att)
 		att += ((op->eg.att + op->tlev) << 2);			// 5.8
 // chip computes 2^(-N) as 2^(-I) * 2^(-F) where I is integer part (5 bits), F is fractal part (8 bits). 2^(-F) from table: T[i] = (2^(-(N+1)/256) << 11) : 11 bits (0.11)
-//	so result is: fract=N&FF, intgr=N>>8, result=T[fract] >> intgr : 13 bit value; if (intgr>13),result=0
-		int res = (pow2_tab[att & 0xff] << 2) >> (att >> 8);
-		res &= ((1 << 13) - 1);
+//	so result is: fract=N&FF, intgr=N>>8, result=(T[fract] << 2) >> intgr : 13 bit value; if (intgr>13),result=0
+		op->out = (pow2_tab[att & 0xff] << 2) >> (att >> 8);
 // apply sign to result: this is 14-bit output value (sign + 13 bits: if this is modulator, it adds value in range [-8pi;+8pi] to next operator)
-		if (psign) res = -res;
-		res >>= 3;	// to 10 bit signed
-		op->out = res;
+		if (psign) op->out = -op->out;
 #else
 // 2^(-(att + (eg.att << 2)) = 2^(-(-log2(sin(x)) + eg.att)) = 2^(log2(sin(x))*2^(-eg.att) = 2^(-eg.att)*sin(x)
-		//op->out = 1024.0 * pow(2, -op->eg.out / 64.0) * sin_tab[(phase >> SIN_SHIFT) & SIN_MASK];
-		op->out = 1024.0 * pow2_m[op->eg.out] * sin_tab[(phase >> SIN_SHIFT) & SIN_MASK];
+		if (op->eg.out > 0x340) {
+			op->out = 0;
+		} else {
+			op->out = (1 << 13) * pow2_m[op->eg.out] * sin_tab[(phase >> SIN_SHIFT) & SIN_MASK];	// signed 12 bits. modulation [-8pi;+8pi]; b0 doesn't affect, 10 bits is 2pi, 2 bits doesn't matter (+2pi for sinus)
+		}
 #endif
-//		op->out += op->tlev;
 	}
 }
 
@@ -322,14 +320,15 @@ void ym2203_fmchan_tick(fmChan* ch) {
 	ym2203_fmop_tick(&ch->op[3]);
 	// not connected yet, connect when ym2203_vol to get output volume
 	// fully calculate op0 for proper feedback
-	if (ch->op[0].feedback & 7) {
-		int shift = 7 - (ch->op[0].feedback & 7);
-		int mod = (ch->op[0].out + ch->op[0].outp) >> shift;	// out is previous, outp is pre-previous
-		ch->op[0].outp = ch->op[0].out;		// previous is pre-previous now
-		ym2203_fmop_exec(&ch->op[0], mod);	// generate new out (will be previous @ next step until new generation)
+	fmOper* op0 = &ch->op[0];
+	int fb = op0->feedback & 7;
+	if (fb) {
+		int mod = (op0->out + op0->outp) >> (7 - fb);	// out is previous, outp is pre-previous
+		op0->outp = op0->out;		// previous is pre-previous now
+		ym2203_fmop_exec(op0, mod);	// generate new out (will be previous @ next step until new generation)
 	} else {
-		ch->op[0].outp = ch->op[0].out;
-		ym2203_fmop_exec(&ch->op[0], 0);
+		op0->outp = op0->out;
+		ym2203_fmop_exec(op0, 0);
 	}
 }
 
@@ -397,8 +396,8 @@ void ym2203_fmchan_connect(fmChan* ch) {
 			break;
 	}
 	if (ch->off) ch->out = 0;
-	// ch->out [-1024;1024]
-	ch->out += 1024;
+	// ch->out signed 13 bit
+	ch->out = (ch->out + (1 << 13));
 }
 
 // timings (chatgpt):
@@ -486,7 +485,7 @@ sndPair ym2203_vol(aymChip* chip) {
 	int fmv = 0;
 	for (int i = 0; i < 3; i++) {
 		ym2203_fmchan_connect(&chip->chanFM[i]);
-		fmv += chip->chanFM[i].out * 4;
+		fmv += chip->chanFM[i].out;
 	}
 	v.left += fmv / 3;
 	v.right += fmv / 3;
@@ -665,8 +664,10 @@ void ym2203_wr(aymChip* chip, int adr, int val) {
 }
 
 void ym2203_op_reset(fmOper* op) {
-	op->state = OPST_OFF;
+	op->eg.state = OPST_OFF;
 	op->eg.att = 1023;
+	op->eg.out = 1023;
+	op->tlev = 0;
 }
 
 void ym2203_ch_reset(fmChan* ch) {

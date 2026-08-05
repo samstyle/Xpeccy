@@ -98,7 +98,6 @@ enum {
 
 typedef struct {
 	unsigned key:1;
-	int state;
 	int feedback;	// op1 only
 	int tlev;	// 0:max, 1024:min
 	struct {	// phase generator
@@ -110,6 +109,7 @@ typedef struct {
 		int detune;
 	} pg;
 	struct {		// envelope generator
+		int state;	// atk/dec/sus/rel/off
 		int ks;		// from reg.value (2bits)
 		int kscale;	// calculated (0-31)
 		int atkrate;
@@ -161,7 +161,7 @@ struct aymChip {
 	int pscnt;	// pre-scaler: (2,3,6) of master ticks
 	int fmcnt;	// fm: 12 pre-scaled ticks
 	int eg_timer;	// eg: 3 fm ticks
-	int eg_cnt;	// inc each eg tick (12 bit)
+	unsigned eg_cnt:12;// inc each eg tick (12 bit)
 	int sg_cnt;	// ssg divider counter
 
 	fmChan chanFM[3];	// fm channels
