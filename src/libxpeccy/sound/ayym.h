@@ -93,7 +93,8 @@ enum {
 	OPST_ATK,
 	OPST_DEC,
 	OPST_SUS,
-	OPST_REL
+	OPST_REL,
+	OPST_HOLD
 };
 
 typedef struct {
@@ -104,9 +105,11 @@ typedef struct {
 		unsigned phase:20;		// 20-bit phase 10.10 (max is 2*pi)
 		int freq;
 		int block;
+		int note;			// keycode
 		int pstep;			// phase step
 		int mult;
-		int detune;
+		int detune;			// from register
+		int dt;				// calculated value
 	} pg;
 	struct {		// envelope generator
 		int state;	// atk/dec/sus/rel/off
@@ -118,6 +121,7 @@ typedef struct {
 		int suslev;	// [0;1024]
 		int relrate;
 		int envflag;
+		int envinv;
 		int att;			// 0:max, 1023:min
 		int out;			// att + tlev;
 	} eg;
@@ -136,6 +140,7 @@ struct aymChip {
 	unsigned coarse:1;	// 4-bit DAC volume
 	unsigned blk_fm:1;	// 1:block fm output
 	int stereo;
+	int wait;		// waiting. chip is busy when >0
 
 	int type;
 	double frq;		// in MHz

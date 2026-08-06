@@ -192,6 +192,7 @@ int tsIn(TSound* ts, int port) {
 	int res = -1;
 	if (ts->r_stat) {			// read status
 		res = ts->curChip->reg[0xff] & 3;
+		if (ts->curChip->wait > 0) res |= 0x80;
 	} else {				// read registers
 		res = ts->curChip->rd(ts->curChip, (port >> 14) & 1);
 	}
