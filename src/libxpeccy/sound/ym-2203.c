@@ -197,7 +197,7 @@ void ym2203_eg_tick(fmOper* op, int ecount) {
 			if (rate > 63) rate = 63;
 			shift = shift_tab[rate]; // (rate < 44) ? (11 - (rate >> 2)) : 0;
 			if (!(ecount & ((1 << shift) - 1))) {
-				inc = (~op->eg.att * att_inc[rate][(ecount >> shift) & 7]) >> 4;	// negative value
+				inc = (~(op->eg.att + 1) * att_inc[rate][(ecount >> shift) & 7]) >> 4;	// negative value
 				op->eg.att += inc;
 				if (op->eg.att <= 0) {
 					op->eg.att = 0;
@@ -408,25 +408,25 @@ void ym2203_fmchan_connect(fmChan* ch) {
 			ym2203_fmop_exec(&ch->op[1], 0);
 			ym2203_fmop_exec(&ch->op[2], ch->op[0].out);
 			ym2203_fmop_exec(&ch->op[3], ch->op[1].out);
-			ch->out = (ch->op[2].out + ch->op[3].out) / 2;
+			ch->out = (ch->op[2].out + ch->op[3].out); // / 2;
 			break;
 		case 5:		// op0->(op1,op2,op3)->out
 			ym2203_fmop_exec(&ch->op[1], ch->op[0].out);
 			ym2203_fmop_exec(&ch->op[2], ch->op[0].out);
 			ym2203_fmop_exec(&ch->op[3], ch->op[0].out);
-			ch->out = (ch->op[1].out + ch->op[2].out + ch->op[3].out) / 3;
+			ch->out = (ch->op[1].out + ch->op[2].out + ch->op[3].out); // / 3;
 			break;
 		case 6:		// op0->op2->out, op1->out, op3->out
 			ym2203_fmop_exec(&ch->op[1], 0);
 			ym2203_fmop_exec(&ch->op[2], ch->op[0].out);
 			ym2203_fmop_exec(&ch->op[3], 0);
-			ch->out = (ch->op[1].out + ch->op[2].out + ch->op[3].out) / 3;
+			ch->out = (ch->op[1].out + ch->op[2].out + ch->op[3].out); // / 3;
 			break;
 		case 7:		// op0->out, op1->out, op2->out, op3->out
 			ym2203_fmop_exec(&ch->op[1], 0);
 			ym2203_fmop_exec(&ch->op[2], 0);
 			ym2203_fmop_exec(&ch->op[3], 0);
-			ch->out = (ch->op[0].out + ch->op[1].out + ch->op[2].out + ch->op[3].out) / 4;
+			ch->out = (ch->op[0].out + ch->op[1].out + ch->op[2].out + ch->op[3].out); // / 4;
 			break;
 	}
 	if (ch->off) ch->out = 0;
@@ -489,10 +489,10 @@ void ym2203_sync(aymChip* chip, int ns) {
 									chip->reg[0xff] |= 2;
 									// switch ch3 op keys
 									if ((chip->reg[0x27] & 0xc0) == 0x40) {		// special mode, change keys state
-										ym2203_op_swkey(&chip->chanFM[2].op[0]);
-										ym2203_op_swkey(&chip->chanFM[2].op[1]);
-										ym2203_op_swkey(&chip->chanFM[2].op[2]);
-										ym2203_op_swkey(&chip->chanFM[2].op[3]);
+										ym2203_op_key(&chip->chanFM[2].op[0], 1);
+										ym2203_op_key(&chip->chanFM[2].op[1], 1);
+										ym2203_op_key(&chip->chanFM[2].op[2], 1);
+										ym2203_op_key(&chip->chanFM[2].op[3], 1);
 									}
 								}
 							}
@@ -522,7 +522,7 @@ sndPair ym2203_vol(aymChip* chip) {
 	int fmv = 0;
 	for (int i = 0; i < 3; i++) {
 		ym2203_fmchan_connect(&chip->chanFM[i]);
-		fmv += chip->chanFM[i].out << 1;
+		fmv += chip->chanFM[i].out;
 	}
 	v.left += fmv / 3;
 	v.right += fmv / 3;
@@ -711,6 +711,8 @@ void ym2203_op_reset(fmOper* op) {
 	op->eg.state = OPST_OFF;
 	op->eg.att = 1023;
 	op->eg.out = 1023;
+	op->pg.mult = 2;
+	op->pg.dt = 0;
 	op->tlev = 0;
 }
 

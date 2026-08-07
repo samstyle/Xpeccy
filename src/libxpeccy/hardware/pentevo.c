@@ -2,6 +2,8 @@
 
 #include <stdio.h>
 
+// NOTE: xxBD/xxBE ports are swaped in newer firmware. latest bios will not work
+
 #define regBF	reg[16]
 #define reg2F	reg[17]
 #define reg4F	reg[18]
@@ -171,6 +173,8 @@ int evoIn8F(Computer* comp, int port) {
 int evoInBEF7(Computer* comp, int port) {	// dos
 	int res = cmsRd(comp);
 	switch (comp->cmos.adr & 0xff) {
+		case 0x0a: res = 0x00; break;
+		case 0x0b: res = 0x02; break;
 		case 0x0c:
 			res = 0x00;
 			// b2: 0 if sdc write only
@@ -202,7 +206,7 @@ int evoInBEF7(Computer* comp, int port) {	// dos
 }
 
 int evoInBFF7(Computer* comp, int port) {	// !dos
-	return (comp->pEFF7 & 0x80) ? cmsRd(comp) : 0xff;
+	return (comp->pEFF7 & 0x80) ? evoInBEF7(comp, port) : 0xff;
 }
 
 int evoInFF(Computer* comp, int port) {
@@ -290,6 +294,15 @@ void evoOut7FFD(Computer* comp, int port, int val) {
 
 void evoOutBEF7(Computer* comp, int port, int val) {	// dos
 	cmsWr(comp,val);
+	switch(comp->cmos.adr) {
+		case 0x0a:
+			// set eeprom adr
+			break;
+		case 0x0c:
+			if (val & 1) comp->keyb->outbuf = 0;
+			// b7: eeprom access enabled
+			break;
+	}
 }
 
 void evoOutDEF7(Computer* comp, int port, int val) {	// dos
@@ -298,7 +311,7 @@ void evoOutDEF7(Computer* comp, int port, int val) {	// dos
 
 void evoOutBFF7(Computer* comp, int port, int val) {	// !dos
 	if (comp->pEFF7 & 0x80)
-		cmsWr(comp,val);
+		evoOutBEF7(comp,port,val);
 }
 
 void evoOutDFF7(Computer* comp, int port, int val) {	// !dos
