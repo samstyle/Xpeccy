@@ -121,11 +121,11 @@ void xAYWidget::draw() {
 	ui.leFmChanAlg->setText(gethexbyte(ch->algo));
 	ui.leFmChanOut->setText(QString::number(ch->out));
 	ui.leFmOpStatus->setText(getOpStatusName(op->eg.state));
-	ui.leFmOpAR->setText(gethexbyte(op->eg.atkrate));
-	ui.leFmOpDR->setText(gethexbyte(op->eg.decrate));
-	ui.leFmOpSR->setText(gethexbyte(op->eg.susrate));
+	ui.leFmOpAR->setText(gethexbyte(op->eg.atk.rate));
+	ui.leFmOpDR->setText(gethexbyte(op->eg.dec.rate));
+	ui.leFmOpSR->setText(gethexbyte(op->eg.sus.rate));
 	ui.leFmOpSL->setText(gethexword(op->eg.suslev));
-	ui.leFmOpRR->setText(gethexbyte(op->eg.relrate));
+	ui.leFmOpRR->setText(gethexbyte(op->eg.rel.rate));
 	ui.leFmOpTL->setText(gethexword(op->tlev));
 	ui.leFmOpKS->setText(gethexbyte(op->eg.ks));
 	ui.leFmOpEGAmp->setText(gethexword(op->eg.att));

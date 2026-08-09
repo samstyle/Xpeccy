@@ -109,7 +109,7 @@ int tslMRd(Computer* comp, int adr, int m1) {
 }
 
 void tslMWr(Computer* comp, int adr, int val) {
-	if ((comp->flgMEN & 0x10) && (((adr & 0xf000) >> 12) == comp->regMADR)) {
+	if (comp->flgMEN && (((adr & 0xf000) >> 12) == comp->regMADR)) {
 		if ((adr & 0xe00) == 0x000) {				// palete
 			comp->vid->tsconf.cram[adr & 0x1ff] = val & 0xff;
 			tslUpdatePal(comp);
@@ -294,7 +294,7 @@ int tsIn12AF(Computer* comp, int port) {return comp->mem->map[0x80].num >> 6;}
 int tsIn13AF(Computer* comp, int port) {return comp->mem->map[0xc0].num >> 6;}
 
 void tsOut15AF(Computer* comp, int port, int val) {
-	comp->flgMEN = val & 0x10;		// FM_EN
+	comp->flgMEN = !!(val & 0x10);		// FM_EN
 	comp->regMADR = val & 0x0f;
 }
 
@@ -570,18 +570,33 @@ int tslIn(Computer* comp, int port) {
 	return  res;
 }
 
+// keys
+
+void xt_press(Keyboard*, keyEntry*);
+void xt_release(Keyboard*, keyEntry*);
+
+void ts_keyp(Computer* comp, keyEntry* ent) {
+	zx_keyp(comp, ent);
+	xt_press(comp->keyb, ent);
+}
+
+void ts_keyr(Computer* comp, keyEntry* ent) {
+	zx_keyr(comp, ent);
+	xt_release(comp->keyb, ent);
+}
+
 // tsconf
 xPortDsc zx_port_tab_ts[] = {
 	{0x7ffd, REG_BYTE, offsetof(Computer, p7FFD)},
 	{0xeff7, REG_BYTE, offsetof(Computer, pEFF7)},
 	{0x01af, REG_BYTE, offsetof(Computer, p01AF)},
-	{0x02af, REG_BYTE, offsetof(Computer, p02AF)},
-	{0x03af, REG_BYTE, offsetof(Computer, p03AF)},
-	{0x04af, REG_BYTE, offsetof(Computer, p04AF)},
-	{0x05af, REG_BYTE, offsetof(Computer, p05AF)},
+//	{0x02af, REG_BYTE, offsetof(Computer, p02AF)},
+//	{0x03af, REG_BYTE, offsetof(Computer, p03AF)},
+//	{0x04af, REG_BYTE, offsetof(Computer, p04AF)},
+//	{0x05af, REG_BYTE, offsetof(Computer, p05AF)},
 	{0x21af, REG_BYTE, offsetof(Computer, tsconf.p21af)},
 	{-1, 0, 0}
 };
 
 HardWare tsl_hw_core = {HW_TSLAB,HWG_ZX,"TSLab","Evo TSConf",16,MEM_4M,1.0,NULL,16,zx_port_tab_ts,
-			zx_init,tslMapMem,tslOut,tslIn,tslMRd,tslMWr,zx_irq,zx_ack,tslReset,zx_sync,zx_keyp,zx_keyr,zx_vol};
+			zx_init,tslMapMem,tslOut,tslIn,tslMRd,tslMWr,zx_irq,zx_ack,tslReset,zx_sync,ts_keyp,ts_keyr,zx_vol};

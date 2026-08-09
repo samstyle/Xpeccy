@@ -98,6 +98,12 @@ enum {
 };
 
 typedef struct {
+	int rate;	// from register
+	int efrate;	// 2*rate+kscale (4*rate+2+kscale for REL), 64 if rate 0, 65 if 2ar+kscale>61
+	int shift;	// 0 if rate 0, 0 if ar>61, shift_tab[efrate] otherwise
+} xAdsr;
+
+typedef struct {
 	unsigned key:1;
 	int feedback;	// op1 only
 	int tlev;	// 0:max, 1024:min
@@ -115,11 +121,15 @@ typedef struct {
 		int state;	// atk/dec/sus/rel/off
 		int ks;		// from reg.value (2bits)
 		int kscale;	// calculated (0-31)
-		int atkrate;
-		int decrate;
-		int susrate;
+		xAdsr atk;
+		xAdsr dec;
+		xAdsr sus;
+		xAdsr rel;
+//		int atkrate;
+//		int decrate;
+//		int susrate;
 		int suslev;	// [0;1024]
-		int relrate;
+//		int relrate;
 		int envflag;
 		int envinv;
 		int att;			// 0:max, 1023:min

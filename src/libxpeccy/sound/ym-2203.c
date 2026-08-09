@@ -141,9 +141,10 @@ static int dt_tab[32][8] = {
 };
 
 // [adsr eff.rate][(ecount >> shift) & 7]
-int att_inc[64][8] = {
-	{0,0,0,0,0,0,0,0},{0,0,0,0,0,0,0,0},{1,0,1,0,1,0,1,0},{1,0,1,0,1,0,1,0},  // 0-3    (0x00-0x03)
-	{1,0,1,0,1,0,1,0},{1,0,1,0,1,0,1,0},{1,1,1,0,1,1,1,0},{1,1,1,0,1,1,1,0},  // 4-7    (0x04-0x07)
+// [0] is rate==0 for atk/dec/sus, don't add kscale; doesn't affect rel
+int att_inc[64+1][8] = {
+	{0,0,0,0,0,0,0,0},{1,0,1,1,1,0,1,0},{1,1,1,0,1,1,1,0},{1,1,1,1,1,1,1,0},  // 0-3    (0x00-0x03)
+	{1,0,1,0,1,0,1,0},{1,0,1,1,1,0,1,0},{1,1,1,0,1,1,1,0},{1,1,1,1,1,1,1,0},  // 4-7    (0x04-0x07)
 	{1,0,1,0,1,0,1,0},{1,0,1,1,1,0,1,0},{1,1,1,0,1,1,1,0},{1,1,1,1,1,1,1,0},  // 8-11   (0x08-0x0B)
 	{1,0,1,0,1,0,1,0},{1,0,1,1,1,0,1,0},{1,1,1,0,1,1,1,0},{1,1,1,1,1,1,1,0},  // 12-15  (0x0C-0x0F)
 	{1,0,1,0,1,0,1,0},{1,0,1,1,1,0,1,0},{1,1,1,0,1,1,1,0},{1,1,1,1,1,1,1,0},  // 16-19  (0x10-0x13)
@@ -157,7 +158,8 @@ int att_inc[64][8] = {
 	{1,1,1,1,1,1,1,1},{2,1,1,1,2,1,1,1},{2,1,2,1,2,1,2,1},{2,2,2,1,2,2,2,1},  // 48-51  (0x30-0x33)
 	{2,2,2,2,2,2,2,2},{4,2,2,2,4,2,2,2},{4,2,4,2,4,2,4,2},{4,4,4,2,4,4,4,2},  // 52-55  (0x34-0x37)
 	{4,4,4,4,4,4,4,4},{8,4,4,4,8,4,4,4},{8,4,8,4,8,4,8,4},{8,8,8,4,8,8,8,4},  // 56-59  (0x38-0x3B)
-	{8,8,8,8,8,8,8,8},{8,8,8,8,8,8,8,8},{8,8,8,8,8,8,8,8},{8,8,8,8,8,8,8,8}   // 60-63  (0x3C-0x3F)
+	{8,8,8,8,8,8,8,8},{8,8,8,8,8,8,8,8},{8,8,8,8,8,8,8,8},{8,8,8,8,8,8,8,8},  // 60-63  (0x3C-0x3F)
+	{16,16,16,16,16,16,16,16}	// [64] for atk.effrate>62 - very fast
 };
 
 // for every effecive rate (2*R + Rks)
@@ -185,7 +187,6 @@ static int keyscale_tab[32 * 4] = {
 // TODO: pre-calc rate,shift,sel,eg_inc[] pointer
 void ym2203_eg_tick(fmOper* op, int ecount) {
 	int shift;
-	int rate;
 	int inc;
 	switch(op->eg.state) {
 		case OPST_OFF:
@@ -193,11 +194,9 @@ void ym2203_eg_tick(fmOper* op, int ecount) {
 		case OPST_HOLD:
 			break;
 		case OPST_ATK:
-			rate = 2 * op->eg.atkrate + op->eg.kscale;
-			if (rate > 63) rate = 63;
-			shift = shift_tab[rate]; // (rate < 44) ? (11 - (rate >> 2)) : 0;
+			shift = op->eg.atk.shift;
 			if (!(ecount & ((1 << shift) - 1))) {
-				inc = (~(op->eg.att + 1) * att_inc[rate][(ecount >> shift) & 7]) >> 4;	// negative value
+				inc = (~(op->eg.att + 1) * att_inc[op->eg.atk.efrate][(ecount >> shift) & 7]) >> 4;	// negative value
 				op->eg.att += inc;
 				if (op->eg.att <= 0) {
 					op->eg.att = 0;
@@ -206,12 +205,10 @@ void ym2203_eg_tick(fmOper* op, int ecount) {
 			}
 			break;
 		case OPST_DEC:
-			rate = 2 * op->eg.decrate + op->eg.kscale;
-			if (rate > 63) rate = 63;
-			shift = shift_tab[rate]; // (rate < 44) ? (11 - (rate >> 2)) : 0;
+			shift = op->eg.dec.shift;
 			if (op->eg.envflag & 8) shift >>= 2;		// 4 times faster
 			if (!(ecount & ((1 << shift) - 1))) {
-				inc = att_inc[rate][(ecount >> shift) & 7];
+				inc = att_inc[op->eg.dec.efrate][(ecount >> shift) & 7];
 				op->eg.att += inc;
 				if (op->eg.att >= op->eg.suslev) {
 					op->eg.state = OPST_SUS;
@@ -219,12 +216,10 @@ void ym2203_eg_tick(fmOper* op, int ecount) {
 			}
 			break;
 		case OPST_SUS:
-			rate = 2 * op->eg.susrate + op->eg.kscale;
-			if (rate > 63) rate = 63;
-			shift = shift_tab[rate]; //(rate < 44) ? (11 - (rate >> 2)) : 0;
+			shift = op->eg.sus.shift;
 			if (op->eg.envflag & 8) shift >>= 2;
 			if (!(ecount & ((1 << shift) - 1))) {
-				inc = att_inc[rate][(ecount >> shift) & 7];
+				inc = att_inc[op->eg.sus.efrate][(ecount >> shift) & 7];
 				op->eg.att += inc;
 				if (op->eg.att >= 1023) {
 					op->eg.att = 1023;
@@ -243,12 +238,10 @@ void ym2203_eg_tick(fmOper* op, int ecount) {
 			}
 			break;
 		case OPST_REL:
-			rate = 4 * op->eg.relrate + 2 + op->eg.kscale;
-			if (rate > 63) rate = 63;
-			shift = shift_tab[rate]; // (rate < 44) ? (11 - (rate >> 2)) : 0;
+			shift = op->eg.rel.shift;
 			if (op->eg.envflag & 8) shift >>= 2;
 			if (!(ecount & ((1 << shift) - 1))) {
-				inc = att_inc[rate][(ecount >> shift) & 7];
+				inc = att_inc[op->eg.rel.efrate][(ecount >> shift) & 7];
 				op->eg.att += inc;
 				if (op->eg.att >= 1023) {
 					op->eg.att = 1023;
@@ -287,9 +280,14 @@ void ym2203_cheg_tick(fmChan* ch, int ecount) {
 // press/release key for operator
 void ym2203_op_key(fmOper* op, int st) {
 	if (st && !op->key) {	// key on
-		op->eg.state = OPST_ATK;
+		if (op->eg.atk.efrate > 61) {		// 62,63 -> skip ATK, go to DEC with att=0
+			op->eg.state = OPST_DEC;
+			op->eg.att = 0;
+		} else {
+			op->eg.state = OPST_ATK;
+			op->eg.att = 1023;
+		}
 		op->pg.phase = 0;
-		op->eg.att = 1023;
 		op->key = 1;
 	} else if (!st && op->key) {	// key off
 		op->eg.state = OPST_REL;
@@ -558,6 +556,52 @@ void ym2203_divmode(aymChip* chip) {
 	chip->fmcnt <<= 1;	// halfperiod -> period
 }
 
+#define USE_NEW_METHOD	1
+void op_recalc_ds(xAdsr* st, int kscale) {
+#if !USE_NEW_METHOD
+	st->efrate = 2 * st->rate + kscale;
+	if (st->efrate > 63)
+		st->efrate = 63;
+	st->shift = shift_tab[st->efrate];
+#else
+	if (st->rate == 0) {
+		st->efrate = 0;		// 0 -> {0}, infinity
+		st->shift = 0;
+	} else {
+		st->efrate = 2 * st->rate + kscale;
+		if (st->efrate > 63)
+			st->efrate = 63;
+		st->shift = shift_tab[st->efrate];
+	}
+#endif
+}
+
+void op_recalc_dec(fmOper* op) {op_recalc_ds(&op->eg.dec, op->eg.kscale);}
+void op_recalc_sus(fmOper* op) {op_recalc_ds(&op->eg.sus, op->eg.kscale);}
+void op_recalc_rel(fmOper* op) {
+	xAdsr r = op->eg.rel;
+	r.rate = 2 * r.rate + 1;		// never 0
+	op_recalc_ds(&r, op->eg.kscale);
+	op->eg.rel.efrate = r.efrate;
+	op->eg.rel.shift = r.shift;
+}
+void op_recalc_atk(fmOper* op) {
+	op_recalc_ds(&op->eg.atk, op->eg.kscale);
+#if USE_NEW_METHOD
+	if (op->eg.atk.efrate > 61) {		// 62,63 -> {16}, very fast
+		op->eg.atk.efrate = 64;
+		op->eg.atk.shift = 0;
+	}
+#endif
+}
+void op_recalc_rates(fmOper* op) {
+	op_recalc_atk(op);
+	op_recalc_dec(op);
+	op_recalc_sus(op);
+	op_recalc_rel(op);
+}
+#undef USE_NEW_METHOD
+
 int calc_note(int frq, int blk) {
 	int nte = (frq & 0x400) ? 2 : 0;
 	if (((frq & 0x780) == 0x380) || ((frq & 0x400) && (frq & 0x380))) nte |= 1;
@@ -580,6 +624,7 @@ void op_update_freq(fmChan* ch, int opn, unsigned char regl, unsigned char regh)
 		op->pg.note = calc_note(frq, blk);
 		op->eg.kscale = op->pg.note >> (op->eg.ks ^ 3);
 		op->pg.dt = dt_tab[op->pg.note][op->pg.detune];		// step shift value
+		op_recalc_rates(op);
 		opn++;
 	} while (all && (opn < 4));
 }
@@ -667,19 +712,23 @@ void ym2203_wr(aymChip* chip, int adr, int val) {
 						op->tlev = (val & 0x7f) << 3;	// b0..5 total level
 						break;
 					case 0x50:
-						op->eg.atkrate = val & 0x1f;	// b0..4 atk rate (0 - slow, 1f - fast)
+						op->eg.atk.rate = val & 0x1f;	// b0..4 atk rate (0 - slow, 1f - fast)
 						op->eg.ks = (val >> 6) & 3;	// b6,7 key scale (rate scale)
 						op->eg.kscale = op->pg.note >> (op->eg.ks ^ 3);
+						op_recalc_rates(op);
 						break;
 					case 0x60:
-						op->eg.decrate = val & 0x1f;	// b0..4 decay rate
+						op->eg.dec.rate = val & 0x1f;	// b0..4 decay rate
+						op_recalc_dec(op);
 						break;
 					case 0x70:
-						op->eg.susrate = val & 0x1f;	// b0..4 sustain rate
+						op->eg.sus.rate = val & 0x1f;	// b0..4 sustain rate
+						op_recalc_sus(op);
 						break;
 					case 0x80:
-						op->eg.relrate = val & 0x0f;	// b0..3 release rate
+						op->eg.rel.rate = val & 0x0f;	// b0..3 release rate
 						op->eg.suslev = (val & 0xf0) << 2;	// b4..7 sustain level
+						op_recalc_rel(op);
 						break;
 					case 0x90:
 						op->eg.envflag = val & 0x0f;	// b0..3 envelope control (TODO)
