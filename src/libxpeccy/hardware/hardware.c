@@ -217,7 +217,6 @@ void stdMWr(Computer *comp, int adr, int val) {
 }
 
 // io
-// TODO: contended io here or in spectrum.c? Z80: add 4T after io cycle?
 
 int hwIn(xPort* ptab, Computer* comp, int port) {
 	int res = -1;

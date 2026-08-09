@@ -719,7 +719,7 @@ void MainWin::paintEvent(QPaintEvent*) {
 	pnt.endNativePainting();
 #else
 	Computer* comp = conf.prof.cur->zx;
-	pnt.drawImage(0, 0, QImage(comp->debug ? scrimg : bufimg, width(), height(), QImage::Format_RGBA8888));
+	pnt.drawImage(0, 0, QImage(comp->flgDBG ? scrimg : bufimg, width(), height(), QImage::Format_RGBA8888));
 #endif
 	drawIcons(pnt);
 	pnt.end();

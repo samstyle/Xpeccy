@@ -519,6 +519,8 @@ void ym2203_sync(aymChip* chip, int ns) {
 // TODO: normal mixer
 sndPair ym2203_vol(aymChip* chip) {
 	sndPair v = ym_vol(chip);
+	v.left *= 0.75;
+	v.right *= 0.75;
 	int fmv = 0;
 	for (int i = 0; i < 3; i++) {
 		ym2203_fmchan_connect(&chip->chanFM[i]);
