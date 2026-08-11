@@ -897,7 +897,8 @@ void vidProfiScr(Video* vid) {
 
 void vidDrawTSLNormal(Video*);
 void vidDrawTSLExt(Video*);
-void vidTSline(Video*);
+void vts_hblk(Video*);
+void vts_line(Video*);
 void vidDrawTSLText(Video*);
 void vidDrawEvoText(Video*);
 
@@ -956,10 +957,10 @@ static xVideoMode vidModeTab[] = {
 	{VID_ATM_TEXT, NULL, vidDrawATMtext, NULL, NULL, NULL, NULL},
 	{VID_ATM_HWM, NULL, vidDrawATMhwmc, NULL, NULL, NULL, NULL},
 	{VID_EVO_TEXT, NULL, vidDrawEvoText, NULL, NULL, NULL, NULL},
-	{VID_TSL_NORMAL, NULL, vidDrawTSLNormal, NULL, vidTSline, NULL, NULL},
-	{VID_TSL_16, NULL, vidDrawTSLExt, NULL, vidTSline, NULL, NULL},			// vidDrawTSL16
-	{VID_TSL_256, NULL, vidDrawTSLExt, NULL, vidTSline, NULL, NULL},		// vidDrawTSL256
-	{VID_TSL_TEXT, NULL, vidDrawTSLText, NULL, vidTSline, NULL, NULL},
+	{VID_TSL_NORMAL, NULL, vidDrawTSLNormal, vts_hblk, vts_line, NULL, NULL},
+	{VID_TSL_16, NULL, vidDrawTSLExt, vts_hblk, vts_line, NULL, NULL},			// vidDrawTSL16
+	{VID_TSL_256, NULL, vidDrawTSLExt, vts_hblk, vts_line, NULL, NULL},		// vidDrawTSL256
+	{VID_TSL_TEXT, NULL, vidDrawTSLText, vts_hblk, vts_line, NULL, NULL},
 	{VID_PRF_MC, NULL, vidProfiScr, NULL, NULL, NULL, NULL},
 
 	{VID_GBC, NULL, gbcvDraw, NULL, gbcvLine, gbcvVBL, gbcvFram},

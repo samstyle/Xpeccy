@@ -5,6 +5,8 @@
 
 #define flgMEN	flag[0]		// 15AF[4] = FM_EN
 #define flgVDOS	flag[1]
+#define flgLINT	flag[2]		// 1 on vid->intLINE, 0 on line int ack
+#define flgDINT	flag[3]		// (same for dma int)
 
 #define p01AF	reg[7]		// move to tsconf.c (what to do with ports tab?)
 #define p02AF	reg[8]
@@ -323,6 +325,7 @@ void tsOut21AF(Computer* comp, int port, int val) {
 	comp->tsconf.p21af = val & 0xff;
 	comp->p7FFD &= ~0x10;
 	if (val & 1) comp->p7FFD |= 0x10;
+	comp->flgROM = val & 1;
 	tslMapMem(comp);
 }
 
@@ -570,6 +573,50 @@ int tslIn(Computer* comp, int port) {
 	return  res;
 }
 
+// irq
+
+#include "../cpu/Z80/z80.h"
+
+void ts_irq(Computer* comp, int t) {
+	switch(t) {
+		case IRQ_VID_IEND:
+			if (!comp->flgLINT && !comp->flgDINT) {
+				comp->cpu->intrq &= ~Z80_INT;	// reset cpu int line if there is no other ints
+			}
+			break;
+		case IRQ_VID_LINE:			// line int (tsconf) FD
+			comp->flgLINT = 1;
+			comp->cpu->intrq |= Z80_INT;
+			comp->vid->intLINE = 0;
+			break;
+		case IRQ_DMA:				// dma int (tsconf) FB
+			comp->flgDINT = 1;
+			comp->cpu->intrq |= Z80_INT;
+			comp->vid->intDMA = 0;		// reset on vector request
+			break;
+		case IRQ_CPU_ACK:
+			zx_irq(comp, t);
+			comp->cpu->flgACK |= comp->flgLINT || comp->flgDINT;
+			break;
+		default:
+			zx_irq(comp, t);
+			break;
+	}
+}
+
+int ts_ack(Computer* comp) {
+	if (comp->vid->intFRAME) {		// frame int have highest priority
+		comp->intVector = 0xff;
+	} else if (comp->flgLINT) {		// line int
+		comp->flgLINT = 0;
+		comp->intVector = 0xfd;
+	} else if (comp->flgDINT) {		// dma int
+		comp->flgDINT = 0;
+		comp->intVector = 0xfb;
+	}
+	return comp->intVector & 0xff;
+}
+
 // keys
 
 void xt_press(Keyboard*, keyEntry*);
@@ -599,4 +646,4 @@ xPortDsc zx_port_tab_ts[] = {
 };
 
 HardWare tsl_hw_core = {HW_TSLAB,HWG_ZX,"TSLab","Evo TSConf",16,MEM_4M,1.0,NULL,16,zx_port_tab_ts,
-			zx_init,tslMapMem,tslOut,tslIn,tslMRd,tslMWr,zx_irq,zx_ack,tslReset,zx_sync,ts_keyp,ts_keyr,zx_vol};
+			zx_init,tslMapMem,tslOut,tslIn,tslMRd,tslMWr,ts_irq,ts_ack,tslReset,zx_sync,ts_keyp,ts_keyr,zx_vol};

@@ -234,7 +234,7 @@ void tslUpdatePorts(Video* vid) {
 	unsigned char val = vid->tsconf.p00af;
 	vid->scrsize.x = tslXRes[(val >> 6) & 3];
 	vid->scrsize.y = tslYRes[(val >> 6) & 3];
-	vid->tsconf.xPos = (vid->vend.x - vid->scrsize.x) / 2;
+	vid->tsconf.xPos = (vid->vend.x - vid->scrsize.x) / 2;		// ???
 	vid->tsconf.yPos = (vid->vend.y - vid->scrsize.y) / 2;
 	// printf("%i x %i (%i x %i) = %i x %i\n",vid->scrsize.x,vid->scrsize.y,vid->vsze.x,vid->vsze.y,vid->tsconf.xPos,vid->tsconf.yPos);
 	switch(val & 3) {
@@ -243,7 +243,7 @@ void tslUpdatePorts(Video* vid) {
 		case 2: vid_set_mode(vid,VID_TSL_256); break;
 		case 3: vid_set_mode(vid,VID_TSL_TEXT); break;
 	}
-	vid->nogfx = (val & 0x20) ? 1 : 0;
+	vid->nogfx = !!(val & 0x20);
 	val = vid->tsconf.p07af;
 	vid->tsconf.scrPal = (val << 4) & 0xf0;
 	vid->tsconf.T0Pal76 = (val << 2) & 0xc0;
@@ -252,14 +252,17 @@ void tslUpdatePorts(Video* vid) {
 
 // tsconf line callback
 // TODO : emulate drawing time
-void vidTSline(Video* vid) {
-	int res = vidTSRender(vid);		// dots eaten by rendering
-	vid->intp.x = vid->tsconf.hsint + res;
+void vts_hblk(Video* vid) {
 	if (vid->inten & 2) {
 		vid->intLINE = 1;
 		vid->xirq(IRQ_VID_LINE, vid->xptr);
 	}
+}
+
+void vts_line(Video* vid) {
 	tslUpdatePorts(vid);
+	int res = vidTSRender(vid);		// dots eaten by rendering
+	vid->intp.x = vid->tsconf.hsint + res;
 }
 
 void scanExtLine(Video* vid) {

@@ -86,26 +86,8 @@ void zx_irq(Computer* comp, int t) {
 			rzxGetFrame(comp);
 #endif
 			break;
-		case IRQ_VID_IEND:			// frame int end
-			if (comp->vid->intLINE) {
-				zx_irq(comp, IRQ_VID_LINE);
-			} else if (comp->vid->intDMA) {
-				zx_irq(comp, IRQ_DMA);
-			} else {
-				comp->cpu->intrq &= ~Z80_INT;
-			}
-			break;
-		case IRQ_VID_LINE:			// line int (tsconf)
-			if (comp->vid->intFRAME) break;
-			comp->vid->intLINE = 0;
-			comp->intVector = 0xfd;
-			comp->cpu->intrq |= Z80_INT;
-			break;
-		case IRQ_DMA:				// dma int (tsconf)
-			if (comp->vid->intFRAME) break;
-			comp->vid->intDMA = 0;
-			comp->intVector = 0xfb;
-			comp->cpu->intrq |= Z80_INT;
+		case IRQ_VID_IEND:			// frame int end (for tsconf see in tslab.c)
+			comp->cpu->intrq &= ~Z80_INT;
 			break;
 		case IRQ_CPU_SYNC:			// sync cpu-vid
 			// NOTE: video is already sync'ed in comp_irq
