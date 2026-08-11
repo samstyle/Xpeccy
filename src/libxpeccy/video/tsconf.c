@@ -194,6 +194,7 @@ int vidTSRender(Video* vid) {
 	}
 */
 // ...
+// check if this is screen line (not top/bottom border)
 	if (vid->ray.y < vid->tsconf.yPos) return res;
 	if (vid->ray.y >= (vid->tsconf.yPos + vid->scrsize.y)) return res;
 // prepare layers
@@ -234,7 +235,7 @@ void tslUpdatePorts(Video* vid) {
 	unsigned char val = vid->tsconf.p00af;
 	vid->scrsize.x = tslXRes[(val >> 6) & 3];
 	vid->scrsize.y = tslYRes[(val >> 6) & 3];
-	vid->tsconf.xPos = (vid->vend.x - vid->scrsize.x) / 2;		// ???
+	vid->tsconf.xPos = (vid->vend.x - vid->scrsize.x) / 2;
 	vid->tsconf.yPos = (vid->vend.y - vid->scrsize.y) / 2;
 	// printf("%i x %i (%i x %i) = %i x %i\n",vid->scrsize.x,vid->scrsize.y,vid->vsze.x,vid->vsze.y,vid->tsconf.xPos,vid->tsconf.yPos);
 	switch(val & 3) {
@@ -250,19 +251,25 @@ void tslUpdatePorts(Video* vid) {
 	vid->tsconf.T1Pal76 = (val & 0xc0);
 }
 
-// tsconf line callback
-// TODO : emulate drawing time
+// HBlank start
 void vts_hblk(Video* vid) {
+}
+
+// Line start
+void vts_line(Video* vid) {
+	tslUpdatePorts(vid);
+	int res = vidTSRender(vid);		// dots eaten by rendering
+	vid->intp.x = vid->tsconf.hsint + res + vid->blank.x;
+	vid->intp.x %= vid->full.x;
 	if (vid->inten & 2) {
 		vid->intLINE = 1;
 		vid->xirq(IRQ_VID_LINE, vid->xptr);
 	}
 }
 
-void vts_line(Video* vid) {
-	tslUpdatePorts(vid);
-	int res = vidTSRender(vid);		// dots eaten by rendering
-	vid->intp.x = vid->tsconf.hsint + res;
+// Frame start
+void vts_frame(Video* vid) {
+	vid->tsconf.scrLine = 0;
 }
 
 void scanExtLine(Video* vid) {

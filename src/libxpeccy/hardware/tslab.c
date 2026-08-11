@@ -330,8 +330,8 @@ void tsOut21AF(Computer* comp, int port, int val) {
 }
 
 void tsOut22AF(Computer* comp, int port, int val) {
-	comp->vid->tsconf.hsint = (val << 1);		// base value, real pos = base + shift by line rendering
-	comp->vid->intp.x = (val << 1);
+	comp->vid->tsconf.hsint = (val << 1); // + comp->vid->blank.x;		// base value, real pos = base + shift by line rendering
+	comp->vid->intp.x = comp->vid->tsconf.hsint;
 }
 
 void tsOut23AF(Computer* comp, int port, int val) {
@@ -453,8 +453,10 @@ void tsOut27AF(Computer* comp, int port, int val) {
 	comp->dmaDst.w = dadr & 0x3fff;
 //	comp->dmaDst.h = ((dadr & 0x3f00) >> 8);
 //	comp->dmaDst.l = dadr & 0xff;
-	if (comp->vid->inten & 4)
+	if (comp->vid->inten & 4) {
 		comp->vid->intDMA = 1;
+		comp->hw->irq(comp, IRQ_DMA);
+	}
 }
 
 void tsOut28AF(Computer* comp, int port, int val) {
@@ -471,6 +473,7 @@ void tsOut29AF(Computer* comp, int port, int val) {
 
 void tsOut2AAF(Computer* comp, int port, int val) {
 	comp->vid->inten = val & 0xff;
+	if (~val & 1) comp->vid->intFRAME = 0;
 	if (~val & 2) comp->vid->intLINE = 0;
 	if (~val & 4) comp->vid->intDMA = 0;
 }

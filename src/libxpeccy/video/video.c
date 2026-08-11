@@ -895,10 +895,11 @@ void vidProfiScr(Video* vid) {
 
 // tsconf
 
-void vidDrawTSLNormal(Video*);
-void vidDrawTSLExt(Video*);
 void vts_hblk(Video*);
 void vts_line(Video*);
+void vts_frame(Video*);
+void vidDrawTSLNormal(Video*);
+void vidDrawTSLExt(Video*);
 void vidDrawTSLText(Video*);
 void vidDrawEvoText(Video*);
 
@@ -957,10 +958,10 @@ static xVideoMode vidModeTab[] = {
 	{VID_ATM_TEXT, NULL, vidDrawATMtext, NULL, NULL, NULL, NULL},
 	{VID_ATM_HWM, NULL, vidDrawATMhwmc, NULL, NULL, NULL, NULL},
 	{VID_EVO_TEXT, NULL, vidDrawEvoText, NULL, NULL, NULL, NULL},
-	{VID_TSL_NORMAL, NULL, vidDrawTSLNormal, vts_hblk, vts_line, NULL, NULL},
-	{VID_TSL_16, NULL, vidDrawTSLExt, vts_hblk, vts_line, NULL, NULL},			// vidDrawTSL16
-	{VID_TSL_256, NULL, vidDrawTSLExt, vts_hblk, vts_line, NULL, NULL},		// vidDrawTSL256
-	{VID_TSL_TEXT, NULL, vidDrawTSLText, vts_hblk, vts_line, NULL, NULL},
+	{VID_TSL_NORMAL, NULL, vidDrawTSLNormal, vts_hblk, vts_line, NULL, vts_frame},
+	{VID_TSL_16, NULL, vidDrawTSLExt, vts_hblk, vts_line, NULL, vts_frame},			// vidDrawTSL16
+	{VID_TSL_256, NULL, vidDrawTSLExt, vts_hblk, vts_line, NULL, vts_frame},		// vidDrawTSL256
+	{VID_TSL_TEXT, NULL, vidDrawTSLText, vts_hblk, vts_line, NULL, vts_frame},
 	{VID_PRF_MC, NULL, vidProfiScr, NULL, NULL, NULL, NULL},
 
 	{VID_GBC, NULL, gbcvDraw, NULL, gbcvLine, gbcvVBL, gbcvFram},
@@ -1046,7 +1047,6 @@ void vid_tick(Video* vid) {
 			vid->idx = 0;
 			vid->ray.y = 0;
 			vid->vblank = 0;
-			vid->tsconf.scrLine = 0;
 			vid->fcnt++;
 			vid->flash = (vid->fcnt & 0x10) ? 1 : 0;
 			if (vid->cb->frm)
@@ -1069,7 +1069,7 @@ void vid_tick(Video* vid) {
 		if ((vid->ray.y >= vid->lcut.y) && (vid->ray.y < vid->rcut.y)) vid_line(vid);	// complete line image
 		vid->ray.xb = 0;
 		vid->ray.yb++;
-		if (vid->ray.y == vid->vend.y - 1) {		// last screen line
+		if (vid->ray.y == vid->vend.y - 1) {
 			vid->ray.yb = 0;
 		}
 		vid->hblank = 1;
@@ -1084,7 +1084,7 @@ void vid_tick(Video* vid) {
 		vid->intFRAME--;
 		if (!vid->intFRAME)
 			vid->xirq(IRQ_VID_IEND, vid->xptr);
-	} else if ((vid->ray.yb == vid->intp.y) && (vid->ray.xb == vid->intp.x)) {
+	} else if ((vid->ray.yb == vid->intp.y) && (vid->ray.xb == vid->intp.x) && (vid->inten & 1)) {		// added: ...and frame int enabled
 		vid->intTime = vid->time;
 		vid->xirq(IRQ_VID_INT, vid->xptr);
 	}

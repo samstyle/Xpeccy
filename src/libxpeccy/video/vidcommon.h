@@ -20,11 +20,11 @@ typedef struct {
 typedef struct {
 	unsigned char* ptr;
 	unsigned char* lptr;
-	int x;
+	int x;		// from top-left edge of visible image
 	int y;
-	int xb;
+	int xb;		// from leading edge of hblank/vblank
 	int yb;
-	int xs;
+	int xs;		// from top-left corner of main screen
 	int ys;
 } vRay;
 
