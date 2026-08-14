@@ -355,9 +355,9 @@ void vidDrawTSLText(Video* vid) {
 			vid_dot_full(vid, vid->line[xscr]);
 		} else {
 			xscr <<= 1;
-			vid_dot_half(vid, (vid->linb[xscr] & 0x0f) ? vid->linb[xscr] : vid->brdcol);
+			vid_dot_half(vid, vid->linb[xscr] ? vid->linb[xscr] : vid->brdcol);
 			xscr++;
-			vid_dot_half(vid, (vid->linb[xscr] & 0x0f) ? vid->linb[xscr] : vid->brdcol);
+			vid_dot_half(vid, vid->linb[xscr] ? vid->linb[xscr] : vid->brdcol);
 		}
 #else
 		if ((xscr & 3) == 0) {

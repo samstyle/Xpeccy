@@ -101,6 +101,7 @@ class DebugWin : public QMainWindow {
 		xGameboyWidget* wid_gb;
 		xGBVideoWidget* wid_gbv;
 		xPPUWidget* wid_ppu;
+		xPalWidget* wid_pal;
 		// apu (future)
 		xCiaWidget* wid_cia;
 		xVicWidget* wid_vic;

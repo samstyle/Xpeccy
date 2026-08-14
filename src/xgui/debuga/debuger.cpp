@@ -304,10 +304,11 @@ DebugWin::DebugWin(QWidget* par):QMainWindow(par) {
 	wid_vic = new xVicWidget("","VIC");
 	wid_mmap = new xMMapWidget(":/images/memory.png","Memory map");
 	wid_ps2 = new xPS2Widget("","PS/2");
+	wid_pal = new xPalWidget(":/images/palette.png", "Palette");
 
 	dockWidgets << wid_dump << wid_rdump << wid_disk_dump << wid_vmem_dump << wid_cmos_dump;
 	dockWidgets << wid_brk << wid_zxscr << wid_ay << wid_tape;
-	dockWidgets << wid_fdd << wid_mmap << wid_gb << wid_gbv << wid_ppu;
+	dockWidgets << wid_fdd << wid_mmap << wid_gb << wid_gbv << wid_ppu << wid_pal;
 	dockWidgets << wid_cia << wid_dma << wid_pic << wid_pit << wid_vga << wid_ps2;
 
 	addDockWidget(Qt::RightDockWidgetArea, wid_dump);
@@ -330,6 +331,7 @@ DebugWin::DebugWin(QWidget* par):QMainWindow(par) {
 	tabifyDockWidget(wid_brk, wid_pit);
 	tabifyDockWidget(wid_brk, wid_vga);
 	tabifyDockWidget(wid_brk, wid_ps2);
+	tabifyDockWidget(wid_brk, wid_pal);
 	wid_dump->raise();
 	wid_brk->raise();
 

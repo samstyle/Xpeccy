@@ -15,6 +15,7 @@
 #include "dbg_sprscan.h"
 #include "dbg_vmem_dump.h"
 #include "dbg_rdump.h"
+#include "dbg_palette.h"
 
 void drawHBar(QLabel*, int, int);
 void drawVBar(QLabel*, int, int);

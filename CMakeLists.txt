@@ -162,6 +162,7 @@ set(MOCFILES
 	./src/xgui/debuga/dbg_cmos_dump.h
 	./src/xgui/debuga/dbg_widgets.h
 	./src/xgui/debuga/dbg_rdump.h
+	./src/xgui/debuga/dbg_palette.h
 	./src/watcher.h
 	./src/xgui/options/setupwin.h
 	./src/xgui/options/padbinder.h
