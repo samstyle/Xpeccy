@@ -15,6 +15,7 @@ static int tile;
 static int sadr;	// adr in sprites dsc
 static int xadr;	// = pos with XFlip
 
+// render tiles
 int vidTSLRenderTiles(Video* vid, int lay, unsigned short yoffs, unsigned short xoffs, unsigned char gpage, unsigned char palhi) {
 	int j;
 	int res = 0;
@@ -70,6 +71,7 @@ int vidTSLRenderTiles(Video* vid, int lay, unsigned short yoffs, unsigned short 
 	return res;
 }
 
+// render sprites
 typedef struct {
 	unsigned y:9;		// 0[0:7], 1:0
 	unsigned ys:3;		// 1[1:3]
@@ -142,7 +144,7 @@ int vidTSLRenderSprites(Video* vid) {
 	return res;
 }
 
-// pre-render bitmap planes to vid->tsconv.linb[512]
+//render 4bpp mode line
 int vidTSLRender16c(Video* vid) {
 	xscr = vid->tsconf.xOffset & 0x1ff;
 	yscr = (vid->tsconf.scrLine + vid->tsconf.yOffset) & 0x1ff;
@@ -160,6 +162,7 @@ int vidTSLRender16c(Video* vid) {
 	return vid->scrsize.x >> 2;		// 1/4
 }
 
+// render 8bpp mode line
 int vidTSLRender256c(Video* vid) {
 	xscr = vid->tsconf.xOffset & 0x1ff;
 	yscr = (vid->tsconf.scrLine + vid->tsconf.yOffset) & 0x1ff;
@@ -174,6 +177,29 @@ int vidTSLRender256c(Video* vid) {
 	return vid->scrsize.x >> 1;		// 1/2
 }
 
+// render text mode line
+int vidTSLRenderText(Video* vid) {
+	xscr = vid->tsconf.xOffset & 0x1ff;
+	yscr = (vid->tsconf.scrLine + vid->tsconf.yOffset) & 0x1ff;
+	adr = (vid->tsconf.vidPage << 14) + ((yscr & 0x1f8) << 5) + (xscr >> 2);
+	xadr = adr & ~0x7f;
+	fadr = 0;
+	while (fadr < (vid->scrsize.x << 1)) {
+		tile = vid->mrd(adr, vid->xptr);		// char nr
+		col = vid->mrd(adr | 0x80, vid->xptr);
+		adr = ((adr + 1) & 0x7f) | xadr;
+		ink = (col & 0x0f) | (vid->tsconf.scrPal);
+		pap = ((col & 0xf0) >> 4)  | (vid->tsconf.scrPal);
+		scrbyte = vid->mrd(MADR(vid->tsconf.vidPage ^ 1, (tile << 3) | (yscr & 7)), vid->xptr);	// char line data (8 dots)
+		do {
+			vid->linb[fadr & 0x3ff] = (scrbyte & 0x80) ? ink : pap;
+			scrbyte <<= 1;
+			fadr++;
+		} while (fadr & 7);
+	}
+	return 0;
+}
+
 // return ticks @ 7MHz (aka dots) eaten for line rendering
 int vidTSRender(Video* vid) {
 	int res = 0;
@@ -185,15 +211,6 @@ int vidTSRender(Video* vid) {
 		if (vid->tsconf.tconfig & 0x20) res += 8;
 		if (vid->tsconf.tconfig & 0x40) res += 8;
 	}
-// dma portion
-/*
-	if (vid->tsconf.dmabytes > 0) {
-		sadr = (vid->tsconf.dmabytes > 32) ? 32 : vid->tsconf.dmabytes;
-		vid->tsconf.dmabytes -= sadr;
-		res += sadr;
-	}
-*/
-// ...
 // check if this is screen line (not top/bottom border)
 	if (vid->ray.y < vid->tsconf.yPos) return res;
 	if (vid->ray.y >= (vid->tsconf.yPos + vid->scrsize.y)) return res;
@@ -201,7 +218,7 @@ int vidTSRender(Video* vid) {
 	sadr = 0x000;					// adr inside SFILE
 	memset(vid->line,0x00,0x200);		// clear tile-sprite line
 	memset(vid->linb,0x00,0x200);
-// bitplane
+// bitplane/text (render to vid->linb)
 	switch(vid->vmode) {
 		case VID_TSL_16:
 			res += vidTSLRender16c(vid);
@@ -210,10 +227,11 @@ int vidTSRender(Video* vid) {
 			res += vidTSLRender256c(vid);
 			break;
 		case VID_TSL_TEXT:
-			// TODO : text line pre-render
+			res += vidTSLRenderText(vid);		// rendered as double-density
 			break;
 	}
 	if (vid->vmode != VID_TSL_NORMAL) res += 32;		// shit
+// tiles/sprites (render to vid->line)
 // S0
 	if (vid->tsconf.tconfig & 0x80) res += vidTSLRenderSprites(vid);
 // T0
@@ -237,7 +255,6 @@ void tslUpdatePorts(Video* vid) {
 	vid->scrsize.y = tslYRes[(val >> 6) & 3];
 	vid->tsconf.xPos = (vid->vend.x - vid->scrsize.x) / 2;
 	vid->tsconf.yPos = (vid->vend.y - vid->scrsize.y) / 2;
-	// printf("%i x %i (%i x %i) = %i x %i\n",vid->scrsize.x,vid->scrsize.y,vid->vsze.x,vid->vsze.y,vid->tsconf.xPos,vid->tsconf.yPos);
 	switch(val & 3) {
 		case 0: vid_set_mode(vid,VID_TSL_NORMAL); break;
 		case 1: vid_set_mode(vid,VID_TSL_16); break;
@@ -253,6 +270,10 @@ void tslUpdatePorts(Video* vid) {
 
 // HBlank start
 void vts_hblk(Video* vid) {
+	if (vid->inten & 2) {
+		vid->intLINE = 1;
+		vid->xirq(IRQ_VID_LINE, vid->xptr);
+	}
 }
 
 // Line start
@@ -261,10 +282,6 @@ void vts_line(Video* vid) {
 	int res = vidTSRender(vid);		// dots eaten by rendering
 	vid->intp.x = vid->tsconf.hsint + res + vid->blank.x;
 	vid->intp.x %= vid->full.x;
-	if (vid->inten & 2) {
-		vid->intLINE = 1;
-		vid->xirq(IRQ_VID_LINE, vid->xptr);
-	}
 }
 
 // Frame start
@@ -313,7 +330,6 @@ void vidDrawTSLNormal(Video* vid) {
 	}
 	scanExtLine(vid);
 	vid_dot_full(vid, col);
-	//vidPutDot(&vid->ray, vid->pal, col);
 }
 
 // tsconf extend mode (out pre-rendered bitmap/TSU layers)
@@ -334,6 +350,16 @@ void vidDrawTSLText(Video* vid) {
 		vid_dot_full(vid, vid->brdcol);
 		//vidPutDot(&vid->ray, vid->pal, vid->brdcol);
 	} else {
+#if 1
+		if (vid->line[xscr] & 0x0f) {
+			vid_dot_full(vid, vid->line[xscr]);
+		} else {
+			xscr <<= 1;
+			vid_dot_half(vid, (vid->linb[xscr] & 0x0f) ? vid->linb[xscr] : vid->brdcol);
+			xscr++;
+			vid_dot_half(vid, (vid->linb[xscr] & 0x0f) ? vid->linb[xscr] : vid->brdcol);
+		}
+#else
 		if ((xscr & 3) == 0) {
 			xscr += vid->tsconf.xOffset;
 			yscr += vid->tsconf.yOffset;
@@ -357,5 +383,6 @@ void vidDrawTSLText(Video* vid) {
 			vid_dot_half(vid, (scrbyte & 0x40) ? ink : pap);
 		}
 		scrbyte <<= 2;
+#endif
 	}
 }

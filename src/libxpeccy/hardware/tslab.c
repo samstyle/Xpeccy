@@ -357,9 +357,10 @@ void tsOut27AF(Computer* comp, int port, int val) {
 	int sadr = (comp->dmaSrc.ih << 14) | (comp->dmaSrc.w & 0x3ffe); // (comp->dma.src.x << 14) | ((comp->dma.src.h & 0x3f) << 8) | (comp->dma.src.l & 0xfe);
 	int dadr = (comp->dmaDst.ih << 14) | (comp->dmaDst.w & 0x3ffe); // (comp->dma.dst.x << 14) | ((comp->dma.dst.h & 0x3f) << 8) | (comp->dma.dst.l & 0xfe);
 	int lcnt = (comp->dmaLen + 1) << 1;
-	comp->vid->tsconf.dmabytes = (comp->dmaLen + 1) * (comp->dmaCnt + 1);
+//	comp->vid->tsconf.dmabytes = (comp->dmaLen + 1) * (comp->dmaCnt + 1);
 	switch (val & 0x87) {
 		case 0x01:		// ram->ram
+//			printf("dma ram-ram %X:%X->%X:%X, %Xx%X words, ctrl %.2X\n", comp->dmaSrc.ih, comp->dmaSrc.w, comp->dmaDst.ih, comp->dmaDst.w, comp->dmaCnt+1, comp->dmaLen+1, val);
 			for (cnt = 0; cnt <= comp->dmaCnt; cnt++) {
 				for (cnt2 = 0; cnt2 < lcnt; cnt2++) {
 					comp->mem->ramData[dadr + cnt2] = comp->mem->ramData[sadr + cnt2];
@@ -369,6 +370,7 @@ void tsOut27AF(Computer* comp, int port, int val) {
 			}
 			break;
 		case 0x81:		// blitter
+//			printf("dma blt %X:%X->%X:%X, %Xx%X words, ctrl %.2X\n", comp->dmaSrc.ih, comp->dmaSrc.w, comp->dmaDst.ih, comp->dmaDst.w, comp->dmaCnt+1, comp->dmaLen+1, val);
 			for (cnt = 0; cnt <= comp->dmaCnt; cnt++) {
 				for (cnt2 = 0; cnt2 < lcnt; cnt2++) {
 					tmp = comp->mem->ramData[sadr + cnt2];
@@ -432,7 +434,7 @@ void tsOut27AF(Computer* comp, int port, int val) {
 				dadr += (val & 0x10) ? ((val & 0x08) ? 0x200 : 0x100) : lcnt;		// DALGN
 			}
 			break;
-		case 0x84:
+		case 0x84:		// RAM->CRAM
 		case 0x85:		// RAM->SFILE
 			ptr = (val & 1) ? comp->vid->tsconf.sfile : comp->vid->tsconf.cram;
 			for (cnt2 = 0; cnt2 < lcnt; cnt2++) {

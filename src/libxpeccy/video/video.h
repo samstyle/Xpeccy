@@ -275,7 +275,7 @@ struct Video {
 	unsigned char bgline[0x200];		// bg (full 2 screens)
 	unsigned char spline[0x108];		// sprites (8 max)
 	unsigned char prline[0x108];		// sprites priority
-	unsigned char sprImg[256 * 256];
+//	unsigned char sprImg[256 * 256];
 	void(*pset)(Video*,int,int,unsigned char);
 	unsigned char(*col)(Video*,int,int);
 
@@ -304,7 +304,7 @@ struct Video {
 		ePair(intLine, ilinh, ilinl);	// INT line
 		unsigned char cram[0x200];	// pal = colram?
 		unsigned char sfile[0x200];	// sprites = ram?
-		int dmabytes;
+//		int dmabytes;
 	} tsconf;
 	struct {
 		unsigned atrig:1;		// 3c0 flip-flop
