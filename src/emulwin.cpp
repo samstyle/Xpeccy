@@ -899,7 +899,7 @@ void MainWin::screenShot() {
 	QImage img(bufimg, width(), height(), QImage::Format_RGBA8888);
 #endif
 	int x,y,dx,dy;
-	char* sptr = (char*)(comp->mem->ramData + (comp->vid->curscr << 14));
+	char* sptr = (char*)(comp->mem->ramData + (comp->vid->vidPage << 14));
 	switch (frm) {
 		case SCR_HOB:
 			file.open(fnam.c_str(),std::ios::binary);

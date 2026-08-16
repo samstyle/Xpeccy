@@ -31,7 +31,7 @@ void alf_mapmem(Computer* comp) {
 
 void alf_reset(Computer* comp) {
 	comp->intVector = 0xff;
-	comp->vid->curscr = 5;
+	comp->vid->vidPage = 5;
 	vid_set_mode(comp->vid, VID_NORMAL);
 	comp->regRomN = 0x00;
 	comp->p7FFD = 0x00;
@@ -67,7 +67,7 @@ int alf_inFE(Computer* comp, int adr) {
 void alf_out7FFD(Computer* comp, int adr, int data) {
 	if (comp->mem->ramSize == MEM_64K) return;		// 48K
 	comp->p7FFD = data & 7;
-	comp->vid->curscr = (data & 0x08) ? 7 : 5;
+	comp->vid->vidPage = (data & 0x08) ? 7 : 5;
 	alf_mapmem(comp);
 }
 

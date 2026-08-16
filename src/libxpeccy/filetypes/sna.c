@@ -72,7 +72,7 @@ int loadSNA_f(Computer* comp, FILE* file, size_t fileSize) {
 		comp->hw->mapMem(comp);
 		memSetBank(comp->mem, 0xc0, MEM_RAM, 0, MEM_16K, NULL,NULL,NULL);
 		memPutData(comp->mem, MEM_RAM, 0, MEM_16K, tmpgBuf);
-		comp->vid->curscr = 5;
+		comp->vid->vidPage = 5;
 		comp->cpu->regPCl = memRd(comp->mem, comp->cpu->regSP++);
 		comp->cpu->regPCh = memRd(comp->mem, comp->cpu->regSP++);
 	} else {

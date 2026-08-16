@@ -54,7 +54,7 @@ void tslReset(Computer* comp) {
 	comp->vid->tsconf.yOffset = 0;
 	comp->vid->tsconf.p07af = 0x0f;
 
-	comp->vid->tsconf.vidPage = 5;
+	comp->vid->vidPage = 5;
 	comp->vid->tsconf.T0XOffset = 0;
 	comp->vid->tsconf.T0YOffset = 0;
 	comp->vid->tsconf.T1XOffset = 0;
@@ -237,7 +237,7 @@ void tsOut7FFD(Computer* comp, int port, int val) {
 		num &= 7;
 	}
 	memSetBank(comp->mem,0xc0,MEM_RAM,num, MEM_16K,NULL,NULL,NULL);
-	comp->vid->tsconf.vidPage = (val & 8) ? 7 : 5;
+	comp->vid->vidPage = (val & 8) ? 7 : 5;
 	tslMapMem(comp);
 }
 
@@ -265,7 +265,7 @@ int tsIn00AF(Computer* comp, int port) {
 }
 
 void tsOut00AF(Computer* comp, int port, int val) {comp->vid->tsconf.p00af = val & 0xff;}
-void tsOut01AF(Computer* comp, int port, int val) {comp->vid->tsconf.vidPage = val & 0xff;}
+void tsOut01AF(Computer* comp, int port, int val) {comp->vid->vidPage = val & 0xff;}
 void tsOut02AF(Computer* comp, int port, int val) {comp->vid->tsconf.soxl = val & 0xff;}
 void tsOut03AF(Computer* comp, int port, int val) {comp->vid->tsconf.soxh = val & 1;}
 

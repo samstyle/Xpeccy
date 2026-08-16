@@ -69,7 +69,7 @@ void bk11_kbd_wr(Computer* comp, int adr, int val) {
 //		comp->cpu->inten |= PDP_INT_IRQ2;
 //	}
 // b15: 0:scr.page5, 1:scr.page6
-	comp->vid->curscr = !!(val & 0x8000);
+	comp->vid->vidPage = !!(val & 0x8000);
 }
 
 // scroller
@@ -445,7 +445,7 @@ void bk_reset(Computer* comp) {
 	comp->reg01 = 0x80;
 	comp->regB2 = 0x40;
 	cpu_reset(comp->cpu);
-	comp->vid->curscr = 0;
+	comp->vid->vidPage = 0;
 	comp->vid->paln = 0;
 	vid_set_mode(comp->vid, VID_BK_BW);
 	kbd_reset(comp->keyb);

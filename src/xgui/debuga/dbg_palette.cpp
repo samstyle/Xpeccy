@@ -61,4 +61,7 @@ void xPalWidget::mousePressEvent(QMouseEvent* ev) {
 	ui.leRed->setText(QString::number(r));
 	ui.leGreen->setText(QString::number(g));
 	ui.leBlue->setText(QString::number(b));
+	QPixmap pxm(ui.labColor->size());
+	pxm.fill(QColor(r,g,b));
+	ui.labColor->setPixmap(pxm);
 }

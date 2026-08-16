@@ -70,7 +70,7 @@ void prfOut7FFD(Computer* comp, int port, int val) {
 	if ((~comp->pDFFD & 0x10) && (comp->p7FFD & 0x20)) return;	// 7FFD is blocked
 	comp->p7FFD = val & 0xff;
 	comp->flgROM = (val & 0x10) ? 1 : 0;
-	comp->vid->curscr = (val & 0x08) ? 7 : 5;
+	comp->vid->vidPage = (val & 0x08) ? 7 : 5;
 	prfMapMem(comp);
 //	printf("OUT 7FFD,%.2X\n",val);
 }

@@ -87,7 +87,7 @@ void atm2Out7FFD(Computer* comp, int port, int val) {
 	if (comp->p7FFD & 0x20) return;
 	comp->flgROM = (val & 0x10) ? 1 : 0;
 	comp->p7FFD = val & 0xff;
-	comp->vid->curscr = (val & 0x08) ? 7 : 5;
+	comp->vid->vidPage = (val & 0x08) ? 7 : 5;
 	atm2MapMem(comp);
 }
 

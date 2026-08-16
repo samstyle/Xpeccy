@@ -5,7 +5,7 @@
 void zx48_reset(Computer* comp) {
 	comp->mem->ramMask = MEM_128K - 1;	// to acces pages 2,5
 	comp->flgROM = 1;				// to switch to trdos
-	comp->vid->curscr = 5;
+	comp->vid->vidPage = 5;
 	//speReset(comp);
 	zx_set_pal(comp);
 	vid_set_mode(comp->vid, VID_ULA_SCR);

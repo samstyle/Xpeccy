@@ -148,7 +148,7 @@ int vidTSLRenderSprites(Video* vid) {
 int vidTSLRender16c(Video* vid) {
 	xscr = vid->tsconf.xOffset & 0x1ff;
 	yscr = (vid->tsconf.scrLine + vid->tsconf.yOffset) & 0x1ff;
-	adr = ((vid->tsconf.vidPage & 0xf8) << 14) + (yscr << 8) + (xscr >> 1);
+	adr = ((vid->vidPage & 0xf8) << 14) + (yscr << 8) + (xscr >> 1);
 	xadr = adr & ~0xff;
 	fadr = 0;
 	while (fadr < vid->scrsize.x) {
@@ -166,7 +166,7 @@ int vidTSLRender16c(Video* vid) {
 int vidTSLRender256c(Video* vid) {
 	xscr = vid->tsconf.xOffset & 0x1ff;
 	yscr = (vid->tsconf.scrLine + vid->tsconf.yOffset) & 0x1ff;
-	adr = ((vid->tsconf.vidPage & 0xf0) << 14) + (yscr << 9) + xscr;
+	adr = ((vid->vidPage & 0xf0) << 14) + (yscr << 9) + xscr;
 	xadr = adr & ~0x1ff;
 	fadr = 0;
 	while (fadr < vid->scrsize.x) {
@@ -181,7 +181,7 @@ int vidTSLRender256c(Video* vid) {
 int vidTSLRenderText(Video* vid) {
 	xscr = vid->tsconf.xOffset & 0x1ff;
 	yscr = (vid->tsconf.scrLine + vid->tsconf.yOffset) & 0x1ff;
-	adr = (vid->tsconf.vidPage << 14) + ((yscr & 0x1f8) << 5) + (xscr >> 2);
+	adr = (vid->vidPage << 14) + ((yscr & 0x1f8) << 5) + (xscr >> 2);
 	xadr = adr & ~0x7f;
 	fadr = 0;
 	while (fadr < (vid->scrsize.x << 1)) {
@@ -190,7 +190,7 @@ int vidTSLRenderText(Video* vid) {
 		adr = ((adr + 1) & 0x7f) | xadr;
 		ink = (col & 0x0f) | (vid->tsconf.scrPal);
 		pap = ((col & 0xf0) >> 4)  | (vid->tsconf.scrPal);
-		scrbyte = vid->mrd(MADR(vid->tsconf.vidPage ^ 1, (tile << 3) | (yscr & 7)), vid->xptr);	// char line data (8 dots)
+		scrbyte = vid->mrd(MADR(vid->vidPage ^ 1, (tile << 3) | (yscr & 7)), vid->xptr);	// char line data (8 dots)
 		do {
 			vid->linb[fadr & 0x3ff] = (scrbyte & 0x80) ? ink : pap;
 			scrbyte <<= 1;
@@ -270,10 +270,6 @@ void tslUpdatePorts(Video* vid) {
 
 // HBlank start
 void vts_hblk(Video* vid) {
-	if (vid->inten & 2) {
-		vid->intLINE = 1;
-		vid->xirq(IRQ_VID_LINE, vid->xptr);
-	}
 }
 
 // Line start
@@ -282,6 +278,10 @@ void vts_line(Video* vid) {
 	int res = vidTSRender(vid);		// dots eaten by rendering
 	vid->intp.x = vid->tsconf.hsint + res + vid->blank.x;
 	vid->intp.x %= vid->full.x;
+	if (vid->inten & 2) {
+		vid->intLINE = 1;
+		vid->xirq(IRQ_VID_LINE, vid->xptr);
+	}
 }
 
 // Frame start
@@ -308,10 +308,10 @@ void vidDrawTSLNormal(Video* vid) {
 	if ((yscr < 0) || (yscr >= vid->scrn.y) || vid->nogfx) {
 		col = vid->brdcol;
 	} else {
-		xadr = vid->tsconf.vidPage;
+//		xadr = vid->vidPage;
 		if ((xscr & 7) == 4) {
 			adr = ((yscr & 0xc0) << 5) | ((yscr & 7) << 8) | ((yscr & 0x38) << 2) | (((xscr + 4) & 0xf8) >> 3);
-			nxtbyte = vid->mrd(MADR(xadr, adr), vid->xptr);
+			nxtbyte = vid->mrd(MADR(vid->vidPage, adr), vid->xptr);
 		}
 		if ((xscr < 0) || (xscr >= vid->scrn.x)) {
 			col = vid->brdcol;
@@ -319,7 +319,7 @@ void vidDrawTSLNormal(Video* vid) {
 			if ((xscr & 7) == 0) {
 				scrbyte = nxtbyte;
 				adr = 0x1800 | ((yscr & 0xc0) << 2) | ((yscr & 0x38) << 2) | (((xscr + 4) & 0xf8) >> 3);
-				vid->atrbyte = vid->mrd(MADR(xadr, adr), vid->xptr);
+				vid->atrbyte = vid->mrd(MADR(vid->vidPage, adr), vid->xptr);
 				if ((vid->atrbyte & 0x80) && vid->flash) scrbyte ^= 0xff;
 				ink = (vid->atrbyte & 0x07) | ((vid->atrbyte & 0x40) >> 3);
 				pap = (vid->atrbyte & 0x78) >> 3;

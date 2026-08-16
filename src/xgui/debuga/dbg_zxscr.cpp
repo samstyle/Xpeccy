@@ -43,7 +43,7 @@ void xZXScrWidget::draw() {
 	QSize sz(276*conf.dbg.scrzoom, 212*conf.dbg.scrzoom);
 	ui.scrLabel->setFixedSize(sz);
 	ui.scrLabel->setPixmap(xpxm.scaled(sz));
-	ui.labCurScr->setText(QString::number(comp->vid->curscr, 16).rightJustified(2, '0'));
+	ui.labCurScr->setText(QString::number(comp->vid->vidPage, 16).rightJustified(2, '0'));
 }
 
 void xZXScrWidget::setAddress(int adr, int atr) {

@@ -220,7 +220,7 @@ Video* vidCreate(cbxrd cb, cbirq ci, void* dptr) {
 
 	vid->brdstep = 1;
 	vid->nextbrd = 0;
-	vid->curscr = 5;
+	vid->vidPage = 5;
 	vid->fcnt = 0;
 
 	vid->nsDraw = 0;
@@ -257,7 +257,7 @@ void vid_reset(Video* vid) {
 		vid_reset_col(vid, i);
 	}
 	vid->ula->active = 0;
-	vid->curscr = 5;
+	vid->vidPage = 5;
 	vid->nsDraw = 0;
 //	vidSetMode(vid, VID_NORMAL);
 }
@@ -590,7 +590,7 @@ void vidDrawNormal(Video* vid) {
 		yscr = vid->ray.y - vid->bord.y;
 		if ((xscr & 7) == 3) {
 			adr = (vid->idx & 0x181f) | ((vid->idx & 0x700) >> 3) | ((vid->idx & 0xe0) << 3);
-			nxtbyte = vid->mrd(MADR(vid->curscr, adr), vid->xptr);
+			nxtbyte = vid->mrd(MADR(vid->vidPage, adr), vid->xptr);
 		}
 		if (vid->hbrd) {
 			col = vid->brdcol;
@@ -600,7 +600,7 @@ void vidDrawNormal(Video* vid) {
 			if ((xscr & 7) == 0) {
 				scrbyte = nxtbyte;
 				adr = 0x1800 | ((vid->idx & 0x1f00) >> 3) | (vid->idx & 0x1f);
-				vid->atrbyte = vid->mrd(MADR(vid->curscr, adr), vid->xptr);
+				vid->atrbyte = vid->mrd(MADR(vid->vidPage, adr), vid->xptr);
 				if (vid->idx < 0x1b00) vid->idx++;
 				if (vid->ula->active) {
 					ink = ((vid->atrbyte & 0xc0) >> 2) | (vid->atrbyte & 7);
@@ -630,23 +630,23 @@ void ula_dot(Video* vid) {
 		switch(xscr & 15) {
 			case 12:
 				adr = (vid->idx & 0x181f) | ((vid->idx & 0x700) >> 3) | ((vid->idx & 0xe0) << 3);
-				nxtbyte = vid->mrd(MADR(vid->curscr, adr), vid->xptr);
+				nxtbyte = vid->mrd(MADR(vid->vidPage, adr), vid->xptr);
 				break;		// 4dots before each even box: box pix
 			case 14:
 				adr = 0x1800 | ((vid->idx & 0x1f00) >> 3) | (vid->idx & 0x1f);
-				nxtatr = vid->mrd(MADR(vid->curscr, adr), vid->xptr);
+				nxtatr = vid->mrd(MADR(vid->vidPage, adr), vid->xptr);
 				break;		// 2dots before each even box: box atr
 			case 0:
 				scrbyte = nxtbyte;
 				vid->atrbyte = nxtatr;
 				vid->idx++;		// lame (idx is still not updated, but we need address of next box)
 				adr = (vid->idx & 0x181f) | ((vid->idx & 0x700) >> 3) | ((vid->idx & 0xe0) << 3);
-				nxtbyte = vid->mrd(MADR(vid->curscr, adr), vid->xptr);
+				nxtbyte = vid->mrd(MADR(vid->vidPage, adr), vid->xptr);
 				vid->idx--;
 				break;		// start of even box: next (odd) box pix
 			case 1:
 				adr = 0x1800 | ((vid->idx & 0x1f00) >> 3) | (vid->idx & 0x1f);
-				nxtatr = vid->mrd(MADR(vid->curscr, adr), vid->xptr);
+				nxtatr = vid->mrd(MADR(vid->vidPage, adr), vid->xptr);
 				break;		// 2nd dot of even box: next (odd) box atr
 			case 8:
 				scrbyte = nxtbyte;
@@ -689,19 +689,19 @@ void vidDrawAlco(Video* vid) {
 			adr = ((yscr & 0xc0) << 5) | ((yscr & 7) << 8) | ((yscr & 0x38) << 2) | ((xscr & 0xf8) >> 3);
 			switch (xscr & 7) {
 				case 0:
-					scrbyte = vid->mrd(MADR(vid->curscr ^ 1, adr), vid->xptr);
+					scrbyte = vid->mrd(MADR(vid->vidPage ^ 1, adr), vid->xptr);
 					col = (scrbyte & 7) | ((scrbyte & 0x40) >> 3);
 					break;
 				case 2:
-					scrbyte = vid->mrd(MADR(vid->curscr, adr), vid->xptr);
+					scrbyte = vid->mrd(MADR(vid->vidPage, adr), vid->xptr);
 					col = (scrbyte & 7) | ((scrbyte & 0x40) >> 3);
 					break;
 				case 4:
-					scrbyte = vid->mrd(MADR(vid->curscr ^ 1, adr + 0x2000), vid->xptr);
+					scrbyte = vid->mrd(MADR(vid->vidPage ^ 1, adr + 0x2000), vid->xptr);
 					col = (scrbyte & 7) | ((scrbyte & 0x40) >> 3);
 					break;
 				case 6:
-					scrbyte = vid->mrd(MADR(vid->curscr, adr + 0x2000), vid->xptr);
+					scrbyte = vid->mrd(MADR(vid->vidPage, adr + 0x2000), vid->xptr);
 					col = (scrbyte & 7) | ((scrbyte & 0x40) >> 3);
 					break;
 				default:
@@ -723,7 +723,7 @@ void vidDrawHwmc(Video* vid) {
 		yscr = vid->ray.y - vid->bord.y;
 		if ((xscr & 7) == 4) {
 			adr = ((yscr & 0xc0) << 5) | ((yscr & 7) << 8) | ((yscr & 0x38) << 2) | (((xscr + 4) & 0xf8) >> 3);
-			nxtbyte = vid->mrd(MADR(vid->curscr, adr), vid->xptr);
+			nxtbyte = vid->mrd(MADR(vid->vidPage, adr), vid->xptr);
 		}
 		if (vid->hbrd) {
 			col = vid->brdcol;
@@ -731,7 +731,7 @@ void vidDrawHwmc(Video* vid) {
 			if ((xscr & 7) == 0) {
 				scrbyte = nxtbyte;
 				adr = ((yscr & 0xc0) << 5) | ((yscr & 7) << 8) | ((yscr & 0x38) << 2) | ((xscr & 0xf8) >> 3);
-				vid->atrbyte = vid->mrd(MADR(vid->curscr, adr), vid->xptr);
+				vid->atrbyte = vid->mrd(MADR(vid->vidPage, adr), vid->xptr);
 				if ((vid->atrbyte & 0x80) && vid->flash) scrbyte ^= 0xff;
 				ink = (vid->atrbyte & 0x07) | ((vid->atrbyte & 0x40) >> 3);
 				pap = (vid->atrbyte & 0x78) >> 3;
@@ -753,19 +753,19 @@ void vidDrawATMega(Video* vid) {
 		adr = (yscr * 40) + (xscr >> 3);
 		switch (xscr & 7) {
 			case 0:
-				scrbyte = vid->mrd(MADR(vid->curscr ^ 4, adr), vid->xptr) & 0xff;
+				scrbyte = vid->mrd(MADR(vid->vidPage ^ 4, adr), vid->xptr) & 0xff;
 				col = (scrbyte & 7) | ((scrbyte & 0x40) >> 3); // inkTab[scrbyte & 0x7f];
 				break;
 			case 2:
-				scrbyte = vid->mrd(MADR(vid->curscr, adr), vid->xptr) & 0xff;
+				scrbyte = vid->mrd(MADR(vid->vidPage, adr), vid->xptr) & 0xff;
 				col = (scrbyte & 7) | ((scrbyte & 0x40) >> 3);
 				break;
 			case 4:
-				scrbyte = vid->mrd(MADR(vid->curscr ^ 4, adr + 0x2000), vid->xptr) & 0xff;
+				scrbyte = vid->mrd(MADR(vid->vidPage ^ 4, adr + 0x2000), vid->xptr) & 0xff;
 				col = (scrbyte & 7) | ((scrbyte & 0x40) >> 3);
 				break;
 			case 6:
-				scrbyte = vid->mrd(MADR(vid->curscr, adr + 0x2000), vid->xptr) & 0xff;
+				scrbyte = vid->mrd(MADR(vid->vidPage, adr + 0x2000), vid->xptr) & 0xff;
 				col = (scrbyte & 7) | ((scrbyte & 0x40) >> 3);
 				break;
 			default:
@@ -799,11 +799,11 @@ void vidDrawATMtext(Video* vid) {
 		adr = 0x1c0 + ((yscr & 0xf8) << 3) + (xscr >> 3);
 		if ((xscr & 3) == 0) {
 			if ((xscr & 7) == 0) {
-				scrbyte = vid->mrd(MADR(vid->curscr, adr), vid->xptr) & 0xff;
-				col = vid->mrd(MADR(vid->curscr ^ 4, adr ^ 0x2000), vid->xptr) & 0xff;
+				scrbyte = vid->mrd(MADR(vid->vidPage, adr), vid->xptr) & 0xff;
+				col = vid->mrd(MADR(vid->vidPage ^ 4, adr ^ 0x2000), vid->xptr) & 0xff;
 			} else {
-				scrbyte = vid->mrd(MADR(vid->curscr, adr ^ 0x2000), vid->xptr) & 0xff;
-				col = vid->mrd(MADR(vid->curscr ^ 4, adr + 1), vid->xptr) & 0xff;
+				scrbyte = vid->mrd(MADR(vid->vidPage, adr ^ 0x2000), vid->xptr) & 0xff;
+				col = vid->mrd(MADR(vid->vidPage ^ 4, adr + 1), vid->xptr) & 0xff;
 			}
 			scrbyte = vid_fnt_rd(vid, (scrbyte << 3) | (yscr & 7));	// vid->font[(scrbyte << 3) | (yscr & 7)];
 			vidATMDoubleDot(vid,col);
@@ -823,11 +823,11 @@ void vidDrawATMhwmc(Video* vid) {
 		adr = (yscr * 40) + (xscr >> 3);
 		if ((xscr & 3) == 0) {
 			if ((xscr & 7) == 0) {
-				scrbyte = vid->mrd(MADR(vid->curscr, adr), vid->xptr);
-				col = vid->mrd(MADR(vid->curscr ^ 4, adr), vid->xptr);
+				scrbyte = vid->mrd(MADR(vid->vidPage, adr), vid->xptr);
+				col = vid->mrd(MADR(vid->vidPage ^ 4, adr), vid->xptr);
 			} else {
-				scrbyte = vid->mrd(MADR(vid->curscr, adr + 0x2000), vid->xptr);
-				col = vid->mrd(MADR(vid->curscr ^ 4, adr + 0x2000), vid->xptr);
+				scrbyte = vid->mrd(MADR(vid->vidPage, adr + 0x2000), vid->xptr);
+				col = vid->mrd(MADR(vid->vidPage ^ 4, adr + 0x2000), vid->xptr);
 			}
 			vidATMDoubleDot(vid,col);
 		}
@@ -847,11 +847,11 @@ void vidDrawEvoText(Video* vid) {
 		if ((xscr & 3) == 0) {
 			adr = 0x1c0 + ((yscr & 0xf8) << 3) + (xscr >> 3);
 			if ((xscr & 7) == 0) {
-				scrbyte = vid->mrd(MADR(vid->curscr + 3, adr), vid->xptr);
-				col = vid->mrd(MADR(vid->curscr + 3, adr + 0x3000), vid->xptr);
+				scrbyte = vid->mrd(MADR(vid->vidPage + 3, adr), vid->xptr);
+				col = vid->mrd(MADR(vid->vidPage + 3, adr + 0x3000), vid->xptr);
 			} else {
-				scrbyte = vid->mrd(MADR(vid->curscr + 3, adr + 0x1000), vid->xptr);
-				col = vid->mrd(MADR(vid->curscr + 3, adr + 0x2001), vid->xptr);
+				scrbyte = vid->mrd(MADR(vid->vidPage + 3, adr + 0x1000), vid->xptr);
+				col = vid->mrd(MADR(vid->vidPage + 3, adr + 0x2001), vid->xptr);
 			}
 			scrbyte = vid_fnt_rd(vid, (scrbyte << 3) | (yscr & 7)); // vid->font[(scrbyte << 3) | (yscr & 7)];
 			vidATMDoubleDot(vid,col);
@@ -878,7 +878,7 @@ void vidProfiScr(Video* vid) {
 				} else {
 					adr |= 0x2000;
 				}
-				if (vid->curscr == 7) {
+				if (vid->vidPage == 7) {
 					scrbyte = vid->mrd(MADR(6, adr), vid->xptr);
 					col = vid->mrd(MADR(0x3a, adr), vid->xptr);		// b0..2 ink, b3..5 pap, b6 inkBR, b7 papBR
 				} else {

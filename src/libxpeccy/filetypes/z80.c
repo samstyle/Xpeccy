@@ -109,7 +109,7 @@ int loadZ80_f(Computer* comp, FILE* file) {
 	comp->pEFF7 = 0x00;
 	memSetBank(comp->mem,0x00,MEM_ROM,1,MEM_16K,NULL,NULL,NULL);
 	memSetBank(comp->mem,0xc0,MEM_RAM,0,MEM_16K,NULL,NULL,NULL);
-	comp->vid->curscr = 5;
+	comp->vid->vidPage = 5;
 
 	fread((char*)&hd, sizeof(z80v1Header), 1, file);
 	if (hd.flag12 == 0xff) hd.flag12 = 0x01;	// Because of compatibility, if byte 12 is 255, it has to be regarded as being 1.

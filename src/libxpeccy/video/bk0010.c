@@ -22,7 +22,7 @@ void bk_bw_dot(Video* vid) {
 		xscr = vid->ray.xs;
 		if ((vid->ray.x & 3) == 0) {
 			yscr = (vid->ray.ys + vid->sc.y - 0xd8) & 0xff;
-			xadr = ((vid->curscr ? 7 : 1) << 14) | (yscr << 6) | ((xscr >> 2) & 0x3f);
+			xadr = ((vid->vidPage ? 7 : 1) << 14) | (yscr << 6) | ((xscr >> 2) & 0x3f);
 			if (vid->cutscr) xadr |= 0x3000;
 			sbyte = vid->mrd(xadr, vid->xptr);
 		}
@@ -46,7 +46,7 @@ void bk_col_dot(Video* vid) {
 		xscr = vid->ray.xs;
 		if ((vid->ray.x & 3) == 0) {
 			yscr = (vid->ray.ys + vid->sc.y - 0xd8) & 0xff;
-			xadr = ((vid->curscr ? 7 : 1) << 14) | (yscr << 6) | ((xscr >> 2) & 0x3f);
+			xadr = ((vid->vidPage ? 7 : 1) << 14) | (yscr << 6) | ((xscr >> 2) & 0x3f);
 			if (vid->cutscr) xadr |= 0x3000;
 			sbyte = vid->mrd(xadr, vid->xptr);
 		}

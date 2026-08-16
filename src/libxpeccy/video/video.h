@@ -150,7 +150,7 @@ struct Video {
 	int dotPerFrame;
 
 	int flash;
-	int curscr;
+	int vidPage;
 
 	int brdstep;
 	double brdsize;
@@ -290,7 +290,6 @@ struct Video {
 		unsigned char T0Pal76;		// b7.6 of tiles palete (07AF)
 		unsigned char T1Pal76;
 		unsigned char scrPal;		// b7..4: bitmap palete
-		unsigned char vidPage;		// 1st video page
 		int hsint;			// tsconf INT x pos = p22AF << 1
 		unsigned char p00af;
 		unsigned char p07af;
