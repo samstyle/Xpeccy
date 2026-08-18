@@ -203,7 +203,6 @@ int vidTSLRenderText(Video* vid) {
 // return ticks @ 7MHz (aka dots) eaten for line rendering
 int vidTSRender(Video* vid) {
 	int res = 0;
-
 // tilemap reading
 	yscr = (vid->ray.y - vid->tsconf.yPos + 8);
 	if (yscr < 0) yscr += vid->full.y;
@@ -219,29 +218,33 @@ int vidTSRender(Video* vid) {
 	memset(vid->line,0x00,0x200);		// clear tile-sprite line
 	memset(vid->linb,0x00,0x200);
 // bitplane/text (render to vid->linb)
-	switch(vid->vmode) {
-		case VID_TSL_16:
-			res += vidTSLRender16c(vid);
-			break;
-		case VID_TSL_256:
-			res += vidTSLRender256c(vid);
-			break;
-		case VID_TSL_TEXT:
-			res += vidTSLRenderText(vid);		// rendered as double-density
-			break;
+	if (!vid->nogfx) {
+		switch(vid->vmode) {
+			case VID_TSL_16:
+				res += vidTSLRender16c(vid);
+				break;
+			case VID_TSL_256:
+				res += vidTSLRender256c(vid);
+				break;
+			case VID_TSL_TEXT:
+				res += vidTSLRenderText(vid);		// rendered as double-density
+				break;
+		}
 	}
 	if (vid->vmode != VID_TSL_NORMAL) res += 32;		// shit
 // tiles/sprites (render to vid->line)
+	if (!(vid->tsconf.p00af & 0x10)) {			// notsu bit
 // S0
-	if (vid->tsconf.tconfig & 0x80) res += vidTSLRenderSprites(vid);
+		if (vid->tsconf.tconfig & 0x80) res += vidTSLRenderSprites(vid);
 // T0
-	if (vid->tsconf.tconfig & 0x20) res += vidTSLRenderTiles(vid,0,vid->tsconf.T0YOffset,vid->tsconf.T0XOffset,vid->tsconf.T0GPage,vid->tsconf.T0Pal76);
+		if (vid->tsconf.tconfig & 0x20) res += vidTSLRenderTiles(vid,0,vid->tsconf.T0YOffset,vid->tsconf.T0XOffset,vid->tsconf.T0GPage,vid->tsconf.T0Pal76);
 // S1
-	if (vid->tsconf.tconfig & 0x80) res += vidTSLRenderSprites(vid);
+		if (vid->tsconf.tconfig & 0x80) res += vidTSLRenderSprites(vid);
 // T1
-	if (vid->tsconf.tconfig & 0x40) res += vidTSLRenderTiles(vid,1,vid->tsconf.T1YOffset,vid->tsconf.T1XOffset,vid->tsconf.T1GPage,vid->tsconf.T1Pal76);
+		if (vid->tsconf.tconfig & 0x40) res += vidTSLRenderTiles(vid,1,vid->tsconf.T1YOffset,vid->tsconf.T1XOffset,vid->tsconf.T1GPage,vid->tsconf.T1Pal76);
 // S2
-	if (vid->tsconf.tconfig & 0x80) res += vidTSLRenderSprites(vid);
+		if (vid->tsconf.tconfig & 0x80) res += vidTSLRenderSprites(vid);
+	}
 	vid->tsconf.scrLine++;
 	return res;
 }
@@ -308,7 +311,6 @@ void vidDrawTSLNormal(Video* vid) {
 	if ((yscr < 0) || (yscr >= vid->scrn.y) || vid->nogfx) {
 		col = vid->brdcol;
 	} else {
-//		xadr = vid->vidPage;
 		if ((xscr & 7) == 4) {
 			adr = ((yscr & 0xc0) << 5) | ((yscr & 7) << 8) | ((yscr & 0x38) << 2) | (((xscr + 4) & 0xf8) >> 3);
 			nxtbyte = vid->mrd(MADR(vid->vidPage, adr), vid->xptr);
@@ -333,12 +335,27 @@ void vidDrawTSLNormal(Video* vid) {
 }
 
 // tsconf extend mode (out pre-rendered bitmap/TSU layers)
-
+// 16c/256c: mix tile/sprite, bitmap & border colors
 void vidDrawTSLExt(Video* vid) {
+#if 1
+	xscr = vid->ray.x - vid->tsconf.xPos;
+	yscr = vid->ray.y - vid->tsconf.yPos;
+	if ((yscr >= 0) && (yscr < vid->scrsize.y) && (xscr >= 0) && (xscr < vid->scrsize.x)) {
+		if (vid->line[xscr] & 0x0f) {
+			col = vid->line[xscr];
+		} else if (vid->nogfx) {
+			col = vid->brdcol;
+		} else {
+			col = vid->linb[xscr];
+		}
+	} else {
+		col = vid->brdcol;
+	}
+#else
 	col = vid->brdcol;
 	scanExtLine(vid);
+#endif
 	vid_dot_full(vid, col);
-	// vidPutDot(&vid->ray, vid->pal, col);
 }
 
 // tsconf text
@@ -348,9 +365,7 @@ void vidDrawTSLText(Video* vid) {
 	yscr = vid->ray.y - vid->tsconf.yPos;
 	if ((xscr < 0) || (xscr >= vid->scrsize.x) || (yscr < 0) || (yscr >= vid->scrsize.y)) {
 		vid_dot_full(vid, vid->brdcol);
-		//vidPutDot(&vid->ray, vid->pal, vid->brdcol);
 	} else {
-#if 1
 		if (vid->line[xscr] & 0x0f) {
 			vid_dot_full(vid, vid->line[xscr]);
 		} else {
@@ -359,30 +374,5 @@ void vidDrawTSLText(Video* vid) {
 			xscr++;
 			vid_dot_half(vid, vid->linb[xscr] ? vid->linb[xscr] : vid->brdcol);
 		}
-#else
-		if ((xscr & 3) == 0) {
-			xscr += vid->tsconf.xOffset;
-			yscr += vid->tsconf.yOffset;
-			xscr &= 0x1ff;
-			yscr &= 0x1ff;
-			adr = (vid->tsconf.vidPage << 14) + ((yscr & 0x1f8) << 5) + (xscr >> 2);	// 256 bytes in row
-			scrbyte = vid->mrd(adr, vid->xptr);
-			col = vid->mrd(adr | 0x80, vid->xptr);
-			ink = (col & 0x0f) | (vid->tsconf.scrPal);
-			pap = ((col & 0xf0) >> 4)  | (vid->tsconf.scrPal);
-			scrbyte = vid->mrd(MADR(vid->tsconf.vidPage ^ 1, (scrbyte << 3) | (yscr & 7)), vid->xptr);
-//			vidDrawByteDD(vid);
-		}
-		if (vid->line[xscr] & 0x0f) {							// put not-transparent tiles/sprites pixel
-			vid_dot_full(vid, vid->line[xscr]);
-			//vidPutDot(&vid->ray, vid->pal, vid->line[xscr]);
-		} else {
-			//vidSingleDot(&vid->ray, vid->pal, (scrbyte & 0x80) ? ink : pap);
-			//vidSingleDot(&vid->ray, vid->pal, (scrbyte & 0x40) ? ink : pap);
-			vid_dot_half(vid, (scrbyte & 0x80) ? ink : pap);
-			vid_dot_half(vid, (scrbyte & 0x40) ? ink : pap);
-		}
-		scrbyte <<= 2;
-#endif
 	}
 }
