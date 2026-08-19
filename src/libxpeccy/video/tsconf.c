@@ -273,18 +273,21 @@ void tslUpdatePorts(Video* vid) {
 
 // HBlank start
 void vts_hblk(Video* vid) {
-}
-
-// Line start
-void vts_line(Video* vid) {
 	tslUpdatePorts(vid);
+	// ear-feint :) ray.y isn't updated yet on HBlank, but we must render for next line
+	vid->ray.y++;
 	int res = vidTSRender(vid);		// dots eaten by rendering
-	vid->intp.x = vid->tsconf.hsint + res + vid->blank.x;
-	vid->intp.x %= vid->full.x;
+	vid->ray.y--;
+	vid->intp.x = vid->tsconf.hsint + res; // hsint=0 must be on xb=0 + render time
+	// CHECK: line INT is delayed too because of render?
 	if (vid->inten & 2) {
 		vid->intLINE = 1;
 		vid->xirq(IRQ_VID_LINE, vid->xptr);
 	}
+}
+
+// Line start
+void vts_line(Video* vid) {
 }
 
 // Frame start
