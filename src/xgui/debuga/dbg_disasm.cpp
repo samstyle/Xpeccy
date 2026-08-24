@@ -829,11 +829,13 @@ void xDisasmTable::setAdr(int adr, int hist) {
 		history.append(model->asmadr);
 	int oadr = model->asmadr;
 	model->asmadr = adr & conf.prof.cur->zx->mem->busmask;
-	updContent();
-	if (oadr != model->asmadr)
+	if (oadr != model->asmadr) {
+		updContent();
 		emit s_adrch(model->asmadr);
+	}
 }
 
+// used as slot
 void xDisasmTable::setAdrX(int adr) {
 	setAdr(adr, 0);
 }
@@ -1031,7 +1033,7 @@ void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 			if (!idx.isValid()) break;
 			adr = model->dasm[idx.row()].oadr;
 			if (adr < 0) break;
-			history.append(model->asmadr);
+			// history.append(model->asmadr);
 			model->setData(model->index(idx.row(), 0), QString::number(adr, 16).prepend("0x"), Qt::EditRole);
 			updContent();
 			setCurrentIndex(idx);
@@ -1041,6 +1043,7 @@ void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 			if (history.size() < 1) break;
 			model->asmadr = history.takeLast();
 			updContent();
+			setCurrentIndex(idx);
 			emit s_adrch(model->asmadr);
 			break;
 		case Qt::Key_Return:

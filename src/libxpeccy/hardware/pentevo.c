@@ -491,21 +491,27 @@ static xPort evo21PortMap[] = {
 	{0x0000,0x0000,2,2,2,evoInCmn,	evoOutCmn}
 };
 
-void evoOut(Computer* comp, int port, int val) {
+void evo_out_ext(Computer* comp, int port, int val, xPort* extab) {
 	if (comp->regBF & 0x01) comp->flgBDI = 1;	// force open ports
 	if (!(comp->prt2 & 0x80)) comp->flgBDI = 1;
 	zx_dev_wr(comp, port, val);
-	hwOut(evo14PortMap, comp, port, val, 1);
+	hwOut(extab, comp, port, val, 1);
 }
 
-int evoIn(Computer* comp, int port) {
+void evoOut(Computer* comp, int port, int val) {evo_out_ext(comp, port, val, evo14PortMap);}
+void evoOutv2(Computer* comp, int port, int val) {evo_out_ext(comp, port, val, evo21PortMap);}
+
+int evo_in_ext(Computer* comp, int port, xPort* extab) {
 	int res = -1;
 	if (comp->regBF & 1) comp->flgBDI = 1;	// open ports
 	if (!(comp->prt2 & 0x80)) comp->flgBDI = 1;
 	if (zx_dev_rd(comp, port, &res)) return res;
-	res = hwIn(evo14PortMap, comp, port);
+	res = hwIn(extab, comp, port);
 	return res;
 }
+
+int evoIn(Computer* comp, int port) {return evo_in_ext(comp, port, evo14PortMap);}
+int evoInv2(Computer* comp, int port) {return evo_in_ext(comp, port, evo21PortMap);}
 
 void xt_press(Keyboard*, keyEntry*);
 void xt_release(Keyboard*, keyEntry*);
@@ -544,3 +550,5 @@ xPortDsc evo_port_tab[] = {
 
 HardWare evo_hw_core = {HW_PENTEVO,HWG_ZX,"PentEvo","Evo Baseconf (before 2021)",16,MEM_4M,1.0,NULL,16,evo_port_tab,
 			zx_init,evoMapMem,evoOut,evoIn,evoMRd,evoMWr,zx_irq,zx_ack,evoReset,zx_sync,evo_keyp,evo_keyr,zx_vol};
+HardWare evo_v2_core = {HW_PENTEVO,HWG_ZX,"PentEvo21","Evo Baseconf (after 2021)",16,MEM_4M,1.0,NULL,16,evo_port_tab,
+			zx_init,evoMapMem,evoOutv2,evoInv2,evoMRd,evoMWr,zx_irq,zx_ack,evoReset,zx_sync,evo_keyp,evo_keyr,zx_vol};

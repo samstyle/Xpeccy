@@ -20,6 +20,7 @@ enum {
 	HW_ATM1,	// ATM 1
 	HW_ATM2,	// ATM 2+
 	HW_PENTEVO,	// ZXEvo (Baseconf)
+	HW_PENTEVO21,	// Baseconf after 2021
 	HW_TSLAB,	// PentEvo (TSConf)
 	HW_PROFI,	// Profi
 	HW_PHOENIX,	// ZXM Phoenix
