@@ -1431,7 +1431,10 @@ void DebugWin::fillPorts() {
 				wid->setText(gethexword(tab[i].port));
 				wid = (QLabel*)(ui_misc.formPort->itemAt(i, QFormLayout::FieldRole)->widget());
 				wid->setVisible(true);
-				wid->setText(gethexbyte(tab[i].value));
+				switch(tab[i].size) {
+					case REG_WORD: wid->setText(gethexword(tab[i].value)); break;
+					default: wid->setText(gethexbyte(tab[i].value)); break;
+				}
 				i++;
 			}
 			ui_misc.labPorts->setVisible(true);

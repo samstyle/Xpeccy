@@ -88,12 +88,30 @@ void z80_mwr(CPU *cpu, int adr, int data) {
 }
 
 // if block opcode is interrupted, flags will be like this:
-
 int z80_int(CPU* cpu) {
 	int res = 0;
 	if (cpu->flgWAIT) return res;
-	if (cpu->intrq & Z80_INT) {		// int
-		if (cpu->flgIFF1 && !cpu->flgNOINT && cpu->flgACK) {
+	if (cpu->intrq & Z80_NMI) {		// nmi have priority over int
+		if (!cpu->flgNOINT) {
+			if (cpu->flgHALT) {	// nmi breaks halt too
+				cpu->regPC++;
+				cpu->flgHALT = 0;
+			}
+			if (cpu->flgRetBRK) {
+				cpu->regCallCnt++;
+			}
+			cpu->regR++;
+			cpu->flgIFF2 = cpu->flgIFF1;
+			cpu->flgIFF1 = 0;
+			cpu->t = 5;
+			z80_push(cpu, cpu->regPC);
+			cpu->regPC = 0x0066;
+			cpu->regWZ = cpu->regPC;
+			res = cpu->t;		// always 11
+		}
+		cpu->intrq &= ~Z80_NMI;
+	} else if ((cpu->intrq & Z80_INT) && cpu->flgIFF1) {
+		if (!cpu->flgNOINT && cpu->flgACK) {
 			cpu->flgIFF1 = 0;
 			cpu->flgIFF2 = 0;
 			if (cpu->flgHALT) {
@@ -139,25 +157,13 @@ int z80_int(CPU* cpu) {
 			res = cpu->t;
 			cpu->intrq &= ~Z80_INT;
 		}
-	} else if (cpu->intrq & Z80_NMI) {			// nmi
-		if (!cpu->flgNOINT) {
-			cpu->regR++;
-			cpu->flgIFF2 = cpu->flgIFF1;
-			cpu->flgIFF1 = 0;
-			cpu->t = 5;
-			z80_push(cpu, cpu->regPC);
-			cpu->regPC = 0x0066;
-			cpu->regWZ = cpu->regPC;
-			res = cpu->t;		// always 11
-		}
-		cpu->intrq &= ~Z80_NMI;
 	}
 	return res;
 }
 
 int z80_exec(CPU* cpu) {
 	int res = 0;
-	if (cpu->intrq & cpu->inten) {
+	if (cpu->intrq) {
 		res = z80_int(cpu);
 	}
 	cpu->flgResPV = 0;

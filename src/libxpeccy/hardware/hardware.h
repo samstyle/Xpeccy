@@ -126,6 +126,7 @@ typedef struct {
 
 typedef struct {
 	int port;
+	int size;
 	int value;
 } xPortValue;
 

@@ -1,6 +1,7 @@
 #include "hardware.h"
 #include <stdlib.h>
 #include <string.h>
+
 // layout = v9938:342:313:16:13:57:80:64:0:0:256:192
 // {{full},{border},{blank},{screen},{ipos},ilen}
 
@@ -275,8 +276,10 @@ xPortValue* hwGetPorts(Computer* comp) {
 		while ((tab[i].port > 0) && (i < 33)) {
 			pvTab[i].port = tab[i].port;
 			if (tab[i].offset) {
+				pvTab[i].size = tab[i].type;
 				ptr = ((void*)comp) + tab[i].offset;
 				switch(tab[i].type) {
+					case REG_BIT: pvTab[i].value = !!(*((bool*)ptr)); break;
 					case REG_BYTE: pvTab[i].value = *((unsigned char*)ptr) & 0xff; break;
 					case REG_WORD: pvTab[i].value = *((unsigned short*)ptr) & 0xffff; break;
 					case REG_32: pvTab[i].value = *((unsigned int*)ptr); break;

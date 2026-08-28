@@ -1,8 +1,10 @@
 #include "../spectrum.h"
+#include "../cpu/Z80/z80.h"
 
 #include <stdio.h>
 
-// NOTE: xxBD/xxBE ports are swaped in newer firmware. latest bios will not work
+// NOTE: xxBD/xxBE ports are swaped in a new firmware. latest bios (ers 0.59+) required
+// TODO: NMI doesn't work
 
 #define regBF	reg[16]
 #define reg2F	reg[17]
@@ -14,23 +16,16 @@
 #define flgVDOS	flag[100]
 #define flgVNMI flag[101]
 #define flgBRKE	flag[102]	// hw brk enabled
+#define flgNMIR flag[103]	// enter nmi with next int
+#define flgNMIE flag[104]	// switch ramFF on next m1 for nmi
 
+// palette (0..15)
+#define regPal(_n) reg[0xe0 + (_n)]
+// NOTE: memPage is inverted page nr
 #define memFlag(_n) reg[0xf0 + (_n)]
 #define memPage(_n) reg[0xf8 + (_n)]
 
 #define xregBRKA xreg[0]
-
-void evoReset(Computer* comp) {
-	comp->flgDOS = 1;
-	comp->regBF = 0;
-	comp->prt2 = 0x03;
-	comp->sdc->on = 1;
-	sdcReset(comp->sdc);
-	comp->flgVDOS = 0;
-	comp->flgVNMI = 0;
-	comp->flgBRKE = 0;
-	comp->regM1CNT = 0;
-}
 
 void evoSetVideoMode(Computer* comp) {
 	int mode = (comp->pEFF7 & 0x20) | ((comp->pEFF7 & 0x01) << 1) | (comp->prt2 & 0x07);	// z5.z0.0.b2.b1.b0	b:FF77, z:eff7
@@ -48,12 +43,12 @@ void evoSetVideoMode(Computer* comp) {
 
 void evoSetBank(Computer* comp, int bank, int idx) { // memEntry me) {
 	idx &= 7;
-	unsigned char page = comp->memPage(idx) ^ 0xff;
-	if (comp->memFlag(idx) & 0x80) {
-		if (comp->memFlag(idx) & 0x40) {
-			if (comp->pEFF7 & 4) {
+	unsigned char page = comp->memPage(idx) ^ 0xff;		// invert inverted -> get normal pagenum
+	if (comp->memFlag(idx) & 0x80) {			// replace lower bits mode
+		if (comp->memFlag(idx) & 0x40) {		// ram/rom
+			if (comp->pEFF7 & 4) {			// 128 mode
 				page = (page & 0xf8) | (comp->p7FFD & 7);				// mix with b0..2 (7FFD) - 128K mode
-			} else {
+			} else {				// 1024 mode
 				page = (page & 0xc0) | (comp->p7FFD & 7) | ((comp->p7FFD & 0xe0) >> 2);	// mix with b0..2,5..7 (7FFD) - P1024 mode
 			}
 		} else {
@@ -85,29 +80,58 @@ void evoMapMem(Computer* comp) {
 		memSetBank(comp->mem,0x00,MEM_RAM,0x00, MEM_16K, NULL, NULL, NULL);
 }
 
+void evoReset(Computer* comp) {
+	comp->flgDOS = 1;
+	comp->regBF = 0;
+	comp->prt2 = 0x83;
+	comp->sdc->on = 1;
+	sdcReset(comp->sdc);
+	comp->flgVDOS = 0;
+	comp->flgVNMI = 0;
+	comp->flgNMIE = 0;
+	comp->flgNMIR = 0;
+	comp->flgBRKE = 0;
+	comp->regM1CNT = 0;
+	evoMapMem(comp);
+}
+
 int evoMRd(Computer* comp, int adr, int m1) {
-	if (m1 && (comp->dif->type == DIF_BDI)) {
-		if (comp->flgDOS && (mem_get_page(comp->mem, adr)->type == MEM_RAM) && (comp->prt2 & 0x40)) {
-			comp->flgDOS = 0;
-			if (comp->flgROM) comp->hw->mapMem(comp);
+	if (m1) {
+		// dos
+		if (comp->dif->type == DIF_BDI) {
+			if (comp->flgDOS && (mem_get_page(comp->mem, adr)->type == MEM_RAM) && (comp->prt2 & 0x40)) {
+				comp->flgDOS = 0;
+				if (comp->flgROM) comp->hw->mapMem(comp);
+			}
+			if (!comp->flgDOS && ((adr & 0x3f00) == 0x3d00)/* && comp->flgROM*/) {		// b7,memFlag for this page & m1 from 3dxx is switching dos on
+				if (comp->memFlag((comp->flgROM ? 4 : 0) | ((adr >> 14) & 3)) & 0x80) {	// b7,memFlag is set?
+					comp->flgDOS = 1;
+					comp->hw->mapMem(comp);
+				}
+			}
 		}
-		if (!comp->flgDOS && ((adr & 0xff00) == 0x3d00) && (comp->flgROM)) {
-			comp->flgDOS = 1;
-			comp->hw->mapMem(comp);
+		// enter nmi
+		if (comp->flgNMIE) {
+			comp->flgNMIE = 0;
+			comp->flgVNMI = 1;	// set ramFF @ 0000
+			evoMapMem(comp);
+			return 0;		// swap opcode to nop
+		}
+		// hw breakpoint (don't wait next int)
+		if ((comp->regBF & 0x10) && (adr == comp->xregBRKA.w)) {
+			comp->flgNMIRQ = 1;
 		}
 	}
+	int r = memRd(comp->mem,adr);
+	// it was 2nd m1 after out BE, switch mem back (before actual pop during retn)
 	if (m1 && comp->flgVNMI && comp->regM1CNT) {
 		comp->regM1CNT--;
 		if (comp->regM1CNT == 0) {
 			comp->flgVNMI = 0;
-			evoMapMem(comp);
+			comp->hw->mapMem(comp);
 		}
 	}
-	if (m1 && (comp->regBF & 0x40) && (adr == comp->xregBRKA.w)) {
-		// comp->flgNMIRQ = 1;
-	}
-
-	return memRd(comp->mem,adr);
+	return r;
 }
 
 // TODO: write protect, see xBF7)
@@ -153,16 +177,16 @@ int evoInCfg(Computer* comp, int port) {
 	int res = -1;
 	int i;
 	if ((port & 0xf800) == 0x0000) {
-		res = comp->memPage((port >> 8) & 7); // comp->memMap[(port & 0x0700) >> 8].page;
+		res = comp->memPage((port >> 8) & 7);		// reading values is inverted pagenum
 	} else {
 		switch (port & 0xff00) {
 			case 0x0800: res = memflag_collect(comp, 0x40); break;
 			case 0x0900: res = memflag_collect(comp, 0x80); break;
 			case 0x0a00: res = comp->p7FFD; break;
 			case 0x0b00: res = comp->pEFF7; break;
-			case 0x0c00: res = comp->prt2 | (comp->flgDOS ? 0x10 : 0x00); break;
-			case 0x0d00: res = comp->vid->atrbyte; break;
-			case 0x0e00: res = -1; break;		// scrbyte?
+			case 0x0c00: res = (comp->prt2 & 0xef) | (comp->flgDOS ? 0x10 : 0x00); break;
+			case 0x0d00: res = comp->regPal(comp->vid->brdcol & 0x0f) ^ 0xff; break;
+			case 0x0e00: res = comp->vid->arg; break;
 			case 0x0f00: res = comp->vid->brdcol; break;
 			case 0x1000: res = comp->xregBRKA.l; break;
 			case 0x1100: res = comp->xregBRKA.h; break;
@@ -300,11 +324,15 @@ void evoOutBD(Computer* comp, int port, int val) {
 
 void evoStopVrt(Computer* comp, int port, int val) {
 	comp->flgVDOS = 0;
-	comp->regM1CNT = 2;		// 2 M1 after out (RETI?) -> exit NMI
+	comp->regM1CNT = 2;		// 2 M1 after out -> exit NMI
 }
 
 void evoOutBF(Computer* comp, int port, int val) {
 	// b3: 1->0 - generate NMI on next INT
+	if (((comp->regBF ^ val) & comp->regBF) & 8) {
+		comp->flgNMIR = 1;
+	}
+	// b5: extend palette (444)
 	comp->regBF = val & 0xff;
 }
 
@@ -330,7 +358,7 @@ void evoOut57(Computer* comp, int port, int val) {	// !dos
 
 void evoOut77(Computer* comp, int port, int val) {
 	// comp->sdc->on = (val & 1) ? 0 : 1;	// b0: must be 0
-	comp->sdc->cs = (val & 2) ? 1 : 0;	// b1: 0 if sdc is selected
+	comp->sdc->cs = !!(val & 2);		// b1: 0 if sdc is selected
 }
 
 void evoOut77d(Computer* comp, int port, int val) {
@@ -340,21 +368,23 @@ void evoOut77d(Computer* comp, int port, int val) {
 	evoMapMem(comp);
 }
 
-void evoOutF7(Computer* comp, int port, int val) {
-	int adr = ((comp->flgROM) ? 4 : 0) | ((port & 0xc000) >> 14);
-	if (port & 0x0800) {
-		comp->memFlag(adr) &= 0x3f;
-		comp->memFlag(adr) |= val & 0xc0;
-		comp->memPage(adr) = (val & 0xff) | 0xc0;
-	} else {
-		comp->memFlag(adr) |= 0x40;		// ram
-		comp->memPage(adr) = val & 0xff;
-	}
+void evoOut7F7(Computer* comp, int port, int val) {
+	int adr = ((comp->flgROM) ? 4 : 0) | ((port >> 14) & 3);
+	comp->memFlag(adr) |= 0x40;		// ram
+	comp->memPage(adr) = val & 0xff;
+	evoMapMem(comp);
+}
+
+void evoOutFF7(Computer* comp, int port, int val) {
+	int adr = ((comp->flgROM) ? 4 : 0) | ((port >> 14) & 3);
+	comp->memFlag(adr) &= 0x3f;
+	comp->memFlag(adr) |= val & 0xc0;
+	comp->memPage(adr) = (val & 0x3f) | 0xc0;	// b6,7 will reset when evoSetMap do (pagenum^0xff)
 	evoMapMem(comp);
 }
 
 void evoOutBF7(Computer* comp, int port, int val) {
-	int adr = ((comp->flgROM) ? 4 : 0) | ((port & 0xc000) >> 14);
+	int adr = ((comp->flgROM) ? 4 : 0) | ((port >> 14) & 3);
 	comp->memFlag(adr) &= ~0x20;
 	if (val & 1)
 		comp->memFlag(adr) |= 0x20;
@@ -372,6 +402,7 @@ void evoOutFF(Computer* comp, int port, int val) {		// dos
 	if (!(comp->prt2 & 0x80)) {	// pBF.b1 = 1 || p77.a14 = 1
 		val ^= 0xff;					// inverse colors
 		int adr = comp->vid->brdcol & 0x0f;
+		comp->regPal(adr) = val;
 		port ^= 0xff00;
 		if (!comp->flgDDP) port = (port & 0xff) | ((val << 8) & 0xff00);
 		xcol.b = atm3clev[((val & 0x01) << 3) | ((val & 0x20) >> 3) | ((port & 0x0100) >> 7) | ((port & 0x2000) >> 13)];
@@ -383,7 +414,7 @@ void evoOutFF(Computer* comp, int port, int val) {		// dos
 
 void evoOut7FFD(Computer* comp, int port, int val) {
 	if ((comp->pEFF7 & 4) && (comp->p7FFD & 0x20)) return;
-	comp->flgROM = (val & 0x10) ? 1 : 0;
+	comp->flgROM = !!(val & 0x10);
 	comp->p7FFD = val & 0xff;
 	comp->vid->vidPage = (val & 0x08) ? 7 : 5;
 	evoMapMem(comp);
@@ -434,9 +465,6 @@ static xPort evoPortMap[] = {
 	{0x00f7,0x00fe,2,2,2,xInFE,	evoOutFE},	// A3 = border bright
 //	{0x00ff,0x00fb,2,2,2,NULL,	evoOutFB},	// covox
 
-//	{0x00ff,0x00be,2,2,2,evoInBE,	NULL},
-//	{0x00ff,0x00bd,2,2,2,NULL,	evoOutBD},
-
 	{0x00ff,0x00bf,2,2,2,evoInBF,	evoOutBF},
 	{0xc0fe,0x7ffd,2,2,2,NULL,	evoOut7FFD},
 	{0xffff,0xfadf,2,2,2,xInFADF,	NULL},		// k-mouse (fadf,fbdf,ffdf)
@@ -456,8 +484,9 @@ static xPort evoPortMap[] = {
 	{0x00ff,0x0077,1,2,2,NULL,	evoOut77d},
 	{0xffff,0xbef7,1,2,2,evoInBEF7,	evoOutBEF7},	// nvram
 	{0xffff,0xdef7,1,2,2,NULL,	evoOutDEF7},
-	{0x07ff,0x07f7,1,2,2,NULL,	evoOutF7},	// x7f7
-	{0x0fff,0x0bf7,1,2,2,NULL,	evoOutBF7},
+	{0x0fff,0x07f7,1,2,2,NULL,	evoOut7F7},	// x7f7
+	{0x0fff,0x0bf7,1,2,2,NULL,	evoOutBF7},	// xbf7
+	{0x0fff,0x0ff7,1,2,2,NULL,	evoOutFF7},	// xff7
 	// !dos only
 	{0x00ff,0x001f,0,2,2,evoIn1F,	NULL},		// k-joy
 	{0x00ff,0x0057,0,2,2,evoIn57,	evoOut57},	// 57,77 : spi
@@ -477,14 +506,14 @@ int evoInCmn(Computer* comp, int port) {
 	return hwIn(evoPortMap, comp, port);
 }
 
-// ports for legacy: before 2021
+// ports for legacy: ers 0.58 and earleier
 static xPort evo14PortMap[] = {
-	{0x00ff,0x00be,2,2,2,evoInCfg,	NULL},
+	{0x00ff,0x00be,2,2,2,evoInCfg,	evoStopVrt},
 	{0x00ff,0x00bd,2,2,2,NULL,	evoOutBD},
 	{0x0000,0x0000,2,2,2,evoInCmn,	evoOutCmn}	// go to check common ports
 };
 
-// current configuration: after 2021
+// current configuration: ers 0.59 and older
 static xPort evo21PortMap[] = {
 	{0x00ff,0x00bd,2,2,2,evoInCfg,	evoOutCfg},
 	{0x00ff,0x00be,2,2,2,NULL,	evoStopVrt},
@@ -493,7 +522,7 @@ static xPort evo21PortMap[] = {
 
 void evo_out_ext(Computer* comp, int port, int val, xPort* extab) {
 	if (comp->regBF & 0x01) comp->flgBDI = 1;	// force open ports
-	if (!(comp->prt2 & 0x80)) comp->flgBDI = 1;
+	if (!(comp->prt2 & 0x40)) comp->flgBDI = 1;	// xxf7 a9 (b6)
 	zx_dev_wr(comp, port, val);
 	hwOut(extab, comp, port, val, 1);
 }
@@ -504,7 +533,7 @@ void evoOutv2(Computer* comp, int port, int val) {evo_out_ext(comp, port, val, e
 int evo_in_ext(Computer* comp, int port, xPort* extab) {
 	int res = -1;
 	if (comp->regBF & 1) comp->flgBDI = 1;	// open ports
-	if (!(comp->prt2 & 0x80)) comp->flgBDI = 1;
+	if (!(comp->prt2 & 0x40)) comp->flgBDI = 1;
 	if (zx_dev_rd(comp, port, &res)) return res;
 	res = hwIn(extab, comp, port);
 	return res;
@@ -542,13 +571,41 @@ void evo_keyr(Computer* comp, keyEntry* ent) {
 	xt_release(comp->keyb, ent);
 }
 
+void evo_sync(Computer* comp, int ns) {
+	// enter nmi: map ram(FF) @ 0000, cpu nmi
+	if (comp->flgNMIRQ) {
+		comp->cpu->intrq |= Z80_NMI;	// send nmi to cpu
+		comp->flgNMIE = 1;		// next m1 will turn ramFF @ 0000 and change opcode to 00. pc pushed during not-switched state
+		comp->flgNMIRQ = 0;		// reset, don't act it in zx_sync
+	}
+	zx_sync(comp, ns);
+}
+
+void evo_irq(Computer* comp, int t) {
+	zx_irq(comp, t);
+	switch(t) {
+		case IRQ_VID_INT:
+			if (comp->flgNMIR) {		// if there was waiting nmi request. don't generate NMIRQ
+				comp->flgNMIR = 0;
+				comp->flgNMIE = 1;
+				comp->cpu->intrq &= ~Z80_INT;	// nmi instead of int
+				comp->cpu->intrq |= Z80_NMI;
+			}
+			break;
+	}
+}
+
 xPortDsc evo_port_tab[] = {
 	{0x7ffd, REG_BYTE, offsetof(Computer, p7FFD)},
 	{0xeff7, REG_BYTE, offsetof(Computer, pEFF7)},
+	{0x00bf, REG_BYTE, offsetof(Computer, regBF)},
+	{0x0077, REG_BYTE, offsetof(Computer, prt2)},
+//	{0x0001, REG_BIT, offsetof(Computer, flgNMIR)},
+//	{0x0002, REG_BIT, offsetof(Computer, flgNMIE)},
 	{-1, 0, 0}
 };
 
 HardWare evo_hw_core = {HW_PENTEVO,HWG_ZX,"PentEvo","Evo Baseconf (before 2021)",16,MEM_4M,1.0,NULL,16,evo_port_tab,
-			zx_init,evoMapMem,evoOut,evoIn,evoMRd,evoMWr,zx_irq,zx_ack,evoReset,zx_sync,evo_keyp,evo_keyr,zx_vol};
+			zx_init,evoMapMem,evoOut,evoIn,evoMRd,evoMWr,evo_irq,zx_ack,evoReset,evo_sync,evo_keyp,evo_keyr,zx_vol};
 HardWare evo_v2_core = {HW_PENTEVO,HWG_ZX,"PentEvo21","Evo Baseconf (after 2021)",16,MEM_4M,1.0,NULL,16,evo_port_tab,
-			zx_init,evoMapMem,evoOutv2,evoInv2,evoMRd,evoMWr,zx_irq,zx_ack,evoReset,zx_sync,evo_keyp,evo_keyr,zx_vol};
+			zx_init,evoMapMem,evoOutv2,evoInv2,evoMRd,evoMWr,evo_irq,zx_ack,evoReset,evo_sync,evo_keyp,evo_keyr,zx_vol};
