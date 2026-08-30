@@ -31,6 +31,7 @@ enum {
 	IRQ_VID_LINE,	// tsconf
 	IRQ_RZX_INT,
 	IRQ_DMA,
+	IRQ_NMI,
 	IRQ_CPU_SYNC,	// sync cpu ticks
 	IRQ_CPU_HALT,	// enter halt cycle
 	IRQ_CPU_ACK,	// = sync + set flgACK if interrupt (Z80)

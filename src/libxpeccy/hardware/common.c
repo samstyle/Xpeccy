@@ -89,6 +89,9 @@ void zx_irq(Computer* comp, int t) {
 		case IRQ_VID_IEND:			// frame int end (for tsconf see in tslab.c)
 			comp->cpu->intrq &= ~Z80_INT;
 			break;
+		case IRQ_NMI:
+			comp->flgNMIRQ = 1;
+			break;
 		case IRQ_CPU_SYNC:			// sync cpu-vid
 			// NOTE: video is already sync'ed in comp_irq
 //			vid_sync(comp->vid, (comp->cpu->t - res4) * comp->nsPerTick);
