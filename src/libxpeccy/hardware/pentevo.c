@@ -27,6 +27,10 @@
 
 #define xregBRKA xreg[0]
 
+//				0   1   2   3   4   5   6   7   8   9   A   B   C    D    E    F
+const unsigned char blnm[] = {'x','B','o','o','t',000,000,000,000,000,000,000,0x38,0x98,0x00,0x00};
+const unsigned char bcnm[] = {'x','E','v','o',' ',000,000,000,000,000,000,000,0x89,0x99,0x00,0x00};
+
 void evoSetVideoMode(Computer* comp) {
 	int mode = (comp->pEFF7 & 0x20) | ((comp->pEFF7 & 0x01) << 1) | (comp->prt2 & 0x07);	// z5.z0.0.b2.b1.b0	b:FF77, z:eff7
 	switch (mode) {
@@ -271,7 +275,7 @@ int evoIn8F(Computer* comp, int port) {
 }
 
 int evoInBEF7(Computer* comp, int port) {	// dos
-	int res = cmsRd(comp);
+	int res;
 	switch (comp->cmos.adr & 0xff) {
 		case 0x0a: res = 0x00; break;
 		case 0x0b: res = 0x02; break;
@@ -299,6 +303,18 @@ int evoInBEF7(Computer* comp, int port) {	// dos
 			if (comp->keyb->flag2 & 4) res |= 8;
 			if (comp->keyb->flag1 & 1) res |= 16;
 			if (comp->keyb->flag2 & 1) res |= 32;
+			break;
+		default:
+			if (comp->cmos.adr >= 0x70) {
+				switch(comp->cmos.mode) {
+					case 0: res = bcnm[comp->cmos.adr & 0x0f]; break;
+					case 1: res = blnm[comp->cmos.adr & 0x0f]; break;
+					case 2: res = xt_read(comp->keyb); break; //keyReadCode(comp->keyb); break;		// read PC keyboard keycode (TODO: used here only)
+					default: res = 0x00;
+				}
+			} else {
+				res = cmos_rd(&comp->cmos, CMOS_DATA);
+			}
 			break;
 	}
 //	printf("cmos rd: %.2X\n", res);
@@ -421,7 +437,6 @@ void evoOut7FFD(Computer* comp, int port, int val) {
 }
 
 void evoOutBEF7(Computer* comp, int port, int val) {	// dos
-	cmsWr(comp,val);
 	switch(comp->cmos.adr) {
 		case 0x0a:
 			// set eeprom adr
@@ -429,6 +444,13 @@ void evoOutBEF7(Computer* comp, int port, int val) {	// dos
 		case 0x0c:
 			if (val & 1) comp->keyb->outbuf = 0;
 			// b7: eeprom access enabled
+			break;
+		default:
+			if (comp->cmos.adr > 0x6f) {
+				comp->cmos.mode = val;
+			} else {
+				cmos_wr(&comp->cmos, CMOS_DATA, val);
+			}
 			break;
 	}
 }

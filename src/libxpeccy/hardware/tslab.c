@@ -166,7 +166,12 @@ int tsIn1F(Computer* comp, int port) {
 int tsInBFF7(Computer* comp, int port) {
 	int res = 0xff;
 	if (comp->pEFF7 & 0x80) {
-		res = cmsRd(comp);
+		if (comp->cmos.adr >= 0x70) {
+			res = xt_read(comp->keyb);
+		} else {
+			res = cmos_rd(&comp->cmos, CMOS_DATA);
+		}
+//		res = cmsRd(comp);
 	}
 	return res;
 }
@@ -242,8 +247,15 @@ void tsOut7FFD(Computer* comp, int port, int val) {
 }
 
 void tsOutBFF7(Computer* comp, int port, int val) {
-	if (comp->pEFF7 & 0x80)
-		cmsWr(comp,val);
+	if (comp->pEFF7 & 0x80) {
+		switch (comp->cmos.adr) {
+			case 0x0c:
+				if (val & 1) comp->keyb->outbuf = 0;
+				break;
+			default:
+				cmos_wr(&comp->cmos, CMOS_DATA, val);
+		}
+	}
 }
 
 void tsOutDFF7(Computer* comp, int port, int val) {

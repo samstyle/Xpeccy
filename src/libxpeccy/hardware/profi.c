@@ -55,7 +55,7 @@ void prfOutAS(Computer* comp, int port, int val) {
 }
 
 void prfOutDS(Computer* comp, int port, int val) {
-	cmsWr(comp, val);
+	cmos_wr(&comp->cmos, CMOS_DATA, val);
 }
 
 void prfOutBDI(Computer* comp, int port, int val) {
@@ -104,7 +104,7 @@ int prfInBDIFF(Computer* comp, int port) {
 }
 
 int prfInDS(Computer* comp, int port) {
-	return cmsRd(comp);
+	return cmos_rd(&comp->cmos, CMOS_DATA);
 }
 
 static xPort prfPortMap[] = {

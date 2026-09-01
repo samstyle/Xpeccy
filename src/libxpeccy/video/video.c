@@ -344,6 +344,9 @@ void vid_set_border(Video* vid, double brd) {
 // font
 
 void vid_fnt_load(Video* vid, const char* path) {
+	if (vid->font.path) {
+		if (!strcmp(path, vid->font.path)) return;	// same name - don't load
+	}
 	FILE* file = fopen(path, "rb");
 	if (file) {
 		fseek(file, 0, SEEK_END);
@@ -352,6 +355,8 @@ void vid_fnt_load(Video* vid, const char* path) {
 		vid->font.data = realloc(vid->font.data, vid->font.size);
 		fread(vid->font.data, vid->font.size, 1, file);
 		fclose(file);
+		vid->font.path = realloc(vid->font.path, strlen(path)+1);
+		strcpy(vid->font.path, path);
 	}
 }
 
@@ -360,6 +365,8 @@ void vid_fnt_del(Video* vid) {
 	free(vid->font.data);
 	vid->font.data = NULL;
 	vid->font.size = 0;
+	if (vid->font.path) free(vid->font.path);
+	vid->font.path = NULL;
 }
 
 int vid_fnt_rd(Video* vid, int adr) {

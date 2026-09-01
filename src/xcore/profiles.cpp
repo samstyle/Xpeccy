@@ -291,13 +291,6 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 		if (!rset->fntFile.empty()) {
 			fpath = conf.path.romDir + SLASH + rset->fntFile;
 			vid_fnt_load(prf->zx->vid, fpath.c_str());
-/*
-			file = fopen(fpath.c_str(), "rb");
-			if (file) {
-				fread(prf->zx->vid->font, MEM_8K, 1, file);
-				fclose(file);
-			}
-*/
 		} else {
 			vid_fnt_del(prf->zx->vid);
 		}

@@ -215,8 +215,8 @@ int compSetHardware(Computer*,const char*);
 void comp_set_layout(Computer*, vLayout*);
 
 // read-write cmos
-unsigned char cmsRd(Computer*);
-void cmsWr(Computer*, int);
+//unsigned char cmsRd(Computer*);
+//void cmsWr(Computer*, int);
 
 void rzxStop(Computer*);
 

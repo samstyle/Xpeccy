@@ -354,10 +354,6 @@ void rzxStop(Computer* zx) {
 #endif
 }
 
-//				0   1   2   3   4   5   6   7   8   9   A   B   C    D    E    F
-const unsigned char blnm[] = {'x','B','o','o','t',000,000,000,000,000,000,000,0x38,0x98,0x00,0x00};
-const unsigned char bcnm[] = {'x','E','v','o',' ',000,000,000,000,000,000,000,0x89,0x99,0x00,0x00};
-
 Computer* compCreate() {
 	Computer* comp = (Computer*)malloc(sizeof(Computer));
 	memset(comp, 0x00, sizeof(Computer));
@@ -617,7 +613,9 @@ int compExec(Computer* comp) {
 
 // cmos
 
+/*
 unsigned char cmsRd(Computer* comp) {
+#if 0
 	unsigned char res = 0xff;
 	if (comp->cmos.adr >= 0x70) {
 		switch(comp->cmos.mode) {
@@ -629,8 +627,13 @@ unsigned char cmsRd(Computer* comp) {
 		res = cmos_rd(&comp->cmos, CMOS_DATA);
 	}
 	return res & 0xff;
+#else
+	return cmos_rd(&comp->cmos, CMOS_DATA);
+#endif
 }
+*/
 
+/*
 void cmsWr(Computer* comp, int val) {
 	switch (comp->cmos.adr) {
 		case 0x0c:
@@ -648,10 +651,11 @@ void cmsWr(Computer* comp, int val) {
 			break;
 	}
 }
+*/
 
 // breaks
 
-// activate breakpoint w/o type (exit to debuga)
+// activate breakpoint (type -1 -> exit to debuga)
 void comp_brk(Computer* comp, int t) {
 	comp->flgBRK = 1;
 	comp->brkt = t;

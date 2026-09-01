@@ -21,7 +21,7 @@ int p1mIn1F(Computer* comp, int port) {
 }
 
 int p1mInBFF7(Computer* comp, int port) {
-	return (comp->pEFF7 & 0x80) ? cmsRd(comp) : 0xff;
+	return (comp->pEFF7 & 0x80) ? cmos_rd(&comp->cmos, CMOS_DATA) : 0xff;
 }
 
 int p1mInFF(Computer* comp, int port) {
@@ -40,7 +40,7 @@ void p1mOut7FFD(Computer* comp, int port, int val) {
 
 void p1mOutBFF7(Computer* comp, int port, int val) {
 	if (comp->pEFF7 & 0x80)
-		cmsWr(comp,val);
+		cmos_wr(&comp->cmos, CMOS_DATA, val);
 }
 
 void p1mOutDFF7(Computer* comp, int port, int val) {
