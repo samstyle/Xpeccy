@@ -212,7 +212,6 @@ struct Keyboard {
 	unsigned drq:1;			// keyboard buffer have data
 
 	unsigned char port;		// high byte of xxFE port
-	int mode;
 	int flag;
 
 	xKbdCore* core;
@@ -222,7 +221,6 @@ struct Keyboard {
 	// i8031 block (TODO: move it into ATM2)
 	unsigned wcom:1;		// i8031 waiting for command
 	unsigned warg:1;		// i8031 waiting for argument
-//	int submode;			// i8031 mode
 	int com;
 	int arg;
 	unsigned char keycode;		// current pressed key code

@@ -642,11 +642,6 @@ void kbd_destroy(Keyboard* keyb) {
 	free(keyb);
 }
 
-// TODO: make this obsolete
-void kbdSetMode(Keyboard* kbd, int mode) {
-	kbd->mode = mode;
-}
-
 // key press/release/trigger
 
 void kbd_press(Keyboard* kbd, keyEntry* ent) {
@@ -690,7 +685,7 @@ void kbdReleaseAll(Keyboard* kbd) {
 // trigger is using by kbd-window only
 
 void kbdTrigger(Keyboard* kbd, keyEntry* ent) {
-	switch(kbd->mode) {
+	switch(kbd->core->id) {
 		case KBD_SPECTRUM:
 			key_trigger_seq(kbd, keyTab, kbd->map, ent->zxKey);
 			break;
@@ -904,7 +899,6 @@ xKbdCore kbdTypeTab[] = {
 
 void kbd_set_core(Keyboard* kbd, xKbdCore* core) {
 	kbd->core = core;
-//	printf("kbd set mode %i\n", core->id);
 }
 
 void kbd_set_type(Keyboard* kbd, int t) {

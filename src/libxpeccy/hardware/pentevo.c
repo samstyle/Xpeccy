@@ -251,7 +251,7 @@ int evoInBF(Computer* comp, int port) {
 	return comp->regBF;
 }
 
-// TODO: if flgDOS && flgROM && (pc < 0x400) && flp->virt -> flgVDOS = 1  <- check this
+// TODO: if flgDOS && flgROM && (pc < 0x4000) && flp->virt -> flgVDOS = 1  <- check this
 int evoInBDI(Computer* comp, int port) {
 	int res = -1;
 	difIn(comp->dif, port, &res, 1);

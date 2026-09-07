@@ -496,8 +496,6 @@ void compReset(Computer* comp,int res) {
 
 void comp_update_timings(Computer* comp) {
 	comp->nsPerTick = 1e3 / comp->cpuFrq;
-	if (comp->hw->init)
-		comp->hw->init(comp);
 	comp->nsPerTick /= comp->frqMul;
 }
 
@@ -540,6 +538,8 @@ int compSetHardware(Computer* comp, const char* name) {
 	comp->tape->xen = 0;
 	mem_set_bus(comp->mem, hw->adrbus);
 	compSetBaseFrq(comp, 0);	// recalculations
+	if (comp->hw->init)
+		comp->hw->init(comp);
 	return 1;
 }
 
