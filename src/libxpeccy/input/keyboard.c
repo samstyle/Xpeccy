@@ -16,7 +16,6 @@ keyScan findKey(keyScan* tab, char key) {
 
 void key_press(Keyboard* kbd, keyScan* tab, int* mtrx, unsigned char ch) {
 	if (!ch) return;
-//	printf("kbd_press_key %c\n", ch);
 	keyScan key = findKey(tab, ch & 0x7f);
 	key.row &= 0x0f;
 	kbd->row = key.row;
@@ -40,16 +39,14 @@ void key_press_seq(Keyboard* kbd, keyScan* tab, int* mtrx, unsigned char* xk) {
 }
 
 void key_release(Keyboard* kbd, keyScan* tab, int* mtrx, unsigned char ch) {
-//	if (ch) printf("kbd_release_key %c\n", ch);
 	keyScan key = findKey(tab, ch & 0x7f);
 	key.row &= 0x0f;
 	for (int i = 0; i < 16; i++) {
 		if (key.mask & (1 << i)) {
 			if (kbd->matrix[key.row][i] > 0)
 				kbd->matrix[key.row][i]--;
-			if (kbd->matrix[key.row][i] == 0) {
+			if (kbd->matrix[key.row][i] == 0)
 				mtrx[key.row] |= key.mask;
-			}
 		}
 	}
 }
@@ -114,13 +111,19 @@ int kbdScanZX(Keyboard* kbd, int port) {
 // profi = zx + ext.keys
 
 void kbd_prf_press(Keyboard* kbd, keyEntry* ent) {
-	key_press_seq(kbd, keyTab, kbd->extMap, ent->extKey);
-	key_press_seq(kbd, keyTab, kbd->map, ent->zxKey);
+	if (ent->extKey[0]) {
+		key_press_seq(kbd, keyTab, kbd->extMap, ent->extKey);
+	} else {
+		key_press_seq(kbd, keyTab, kbd->map, ent->zxKey);
+	}
 }
 
 void kbd_prf_release(Keyboard* kbd, keyEntry* ent) {
-	key_release_seq(kbd, keyTab, kbd->extMap, ent->extKey);
-	key_release_seq(kbd, keyTab, kbd->map, ent->zxKey);
+	if (ent->extKey[0]) {
+		key_release_seq(kbd, keyTab, kbd->extMap, ent->extKey);
+	} else {
+		key_release_seq(kbd, keyTab, kbd->map, ent->zxKey);
+	}
 }
 
 int kbdScanProfi(Keyboard* kbd, int port) {
