@@ -820,7 +820,7 @@ static fdcCall uFormat[] = {&uwargs,&utrkfrm00,&utrkfrm01,&utrkfrm02,&utrkfrm03,
 // invalid op : R [SR0 = 0x80]
 
 void uinv00(FDC* fdc) {
-	fdc->sr0 = 0x80;
+	fdc->sr0 = 0x80;		// 0x80 for 765a, 0x90 for 765b
 	fdc->resBuf[0] = fdc->sr0;
 	uResp(fdc, 1, 0);
 	fdc->pos++;
@@ -968,6 +968,7 @@ void uReset(FDC* fdc) {
 	fdc->hut = 0;
 	fdc->resCnt = 0;
 	fdc->resPos = 0;
+	fdc->seekend = 0;
 	// TODO:check this
 	fdc->intr = 0;		// ibm bios want interrupt after reset
 	uInt(fdc);

@@ -106,13 +106,13 @@ void i286_int_real(CPU* cpu, int vec) {
 void i286_int_prt(CPU* cpu, int vec) {
 	if (cpu->idtr.limit < (vec & 0xfff8)) {		// check idtr limit
 		x86_exception(cpu, I286_INT_GP, cpu->idtr.idx);
-	} else if (cpu->flgI) {
+	} else /*if (cpu->flgI)*/ {			// NOTE: I flag doesn't affect internal interrupts (int N, exceptions etc), already checked for external interrupts
 		if (cpu->flgHALT) {
 			cpu->flgHALT = 0;
 			cpu->regIP++;
 		}
-		PAIR(w,h,l)seg;
-		PAIR(w,h,l)off;
+		xreg16 seg;
+		xreg16 off;
 		int adr = cpu->idtr.base + (vec << 3);	// 8 bytes/entry
 		cpu->gate = i286_cash_seg_a(cpu, adr);	// get gate descriptor inside IDT
 		cpu->gate.idx = vec;
@@ -190,7 +190,7 @@ void i286_ext_int(CPU* cpu) {
 		cpu->inten |= I286_BLK_NMI;				// NMI is blocking until RETI, but next NMI will be remembered until then
 		cpu->intrq &= ~I286_NMI;
 		i286_interrupt(cpu, I286_INT_NMI);
-	} else 	if (cpu->flgI) {
+	} else if (cpu->flgI) {
 		cpu->intrq &= ~I286_INT;
 		cpu->intvec = cpu->xack(cpu->xptr);
 		i286_interrupt(cpu, cpu->intvec);
@@ -524,9 +524,13 @@ int x86_get_bx(CPU* cpu) {return cpu->regBX;}
 int x86_get_cx(CPU* cpu) {return cpu->regCX;}
 int x86_get_dx(CPU* cpu) {return cpu->regDX;}
 int x86_get_cs(CPU* cpu) {return cpu->cs.idx;}
+int x86_get_cs_base(CPU* cpu) {return cpu->cs.base;}
 int x86_get_ss(CPU* cpu) {return cpu->ss.idx;}
+int x86_get_ss_base(CPU* cpu) {return cpu->ss.base;}
 int x86_get_ds(CPU* cpu) {return cpu->ds.idx;}
+int x86_get_ds_base(CPU* cpu) {return cpu->ds.base;}
 int x86_get_es(CPU* cpu) {return cpu->es.idx;}
+int x86_get_es_base(CPU* cpu) {return cpu->es.base;}
 int x86_get_msw(CPU* cpu) {return cpu->regMSW;}
 int x86_get_ldtr(CPU* cpu) {return cpu->ldtr.base;}
 int x86_get_gdtr(CPU* cpu) {return cpu->gdtr.base;}
@@ -543,10 +547,10 @@ xRegDsc i286RegTab[] = {
 	{I286_BX, "BX", REG_WORD, REG_RDMP, x86_get_bx, x86_set_bx},
 	{I286_CX, "CX", REG_WORD, REG_RDMP, x86_get_cx, x86_set_cx},
 	{I286_DX, "DX", REG_WORD, REG_RDMP, x86_get_dx, x86_set_dx},
-	{I286_CS, "CS", REG_WORD, REG_SEG | REG_CS, x86_get_cs, x86_set_cs},
-	{I286_SS, "SS", REG_WORD, REG_SEG, x86_get_ss, x86_set_ss},
-	{I286_DS, "DS", REG_WORD, REG_SEG, x86_get_ds, x86_set_ds},
-	{I286_ES, "ES", REG_WORD, REG_SEG, x86_get_es, x86_set_es},
+	{I286_CS, "CS", REG_WORD, REG_SEG | REG_CS, x86_get_cs, x86_set_cs, x86_get_cs_base},
+	{I286_SS, "SS", REG_WORD, REG_SEG, x86_get_ss, x86_set_ss, x86_get_ss_base},
+	{I286_DS, "DS", REG_WORD, REG_SEG, x86_get_ds, x86_set_ds, x86_get_ds_base},
+	{I286_ES, "ES", REG_WORD, REG_SEG, x86_get_es, x86_set_es, x86_get_es_base},
 	{I286_MSW, "MSW", REG_WORD, REG_RO, x86_get_msw, x86_set_msw},
 	{I286_LDT, "LDT", REG_24, REG_RO, x86_get_ldtr, NULL},
 	{I286_GDT, "GDT", REG_24, REG_RO, x86_get_gdtr, NULL},
@@ -566,10 +570,10 @@ xRegDsc i086RegTab[] = {
 	{I286_BX, "BX", REG_WORD, REG_RDMP, x86_get_bx, x86_set_bx},
 	{I286_CX, "CX", REG_WORD, REG_RDMP, x86_get_cx, x86_set_cx},
 	{I286_DX, "DX", REG_WORD, REG_RDMP, x86_get_dx, x86_set_dx},
-	{I286_CS, "CS", REG_WORD, REG_SEG | REG_CS, x86_get_cs, x86_set_cs},
-	{I286_SS, "SS", REG_WORD, REG_SEG, x86_get_ss, x86_set_ss},
-	{I286_DS, "DS", REG_WORD, REG_SEG, x86_get_ds, x86_set_ds},
-	{I286_ES, "ES", REG_WORD, REG_SEG, x86_get_es, x86_set_es},
+	{I286_CS, "CS", REG_WORD, REG_SEG | REG_CS, x86_get_cs, x86_set_cs, x86_get_cs_base},
+	{I286_SS, "SS", REG_WORD, REG_SEG, x86_get_ss, x86_set_ss, x86_get_ss_base},
+	{I286_DS, "DS", REG_WORD, REG_SEG, x86_get_ds, x86_set_ds, x86_get_ds_base},
+	{I286_ES, "ES", REG_WORD, REG_SEG, x86_get_es, x86_set_es, x86_get_es_base},
 	{REG_EMPTY, "F", REG_WORD, REG_FLG, x86_get_flag, x86_set_flag},
 	{REG_EOT, "----ODITSZ-A-P-C", 0, 0}
 };

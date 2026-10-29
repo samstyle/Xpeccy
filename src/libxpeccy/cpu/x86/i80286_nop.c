@@ -179,7 +179,7 @@ unsigned char i286_fetch_prt(CPU* cpu) {
 		res = cpu_fetch(cpu, cpu->cs.base + cpu->regIP) & 0xff;
 		cpu->regIP++;
 	} else {
-		x86_exception(cpu, I286_INT_SL, 0);
+		x86_exception(cpu, I286_INT_SL, -1);
 	}
 	return res;
 }
@@ -191,7 +191,7 @@ unsigned char i286_mrd_prt(CPU* cpu, xSegPtr seg, int rpl, unsigned short adr) {
 		if (i286_check_segment_limit(cpu, &seg, adr)) {
 			res = cpu_fetch(cpu, seg.base + adr) & 0xff;
 		} else {
-			x86_exception(cpu, I286_INT_SL, 0);
+			x86_exception(cpu, I286_INT_SL, -1);
 		}
 	} else {
 		x86_exception(cpu, I286_INT_GP, seg.idx);
@@ -206,7 +206,7 @@ void i286_mwr_prt(CPU* cpu, xSegPtr seg, int rpl, unsigned short adr, int val) {
 			cpu_mwr(cpu, seg.base + adr, val);
 		} else {
 			cpu->regIP = cpu->oldpc;
-			x86_exception(cpu, I286_INT_SL, 0);
+			x86_exception(cpu, I286_INT_SL, -1);
 		}
 	} else {
 		x86_exception(cpu, I286_INT_GP, seg.idx);
@@ -263,7 +263,7 @@ unsigned short i286_rd_immw(CPU* cpu) {
 // by address of descriptor in memory
 xSegPtr i286_cash_seg_a(CPU* cpu, int adr) {
 	xSegPtr p;
-	PAIR(w,h,l)off;
+	xreg16 off;
 	unsigned short tmp;
 	off.l = cpu_mrd(cpu, adr++);	// limit:16
 	off.h = cpu_mrd(cpu, adr++);
@@ -272,24 +272,24 @@ xSegPtr i286_cash_seg_a(CPU* cpu, int adr) {
 	off.h = cpu_mrd(cpu, adr++);
 	tmp = cpu_mrd(cpu, adr++);
 	p.base = (tmp << 16) | off.w;
-	tmp = cpu_mrd(cpu, adr);	// flags:8
-	p.ar = tmp & 0x1f;
-	p.pl = (tmp >> 5) & 3;
-	p.pr = !!(tmp & 0x80);
-	p.sys = !(tmp & 0x10);
-	p.code = !!((tmp & 0x18) == 0x18);
-	p.data = !!((tmp & 0x18) == 0x10);
-	p.ext = !!(tmp & 4);
+	p.flag = cpu_mrd(cpu, adr);	// flags:8
+	p.ar = p.flag & 0x1f;
+	p.pl = (p.flag >> 5) & 3;
+	p.pr = !!(p.flag & 0x80);
+	p.sys = !(p.flag & 0x10);
+	p.code = !!((p.flag & 0x18) == 0x18);
+	p.data = !!((p.flag & 0x18) == 0x10);
+	p.ext = !!(p.flag & 4);
 	if (p.sys) {
 		p.ext = 0;
 		p.rd = 1;
 		p.wr = 1;
 	} else if (p.code) {
 		p.wr = 0;
-		p.rd = !!(tmp & 2);
+		p.rd = !!(p.flag & 2);
 	} else if (p.data) {
 		p.rd = 1;
-		p.wr = !!(tmp & 2);
+		p.wr = !!(p.flag & 2);
 	}
 	return p;
 }
@@ -316,9 +316,13 @@ xSegPtr i286_cash_seg(CPU* cpu, unsigned short val) {
 			p = i286_cash_seg_a(cpu, adr);
 		}
 	} else {
-		//p.flag = 0xf2;		// present, dpl=3, segment, data, writeable
 		p.base = val << 4;
 		p.limit = 0xffff;
+		p.pr = 1;
+		p.data = 1;
+		p.code = 1;
+		p.rd = 1;
+		p.wr = 1;
 	}
 	p.idx = val;
 	return p;
@@ -1421,20 +1425,32 @@ void i286_op62(CPU* cpu) {
 	if (cpu->ea.reg) {	// interrupts. TODO: fix for protected mode
 		x86_exception(cpu, I286_INT_UD, 0);		// bad mod
 	} else if ((signed short)cpu->twrd < (signed short)cpu->tmpw) {	// not in bounds: INT5
-		x86_exception(cpu, I286_INT_BR, 0);
+		x86_exception(cpu, I286_INT_BR, -1);
 	} else {
 		cpu->ltw = i286_mrd(cpu, cpu->ea.seg, 1, cpu->ea.adr + 2);
 		cpu->htw = i286_mrd(cpu, cpu->ea.seg, 1, cpu->ea.adr + 3);
 		if ((signed short)cpu->twrd > (signed short)cpu->tmpw) {
-			x86_exception(cpu, I286_INT_BR, 0);
+			x86_exception(cpu, I286_INT_BR, -1);
 		}
 	}
 }
 
 // 63,mod: arpl ew,rw		adjust RPL of EW not less than RPL of RW
 void i286_op63(CPU* cpu) {
-	x86_exception(cpu, I286_INT_UD, 0);	// real mode
-	// TODO: protected mode
+	if (cpu->regMSW & I286_FPE) {
+		i286_rd_ea(cpu, 1);	// tmpw = ew, twrd = rw
+		if ((cpu->tmpw & 3) < (cpu->twrd & 3)) {
+			cpu->flgZ = 1;
+			cpu->tmpw &= ~3;
+			cpu->tmpw |= (cpu->twrd & 3);
+			i286_wr_ea(cpu, cpu->tmpw, 1);
+		} else {
+			cpu->flgZ = 0;
+		}
+		// TODO: protected mode
+	} else {
+		x86_exception(cpu, I286_INT_UD, -1);	// real mode
+	}
 }
 
 // 64: repeat next cmps/scas cx times or cf=1
@@ -1720,11 +1736,37 @@ void i286_op8D(CPU* cpu) {
 // 8e,mod: mov [es,not cs,ss,ds],ew
 void i286_op8E(CPU* cpu) {
 	i286_rd_ea(cpu, 1);
+	xSegPtr s = i286_cash_seg(cpu, cpu->tmpw);
+	if (cpu->flgEXC) return;		// index out of bounds
 	switch((cpu->regMOD & 0x38) >> 3) {
-		case 0:	cpu->es = i286_cash_seg(cpu, cpu->tmpw); break;
+		case 0:
+			if (cpu->regMSW & I286_FPE) {
+				if (!s.pr) x86_exception(cpu, I286_INT_NP, cpu->tmpw);
+//				else if (!s.data || !s.rd) x86_exception(cpu, I286_INT_GP, cpu->tmpw);
+				else cpu->es = s;
+			} else {
+				cpu->es = s;
+			}
+			break;
 		case 1: break;
-		case 2: cpu->ss = i286_cash_seg(cpu, cpu->tmpw); break;
-		case 3: cpu->ds = i286_cash_seg(cpu, cpu->tmpw); break;
+		case 2:
+			if (cpu->regMSW & I286_FPE) {
+				if (!s.pr) x86_exception(cpu, I286_INT_SS, cpu->tmpw);
+//				else if (!s.data || !s.wr) x86_exception(cpu, I286_INT_GP, cpu->tmpw);
+				else cpu->ss = s;
+			} else {
+				cpu->ss = s;
+			}
+			break;
+		case 3:
+			if (cpu->regMSW & I286_FPE) {
+				if (!s.pr) x86_exception(cpu, I286_INT_NP, cpu->tmpw);
+//				else if (!s.data || !s.rd) x86_exception(cpu, I286_INT_GP, cpu->tmpw);
+				else cpu->ds = s;
+			} else {
+				cpu->ds = s;
+			}
+			break;
 	}
 }
 
@@ -2347,8 +2389,8 @@ void i286_opCF(CPU* cpu) {
 				}
 			}
 		} else {
-			unsigned short nip = i286_sys_mrdw(cpu, cpu->ss, 0);	// return ip
-			unsigned short ncs = i286_sys_mrdw(cpu, cpu->ss, 2);	// return cs selector
+			unsigned short nip = i286_sys_mrdw(cpu, cpu->ss, cpu->regSP);		// return ip
+			unsigned short ncs = i286_sys_mrdw(cpu, cpu->ss, cpu->regSP + 2);	// return cs selector
 			seg = i286_cash_seg(cpu, ncs);
 			if (((ncs >> 3) & 0x60) == cpu->cs.pl) {		// rpl = cpl: return at same PL
 				if ((ncs & 0xfff8) == 0) {
@@ -3047,30 +3089,30 @@ opCode x86_tab6B[4] = {
 
 opCode x86_tab6C[4] = {
 	{0, 1, i8086_nodef, NULL, "nodef"},
-	{OF_SKIPABLE, 1, i286_op6C, 0, ":Linsb [es::di]"},
-	{OF_SKIPABLE, 1, i286_op6C, 0, ":Linsb [es::di]"},
-	{OF_SKIPABLE, 1, i286_op6C, 0, ":Linsb [es::di]"}
+	{OF_SKIPABLE | OF_IO, 1, i286_op6C, 0, ":Linsb [es::di]"},
+	{OF_SKIPABLE | OF_IO, 1, i286_op6C, 0, ":Linsb [es::di]"},
+	{OF_SKIPABLE | OF_IO, 1, i286_op6C, 0, ":Linsb [es::di]"}
 };
 
 opCode x86_tab6D[4] = {
 	{0, 1, i8086_nodef, NULL, "nodef"},
-	{OF_SKIPABLE, 1, i286_op6D, 0, ":Linsw [es::di]"},
-	{OF_SKIPABLE, 1, i286_op6D, 0, ":Linsw [es::di]"},
-	{OF_SKIPABLE, 1, i286_op6D, 0, ":Linsw [es::di]"}
+	{OF_SKIPABLE | OF_IO | OF_WORD, 1, i286_op6D, 0, ":Linsw [es::di]"},
+	{OF_SKIPABLE | OF_IO | OF_WORD, 1, i286_op6D, 0, ":Linsw [es::di]"},
+	{OF_SKIPABLE | OF_IO | OF_WORD, 1, i286_op6D, 0, ":Linsw [es::di]"}
 };
 
 opCode x86_tab6E[4] = {
 	{0, 1, i8086_nodef, NULL, "nodef"},
-	{OF_SKIPABLE, 1, i286_op6E, 0, ":Loutsb [:D::si]"},
-	{OF_SKIPABLE, 1, i286_op6E, 0, ":Loutsb [:D::si]"},
-	{OF_SKIPABLE, 1, i286_op6E, 0, ":Loutsb [:D::si]"}
+	{OF_SKIPABLE | OF_IO, 1, i286_op6E, 0, ":Loutsb [:D::si]"},
+	{OF_SKIPABLE | OF_IO, 1, i286_op6E, 0, ":Loutsb [:D::si]"},
+	{OF_SKIPABLE | OF_IO, 1, i286_op6E, 0, ":Loutsb [:D::si]"}
 };
 
 opCode x86_tab6F[4] = {
 	{0, 1, i8086_nodef, NULL, "nodef"},
-	{OF_SKIPABLE, 1, i286_op6F, 0, ":Loutsw [:D::si]"},
-	{OF_SKIPABLE, 1, i286_op6F, 0, ":Loutsw [:D::si]"},
-	{OF_SKIPABLE, 1, i286_op6F, 0, ":Loutsw [:D::si]"}
+	{OF_SKIPABLE | OF_IO | OF_WORD, 1, i286_op6F, 0, ":Loutsw [:D::si]"},
+	{OF_SKIPABLE | OF_IO | OF_WORD, 1, i286_op6F, 0, ":Loutsw [:D::si]"},
+	{OF_SKIPABLE | OF_IO | OF_WORD, 1, i286_op6F, 0, ":Loutsw [:D::si]"}
 };
 
 // i8086 Cx is not fully decoded (C0=C2, C1=C3 etc)
@@ -3228,10 +3270,10 @@ opCode i80286_tab[256] = {
 	{OF_MODRM | OF_WORD | OF_GEN, 1, i286_op69, x86_tab69, "imul :r,:e,:2"},	// 1+
 	{OF_GEN, 1, i286_op6A, x86_tab6A, "push :1"},			// 1+
 	{OF_MODRM | OF_WORD | OF_GEN, 1, i286_op6B, x86_tab6B, "imul :r,:e,:1"},	// 1+
-	{OF_SKIPABLE | OF_GEN, 1, i286_op6C, x86_tab6C, ":Linsb [es::di]"},	// 1+
-	{OF_SKIPABLE | OF_GEN, 1, i286_op6D, x86_tab6D, ":Linsw [es::di]"},	// 1+
-	{OF_SKIPABLE | OF_GEN, 1, i286_op6E, x86_tab6E, ":Loutsb [:D::si]"},	// 1+
-	{OF_SKIPABLE | OF_GEN, 1, i286_op6F, x86_tab6F, ":Loutsw [:D::si]"},	// 1+
+	{OF_SKIPABLE | OF_GEN | OF_IO, 1, i286_op6C, x86_tab6C, ":Linsb [es::di]"},	// 1+
+	{OF_SKIPABLE | OF_GEN | OF_IO, 1, i286_op6D, x86_tab6D, ":Linsw [es::di]"},	// 1+
+	{OF_SKIPABLE | OF_GEN | OF_IO, 1, i286_op6E, x86_tab6E, ":Loutsb [:D::si]"},	// 1+
+	{OF_SKIPABLE | OF_GEN | OF_IO, 1, i286_op6F, x86_tab6F, ":Loutsw [:D::si]"},	// 1+
 	{0, 1, i286_op70, 0, "jo :3"},
 	{0, 1, i286_op71, 0, "jno :3"},
 	{0, 1, i286_op72, 0, "jc :3"},		// jb, jnae
@@ -3348,18 +3390,18 @@ opCode i80286_tab[256] = {
 	{0, 1, i286_opE1, 0, "loopz :3"},
 	{0, 1, i286_opE2, 0, "loop :3"},
 	{0, 1, i286_opE3, 0, "jcxz :3"},
-	{0, 1, i286_opE4, 0, "in al,:1"},
-	{0, 1, i286_opE5, 0, "in ax,:1"},
-	{0, 1, i286_opE6, 0, "out :1,al"},
-	{0, 1, i286_opE7, 0, "out :1,ax"},
+	{OF_IO, 1, i286_opE4, 0, "in al,:1"},
+	{OF_IO, 1, i286_opE5, 0, "in ax,:1"},
+	{OF_IO, 1, i286_opE6, 0, "out :1,al"},
+	{OF_IO | OF_WORD, 1, i286_opE7, 0, "out :1,ax"},
 	{OF_SKIPABLE, 1, i286_opE8, 0, "call :n"},		// :n = near, 2byte offset
 	{0, 1, i286_opE9, 0, "jmp :n"},			// jmp near
 	{0, 1, i286_opEA, 0, "jmpf :p"},		// jmp far
 	{0, 1, i286_opEB, 0, "jmp :3"},			// jmp short
-	{0, 1, i286_opEC, 0, "in al,dx"},
-	{0, 1, i286_opED, 0, "in ax,dx"},
-	{0, 1, i286_opEE, 0, "out dx,al"},
-	{0, 1, i286_opEF, 0, "out dx,ax"},
+	{OF_IO, 1, i286_opEC, 0, "in al,dx"},
+	{OF_IO, 1, i286_opED, 0, "in ax,dx"},
+	{OF_IO, 1, i286_opEE, 0, "out dx,al"},
+	{OF_IO | OF_WORD, 1, i286_opEF, 0, "out dx,ax"},
 	{OF_PREFIX, 1, i286_opF0, 0, "lock"},
 	{0, 1, i286_opF1, 0, "undef"},
 	{OF_PREFIX, 1, i286_opF2, 0, "repnz"},

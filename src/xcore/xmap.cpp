@@ -133,7 +133,6 @@ void load_xmap(QString path) {
 					qb.close();
 				} else {
 					file.seek(file.pos() + len);
-					//file.skip(len);
 				}
 			}
 			brkInstallAll();

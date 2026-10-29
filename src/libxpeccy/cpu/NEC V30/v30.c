@@ -415,9 +415,13 @@ int v30_get_iy(CPU* cpu) {return cpu->regIY;}
 int v30_get_sp(CPU* cpu) {return cpu->regSP;}
 int v30_get_bp(CPU* cpu) {return cpu->regBP;}
 int v30_get_ps(CPU* cpu) {return cpu->regPS;}
+int v30_get_ps_base(CPU* cpu) {return cpu->regPS << 4;}
 int v30_get_ss(CPU* cpu) {return cpu->regSS;}
+int v30_get_ss_base(CPU* cpu) {return cpu->regSS << 4;}
 int v30_get_ds0(CPU* cpu) {return cpu->regDS0;}
+int v30_get_ds0_base(CPU* cpu) {return cpu->regDS0 << 4;}
 int v30_get_ds1(CPU* cpu) {return cpu->regDS1;}
+int v30_get_ds1_base(CPU* cpu) {return cpu->regDS1 << 4;}
 
 xRegDsc v30_regtab[] = {
 	{V30_REG_PC, "PC", REG_WORD, REG_RDMP | REG_PC, v30_get_pc, v30_set_pc},
@@ -429,10 +433,10 @@ xRegDsc v30_regtab[] = {
 	{V30_REG_IY, "IY", REG_WORD, REG_RDMP, v30_get_iy, v30_set_iy},
 	{V30_REG_SP, "SP", REG_WORD, REG_RDMP | REG_SP, v30_get_sp, v30_set_sp},
 	{V30_REG_BP, "BP", REG_WORD, REG_RDMP, v30_get_bp, v30_set_bp},
-	{V30_SEG_PS, "PS", REG_WORD, REG_SEG | REG_CS, v30_get_ps, v30_set_ps},
-	{V30_SEG_SS, "SS", REG_WORD, REG_SEG, v30_get_ss, v30_set_ss},
-	{V30_SEG_DS0, "DS0", REG_WORD, REG_SEG, v30_get_ds0, v30_set_ds0},
-	{V30_SEG_DS1, "DS1", REG_WORD, REG_SEG, v30_get_ds1, v30_set_ds1},
+	{V30_SEG_PS, "PS", REG_WORD, REG_SEG | REG_CS, v30_get_ps, v30_set_ps, v30_get_ps_base},
+	{V30_SEG_SS, "SS", REG_WORD, REG_SEG, v30_get_ss, v30_set_ss, v30_get_ss_base},
+	{V30_SEG_DS0, "DS0", REG_WORD, REG_SEG, v30_get_ds0, v30_set_ds0, v30_get_ds0_base},
+	{V30_SEG_DS1, "DS1", REG_WORD, REG_SEG, v30_get_ds1, v30_set_ds1, v30_get_ds1_base},
 	{REG_EMPTY, "F", REG_WORD, REG_FLG, v30_getflag, v30_setflag},
 	{REG_EOT, "M---VDIBSZ-A-P-C", 0, 0, NULL, NULL}
 };

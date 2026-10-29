@@ -186,12 +186,14 @@ void dasmwr(Computer* comp, int adr, int bt) {
 }
 
 void placeLabel(Computer* comp, dasmData& drow) {
+	if (drow.oadr < 0) return;
 	int shift = 0;
 	int work = 1;
 	QString lab;
 	QString num;
 	xMnem mn;
 	xAdr xadr;
+	int radr = (drow.oadr - comp->cpu->cs.base) & comp->cpu->busmask;	// relative address inside CS segment to replace near/short addressation
 	while (work && (shift < 8)) {
 		xadr = mem_get_xadr(comp->mem, drow.oadr - shift);
 		lab = find_label(xadr);
@@ -209,10 +211,10 @@ void placeLabel(Computer* comp, dasmData& drow) {
 			if (shift < mn.len) {
 				switch(comp->hw->base) {
 					case 8:
-						num = getoctword(drow.oadr);
+						num = getoctword(radr);
 						break;
 					default:
-						num = gethexword(drow.oadr).prepend("#").toUpper();
+						num = gethexword(radr).prepend("#").toUpper();
 						break;
 				}
 				if (shift == 0) {
@@ -531,17 +533,21 @@ int getPrevAdr(Computer* comp, int adr) {
 
 int adr_of_reg(CPU* cpu, bool* flag, QString nam) {
 	xRegBunch bch = cpuGetRegs(cpu);
-	int i = 0;
 	int res;
 	nam = nam.toUpper();
-	while ((bch.regs[i].id != REG_EOT) && (QString(bch.regs[i].name).toUpper() != nam))
-		i++;
-	if (bch.regs[i].id == REG_EOT) {
+	xRegister* cr = bch.regs;
+	while ((cr->id != REG_EOT) && (QString(cr->name).toUpper() != nam))
+		cr++;
+	if (cr->id == REG_EOT) {
 		*flag = false;
 		res = 0;
 	} else {
 		*flag = true;
-		res = bch.regs[i].value;
+		if (cr->flag & REG_SEG) {
+			res = cr->base;
+		} else {
+			res = cr->value;
+		}
 	}
 	return res;
 }
@@ -554,10 +560,10 @@ int str_to_adr(Computer* comp, QString str) {
 	int seg;
 	if (str.startsWith(".")) {			// .REG : name of CPU register
 		adr = adr_of_reg(comp->cpu, &flag, str.mid(1));
-	} else if (str.contains(":")) {			// seg:adr (for real mode)
+	} else if (str.contains(":")) {			// seg:adr (=seg.base+adr)
 		lst = str.split(":",X_SkipEmptyParts);
 		if (lst.size() == 2) {
-			off = lst[1].toInt(&flag,16);
+			off = lst[1].toInt(&flag,16);	// offset
 			if (!flag) {
 				off = adr_of_reg(comp->cpu, &flag, lst[1]);
 			}
@@ -566,9 +572,9 @@ int str_to_adr(Computer* comp, QString str) {
 				if (flag) {
 					adr = (seg << 4) + off;
 				} else {
-					seg = adr_of_reg(comp->cpu, &flag, lst[0]);
+					seg = adr_of_reg(comp->cpu, &flag, lst[0]);	// return base for segment registers
 					if (flag) {
-						adr = (seg << 4) + off;
+						adr = seg + off;
 					}
 				}
 			}

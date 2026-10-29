@@ -111,27 +111,37 @@ int kbdScanZX(Keyboard* kbd, int port) {
 // profi = zx + ext.keys
 
 void kbd_prf_press(Keyboard* kbd, keyEntry* ent) {
+#if 1
+	key_press_seq(kbd, keyTab, kbd->map, ent->extKey);
+	key_press_seq(kbd, keyTab, kbd->map, ent->zxKey);
+#else
 	if (ent->extKey[0]) {
 		key_press_seq(kbd, keyTab, kbd->extMap, ent->extKey);
 	} else {
 		key_press_seq(kbd, keyTab, kbd->map, ent->zxKey);
 	}
+#endif
 }
 
 void kbd_prf_release(Keyboard* kbd, keyEntry* ent) {
+#if 1
+	key_release_seq(kbd, keyTab, kbd->map, ent->extKey);
+	key_release_seq(kbd, keyTab, kbd->map, ent->zxKey);
+#else
 	if (ent->extKey[0]) {
 		key_release_seq(kbd, keyTab, kbd->extMap, ent->extKey);
 	} else {
 		key_release_seq(kbd, keyTab, kbd->map, ent->zxKey);
 	}
+#endif
 }
 
 int kbdScanProfi(Keyboard* kbd, int port) {
 	int res = 0x3f;
 	for (int i = 0; i < 8; i++) {
 		if (!(port & 0x8000)) {
-			res &= kbd->extMap[i];
-			res &= (kbd->map[i] | 0x20);
+			// res &= kbd->extMap[i];
+			res &= (kbd->map[i]/* | 0x20*/);
 		}
 		port <<= 1;
 	}
@@ -499,8 +509,6 @@ int xt_read(Keyboard* kbd) {
 	return res;
 }
 
-// bk (!)
-
 // peka common
 
 unsigned long add_msb(unsigned long code, unsigned long bt) {
@@ -667,7 +675,7 @@ void kbdReleaseAll(Keyboard* kbd) {
 	int i;
 	for (i = 0; i < 8; i++) {
 		kbd->map[i] = -1;
-		kbd->extMap[i] = -1;
+//		kbd->extMap[i] = -1;
 		kbd->msxMap[i] = -1;
 		kbd->msxMap[i + 8] = -1;
 	}
@@ -693,8 +701,16 @@ void kbdTrigger(Keyboard* kbd, keyEntry* ent) {
 			key_trigger_seq(kbd, keyTab, kbd->map, ent->zxKey);
 			break;
 		case KBD_PROFI:
-			key_trigger_seq(kbd, keyTab, kbd->extMap, ent->extKey);
+#if 1
+			key_trigger_seq(kbd, keyTab, kbd->map, ent->extKey);
 			key_trigger_seq(kbd, keyTab, kbd->map, ent->zxKey);
+#else
+			if (ent->extKey[0]) {
+				key_trigger_seq(kbd, keyTab, kbd->extMap, ent->extKey);
+			} else {
+				key_trigger_seq(kbd, keyTab, kbd->map, ent->zxKey);
+			}
+#endif
 			break;
 		case KBD_MSX:
 			key_trigger_seq(kbd, msxKeyTab, kbd->msxMap, ent->msxKey);

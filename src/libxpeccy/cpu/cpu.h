@@ -71,6 +71,7 @@ typedef struct {
 	int flag;
 	int(*get)(CPU*);
 	void(*set)(CPU*,int);
+	int(*base)(CPU*);
 } xRegDsc;
 
 // memrq rd
@@ -99,6 +100,7 @@ typedef int(*cbdmr)(int, void*);
 #define OF_COMEXT	(1<<9)		// mod r/m contains command extension bits
 #define OF_MODCOM	(OF_MODRM | OF_COMEXT)
 #define OF_GEN		(1<<10)		// opcode depends on cpu generation (86/186/286 or vm1/vm2) op->tab is sub-table[cpu->gen]
+#define OF_IO		(1<<11)		// i/o r/w operation
 
 typedef struct opCode opCode;
 
@@ -140,7 +142,8 @@ typedef struct {
 	unsigned sys:1;			// !(ar & 0x10)
 	unsigned code:1;		// ar & 0x18 = 0x18
 	unsigned data:1;		// ar & 0x18 = 0x10
-	int base;		// segment base addr
+	int flag;			// flag as it is in descriptor
+	int base;			// segment base addr
 	int limit;			// segment size in bytes
 } xSegPtr;				// aka segment table descriptor
 

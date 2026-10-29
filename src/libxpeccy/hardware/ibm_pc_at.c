@@ -600,8 +600,6 @@ void ibm_init(Computer* comp) {
 //	ps2c_set_dev(comp->ps2c, 1, ibm_mou_rd, ibm_mou_wr, comp->mouse);
 }
 
-void dma_ch_transfer(DMAChan*, void*);
-
 void ibm_irq(Computer* comp, int t) {
 	switch(t) {
 		case IRQ_FDC: pic_int(comp->mpic, 6); break;						// fdc interrupt (drq | rdy changing)

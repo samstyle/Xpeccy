@@ -35,6 +35,13 @@ enum {
 	IDE_ATAPI
 };
 
+enum {
+	FS_UNKNOWN = 0,
+	FS_MBR,
+	FS_FAT16,
+	FS_FAT32
+};
+
 #define HDD_BUFSIZE	512
 
 // hdd port = 0.0.0.0.0.0.CS1.CS0.1.1.1.1.1.HS2.HS1.HS0
@@ -92,6 +99,17 @@ typedef struct {
 	char mcver[8];		// firmware version
 	char model[40];		// model
 } ATAPassport;
+
+typedef struct {
+	int fatType;	// 16 or 32
+	int prtStart;	// 1st sector of partition, all below is relative to this nr
+	int fatStart;	// sector nr
+	int fatSize;	// in sectors
+	int fatCopies;	// number of fats
+	int clstSize;	// sectors in cluster
+	int dataStart;	// sector nr of cluster 0
+	int rootClst;	// root dir cluster
+} fatParam;
 
 typedef struct {
 	unsigned idle:1;

@@ -73,20 +73,7 @@ void ataReset(ATADev* ata) {
 }
 
 void ataClearBuf(ATADev* dev) {
-	int i;
-	for (i = 0; i < HDD_BUFSIZE; i++) {
-		dev->buf.data[i] = 0x00;
-	}
-}
-
-void ataRefresh(ATADev* dev) {
-//	if (dev->hasLBA) {
-//		dev->pass.spt = 64;
-//		dev->pass.hds = 16;
-//	} else {
-//		dev->maxlba = dev->pass.cyls * dev->pass.hds * dev->pass.spt;
-//	}
-//	dev->pass.bpt = dev->pass.bps * dev->pass.spt;
+	memset(dev->buf.data, 0x00, HDD_BUFSIZE);
 }
 
 void ataSetSector(ATADev* dev, int nr) {
@@ -121,20 +108,30 @@ void ataSetLBA(ATADev* dev) {
 	}
 }
 
+void ata_rd_sector(FILE* file, int nr, int sz, int off, char* buf) {
+	if (file) {
+		fseek(file, nr * sz + off, SEEK_SET);
+		fread(buf, sz, 1, file);
+	} else {
+		memset(buf, 0x00, sz);
+	}
+}
+
 void ataReadSector(ATADev* dev) {
-	long nps;
+//	long nps;
 	ataSetLBA(dev);
 	if (dev->lba >= dev->maxlba) {					// sector not found
 		dev->reg.state |= HDF_ERR;
 		dev->reg.err |= (HDF_ABRT | HDF_IDNF);
 	} else {
-		if (dev->file) {
-			nps = dev->lba * dev->pass.bps + dev->offset;
-			fseek(dev->file,nps,SEEK_SET);			// if filesize < nps, there will be 0xFF in buf
-			fread((char*)dev->buf.data,dev->pass.bps,1,dev->file);
-		} else {
-			ataClearBuf(dev);
-		}
+		ata_rd_sector(dev->file, dev->lba, dev->pass.bps, dev->offset, (char*)dev->buf.data);
+	}
+}
+
+void ata_wr_sector(FILE* file, int nr, int sz, int off, char* buf) {
+	if (file) {
+		fseek(file, nr * sz + off, SEEK_SET);
+		fwrite(buf, sz, 1, file);
 	}
 }
 
@@ -144,11 +141,7 @@ void ataWriteSector(ATADev* dev) {
 		dev->reg.state |= HDF_ERR;
 		dev->reg.err |= (HDF_ABRT | HDF_IDNF);
 	} else {
-		if (dev->file) {
-			long pos = dev->lba * dev->pass.bps + dev->offset;
-			fseek(dev->file, pos, SEEK_SET);
-			fwrite((char*)dev->buf.data, dev->pass.bps, 1, dev->file);
-		}
+		ata_wr_sector(dev->file, dev->lba, dev->pass.bps, dev->offset, (char*)dev->buf.data);
 	}
 }
 
@@ -584,9 +577,158 @@ ATAPassport ideGetPassport(IDE* ide, int iface) {
 	return res;
 }
 
-// IDE controller
+// FAT 16/32 operations
 
-// SMUC: dos, a0=0,a1=a5=a7=a11=a12=1	xxx1 1xxx 1x1x xx10
+int get_partition_type(ATADev* dev, int sn) {
+	int r = FS_UNKNOWN;
+	char buf[512];
+	ata_rd_sector(dev->file, sn, dev->pass.bps, dev->offset, buf);
+	if (!strncmp(buf + 0x52, "FAT16", 5)) {
+		r = FS_FAT16;
+	} else if (strncmp(buf + 0x52, "FAT32", 5)) {
+		r = FS_FAT32;
+	} else if ((buf[0x1fe] == 0x55) && (buf[0x1ff] == 0xaa)) {	// ???. MBR may be at sector 0 and at begin of extend partition
+		r = FS_MBR;
+	}
+	return r;
+}
+
+int buf_get_wrd(char* buf, int n) {
+	return (buf[n] & 0xff) | ((buf[n+1] & 0xff) << 8);
+}
+
+int buf_get_int(char* buf, int n) {
+	return (buf[n] & 0xff) | ((buf[n+1] & 0xff) << 8) | ((buf[n+2] & 0xff) << 16) | ((buf[n+3] & 0xff) << 24);
+}
+
+// sn - fat partition start sector
+fatParam get_fat_params(ATADev* dev, int sn) {
+	char buf[512];
+	fatParam p;
+	p.fatType = get_partition_type(dev, sn);
+	if ((p.fatType == FS_FAT16) || (p.fatType == FS_FAT32)) {
+		ata_rd_sector(dev->file, sn, 512, dev->offset, buf);
+		p.prtStart = sn;
+		p.clstSize = buf[0x0d] & 0xff;
+		p.fatStart = buf_get_wrd(buf, 0x0e);
+		p.fatCopies = buf[0x10] & 0xff;
+		p.fatSize = buf_get_int(buf, 0x24);
+		p.dataStart = p.fatStart + p.fatCopies * p.fatSize;
+		p.rootClst = buf_get_int(buf, 0x2c);
+	} else {
+		p.fatType = FS_UNKNOWN;
+	}
+	return p;
+}
+
+// return 1.. as 1st free cluster
+// return 0 if not found
+int get_free_cluster(ATADev* dev, fatParam* p) {
+	int pos = dev->offset + dev->pass.bps * (p->prtStart + p->fatStart);
+	int cnt = p->fatSize;
+	int r = 0;
+	int i = 0;
+	int n;
+	int(*foo)(FILE*);
+	switch(p->fatType) {
+		case FS_FAT16:
+			cnt <<= 8;		// 256 entries/sector, 2byte entries
+			foo = &fgetw;
+			break;
+		case FS_FAT32:
+			cnt <<= 7;		// 128 entries/sector, 4byte entries
+			foo = &fgeti;
+			break;
+		default: cnt = 0;
+	}
+	fseek(dev->file, pos, SEEK_SET);	// to start of fat (TODO: entry 0 must be skipped, but its not 0 anyway)
+	while (!r && (cnt > 0)) {
+		n = foo(dev->file);
+		if (n == 0) {
+			r = i;
+		}
+		i++;
+		cnt--;
+	}
+	return r;
+}
+
+// -1 -> end of chain
+// 0 -> error
+int get_next_cluster(ATADev* dev, fatParam* p, int n) {
+	int r = 0;
+	int pos = (p->prtStart + p->fatStart) * dev->pass.bps + dev->offset;
+	switch(p->fatType) {
+		case FS_FAT16:
+			fseek(dev->file, pos + n * 2, SEEK_SET);
+			r = fgetw(dev->file);
+			if (r > 0x0ff7) r = -1;
+			break;
+		case FS_FAT32:
+			fseek(dev->file, pos + n * 4, SEEK_SET);
+			r = fgeti(dev->file);
+			if (r > 0x0ffffff7) r = -1;
+			break;
+	}
+	return r;
+}
+
+void set_cluster(ATADev* dev, fatParam* p, int n, int v) {
+	int pos = (p->prtStart + p->fatStart) * dev->pass.bps + dev->offset;
+	switch(p->fatType) {
+		case FS_FAT16:
+			fseek(dev->file, pos + n * 2, SEEK_SET);
+			if (v < 0) v = 0x0ff8;
+			for (pos = 0; pos < p->fatCopies; p++) {
+				fputw(v, dev->file);
+				fseek(dev->file, p->fatSize * dev->pass.bps - 2, SEEK_CUR);
+			}
+			break;
+		case FS_FAT32:
+			fseek(dev->file, pos + n * 4, SEEK_SET);
+			if (v < 0) v = 0x0ffffff8;
+			for (pos = 0; pos < p->fatCopies; p++) {
+				fputi(v, dev->file);
+				fseek(dev->file, p->fatSize * dev->pass.bps - 4, SEEK_CUR);
+			}
+			break;
+	}
+}
+
+// cn - any cluster inside chain, end of chain will be found automaticly.
+// return 0 if no space
+// return new cluster nr on success
+int extend_chain(ATADev* dev, fatParam* p, int cn) {
+	int ln = cn;
+	// ln = last cluster of chain
+	do {
+		cn = get_next_cluster(dev, p, ln);
+		if (cn > 0) ln = cn;
+	} while (cn > 0);
+	// nn = free cluster nr
+	int nn = get_free_cluster(dev, p);
+	if (nn < 1) return 0;
+	// update fat(s)
+	set_cluster(dev, p, ln, nn);
+	set_cluster(dev, p, nn, -1);	// -1 means 'end of chain' mark
+	return nn;
+}
+
+void read_cluster(ATADev* dev, fatParam* p, int n, int max, char* buf) {
+	int sn = p->prtStart + p->dataStart + p->clstSize * n;
+	if (max < p->clstSize * dev->pass.bps) {
+		max = p->clstSize * dev->pass.bps;
+	}
+	ata_rd_sector(dev->file, sn, max, dev->offset, buf);
+}
+
+/*
+int create_file(ATADev* dev, fatParam* p, int dir, const char* name, const char* ext, int size, char* buf) {
+	return 0;
+}
+*/
+
+// IDE controller
 
 // dummy
 
@@ -715,6 +857,7 @@ ataAddr ide_nemoa8_decode(int port, int dosen, int wr) {
 }
 
 // smuc
+// SMUC: dos, a0=0,a1=a5=a7=a11=a12=1	xxx1 1xxx 1x1x xx10
 
 ataAddr ide_smuc_decode(int port, int dosen, int wr) {
 	ataAddr res;
@@ -775,10 +918,8 @@ void ide_smuc_wr(IDE* ide, ataAddr adr, int val) {
 			case 0xdfba:			// cmos
 				if (ide->smuc.sys & 0x80) {		// data
 					cmos_wr(ide->smuc.cmos, CMOS_DATA, val);
-					// ide->smuc.cmos->data[ide->smuc.cmos->adr] = val;
 				} else {				// address
 					cmos_wr(ide->smuc.cmos, CMOS_ADR, val);
-					// ide->smuc.cmos->adr = val;
 				}
 				break;
 		}

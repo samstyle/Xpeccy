@@ -59,16 +59,20 @@ int pc98xx_vid_rd(int adr, void* p) {
 	adr &= 0x1ffff;
 	int r = comp->vid->ram[adr] & 0xff;
 	switch (adr) {
-		case 0x03fe2:
-		case 0x03fe6:
-		case 0x03ff2:
-		case 0x03ff6:
+		case 0x03fe2:			// 48 <- ITF init values, if write is enabled by DIPSW2-4
+		case 0x03fe6:			// 05
+		case 0x03ff6:			// 00
+		case 0x03ffa:			// 00
 			printf("%X : rd SWx: %X = %.2X\n", comp->cpu->cs.base + comp->cpu->oldpc, adr, r);
 			break;
-		case 0x03fea:
+		case 0x03ff2:			// 01
+			r = 0x00;	// high 4 bits: boot device (0000:default - hd fdc, hdd, basic)
+			printf("%X : rd MSW5 = %.2X\n", comp->cpu->cs.base + comp->cpu->oldpc, r);
+			break;
+		case 0x03fea:			// 03/04 (512K/640K)
 			r = 0x4c;	// b6:initial screen black, b3:x86, b0..2:640Kb
 			break;
-		case 0x03fee:
+		case 0x03fee:			// 00/08 (sound rom present/absent)
 			r = 0x00;
 			if (comp->ts->rom.data != NULL) r |= 8;		// sound rom
 			break;
@@ -159,7 +163,7 @@ int pc98xx_snd_rd(int adr, void* p) {
 // b0,1	: 00
 
 // A3FF2/E3FF2:default 01
-// b4..7: floppy disks
+// b4..7: boot device (0000:default, 0010:dd fdc, 0100:hd fdc)
 // b3	: screen hard copy (0:b/w, 1:color)
 // b2	:
 // b1	:
@@ -213,12 +217,12 @@ void pc98xx_mem_map(Computer* comp) {
 void pc98xx_reset(Computer* comp) {
 	comp->DIPSW1 = 0x80;	// b0=0:15MHz dots, 50Hz frame in current layout
 	comp->DIPSW2 = 0x03;
-	comp->DIPSW3 = 0x81;
+	comp->DIPSW3 = 0x82;
 	if (comp->cpu->core->type == CPU_V30) comp->DIPSW3 &= ~0x80;	// b7=0
 	comp->portB = 0x00;	// b3:1=highres
 	comp->portC = 0xff;
 	comp->flgVSync = 1;	// disabled
-	comp->flgA20 = 1;
+	comp->flgA20 = 1;	// unmask A20
 	comp->flgRomIPL = 0;
 	comp->regKBDs = 0;
 	pc98xx_mem_map(comp);
@@ -255,7 +259,7 @@ void pc98xx_reset(Computer* comp) {
 // b1	1:basic mode, 0:terminal mode
 // b2	1:80 0:40 chars/line
 // b3	1:25 0:20 char lines/screen
-// b4	1:clear ram on reset
+// b4	1:memory switches is write enabled (0:hw fixed)
 // b5	1:disable internal hdd
 // b6	-
 // b7	gdc dot clk: 1:5mhz, 0:2.5MHz	(640/320 dots/line)
@@ -268,7 +272,7 @@ void pc98xx_reset(Computer* comp) {
 // b4	-
 // b5	memory 1:512K, 0:640K (mouse port)
 // b6	-
-// b7	cpu 1:x86, 0:v30 (printer port)
+// b7	cpu 1:x86, 0:v30 (mouse port)
 
 // uPD8255 - misc data (rs232,soft reset,misc flags) (31,33,35,37)
 // portA (31)	system switch, DIPSW2 full (ro) - see above
@@ -296,15 +300,14 @@ void pc98xx_reset(Computer* comp) {
 int pc98xx_ppia_rd(void* comp) {return ((Computer*)comp)->DIPSW2;}
 int pc98xx_ppib_rd(void* ptr) {
 	Computer* comp = (Computer*)ptr;
-	int res = comp->portB & 0xfe;
-	res &= ~0x08;
+	int res = comp->portB & 0xf6;
 	if (comp->DIPSW1 & 1) res |= 8;
 	if (comp->rtc->data) res |= 1;
 	return res;
 }
 int pc98xx_ppic_rd(void* p) {
 	Computer* comp = p;
-	return comp->portC | 0x20;			// force set bit 5 for debugging (avoid soft reset)
+	return comp->portC;
 }
 void pc98xx_ppia_wr(int val, void* p) {}
 void pc98xx_ppib_wr(int val, void* p) {}
@@ -764,28 +767,39 @@ void pc98xx_fnt_wr(Computer* comp, int adr, int val) {
 // 90,92,94,96: 1MB flop (2HD)
 // c8,ca,cc,ce: 640MB flop (2DD)
 
+int pc98xx_fdc_adr(Computer* comp, int adr, int ext) {
+	adr = (adr >> 1) & 3;
+	if (ext) adr |= 4;		// external (fdc2)
+	if (comp->regBE & 1) adr ^= 4;	// swap int/ext
+	return adr;
+}
+
 int pc98xx_fdc_rd(Computer* comp, int adr) {
 	int res = -1;
-	difIn(comp->dif, (adr >> 1) & 3, &res, 0);
-//	printf("PC98: %X: rd %.4X = %.2X\n", comp->cpu->oldpc + comp->cpu->cs.base, adr, res);
+	adr = pc98xx_fdc_adr(comp, adr, 0);
+	difIn(comp->dif, adr, &res, 0);
+//	printf("FDC1: %X: rd %.4X = %.2X\n", comp->cpu->oldpc + comp->cpu->cs.base, adr, res);
 	return res;
 }
 
 void pc98xx_fdc_wr(Computer* comp, int adr, int val) {
-//	printf("PC98: %X: wr %.4X, %.2X\n", comp->cpu->oldpc + comp->cpu->cs.base, adr, val);
-	difOut(comp->dif, (adr >> 1) & 3, val, 0);
+//	printf("FDC1: %X: wr %.4X, %.2X\n", comp->cpu->oldpc + comp->cpu->cs.base, adr, val);
+	adr = pc98xx_fdc_adr(comp, adr, 0);
+	difOut(comp->dif, adr, val, 0);
 }
 
 int pc98xx_fdc2_rd(Computer* comp, int adr) {
 	int res = -1;
-	difIn(comp->dif, ((adr >> 1) & 3) | 4, &res, 0);
-//	printf("PC98: %X: rd %.4X = %.2X\n", comp->cpu->oldpc + comp->cpu->cs.base, adr, res);
+	adr = pc98xx_fdc_adr(comp, adr, 1);
+	difIn(comp->dif, adr, &res, 0);
+//	printf("FDC2: %X: rd %.4X = %.2X\n", comp->cpu->oldpc + comp->cpu->cs.base, adr, res);
 	return res;
 }
 
 void pc98xx_fdc2_wr(Computer* comp, int adr, int val) {
-//	printf("PC98: %X: wr %.4X, %.2X\n", comp->cpu->oldpc + comp->cpu->cs.base, adr, val);
-	difOut(comp->dif, ((adr >> 1) & 3) | 4, val, 0);
+//	printf("FDC2: %X: wr %.4X, %.2X\n", comp->cpu->oldpc + comp->cpu->cs.base, adr, val);
+	adr = pc98xx_fdc_adr(comp, adr, 1);
+	difOut(comp->dif, adr, val, 0);
 }
 
 // fdc1 dma transfer
@@ -853,8 +867,10 @@ void pc98xx_f55_wr(Computer* comp, int adr, int val) {
 }
 
 // be: flp flags
-// b0: switch floppies (0-1 x 3-4)
+// b0: switch address (swap fdc1/fdc2)
 // b1: flop capacity (1MB/640KB)
+// b2: sw3-0
+// b3: sw3-1
 void pc98xx_be_wr(Computer* comp, int adr, int val) {
 	comp->regBE = val & 3;
 }
@@ -868,16 +884,39 @@ int pc98xx_be_rd(Computer* comp, int adr) {
 
 // uPD8255: mouse
 // mouse model - PC9872L
-// 7fd9 portA,rd: mouse data: left.x.right.x.md3..0
-// 7fdb portB,rd: b2:???
-//		b1:cpu clk (1:10MHz, 0:12MHz)
-// 7fdd wr: control flags: hc.sxy.shl.!int.x.x.x.x;f
+// TODO: A3 doesn't matter?
+// 7fd9 portA,rd:
+//	b0..3	md0..3	data (see 7fdd b5,6)
+//	b5	right button
+//	b7	left button
+// 7fdb portB,rd:
+//	b6:sw3-6
+//	b1:spdsw	cpu clk (1:10/16MHz, 0:12/20MHz)
+// 7fdd control flags:
+//	b0:ro:sw1-4	rs232
+//	b1:ro:sw1-5	rs232
+//	b2:ro:sw3-7	0:x86 cpu, 1:v20/30/40 cpu
+//	b3:ro:modsw	0:highres, 1:normal
+//	b4:rw:!int	enable mouse timer interrupt
+//	b5:rw:shl	shl:sxy - data input mode, portA md0..3 (b6:0x,1y, b7:0:low4bits,1:high4bits)
+//	b6:rw:sxy
+//	b7:rw:hc	0->1:clear counter after next read
 // 7fdf wr:	1xxxxxxx: wr mode	rd:93?
-//		0xxxnnnd: wr flag (111:hc, 100:!int)
+//		0xxxnnnd: wr flag (111:clear counter, 100:disable int)
 int pc98xx_mou_rd(Computer* comp, int adr) {
 	int res = 0;
 	switch((adr >> 1) & 3) {
 		case 0: res = 0;
+			break;
+		case 1:
+			break;
+		case 2:
+			if (comp->DIPSW1 & 0x10) res |= 1;
+			if (comp->DIPSW1 & 0x20) res |= 2;
+			if (comp->DIPSW3 & 0x80) res |= 4;
+			res |= 8;	// normal mode
+			break;
+		case 3:
 			break;
 		default:
 			break;
@@ -886,6 +925,19 @@ int pc98xx_mou_rd(Computer* comp, int adr) {
 }
 
 void pc98xx_mou_wr(Computer* comp, int adr, int val) {
+
+}
+
+// bff9/b/d/f: mouse interrupt timer
+// b0,1:00 - 120Hz
+//	01 - 60Hz
+//	10 - 30Hz
+//	11 - 15Hz
+int pc98xx_mint_r(Computer* comp, int adr) {
+	return -1;
+}
+
+void pc98xx_mint_w(Computer* comp, int adr, int val) {
 
 }
 
@@ -902,10 +954,13 @@ void pc98xx_rs_wr(Computer* comp, int adr, int val) {
 // uPD8255 - printer
 // 40 wr data
 // 42 rd 1.0.mod.sw1-3.sw1-8.!bsy.sw3-7.0
-//	mod: system clock 0:10MHz, 1:8MHz
-//	sw1-3: printer display on/off
-//	sw1-8: color depth. 1:16col, 0:8col
-//	sw3-7: 1 for V30, 0 for others
+//	b6,7: system type (00:pc9801, 11:pc9801u, pc98lt/ha, 10:everything else, 01:undef)
+//	b5:mod: system clock 0:10MHz, 1:8MHz
+//	b4:sw1-3: lcd display used
+//	b3:sw1-8: color depth. 1:16col, 0:8col
+//	b2:printer !busy
+//	b1:current cpu: 1 for V30, 0 for x86 (this is not DIPSW3-7)
+//	b0:vf flag (only 9801vf,9801u - builtin 2dd fdc)
 // 44 rw pstb.0.0.0.0.0.0.0
 // 46 rd 82
 // 46 wr 8255 control word/mode
@@ -915,10 +970,10 @@ int pc98xx_prn_rd(Computer* comp, int adr) {
 	int res = 0;
 	switch ((adr >> 1) & 3) {
 		case 0: break;
-		case 1: res = 0xa4;
+		case 1: res = 0x84;
 			if (comp->DIPSW1 & 0x08) res |= 0x10;
 			if (comp->DIPSW1 & 0x80) res |= 0x08;
-			if (comp->DIPSW3 & 0x80) res |= 0x02;
+			if (comp->cpu->type == CPU_V30) res |= 0x02;
 			break;
 		case 2: break;
 		case 3: res = 0x82;
@@ -950,16 +1005,23 @@ void pc98xx_c0_wr(Computer* comp, int adr, int val) {
 
 // 80,82 - HDD controller (uPD7261 ?)
 // cpu.a1 = ctrl.a0
-// a0 = 0: rd/wr hdd data
+// a0 = 0: rd/wr controller data
 // a0 = 1:
-// wr	b0: interrupt enable
-//	b1: dma enable
-//	b3: reset
-//	b5: select
-//	b6: 0:read switch, 1:read status
-//	b7: chen (data bus out enable)
+// wr	b0: INTE = interrupt enable
+//	b1: DMAE = dma enable
+//	b3: RST = reset (1->0)
+//	b5: SEL = select
+//	b6: NRDSW = 0:read switch, 1:read status
+//	b7: (ext.only) CHEN = data bus out enable
 // rd:	if (ctrl.b6 == 0) read sw1..sw8
-//	if (ctrl.b6 == 1) int9.-.i/o.c/d.msg.bsy.ack.req
+//	if (ctrl.b6 == 1)
+//		b0: INT
+//		b2: IXO	0:in, 1:out
+//		b3: CXD 0:command, 1:data
+//		b4: MSG
+//		b5: BSY
+//		b6: (external only) ACK
+//		b7: REQ
 
 void pc98xx_hdd_wr(Computer* comp, int adr, int val) {
 	if (adr & 2) {
@@ -1057,9 +1119,12 @@ void pc98xx_dbg_wr(Computer* comp, int adr, int val) {
 // ports from 'pc9801 programmers bible'
 // NOTE: run with --panic argument to exit on unknown i/o address
 // 439 - DMA access [PC98XA on i80286]
+// 43b - ?
 // 43d - switch rom pages (12 - IPL,bios; 10 - ITF,bootloader)
 // 43f - switch VMem pages (9801VM+)
 // 461 - ram window maping. [0x80000-0x9ffff - address bits 23-17 replaced with value bits 7-1]
+// 463
+// 465
 // 467 wr: b1 = highres mode [undocumented]
 // NOTE: check this:
 // 000..3FF is copies of 00..FF
@@ -1097,7 +1162,7 @@ xPort pc98xx_io_map[] = {
 //	{0x0f1, 0x0c1, 2, 2, 2, NULL,		NULL},			// gp-ib on upd7210
 	{0xfff9,0x7fd9,2, 2, 2, pc98xx_mou_rd,	pc98xx_mou_wr},		// 7fd9/b/d/f: mouse controller on upd8255
 //	{0xfffb,0x3fdb,2, 2, 2, NULL,		NULL},			// 3fdb/f: upd8253 (timer for beeper)
-//	{0xffff,0xbfdb,2, 2, 2, NULL,		NULL},			// bfdb: mouse interrupt ?
+	{0xffff,0xbfdb,2, 2, 2, pc98xx_mint_r,	pc98xx_mint_w},		// bfdb: mouse interrupt timer
 	{0xcf9, 0x0f0, 2, 2, 2, pc98xx_cpu_rd,	pc98xx_cpu_wr},		// f0,f2,f4,f6: cpu control
 //	{0xcf8, 0x0f8, 2, 2, 2, NULL,		NULL},			// f8..ff: ndp (x87)
 	{0xcff, 0x43d, 2, 2, 2, NULL,		pc98xx_43d_wr},		// 43d - switch rom pages
@@ -1136,7 +1201,8 @@ int pc98xx_ack(Computer* comp) {
 // rs232: master.irq4 (int 0c)
 // slave pic: paster.irq7
 // printer: slave.irq0 (int 10h)
-// fdc1 (internal): slave.irq3 (int 13h)
+// fdc2 (640KB): slave.irq2 (int 12h)
+// fdc1 (1MB): slave.irq3 (int 13h)
 // fpu: slave.irq6 (int 16h)
 // GND: slave.irq7
 // external devices: all others (master.3,5,6; slave.1,2,4,5)
@@ -1165,7 +1231,11 @@ void pc98xx_irq(Computer* comp, int id) {
 			break;
 		case IRQ_UART_0: pic_int(comp->mpic, 1); break;
 		case IRQ_FDC: pic_int(comp->spic, 3); break;
+		case IRQ_FDC_RD: dma_ch_transfer(&comp->dma1->ch[2], comp->dma1->ptr); break;
+		case IRQ_FDC_WR: dma_ch_transfer(&comp->dma1->ch[2], comp->dma1->ptr); break;
 		case IRQ_FDC2: pic_int(comp->spic, 2); break;
+		case IRQ_FDC2_RD: dma_ch_transfer(&comp->dma1->ch[3], comp->dma1->ptr); break;
+		case IRQ_FDC2_WR: dma_ch_transfer(&comp->dma1->ch[3], comp->dma1->ptr); break;
 	}
 }
 
@@ -1195,8 +1265,8 @@ void pc98xx_init(Computer* comp) {
 	// fdc
 	comp->dif->fdc->upd = 1;
 	comp->dif->fdc2->upd = 1;
-	dif_align_flps(comp->dif, comp->dif->fdc, 0, 1, 0, 1);
-	dif_align_flps(comp->dif, comp->dif->fdc2, 2, 3, 2, 3);
+	dif_align_flps(comp->dif, comp->dif->fdc, 0, 1, 2, 3);
+	dif_align_flps(comp->dif, comp->dif->fdc2, 0, 1, 2, 3);
 	// dma
 	dma_set_cb(comp->dma1, pc98_dma_mrd, pc98_dma_mwr);					// mrd/mwr callbacks
 	dma_set_chan(comp->dma1, 2, pc98_dma_flp_rd, pc98_dma_flp_wr, pc98_dma_flp_tc);		// ch2: fdc

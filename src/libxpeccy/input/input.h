@@ -232,7 +232,7 @@ struct Keyboard {
 	int mask;
 	int matrix[16][16];
 	int map[8];			// ZX keyboard half-row bits (0-5)
-	int extMap[8];			// Profi XT-keyboard extend
+//	int extMap[8];			// Profi XT-keyboard extend
 	int msxMap[16];			// MSX keys map
 	// pc keyboard
 	unsigned lock:1;	// ps/2 keyboard disabled
