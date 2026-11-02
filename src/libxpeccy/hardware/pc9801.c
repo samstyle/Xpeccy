@@ -115,7 +115,7 @@ int pc98xx_bios_rd(int adr, void* p) {
 }
 
 // sound board bios (cc000-cffff)
-int pc98xx_snd_rd(int adr, void* p) {
+int pc98xx_snd_mrd(int adr, void* p) {
 	Computer* comp = p;
 	return tsReadRom(comp->ts, adr & 0x3fff);
 }
@@ -200,7 +200,7 @@ void pc98xx_mem_map(Computer* comp) {
 	memSetBank(comp->mem, 0xa0, MEM_EXT, 0, MEM_128K, pc98xx_vid_rd, pc98xx_vid_wr, comp);	// video ram (128K)
 
 	memSetBank(comp->mem, 0xc0, MEM_EXT, 0, MEM_128K, NULL, NULL, comp);			// expand roms (128K), reserved
-	memSetBank(comp->mem, 0xcc, MEM_ROM, 1, MEM_16K, pc98xx_snd_rd, NULL, comp);		// sound.rom (16K)
+	memSetBank(comp->mem, 0xcc, MEM_ROM, 1, MEM_16K, pc98xx_snd_mrd, NULL, comp);		// sound.rom (16K)
 
 	memSetBank(comp->mem, 0xe0, MEM_EXT, 0, MEM_32K, pc98xx_vex_rd, pc98xx_vex_wr, comp);	// video ram (32K)
 	if (comp->flgRomIPL) {
@@ -216,9 +216,9 @@ void pc98xx_mem_map(Computer* comp) {
 
 void pc98xx_reset(Computer* comp) {
 	comp->DIPSW1 = 0x80;	// b0=0:15MHz dots, 50Hz frame in current layout
-	comp->DIPSW2 = 0x03;
-	comp->DIPSW3 = 0x82;
-	if (comp->cpu->core->type == CPU_V30) comp->DIPSW3 &= ~0x80;	// b7=0
+	comp->DIPSW2 = 0x23;	// b2:40cpl
+	comp->DIPSW3 = 0x20;
+	if (comp->cpu->core->type == CPU_V30) comp->DIPSW3 |= 0x80;	// b7=1
 	comp->portB = 0x00;	// b3:1=highres
 	comp->portC = 0xff;
 	comp->flgVSync = 1;	// disabled
@@ -237,7 +237,7 @@ void pc98xx_reset(Computer* comp) {
 		vid_upd_timings(comp->vid, 1000/15);
 	}
 	comp->vid->linedbl = !(comp->portB & 8);
-	comp->vid->vga.cpl = (comp->DIPSW2 & 4) ? 80 : 40;
+	comp->vid->vga.cpl = (comp->DIPSW2 & 4) ? 40 : 80;
 	dma_reset(comp->dma1);
 	pit_reset(comp->pit);
 	pic_reset(comp->mpic);
@@ -254,25 +254,25 @@ void pc98xx_reset(Computer* comp) {
 // b6	-
 // b7	1:16col, 0:8col mode (printer port)
 
-// DIPSW2
-// b0	1
-// b1	1:basic mode, 0:terminal mode
-// b2	1:80 0:40 chars/line
-// b3	1:25 0:20 char lines/screen
-// b4	1:memory switches is write enabled (0:hw fixed)
-// b5	1:disable internal hdd
+// DIPSW2 (23)
+// b0	0:LT mode, 1:normal
+// b1	0:terminal mode, 1:basic mode
+// b2	0:80, 1:40 chars/line
+// b3	0:20, 1:25 char lines/screen
+// b4	0:fix memory switches, 1:init memory switches
+// b5	0:disable internal hdd
 // b6	-
-// b7	gdc dot clk: 1:5mhz, 0:2.5MHz	(640/320 dots/line)
+// b7	gdc dot clk: 0:5mhz, 1:2.5MHz	(640/320 dots/line)
 
 // DIPSW3
-// b0	1:auto detect fdd type (by default see b1)
-// b1	1:fdd is dd, 0:fdd is hd
+// b0	0:auto detect fdd type (by default see b1)
+// b1	0:fdd is dd, 1:fdd is hd
 // b2	-
 // b3	-
 // b4	-
-// b5	memory 1:512K, 0:640K (mouse port)
+// b5	0:512K, 1:640K (mouse port)
 // b6	-
-// b7	cpu 1:x86, 0:v30 (mouse port)
+// b7	cpu 0:x86, 1:v30 (mouse port)
 
 // uPD8255 - misc data (rs232,soft reset,misc flags) (31,33,35,37)
 // portA (31)	system switch, DIPSW2 full (ro) - see above
@@ -1056,6 +1056,14 @@ int pc98xx_hdd_rd(Computer* comp, int adr) {
 
 // fm sound (Yamaha 2203)
 
+void pc98xx_snd_wr(Computer* comp, int adr, int val) {
+	tsOut(comp->ts, adr << 13, val);
+}
+
+int pc98xx_snd_rd(Computer* comp, int adr) {
+	return tsIn(comp->ts, adr << 13);	// TODO: (adr>>14)&1 in tsIn
+}
+
 // cpu control
 
 void pc98xx_cpu_wr(Computer* comp, int adr, int val) {
@@ -1145,7 +1153,7 @@ xPort pc98xx_io_map[] = {
 	{0xcf1, 0x070, 2, 2, 2, pc98xx_crt_rd,	pc98xx_crt_wr},		// 70,72,74,76,78,7a,7c,7e: crtc, grcg
 	{0xcf1, 0x071, 2, 2, 2, pc98xx_pit_rd,	pc98xx_pit_wr},		// 71,73,75,77: PIT on upd8253
 	{0x0fd, 0x080, 2, 2, 2, pc98xx_hdd_rd,	pc98xx_hdd_wr},		// 80,82: hard disk inerface
-//	{0xff9, 0x188, 2, 2, 2, NULL,		NULL},			// 188,18a,18c,18e: ym2203
+	{0x1f9, 0x188, 2, 2, 2, pc98xx_snd_rd,	pc98xx_snd_wr},		// 188,18a - ym2203 (not presend in older models)
 //	{0x0f9, 0x089, 2, 2, 2, NULL,		NULL},			// 89,8b,8d,8f: network interface
 	{0x0f1, 0x090, 2, 2, 2, pc98xx_fdc_rd,	pc98xx_fdc_wr},		// 90,92,94,96 + (copy:98,9a,9c,9e): hd fdd on upd765
 //	{0x0f9, 0x091, 2, 2, 2, NULL,		NULL},			// 91,93,95,97: tape interface (uart,8251)

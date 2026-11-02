@@ -371,6 +371,7 @@ void upd7220_line(Video* vid) {
 		memset(vid->line, 0x00, 0x500);
 	} else {
 		// vid->vga.cpl = 40/80 - chars in line
+		// CHECK: for 40chars/line char is 4 bytes in vmem
 		for (i = 0; i < vid->vga.cpl; i++) {
 			chr = (vid->ram[adr] & 0xff) | (vid->ram[adr + 1] << 8);
 			atr = (vid->ram[adr | 0x2000] & 0xff) | (vid->ram[adr | 0x2001] << 8);	// char attribute
@@ -399,6 +400,7 @@ void upd7220_line(Video* vid) {
 				chr <<= 1;
 			}
 			adr += 2;								// next char
+			if (vid->vga.cpl == 40) adr += 2;
 		}
 	}
 // form graphic line (vid->linb)

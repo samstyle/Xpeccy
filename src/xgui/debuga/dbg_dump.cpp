@@ -41,11 +41,11 @@ int xDumpModel::mrd(int adr) const {
 	MemPage* pg;
 	int fadr;
 	int res = 0xff;
-	if (comp->cpu->core->group == CPUG_X86) {
-		res = comp->hw->mrd(comp, adr, 0);
-	} else {
-		switch(mode) {
-			case XVIEW_CPU:
+	switch(mode) {
+		case XVIEW_CPU:
+			if (comp->cpu->core->group == CPUG_X86) {
+				res = comp->hw->mrd(comp, adr, 0);
+			} else {
 				pg = mem_get_page(comp->mem, adr);	// = &comp->mem->map[(adr >> 8) & 0xff];
 				fadr = mem_get_phys_adr(comp->mem, adr);	// = pg->num << 8) | (adr & 0xff);
 				switch (pg->type) {
@@ -54,21 +54,21 @@ int xDumpModel::mrd(int adr) const {
 					case MEM_SLOT: res = memRd(comp->mem, adr % maxadr);
 						break;
 				}
-				res |= getBrk(comp, adr % maxadr) << 8;
-				break;
-			case XVIEW_RAM:
-				adr &= 0x3fff;
-				adr |= (page << 14);
-				res = comp->mem->ramData[adr & 0x3fffff];
-				res |= comp->brkRamMap[adr & 0x3fffff] << 8;
-				break;
-			case XVIEW_ROM:
-				adr &= 0x3fff;
-				adr |= (page << 14);
-				res = comp->mem->romData[adr & 0x7ffff];
-				res |= comp->brkRomMap[adr & 0x7ffff] << 8;
-				break;
-		}
+			}
+			res |= getBrk(comp, adr % maxadr) << 8;
+			break;
+		case XVIEW_RAM:
+			adr &= (pgsize - 1);
+			adr |= (page * pgsize);
+			res = comp->mem->ramData[adr & 0x3fffff];
+			res |= comp->brkRamMap[adr & 0x3fffff] << 8;
+			break;
+		case XVIEW_ROM:
+			adr &= (pgsize - 1);
+			adr |= (page * pgsize);
+			res = comp->mem->romData[adr & 0x7ffff];
+			res |= comp->brkRomMap[adr & 0x7ffff] << 8;
+			break;
 	}
 	return res;
 }
@@ -97,13 +97,13 @@ void xDumpModel::mwr(int adr, unsigned char bt) {
 				}
 				break;
 			case XVIEW_RAM:
-				adr &= 0x3fff;
-				adr |= (page << 14);
+				adr &= (pgsize - 1);
+				adr |= (page * pgsize);
 				comp->mem->ramData[adr & comp->mem->ramMask] = bt;
 				break;
 			case XVIEW_ROM:
 				if (conf.dbg.romwr)
-					comp->mem->romData[((adr & 0x3fff) | (page << 14)) & comp->mem->romMask] = bt;
+					comp->mem->romData[((adr & (pgsize - 1)) | (page * pgsize)) & comp->mem->romMask] = bt;
 				break;
 		}
 	}
