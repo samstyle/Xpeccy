@@ -480,119 +480,18 @@ void xBreakWidget::resetBrk() {
 	emit updated();		// fill disasm/dump
 }
 
-bool parseRange(QString str, xBrkPoint* p) {
-	bool r;
-	int badr;
-	int eadr;
-	int tadr;
-	QStringList splt;
-	splt = str.split('-', X_SkipEmptyParts);
-	badr = splt.first().toInt(&r, 16);
-	if (r) {
-		if (splt.size() > 1) {
-			eadr = splt[1].toInt(&r, 16);
-			if (eadr < badr) {
-				tadr = badr;
-				badr = eadr;
-				eadr = tadr;
-			}
-		} else {
-			eadr = badr;
-		}
-		if (r) {
-			p->adr = badr;
-			p->eadr = eadr;
-		}
-	}
-	return r;
-}
-
 void xBreakWidget::openBrk() {
 	QString path = QFileDialog::getOpenFileName(this, "Open breakpoints list", "", "deBUGa breakpoints (*.xbrk)",nullptr,QFileDialog::DontUseNativeDialog);
 	if (path.isEmpty()) return;
 	QFile file(path);
 	QString line;
-	QStringList splt;
-	QStringList list;
 	xBrkPoint brk;
-	int off;
-	bool b0,b1;
 	if (file.open(QFile::ReadOnly)) {
 		conf.prof.cur->brk.list.clear();
 		while(!file.atEnd()) {
 			line = tr(file.readLine());
 			if (!line.startsWith(";")) {
-				b0 = true;
-				b1 = true;
-				list = line.trimmed().split(":", X_KeepEmptyParts);
-				while(list.size() < 5)
-					list.append(QString());
-				brk.fetch = list.at(3).contains("F") ? 1 : 0;
-				brk.read = list.at(3).contains("R") ? 1 : 0;
-				brk.write = list.at(3).contains("W") ? 1 : 0;
-				brk.off = list.at(3).contains("0") ? 1 : 0;
-				if (list.at(0) == "IO") {
-					brk.type = BRK_IOPORT;
-					brk.adr = list.at(1).toInt(&b0, 16) & 0xffff;
-					brk.mask = list.at(2).toInt(&b1, 16) & 0xffff;
-				} else if (list.at(0) == "CPU") {
-					brk.type = BRK_CPUADR;
-					b0 = parseRange(list.at(1), &brk);
-					brk.adr &= 0xffff;
-					brk.eadr &= 0xffff;
-//					if (list.at(1).contains("-")) {		// 1234-ABCD
-//						splt = list.at(1).split(QLatin1Char('-'), X_SkipEmptyParts);
-//						list[1] = splt.first();
-//						list[2] = splt.last();
-//					}
-//					brk.adr = list.at(1).toInt(&b0, 16) & 0xffff;
-//					if (list.at(2).isEmpty()) {
-//						brk.eadr = brk.adr;
-//					} else {
-//						brk.eadr = list.at(2).toInt(&b1, 16) & 0xffff;
-//						if (brk.eadr < brk.adr)
-//							brk.eadr = brk.adr;
-//					}
-				} else if (list.at(0) == "ROM") {
-					brk.type = BRK_MEMROM;
-					b0 = parseRange(list.at(2), &brk);
-					off = (list.at(1).toInt(&b0, 16) & 0xff) << 14;
-					brk.adr = (brk.adr & 0x3fff) | off;
-					brk.eadr = (brk.eadr & 0x3fff) | off;
-//					brk.adr = (list.at(1).toInt(&b0, 16) & 0xff) << 14;
-//					brk.adr |= (list.at(2).toInt(&b1, 16) & 0x3fff);
-//					brk.eadr = brk.adr;
-				} else if (list.at(0) == "RAM") {
-					brk.type = BRK_MEMRAM;
-					b0 = parseRange(list.at(2), &brk);
-					off = (list.at(1).toInt(&b0, 16) & 0xff) << 14;
-					brk.adr = (brk.adr & 0x3fff) | off;
-					brk.eadr = (brk.eadr & 0x3fff) | off;
-//					brk.adr = (list.at(1).toInt(&b0, 16) & 0xff) << 14;
-//					brk.adr |= (list.at(2).toInt(&b1, 16) & 0x3fff);
-//					brk.eadr = brk.adr;
-				} else if (list.at(0) == "SLT") {
-					brk.type = BRK_MEMSLT;
-					b0 = parseRange(list.at(2), &brk);
-					off = (list.at(1).toInt(&b0, 16) & 0xff) << 14;
-					brk.adr = (brk.adr & 0x3fff) | off;
-					brk.eadr = (brk.eadr & 0x3fff) | off;
-//					brk.adr = (list.at(1).toInt(&b0, 16) & 0xff) << 14;
-//					brk.adr |= (list.at(2).toInt(&b1, 16) & 0x3fff);
-//					brk.eadr = brk.adr;
-				} else if (list.at(0) == "IRQ") {
-					brk.type = BRK_IRQ;
-				} else {
-					b0 = false;
-				}
-				if (list.at(4) == "SCR") {
-					brk.action = BRK_ACT_SCR;
-				} else if (list.at(4) == "CNT") {
-					brk.action = BRK_ACT_COUNT;
-				} else {
-					brk.action = BRK_ACT_DBG;
-				}
-				if (b0 && b1) {
+				if (str_to_brk(line, &brk)) {
 					brk.count = 0;
 					conf.prof.cur->brk.list.push_back(brk);
 				}
@@ -615,10 +514,14 @@ void xBreakWidget::saveBrk() {
 		path.append(".xbrk");
 	xBrkPoint brk;
 	QFile file(path);
-	QString nm,ar1,ar2,flag,act;
+//	QString nm,ar1,ar2,flag,act;
 	if (file.open(QFile::WriteOnly)) {
 		file.write("; Xpeccy deBUGa breakpoints list\n");
 		foreach(brk, conf.prof.cur->brk.list) {
+#if 1
+			file.write(brk_to_str(brk).toUtf8());
+			file.write("\n");
+#else
 			switch(brk.type) {
 				case BRK_IOPORT:
 					nm = "IO";
@@ -684,6 +587,7 @@ void xBreakWidget::saveBrk() {
 				if (brk.off) flag.append("0");
 				file.write(QString("%0:%1:%2:%3:%4\n").arg(nm).arg(ar1).arg(ar2).arg(flag).arg(act).toUtf8());
 			}
+#endif
 		}
 		file.close();
 	} else {

@@ -272,17 +272,25 @@ void brkInstallList(std::vector<xBrkPoint>* list) {
 	}
 }
 
+void brk_clear_map(xProfile* prf) {
+	memset(prf->zx->brkAdrMap, 0x00, MEM_64K);
+	memset(prf->zx->brkIOMap, 0x00, MEM_64K);
+	clearMap(prf->zx->brkRamMap, MEM_4M);
+	clearMap(prf->zx->brkRomMap, MEM_512K);
+	if (prf->zx->slot->brkMap)
+		clearMap(prf->zx->slot->brkMap, prf->zx->slot->memMask + 1);
+	prf->brk.map.clear();
+	prf->zx->flgIBRK = 0;
+}
+
+void brk_delete_all() {
+	conf.prof.cur->brk.list.clear();
+	brk_clear_map(conf.prof.cur);
+}
+
 void brkInstallAll() {
 	xProfile* prf = conf.prof.cur;
-	Computer* comp = prf->zx;
-	memset(comp->brkAdrMap, 0x00, MEM_64K);
-	memset(comp->brkIOMap, 0x00, MEM_64K);
-	clearMap(comp->brkRamMap, MEM_4M);
-	clearMap(comp->brkRomMap, MEM_512K);
-	if (comp->slot->brkMap)
-		clearMap(comp->slot->brkMap, comp->slot->memMask + 1);
-	prf->brk.map.clear();
-	comp->flgIBRK = 0;
+	brk_clear_map(prf);
 #if 1
 	brkInstallList(&prf->brk.list);
 	brkInstallList(&prf->brk.list_sys);
@@ -294,4 +302,161 @@ void brkInstallAll() {
 		brkInstall(&(*it), 0);
 	}
 #endif
+}
+
+// current string format: RAM:05:0000-003F:FRW0:DBG
+// TODO: convert bank:offset -> fulladdr
+// current address space limited to 4MB
+QString brk_to_str(xBrkPoint brk) {
+	QString nm,ar1,ar2,flag,act;
+	QString str;
+	switch(brk.type) {
+		case BRK_IOPORT:
+			nm = "IO";
+			ar1 = gethexword(brk.adr & 0xffff);
+			ar2 = gethexword(brk.mask & 0xffff);
+			break;
+		case BRK_CPUADR:
+			nm = "CPU";
+			ar1 = gethexword(brk.adr & 0xffff);
+			ar2.clear();
+			if (brk.eadr > brk.adr) {
+				ar1.append("-");
+				ar1.append(gethexword(brk.eadr & 0xffff));
+			}
+			break;
+		case BRK_MEMRAM:
+			nm = "RAM";
+			ar1 = gethexbyte((brk.adr >> 14) & 0xff);	// 16K page
+			ar2 = gethexword(brk.adr & 0x3fff);		// adr in page
+			if (brk.eadr > brk.adr) {
+				ar2.append("-");
+				ar2.append(gethexword(brk.eadr & 0x3fff));
+			}
+			break;
+		case BRK_MEMROM:
+			nm = "ROM";
+			ar1 = gethexbyte((brk.adr >> 14) & 0xff);
+			ar2 = gethexword(brk.adr & 0x3fff);
+			if (brk.eadr > brk.adr) {
+				ar2.append("-");
+				ar2.append(gethexword(brk.eadr & 0x3fff));
+			}
+			break;
+		case BRK_MEMSLT:
+			nm = "SLT";
+			ar1 = gethexbyte((brk.adr >> 14) & 0xff);
+			ar2 = gethexword(brk.adr & 0x3fff);
+			if (brk.eadr > brk.adr) {
+				ar2.append("-");
+				ar2.append(gethexword(brk.eadr & 0x3fff));
+			}
+			break;
+		case BRK_IRQ:
+			nm = "IRQ";
+			ar1.clear();
+			ar2.clear();
+			break;
+		default:
+			nm.clear();
+			break;
+	}
+	switch(brk.action) {
+		case BRK_ACT_DBG: act = "DBG"; break;
+		case BRK_ACT_SCR: act = "SCR"; break;
+		case BRK_ACT_COUNT: act = "CNT"; break;
+		default: act.clear(); break;
+	}
+	if (!nm.isEmpty()) {
+		flag.clear();
+		if (brk.fetch) flag.append("F");
+		if (brk.read) flag.append("R");
+		if (brk.write) flag.append("W");
+		if (brk.off) flag.append("0");
+		str = QString("%0:%1:%2:%3:%4").arg(nm).arg(ar1).arg(ar2).arg(flag).arg(act);
+	}
+	return str;
+}
+
+bool parseRange(QString str, xBrkPoint* p) {
+	bool r;
+	int badr;
+	int eadr;
+	int tadr;
+	QStringList splt;
+	splt = str.split('-', X_SkipEmptyParts);
+	badr = splt.first().toInt(&r, 16);
+	if (r) {
+		if (splt.size() > 1) {
+			eadr = splt[1].toInt(&r, 16);
+			if (eadr < badr) {
+				tadr = badr;
+				badr = eadr;
+				eadr = tadr;
+			}
+		} else {
+			eadr = badr;
+		}
+		if (r) {
+			p->adr = badr;
+			p->eadr = eadr;
+		}
+	}
+	return r;
+}
+
+bool str_to_brk(QString str, xBrkPoint* bptr) {
+	bool b0 = true;
+	bool b1 = true;
+	int off;
+	QStringList list = str.trimmed().split(":", X_KeepEmptyParts);
+	xBrkPoint brk;
+	while(list.size() < 5)
+		list.append(QString());
+	brk.fetch = list.at(3).contains("F") ? 1 : 0;
+	brk.read = list.at(3).contains("R") ? 1 : 0;
+	brk.write = list.at(3).contains("W") ? 1 : 0;
+	brk.off = list.at(3).contains("0") ? 1 : 0;
+	if (list.at(0) == "IO") {
+		brk.type = BRK_IOPORT;
+		brk.adr = list.at(1).toInt(&b0, 16) & 0xffff;
+		brk.mask = list.at(2).toInt(&b1, 16) & 0xffff;
+	} else if (list.at(0) == "CPU") {
+		brk.type = BRK_CPUADR;
+		b0 = parseRange(list.at(1), &brk);
+		brk.adr &= 0xffff;
+		brk.eadr &= 0xffff;
+	} else if (list.at(0) == "ROM") {
+		brk.type = BRK_MEMROM;
+		b0 = parseRange(list.at(2), &brk);
+		off = (list.at(1).toInt(&b0, 16) & 0xff) << 14;
+		brk.adr = (brk.adr & 0x3fff) | off;
+		brk.eadr = (brk.eadr & 0x3fff) | off;
+	} else if (list.at(0) == "RAM") {
+		brk.type = BRK_MEMRAM;
+		b0 = parseRange(list.at(2), &brk);
+		off = (list.at(1).toInt(&b0, 16) & 0xff) << 14;
+		brk.adr = (brk.adr & 0x3fff) | off;
+		brk.eadr = (brk.eadr & 0x3fff) | off;
+	} else if (list.at(0) == "SLT") {
+		brk.type = BRK_MEMSLT;
+		b0 = parseRange(list.at(2), &brk);
+		off = (list.at(1).toInt(&b0, 16) & 0xff) << 14;
+		brk.adr = (brk.adr & 0x3fff) | off;
+		brk.eadr = (brk.eadr & 0x3fff) | off;
+	} else if (list.at(0) == "IRQ") {
+		brk.type = BRK_IRQ;
+	} else {
+		b0 = false;
+	}
+	if (list.at(4) == "SCR") {
+		brk.action = BRK_ACT_SCR;
+	} else if (list.at(4) == "CNT") {
+		brk.action = BRK_ACT_COUNT;
+	} else {
+		brk.action = BRK_ACT_DBG;
+	}
+	if (!b0 || !b1) return false;
+	*bptr = brk;
+	return true;
 }

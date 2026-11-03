@@ -184,11 +184,13 @@ typedef struct {
 void brkSet(int, int, int, int);
 void brkXor(int, int, int, int, int);
 void brkAdd(xBrkPoint, int = 0);
-// void brkInstall(xBrkPoint*, int);
 void brkDelete(xBrkPoint);
+void brk_delete_all();
 void brkInstallAll();
 void brk_clear_tmp(Computer*);
 xBrkPoint* brk_find(int, int);
+QString brk_to_str(xBrkPoint);
+bool str_to_brk(QString, xBrkPoint*);
 
 // profiles
 

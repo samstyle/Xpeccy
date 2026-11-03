@@ -43,6 +43,7 @@ void load_xmap(QString path) {
 	QString str;
 	QString sname;
 	QStringList lst;
+	xBrkPoint brk;
 	xAdr xadr;
 	Computer* comp = conf.prof.cur->zx;
 	file.setFileName(path);
@@ -131,6 +132,19 @@ void load_xmap(QString path) {
 						}
 					}
 					qb.close();
+				} else if (!memcmp(buf, "breakpts", 8)) {
+					brk_delete_all();
+					arr = file.read(len);
+					qb.setData(arr);
+					qb.open(QIODevice::ReadOnly);
+					while(!qb.atEnd()) {
+						memset(line, 0, 1024);
+						qb.readLine(line, 1024);
+						str = QString::fromUtf8(line);
+						if (str_to_brk(str, &brk)) {
+							brkAdd(brk);
+						}
+					}
 				} else {
 					file.seek(file.pos() + len);
 				}
@@ -172,6 +186,7 @@ void save_xmap(QString path) {
 	xAdr xadr;
 	QString str;
 	QString lab;
+	xBrkPoint brk;
 	Computer* comp = conf.prof.cur->zx;
 	if (!path.isEmpty()) {
 		file.setFileName(path);
@@ -230,6 +245,16 @@ void save_xmap(QString path) {
 			xputcomments(arr, &conf.prof.cur->commap[MEM_EXT], "EXT");
 			qfputi(file, arr.size());
 			file.write(arr.data(), arr.size());
+			arr.clear();
+			// breakpoints
+			file.write("breakpts",8);
+			foreach(brk, conf.prof.cur->brk.list) {
+				arr.append(brk_to_str(brk).toUtf8());
+				arr.append((char)0x0a);
+			}
+			qfputi(file, arr.size());
+			file.write(arr.data(), arr.size());
+			arr.clear();
 		} else {
 			shitHappens("Can't open this file for writing");
 		}
